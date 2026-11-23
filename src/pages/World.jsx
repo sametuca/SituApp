@@ -12,7 +12,8 @@ import LocalPlayer from '../world/LocalPlayer'
 import RemotePlayers, { GuideNpc, SelfTag } from '../world/RemotePlayers'
 import { useMultiplayer } from '../world/net'
 import { ChatPanel, HelpModal, HintBar, Minimap, TipStack, TopBar, ZoneToast } from '../world/Hud'
-import { ChatFab, ChatSheet, DoorPrompt, IncomingChip, InviteChip, Joystick, NearbyCard } from '../world/Social'
+import { ChatFab, ChatSheet, DoorPrompt, GestureChip, IncomingChip, InteractSheet, InviteChip, Joystick, MatchOverlay, NearbyCard, ReactionBar } from '../world/Social'
+import { GESTURE_BY_KIND, REACTIONS, WHISPER_RANGE } from '../world/interact'
 import { useIsTouch } from '../world/useIsTouch'
 import { HOME_DOOR, HOME_ROOM, HOME_ZONE, SPAWN, TELEPORTS, ZONES, resolveCollisions, resolveRoom, zoneAt } from '../world/layout'
 
@@ -25,6 +26,8 @@ const GUIDE_TIPS = [
   'Selam! Ben Rehber 🧭 Takıldığın yer olursa sağ üstteki ? düğmesine bas.',
   'Enter’a basıp yazarsan mesajın başının üstünde balon olur 💬',
   'Shift’e basılı tutarsan koşarsın 🏃',
+  'Birinin yanına gidip 💗 düğmesine bas: kalp, çiçek gönder ya da kulağına fısılda 🤫',
+  'Aşağıdaki 😊 ile (ya da 1-9 tuşlarıyla) kafanın üstünde emoji uçur!',
   'Yollar lobiden dört yöne açılır: ☕ kuzey, 🪩 doğu, 🏖️ güney, 🌳 batı.',
 ]
 
@@ -144,6 +147,10 @@ function WorldScene({ avatar }) {
   const [editing, setEditing] = useState(false)
   const [selected, setSelected] = useState(null)
   const [invite, setInvite] = useState(null) // { owner, ownerName }: biri seni evine çağırdı
+  const [gestureIn, setGestureIn] = useState(null) // biri sana jest yaptı: { id, name, kind, emoji, avatar }
+  const [match, setMatch] = useState(null) // karşılıklı kalp: { id, name, avatar }
+  const [interactId, setInteractId] = useState(null) // etkileşim menüsü açık olan oyuncu
+  const [, setTick] = useState(0)
   const synced = useRef(null) // sunucuyla en son eşleşen düzen (JSON); değişmediyse tekrar yollama
   const [help, setHelp] = useState(false)
   const tipsKey = `situapp_tips_seen_${user?.id ?? 'guest'}`
@@ -155,7 +162,7 @@ function WorldScene({ avatar }) {
   const addFeed = useCallback((m) => {
     setFeed((f) => [...f, { kind: 'chat', ...m }].slice(-100))
     // başkasından özel mesaj geldi ve o sohbet açık değilse bildirim göster
-    if (m.dm && !m.self && chatTargetRef.current !== m.id) setIncoming({ id: m.id, name: m.name, text: m.text })
+    if ((m.dm || m.whisper) && !m.self && chatTargetRef.current !== m.id) setIncoming({ id: m.id, name: m.name, text: m.text, whisper: Boolean(m.whisper) })
   }, [])
   const say = useCallback((text) => setFeed((f) => [...f, { kind: 'system', ts: Date.now(), text }].slice(-100)), [])
   // Şehir ↔ ev geçişi: ekran kısa süre kararır, sonra oyuncu yeni yere ışınlanır.
@@ -193,7 +200,23 @@ function WorldScene({ avatar }) {
     },
     [say],
   )
-  const net = useMultiplayer({ name, avatar: slug, onChat: addFeed, onDenied, onInfo: say, onInvited: setInvite, onRoom })
+  const onGesture = useCallback(
+    (m) => {
+      setGestureIn(m)
+      const g = GESTURE_BY_KIND[m.kind]
+      say(`${m.emoji} ${m.name} ${g?.text ?? 'sana bir jest yaptı'}.`)
+    },
+    [say],
+  )
+  const onMatch = useCallback(
+    (m) => {
+      setMatch(m)
+      setGestureIn(null)
+      say(`💞 ${m.name} ile eşleştiniz!`)
+    },
+    [say],
+  )
+  const net = useMultiplayer({ name, avatar: slug, onChat: addFeed, onDenied, onInfo: say, onInvited: setInvite, onRoom, onGesture, onMatch })
 
   const goTo = useCallback(
     (target) => {
@@ -279,6 +302,36 @@ function WorldScene({ avatar }) {
   const nearPeer = nearId && nearId !== dismissedId && chatTarget !== nearId ? peerOf(nearId) : null
   const sheetPeer = chatTarget && chatTarget !== 'public' ? peerOf(chatTarget) : null
 
+  // ---- etkileşim: jest, fısıltı, tepki ----
+  const interactPeer = interactId ? peerOf(interactId) : null
+  const distTo = (id) => {
+    const r = net.remotes.current.get(id)
+    return r ? Math.hypot(r.x - focusRef.current.x, r.z - focusRef.current.z) : Infinity
+  }
+  // menü ya da özel sohbet açıkken "yakında mı / yazıyor mu" bilgisi için yarım saniyede bir yenile
+  const liveUi = Boolean(interactPeer || sheetPeer)
+  useEffect(() => {
+    if (!liveUi) return
+    const t = setInterval(() => setTick((n) => n + 1), 500)
+    return () => clearInterval(t)
+  }, [liveUi])
+  useEffect(() => {
+    if (interactId && !net.roster.some((p) => p.id === interactId)) setInteractId(null) // karşı taraf ayrıldı/oda değişti
+  }, [interactId, net.roster])
+  const sendGesture = (kind) => {
+    if (!interactPeer) return
+    if (!net.sendGesture(interactPeer.id, kind)) say('Şu an çevrimdışısın.')
+  }
+  const sendWhisper = (text) => {
+    if (!interactPeer) return
+    if (!net.sendWhisper(text, interactPeer.id)) say('Şu an çevrimdışısın.')
+  }
+  const react = useCallback((e) => net.sendReact(e), [net])
+  const reactRef = useRef(react)
+  useEffect(() => {
+    reactRef.current = react
+  }, [react])
+
   // sohbet ettiğin oyuncu ayrılırsa çekmeceyi kapat
   useEffect(() => {
     if (chatTarget && chatTarget !== 'public' && !net.roster.some((p) => p.id === chatTarget)) openChat(null)
@@ -308,6 +361,11 @@ function WorldScene({ avatar }) {
       const typing = e.target instanceof HTMLElement && ['INPUT', 'TEXTAREA'].includes(e.target.tagName)
       if (e.code === 'KeyH' && !typing) setHelp((h) => !h)
       if (e.code === 'KeyE' && !typing && nearDoorRef.current) doorGoRef.current()
+      if (!typing && /^Digit[0-9]$/.test(e.code) && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const n = Number(e.code.slice(5))
+        const emoji = REACTIONS[(n + 9) % 10]
+        if (emoji) reactRef.current(emoji)
+      }
       if (typing || !editKeysRef.current.on) return
       if (e.code === 'KeyR') editKeysRef.current.rotate()
       if (e.code === 'Delete' || e.code === 'Backspace') editKeysRef.current.remove()
@@ -347,6 +405,16 @@ function WorldScene({ avatar }) {
       if (!home) return say('Zaten dışarıdasın 🌳')
       goTo('city')
       return say('Şehre döndün.')
+    }
+    if (['f', 'fisilda', 'fisilti'].includes(cmd)) {
+      const [who, ...rest] = args
+      const msg = rest.join(' ').trim()
+      if (!who || !msg) return say('Örnek: /f Elif Bugün çok güzelsin 🤫')
+      const peer = net.roster.find((p) => normalize(p.name) === normalize(who)) ?? net.roster.find((p) => normalize(p.name).startsWith(normalize(who)))
+      if (!peer) return say(`“${who}” burada yok. Fısıldamak için aynı yerde ve yakın olmalısınız.`)
+      if (distTo(peer.id) > WHISPER_RANGE) return say(`🤫 ${peer.name} çok uzakta. Fısıldamak için biraz yaklaş.`)
+      if (!net.sendWhisper(msg, peer.id)) say('Şu an çevrimdışısın.')
+      return
     }
     if (cmd === 'davet') {
       const who = args.join(' ')
@@ -413,9 +481,9 @@ function WorldScene({ avatar }) {
             onMove={net.sendMove}
             collide={home ? (x, z) => resolveRoom(x, z, furnColliders) : resolveCollisions}
           >
-            <SelfTag name={name} bubbles={net.bubbles} selfId={net.selfId} />
+            <SelfTag name={name} bubbles={net.bubbles} selfId={net.selfId} reactions={net.reactions} />
           </LocalPlayer>
-          <RemotePlayers roster={net.roster} remotes={net.remotes} bubbles={net.bubbles} />
+          <RemotePlayers roster={net.roster} remotes={net.remotes} bubbles={net.bubbles} reactions={net.reactions} whispering={net.whispering} onPick={(id) => { setChatTarget(null); chatTargetRef.current = null; setInteractId(id) }} />
           {!home && <GuideNpc focusRef={focusRef} tips={GUIDE_TIPS} />}
         </Suspense>
 
@@ -455,8 +523,40 @@ function WorldScene({ avatar }) {
           <HintBar />
         </>
       )}
-      {nearPeer && !chatTarget && (
-        <NearbyCard peer={nearPeer} touch={touch} onChat={() => openChat(nearPeer.id)} onInvite={!home ? () => net.invite({ to: nearPeer.id }) : undefined} onDismiss={() => setDismissedId(nearPeer.id)} />
+      {!editing && !chatTarget && !interactPeer && <ReactionBar onReact={react} touch={touch} />}
+      {nearPeer && !chatTarget && !interactPeer && (
+        <NearbyCard peer={nearPeer} touch={touch} onChat={() => openChat(nearPeer.id)} onInteract={() => setInteractId(nearPeer.id)} onDismiss={() => setDismissedId(nearPeer.id)} />
+      )}
+      {interactPeer && !chatTarget && (
+        <InteractSheet
+          peer={interactPeer}
+          near={distTo(interactPeer.id) <= WHISPER_RANGE - 0.2}
+          canInvite={!home}
+          touch={touch}
+          onClose={() => setInteractId(null)}
+          onChat={() => {
+            setInteractId(null)
+            openChat(interactPeer.id)
+          }}
+          onGesture={sendGesture}
+          onWhisper={sendWhisper}
+          onInvite={() => net.invite({ to: interactPeer.id })}
+        />
+      )}
+      {gestureIn && !match && !chatTarget && !interactPeer && peerOf(gestureIn.id) && (
+        <GestureChip
+          from={gestureIn}
+          onBack={() => {
+            net.sendGesture(gestureIn.id, gestureIn.kind)
+            setGestureIn(null)
+          }}
+          onChat={() => {
+            const id = gestureIn.id
+            setGestureIn(null)
+            openChat(id)
+          }}
+          onClose={() => setGestureIn(null)}
+        />
       )}
       {home && isOwnHome && !editing && !chatTarget && <EditToggle touch={touch} onClick={() => setEditing(true)} />}
       {home && isOwnHome && editing && (
@@ -475,11 +575,22 @@ function WorldScene({ avatar }) {
         <DoorPrompt emoji={home ? '🚪' : '🏠'} label={home ? 'Dışarı çık' : 'Evine gir'} action={home ? 'Çık' : 'Gir'} touch={touch} raised={Boolean(nearPeer)} onGo={doorGo} />
       )}
       {invite && !chatTarget && !editing && <InviteChip from={invite} onGo={() => visit(invite.owner)} onClose={() => setInvite(null)} />}
-      {incoming && !chatTarget && peerOf(incoming.id) && (
+      {incoming && !chatTarget && !interactPeer && !gestureIn && peerOf(incoming.id) && (
         <IncomingChip from={incoming} onOpen={() => openChat(incoming.id)} onClose={() => setIncoming(null)} />
       )}
       {chatTarget && (chatTarget === 'public' || sheetPeer) && (
-        <ChatSheet peer={sheetPeer} feed={feed} onSend={onSheetSend} onClose={closeChat} touch={touch} />
+        <ChatSheet peer={sheetPeer} feed={feed} onSend={onSheetSend} onClose={closeChat} touch={touch} typing={sheetPeer ? (net.typing.current.get(sheetPeer.id) ?? 0) > Date.now() : false} onTyping={net.sendTyping} />
+      )}
+      {match && (
+        <MatchOverlay
+          peer={match}
+          onClose={() => setMatch(null)}
+          onChat={() => {
+            const id = match.id
+            setMatch(null)
+            if (peerOf(id)) openChat(id)
+          }}
+        />
       )}
       {help && <HelpModal onClose={() => setHelp(false)} />}
       {showTips && !help && <TipStack onDone={closeTips} />}

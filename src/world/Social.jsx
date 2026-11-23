@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { ToyButton } from '../components/ui'
+import { CHAT_EMOJIS, GESTURES, GESTURE_BY_KIND, QUICK_REPLIES, REACTIONS, WHISPER_RANGE } from './interact'
 
 const glass = 'border-2 border-white bg-white/80 shadow-soft backdrop-blur-md'
 
-const QUICK_REPLIES = ['Merhaba 👋', 'Nasılsın?', 'Kahve içelim mi? ☕', 'Dans edelim mi? 💃', 'Yürüyüşe çıkalım mı? 🌳']
 
 // ---------- sanal joystick (dokunmatik cihazlar) ----------
 const BASE = 132
@@ -86,7 +86,7 @@ export function Joystick({ inputRef }) {
 }
 
 // ---------- yakındaki oyuncu kartı ----------
-export function NearbyCard({ peer, touch, onChat, onInvite, onDismiss }) {
+export function NearbyCard({ peer, touch, onChat, onInteract, onDismiss }) {
   return (
     <div
       className={`absolute left-1/2 z-10 w-[min(94vw,24rem)] -translate-x-1/2 animate-pop ${touch ? 'bottom-44' : 'bottom-4'}`}
@@ -99,11 +99,9 @@ export function NearbyCard({ peer, touch, onChat, onInvite, onDismiss }) {
           <p className="text-xs font-bold text-[#8a7a9c]">yakınında 👋</p>
         </div>
         <div className="flex shrink-0 gap-1.5">
-          {onInvite && (
-            <button onClick={onInvite} aria-label="Evine davet et" title="Evine davet et" className="grid h-10 w-10 place-items-center rounded-xl border-b-4 border-[#5fb0d8] bg-[#7fcdf3] text-lg shadow-soft active:translate-y-[2px] active:border-b-2">
-              🏠
-            </button>
-          )}
+          <button onClick={onInteract} aria-label="Etkileşim menüsü" title="Kalp, çiçek, fısıltı…" className="grid h-10 w-10 place-items-center rounded-xl border-b-4 border-[#e85a98] bg-[#ffb6d3] text-lg shadow-soft active:translate-y-[2px] active:border-b-2">
+            💗
+          </button>
           <div className="w-28">
             <ToyButton className="!rounded-xl !py-2 !text-sm" onClick={onChat}>
               💬 Sohbet
@@ -134,6 +132,232 @@ export function DoorPrompt({ emoji, label, action, touch, raised, onGo }) {
           <ToyButton className="!rounded-xl !py-2 !text-sm" onClick={onGo}>
             {touch ? action : `E · ${action}`}
           </ToyButton>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---------- emoji tepki çubuğu ----------
+export function ReactionBar({ onReact, touch }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div
+      className="absolute z-10"
+      style={touch ? { right: 'calc(max(1rem, env(safe-area-inset-right)) + 3.9rem)', bottom: 'max(1.5rem, env(safe-area-inset-bottom))' } : { right: '0.75rem', bottom: '3.4rem' }}
+    >
+      {open && (
+        <div className={`absolute bottom-full right-0 mb-2 grid w-max animate-pop grid-cols-4 gap-1.5 rounded-3xl p-2 ${glass}`} role="menu" aria-label="Emoji tepkileri">
+          {REACTIONS.map((e, i) => (
+            <button
+              key={e}
+              role="menuitem"
+              onClick={() => {
+                onReact(e)
+                setOpen(false)
+              }}
+              className="relative grid h-11 w-11 place-items-center rounded-2xl text-2xl transition hover:bg-[#ffd6e8]/70 active:scale-90"
+            >
+              {e}
+              {!touch && i < 10 && <span className="absolute bottom-0 right-1 text-[9px] font-black text-[#8a7a9c]">{(i + 1) % 10}</span>}
+            </button>
+          ))}
+        </div>
+      )}
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-label="Emoji tepkisi gönder"
+        aria-expanded={open}
+        className={`grid ${touch ? 'h-14 w-14 text-2xl' : 'h-11 w-11 text-xl'} place-items-center rounded-full transition hover:bg-white ${glass}`}
+      >
+        😊
+      </button>
+    </div>
+  )
+}
+
+// ---------- etkileşim menüsü (bir oyuncuya kalp, çiçek, fısıltı…) ----------
+export function InteractSheet({ peer, near, canInvite, touch, onClose, onChat, onGesture, onWhisper, onInvite }) {
+  const [whisper, setWhisper] = useState(false)
+  const [text, setText] = useState('')
+  const input = useRef(null)
+
+  useEffect(() => {
+    const onKey = (e) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+  useEffect(() => {
+    if (whisper && !touch) input.current?.focus()
+  }, [whisper, touch])
+
+  const sendWhisper = (e) => {
+    e.preventDefault()
+    const t = text.trim()
+    if (!t) return
+    onWhisper(t)
+    setText('')
+  }
+
+  return (
+    <div
+      className={`absolute z-20 flex flex-col gap-3 bg-white/92 p-4 shadow-toy backdrop-blur-md animate-pop ${
+        touch ? 'inset-x-0 bottom-0 rounded-t-[2rem] border-t-2 border-white pb-[max(1rem,env(safe-area-inset-bottom))]' : 'bottom-3 left-3 w-[22rem] rounded-[2rem] border-2 border-white'
+      }`}
+      role="dialog"
+      aria-label={`${peer.name} ile etkileşim`}
+    >
+      <div className="flex items-center gap-3">
+        <img src={`/avatars/${peer.avatar}.png`} alt="" width="48" height="48" className="h-12 w-12 rounded-full border-2 border-white bg-white/60 object-cover object-top" />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-base font-black text-[#4a3b5c]">{peer.name}</p>
+          <p className={`text-xs font-bold ${near ? 'text-emerald-500' : 'text-[#8a7a9c]'}`}>{near ? 'yakınında · jestler açık' : 'biraz uzakta · jest için yaklaş'}</p>
+        </div>
+        <button onClick={onClose} aria-label="Kapat" className="grid h-9 w-9 place-items-center rounded-full text-sm font-black text-[#8a7a9c] hover:bg-[#ffd6e8]/70">
+          ✕
+        </button>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        {GESTURES.map((g) => (
+          <button
+            key={g.kind}
+            onClick={() => onGesture(g.kind)}
+            disabled={!near}
+            className="flex flex-col items-center gap-0.5 rounded-2xl border-2 border-white bg-[#ffe3f0]/80 py-2 text-[#4a3b5c] transition active:scale-95 enabled:hover:bg-[#ffd0e6] disabled:opacity-45"
+          >
+            <span className="text-2xl">{g.emoji}</span>
+            <span className="text-[11px] font-extrabold">{g.label}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="flex gap-2">
+        <button onClick={onChat} className="flex-1 rounded-2xl border-b-4 border-[#e85a98] bg-[#ff7eb3] py-2 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2">
+          💬 Sohbet
+        </button>
+        <button
+          onClick={() => setWhisper((w) => !w)}
+          aria-pressed={whisper}
+          className={`flex-1 rounded-2xl border-b-4 py-2 text-sm font-extrabold active:translate-y-[2px] active:border-b-2 ${whisper ? 'border-[#8a6bd1] bg-[#a88bff] text-white' : 'border-[#c9b6f5] bg-[#e9ddff] text-[#5b3fa8]'}`}
+        >
+          🤫 Fısılda
+        </button>
+        {canInvite && (
+          <button onClick={onInvite} className="flex-1 rounded-2xl border-b-4 border-[#5fb0d8] bg-[#7fcdf3] py-2 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2">
+            🏠 Davet
+          </button>
+        )}
+      </div>
+
+      {whisper && (
+        <form onSubmit={sendWhisper} className="flex flex-col gap-1.5">
+          <p className="text-xs font-bold text-[#6b4fc0]">
+            {near ? `Yalnızca ${peer.name} duyar. Etraftakiler “fısıldıyor 🤫” görür, ne dediğini görmez.` : `${peer.name} fısıldamak için çok uzakta (en fazla ${WHISPER_RANGE} m).`}
+          </p>
+          <div className="flex gap-2">
+            <input
+              ref={input}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              maxLength={140}
+              autoComplete="off"
+              enterKeyHint="send"
+              aria-label="Fısıltı"
+              placeholder="Kulağına bir şey söyle…"
+              className="min-w-0 flex-1 rounded-2xl border-2 border-[#d6c7ff] bg-[#faf6ff] px-4 py-2.5 text-base font-semibold italic text-[#4a3b5c] outline-none placeholder:text-[#8a7a9c]/60 focus:ring-4 focus:ring-[#d6c7ff]/60"
+            />
+            <button type="submit" disabled={!near} aria-label="Fısılda" className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border-b-4 border-[#8a6bd1] bg-[#a88bff] text-lg text-white active:translate-y-0.5 active:border-b-2 disabled:opacity-50">
+              🤫
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  )
+}
+
+// ---------- birinden jest geldi ----------
+export function GestureChip({ from, onBack, onChat, onClose }) {
+  const g = GESTURE_BY_KIND[from.kind]
+  useEffect(() => {
+    const t = setTimeout(onClose, 14000)
+    return () => clearTimeout(t)
+  }, [from, onClose])
+  return (
+    <div className={`absolute left-1/2 top-24 z-20 w-[min(92vw,22rem)] -translate-x-1/2 animate-pop rounded-3xl p-2.5 pl-4 ${glass}`} role="status">
+      <div className="flex items-center gap-3">
+        <span className="text-3xl" aria-hidden>
+          {from.emoji}
+        </span>
+        <p className="min-w-0 flex-1 text-sm font-black text-[#4a3b5c]">
+          <span className="text-[#ff7eb3]">{from.name}</span> {g?.text ?? 'sana bir jest yaptı'}
+        </p>
+        <button onClick={onClose} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black text-[#8a7a9c] hover:bg-[#ffd6e8]/70">
+          ✕
+        </button>
+      </div>
+      <div className="mt-2 flex gap-2">
+        <button onClick={onBack} className="flex-1 rounded-xl border-b-4 border-[#e85a98] bg-[#ff7eb3] py-1.5 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2">
+          {from.emoji} Karşılık ver
+        </button>
+        <button onClick={onChat} className="flex-1 rounded-xl border-b-4 border-[#c9b6f5] bg-[#e9ddff] py-1.5 text-sm font-extrabold text-[#5b3fa8] active:translate-y-[2px] active:border-b-2">
+          💬 Yaz
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ---------- 💞 eşleşme: karşılıklı kalp ----------
+export function MatchOverlay({ peer, onChat, onClose }) {
+  // kalpler ilk render'da bir kez rastgele üretilir (state başlatıcısı: render'lar arasında sabit kalır)
+  const [spec] = useState(() =>
+    Array.from({ length: 26 }, (_, i) => ({
+      left: Math.round(Math.random() * 96),
+      size: 18 + Math.round(Math.random() * 30),
+      delay: +(Math.random() * 2.4).toFixed(2),
+      dur: +(3.2 + Math.random() * 2.6).toFixed(2),
+      glyph: ['💗', '💖', '💞', '💕', '🌸', '✨'][i % 6],
+    })),
+  )
+  useEffect(() => {
+    const t = setTimeout(onClose, 14000)
+    const onKey = (e) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', onKey)
+    return () => {
+      clearTimeout(t)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [onClose])
+  return (
+    <div className="absolute inset-0 z-40 grid place-items-center overflow-hidden bg-gradient-to-br from-[#ffd0e6]/85 via-[#e9ddff]/85 to-[#cfeaff]/85 p-4 backdrop-blur-[3px]" role="dialog" aria-label="Eşleşme">
+      {spec.map((h, i) => (
+        <span
+          key={i}
+          aria-hidden
+          className="pointer-events-none absolute bottom-0 opacity-0"
+          style={{ left: `${h.left}%`, fontSize: h.size, animation: `heart-rise ${h.dur}s ease-in ${h.delay}s infinite` }}
+        >
+          {h.glyph}
+        </span>
+      ))}
+      <div className="relative flex w-full max-w-sm animate-pop flex-col items-center gap-3 rounded-[2rem] border-2 border-white bg-white/90 p-6 text-center shadow-toy">
+        <p className="text-sm font-extrabold uppercase tracking-widest text-[#ff7eb3]">Eşleşme</p>
+        <img
+          src={`/avatars/${peer.avatar}.png`}
+          alt=""
+          width="112"
+          height="112"
+          className="h-28 w-28 rounded-full border-4 border-white bg-white/60 object-cover object-top shadow-soft [animation:match-pulse_1.6s_ease-in-out_infinite]"
+        />
+        <h2 className="text-3xl font-black text-[#4a3b5c]">💞 {peer.name}</h2>
+        <p className="text-sm font-semibold text-[#6f5f82]">Birbirinize kalp gönderdiniz. Belki de ilk adımı atma zamanı… 🌙</p>
+        <div className="mt-1 flex w-full flex-col gap-2">
+          <ToyButton onClick={onChat}>💬 Sohbet et</ToyButton>
+          <button onClick={onClose} className="rounded-2xl py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#ffd6e8]/60">
+            Daha sonra
+          </button>
         </div>
       </div>
     </div>
@@ -177,20 +401,21 @@ export function IncomingChip({ from, onOpen, onClose }) {
       onClick={onOpen}
       className={`absolute left-1/2 top-24 z-20 w-[min(92vw,20rem)] -translate-x-1/2 animate-pop rounded-3xl px-4 py-2.5 text-left ${glass}`}
     >
-      <p className="text-xs font-extrabold text-[#ff7eb3]">💌 {from.name} sana yazdı</p>
+      <p className="text-xs font-extrabold text-[#ff7eb3]">{from.whisper ? `🤫 ${from.name} sana fısıldadı` : `💌 ${from.name} sana yazdı`}</p>
       <p className="truncate text-sm font-semibold text-[#4a3b5c]">{from.text}</p>
     </button>
   )
 }
 
 // ---------- sohbet çekmecesi (özel veya herkese açık) ----------
-export function ChatSheet({ peer, feed, onSend, onClose, touch }) {
+export function ChatSheet({ peer, feed, onSend, onClose, touch, typing, onTyping }) {
   const [text, setText] = useState('')
+  const [emojis, setEmojis] = useState(false)
   const list = useRef(null)
   const input = useRef(null)
 
   const messages = feed.filter((m) =>
-    peer ? m.kind === 'chat' && m.dm && (m.id === peer.id || m.to === peer.id) : m.kind === 'system' || !m.dm,
+    peer ? m.kind === 'chat' && (m.dm || m.whisper) && (m.id === peer.id || m.to === peer.id) : m.kind === 'system' || (!m.dm && !m.whisper),
   )
 
   useEffect(() => {
@@ -237,14 +462,30 @@ export function ChatSheet({ peer, feed, onSend, onClose, touch }) {
 
       <div ref={list} className="flex min-h-24 flex-1 flex-col gap-1.5 overflow-y-auto" role="log" aria-live="polite" style={{ maxHeight: touch ? '32svh' : '14rem' }}>
         {messages.length === 0 && <p className="m-auto text-center text-sm font-semibold text-[#8a7a9c]">{peer ? `${peer.name} ile ilk mesajı sen at 👋` : 'Henüz mesaj yok.'}</p>}
+        {peer && typing && (
+          <p className="flex w-fit items-center gap-1 self-start rounded-2xl bg-[#f1e6ff] px-3 py-1.5 text-sm font-bold text-[#8a7a9c]" aria-live="polite">
+            {peer.name} yazıyor
+            <span className="inline-flex gap-0.5" aria-hidden>
+              {[0, 1, 2].map((i) => (
+                <span key={i} className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#a88bff]" style={{ animationDelay: `${i * 0.15}s` }} />
+              ))}
+            </span>
+          </p>
+        )}
         {messages.map((m, i) => (
           <p
             key={`${m.ts}-${i}`}
             className={`max-w-[85%] break-words rounded-2xl px-3 py-1.5 text-sm font-semibold ${
-              m.kind === 'system' ? 'w-fit bg-[#ff7eb3]/90 text-white' : m.self ? 'self-end bg-[#a9ddf5] text-[#2f4a5c]' : 'self-start bg-[#f1e6ff] text-[#4a3b5c]'
+              m.kind === 'system'
+                ? 'w-fit bg-[#ff7eb3]/90 text-white'
+                : m.whisper
+                  ? `italic border-2 border-dashed border-[#c9b6f5] bg-[#f4edff] text-[#5b3fa8] ${m.self ? 'self-end' : 'self-start'}`
+                  : m.self
+                    ? 'self-end bg-[#a9ddf5] text-[#2f4a5c]'
+                    : 'self-start bg-[#f1e6ff] text-[#4a3b5c]'
             }`}
           >
-            {m.kind === 'system' ? `🧭 ${m.text}` : !peer && !m.self ? <><b>{m.name}: </b>{m.text}</> : m.text}
+            {m.kind === 'system' ? `🧭 ${m.text}` : m.whisper ? `🤫 ${m.text}` : !peer && !m.self ? <><b>{m.name}: </b>{m.text}</> : m.text}
           </p>
         ))}
       </div>
@@ -263,11 +504,35 @@ export function ChatSheet({ peer, feed, onSend, onClose, touch }) {
         </div>
       )}
 
+      {emojis && (
+        <div className="grid grid-cols-8 gap-1 rounded-2xl bg-[#faf6ff] p-1.5">
+          {CHAT_EMOJIS.map((e) => (
+            <button
+              key={e}
+              type="button"
+              onClick={() => {
+                setText((t) => (t + e).slice(0, 140))
+                input.current?.focus()
+              }}
+              className="grid h-9 place-items-center rounded-xl text-xl active:scale-90 hover:bg-[#ffd6e8]/60"
+            >
+              {e}
+            </button>
+          ))}
+        </div>
+      )}
+
       <form onSubmit={submit} className="flex gap-2">
+        <button type="button" onClick={() => setEmojis((o) => !o)} aria-label="Emoji seç" aria-expanded={emojis} className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border-2 border-[#d6c7ff]/70 bg-white text-xl active:scale-95">
+          😊
+        </button>
         <input
           ref={input}
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value)
+            if (peer && e.target.value) onTyping?.(peer.id)
+          }}
           maxLength={140}
           autoComplete="off"
           enterKeyHint="send"

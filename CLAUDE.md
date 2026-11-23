@@ -30,6 +30,8 @@ npm run lint           # oxlint (World/LocalPlayer'daki react-hooks "immutabilit
   - `net.js`: `useMultiplayer` hook'u (konumlar ref'te tutulur, 10 Hz). `enterRoom('city' | { owner? })` ile oda değiştirir.
   - `HomeEditor.jsx` + `homeLayout.js` + `furniture.js`: mobilya katalogu (11 eşya, `public/models/furniture/`), "🛋️ Döşe" modu (ekle, sürükle, döndür `R`, kaldır `Del`), SAT çakışma kontrolü, kapı önü boş kalır. Düzen sunucuda kalıcıdır (`server/homes.js` → `server/data/homes.json`, git'e girmez; Supabase'e geçilirse yalnızca bu dosya değişir). Tarayıcıdaki `localStorage` (`situapp_home_v1_<kullanıcı>`) yalnızca önbellek. Ev **davetleri**: `/davet <isim>` ya da yakındaki oyuncu kartındaki 🏠; davetli `Git` ile girer. `/ziyaret <isim>` + `/kapı aç|kapat` (herkese açık ev). Ziyaretçi yalnızca bakar, sahibi düzenleyebilir. Sunucu `node --watch` olmadan çalışır: `server/` değişince yeniden başlat. Yeni eşya: `furniture.js`'e ekle → `npm run furniture -- --only <id>` (Meshy; bulutta `NODE_USE_ENV_PROXY=1` gerekir) → gltf-transform ile sıkıştır → `node scripts/measure-furniture.mjs` → önizleme PNG'sini 256 px WebP yap.
   - `HomeRoom.jsx`: ev iç mekânı (oyuncak evi gibi, duvarlar yalnızca içe bakar). Lobideki `🏠 Evim` binası (`HOME_DOOR`) ya da `/ev` ile girilir, kapı önünde `E` ile çıkılır. Odanın koordinatları `HOME_ROOM` (layout.js), çarpışma `resolveRoom`.
+  - `interact.js`: etkileşim sabitleri (emoji tepkileri, jestler, menzil, hazır cevaplar; sunucudaki `REACTIONS`/`GESTURES`/menzillerle aynı tutulmalı).
+  - **Oyuncu etkileşimi (flört)**: emoji tepkisi (`😊` düğmesi, 1-9/0 tuşları; kafanın üstünde süzülür), fısıldama (`/f isim mesaj` ya da menüden; ≤ 7 m, çevre yalnızca "🤫 fısıldıyor…" görür), jestler (kalp, çiçek, göz kırp, öpücük, selam, dans; ≤ 8 m), karşılıklı kalp = 💞 eşleşme (10 dk penceresi, `MatchOverlay`), özel sohbette "yazıyor…" ve emoji seçici. Karaktere tıklayınca ya da yakın oyuncu kartındaki 💗 ile `InteractSheet` açılır. Menzil/hız sınırı sunucuda zorlanır. Tailwind v4: `@theme` dışı keyframe'ler `index.css` sonunda.
   - `Hud.jsx` (üst çubuk, harita, ipuçları, yardım, sohbet paneli), `Social.jsx` (joystick, yakın oyuncu kartı, DM çekmecesi), `useIsTouch.js`.
 - `server/game.js`: WebSocket (`/ws`). Protokol dosyanın başındaki yorumda. **Odalar**: `city` ve `home:<sahip>`; konum/sohbet yalnızca aynı odadakilere gider, `canEnter` giriş iznini belirler. Ev anahtarı oyuncu adından türer (auth yok). Özel mesaj (`to`), isim/mesaj temizleme, hız sınırı, 100 oyuncu sınırı. **Kimlik doğrulama yok**: isim istemciden gelir.
 - `src/components/ui.jsx`: pastel tasarım sistemi (`ToyButton`, `Field`, `StepDots`, `PastelBackground`, `TONES` pembe/mavi). `src/index.css`: renk token'ları (`candy-*`, `ink`).
@@ -57,7 +59,7 @@ Notlar:
 2. Mekanlara/binalara girebilme (iç mekanlar; binalar şu an dekor).
 3. Daha fazla sabit NPC (şu an yalnızca lobide Rehber).
 4. Kalıcı veri: evler dosya tabanlı (`server/data/homes.json`). Hesaplar hâlâ demo/localStorage. Gerçek veritabanı için Supabase projesi gerekir. Hesabındaki `motomeet` ve `insta-copy` Supabase projeleri **başka işlere ait, dokunma**.
-5. Moderasyon: küfür filtresi, engelle, şikâyet. Gerçek auth (join mesajına token).
+5. Moderasyon: küfür filtresi, engelle, şikâyet (fısıltı/jest spam'i için engelle özellikle gerekli). Gerçek auth (join mesajına token).
 6. Gerçek telefonda joystick/his testi yapılmadı.
 
 ## Test ipuçları

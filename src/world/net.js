@@ -3,6 +3,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 const ANIMS = ['idle', 'walk', 'run']
 const SEND_INTERVAL_MS = 100
 const BUBBLE_MS = 6000
+const REACT_MS = 2600
+const WHISPER_MS = 3500
+const TYPING_MS = 3500
 const FEED_MAX = 100
 
 const wsUrl = () =>
@@ -15,7 +18,7 @@ const wsUrl = () =>
  *   bubbles: Map<id, { text, until }>   (konuşma balonları)
  * roster (id listesi) yalnızca biri girip çıkınca değişir.
  */
-export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvited, onRoom }) {
+export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvited, onRoom, onGesture, onMatch }) {
   const [status, setStatus] = useState('connecting') // connecting | online | offline
   const [online, setOnline] = useState(1)
   const [roster, setRoster] = useState([])
@@ -28,6 +31,9 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
   const wantRoom = useRef(null) // yeniden bağlanınca dönülecek oda isteği
   const remotes = useRef(new Map())
   const bubbles = useRef(new Map())
+  const reactions = useRef(new Map()) // id → { e, key, until }: kafanın üstünde uçan emoji
+  const whispering = useRef(new Map()) // id → until: yakında fısıldayan 🤫
+  const typing = useRef(new Map()) // id → until: özel sohbette yazıyor
   const selfId = useRef(null)
   const wsRef = useRef(null)
   const lastSent = useRef({ t: 0, anim: '', x: 0, z: 0 })
@@ -36,6 +42,8 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
   const onInfoRef = useRef(onInfo)
   const onInvitedRef = useRef(onInvited)
   const onRoomRef = useRef(onRoom)
+  const onGestureRef = useRef(onGesture)
+  const onMatchRef = useRef(onMatch)
   const homeKeyRef = useRef(null)
   useEffect(() => {
     onChatRef.current = onChat
@@ -43,7 +51,9 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
     onInfoRef.current = onInfo
     onInvitedRef.current = onInvited
     onRoomRef.current = onRoom
-  }, [onChat, onDenied, onInfo, onInvited, onRoom])
+    onGestureRef.current = onGesture
+    onMatchRef.current = onMatch
+  }, [onChat, onDenied, onInfo, onInvited, onRoom, onGesture, onMatch])
 
   useEffect(() => {
     let stopped = false
@@ -94,6 +104,9 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
             setVisit(m.owner && m.owner !== homeKeyRef.current ? { owner: m.owner, ownerName: m.ownerName, items: m.items ?? [] } : null)
             remotes.current.clear()
             bubbles.current.clear()
+            reactions.current.clear()
+            whispering.current.clear()
+            typing.current.clear()
             m.players.forEach(addRemote)
             syncRoster()
             onRoomRef.current?.(m)
@@ -104,6 +117,24 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
             break
           case 'invited':
             onInvitedRef.current?.(m)
+            break
+          case 'react':
+            reactions.current.set(m.id, { e: m.e, key: `${m.id}-${Date.now()}-${Math.random()}`, until: Date.now() + REACT_MS })
+            break
+          case 'whisper':
+            onChatRef.current?.({ id: m.id, name: m.name, text: m.text, ts: m.ts, to: m.to, toName: m.toName, whisper: true, self: m.id === selfId.current })
+            break
+          case 'whispering':
+            whispering.current.set(m.id, Date.now() + WHISPER_MS)
+            break
+          case 'gesture':
+            onGestureRef.current?.(m)
+            break
+          case 'match':
+            onMatchRef.current?.(m)
+            break
+          case 'typing':
+            typing.current.set(m.id, Date.now() + TYPING_MS)
             break
           case 'info':
             onInfoRef.current?.(m.text)
@@ -202,10 +233,24 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
     if (ws?.readyState === 1) ws.send(JSON.stringify(msg))
     return ws?.readyState === 1
   }, [])
+  const sendReact = useCallback((e) => send({ t: 'react', e }), [send])
+  const sendWhisper = useCallback((text, to) => send({ t: 'whisper', text, to }), [send])
+  const sendGesture = useCallback((to, kind) => send({ t: 'gesture', to, kind }), [send])
+  const lastTyping = useRef(0)
+  /** Özel sohbette yazarken çağır; en fazla ~1,2 sn'de bir yollar. */
+  const sendTyping = useCallback(
+    (to) => {
+      const now = performance.now()
+      if (now - lastTyping.current < 1200) return
+      lastTyping.current = now
+      send({ t: 'typing', to })
+    },
+    [send],
+  )
   const saveHome = useCallback((items) => send({ t: 'home_save', items }), [send])
   const setHomeOpen = useCallback((open) => send({ t: 'home_open', open }), [send])
   /** Bir oyuncuyu evine davet et: { to: id } ya da { name }. */
   const invite = useCallback((who) => send({ t: 'invite', ...who }), [send])
 
-  return { status, online, roster, spawn, room, homeKey, visit, homeSync, saveHome, setHomeOpen, invite, remotes, bubbles, selfId, sendMove, sendChat, enterRoom, feedMax: FEED_MAX }
+  return { status, online, roster, spawn, room, homeKey, visit, homeSync, saveHome, setHomeOpen, invite, sendReact, sendWhisper, sendGesture, sendTyping, remotes, bubbles, reactions, whispering, typing, selfId, sendMove, sendChat, enterRoom, feedMax: FEED_MAX }
 }

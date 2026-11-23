@@ -169,16 +169,29 @@ export function ChatPanel({ feed, onSend, status }) {
           <p
             key={`${m.ts}-${i}`}
             className={`w-fit max-w-full break-words rounded-2xl px-3 py-1 text-sm font-semibold ${
-              m.kind === 'system' ? 'bg-[#ff7eb3]/90 text-white' : m.self ? 'bg-[#a9ddf5]/95 text-[#2f4a5c]' : 'bg-white/90 text-[#4a3b5c]'
+              m.kind === 'system'
+                ? 'bg-[#ff7eb3]/90 text-white'
+                : m.whisper
+                  ? 'border-2 border-dashed border-[#c9b6f5] bg-[#f4edff]/95 italic text-[#5b3fa8]'
+                  : m.self
+                    ? 'bg-[#a9ddf5]/95 text-[#2f4a5c]'
+                    : 'bg-white/90 text-[#4a3b5c]'
             }`}
           >
             {m.kind === 'system' ? (
               <>🧭 {m.text}</>
             ) : (
-              <>
-                <span className="font-extrabold">{m.name}: </span>
-                {m.text}
-              </>
+              m.whisper ? (
+                <>
+                  🤫 <span className="font-extrabold">{m.self ? `${m.toName ?? ''}’a fısıldadın` : `${m.name} fısıldadı`}: </span>
+                  {m.text}
+                </>
+              ) : (
+                <>
+                  <span className="font-extrabold">{m.name}: </span>
+                  {m.text}
+                </>
+              )
             )}
           </p>
         ))}
@@ -259,12 +272,21 @@ export function HelpModal({ onClose }) {
         <Row k="/yakındakiler">yakınındaki oyuncuları listele</Row>
         <Row k="/mekanlar">şehirdeki mekanlar</Row>
         <Row k="/ışınlan kafe">lobi, kafe, kulüp, park veya plaja git</Row>
+        <Row k="/f Elif …">yakındaki birine fısılda 🤫 (en fazla 7 m; çevre yalnızca “fısıldıyor” görür)</Row>
+        <Row k="1-9, 0">kafanın üstünde emoji uçur ❤️😘😍 (ya da 😊 düğmesi)</Row>
         <Row k="/ev">kendi evine gir (lobideki 🏠 kapıdan da girebilirsin)</Row>
         <Row k="/dışarı">evden şehre dön</Row>
         <Row k="/davet Elif">çevrimiçi birini evine çağır (yakınındaki oyuncu kartından 🏠 ile de olur)</Row>
         <Row k="/ziyaret Elif">açık ya da davetli olduğun bir eve git</Row>
         <Row k="/kapı aç">evini herkese aç · /kapı kapat: yalnızca davetliler</Row>
         <Row k="/yardım">bu paneli aç</Row>
+      </ul>
+
+      <h3 className="mt-4 text-sm font-extrabold uppercase tracking-wide text-[#ff7eb3]">Flört 💗</h3>
+      <ul className="mt-2 flex flex-col gap-2">
+        <Row k="Karaktere tıkla">ya da yakındaki kartta 💗: kalp, çiçek, göz kırp, öpücük, selam, dans</Row>
+        <Row k="🤫 Fısılda">yalnızca o kişi duyar; etraftakiler yazdığını görmez</Row>
+        <Row k="💞 Eşleşme">ikiniz de birbirine kalp gönderirseniz (10 dk içinde) eşleşirsiniz</Row>
       </ul>
 
       <h3 className="mt-4 text-sm font-extrabold uppercase tracking-wide text-[#ff7eb3]">Mekanlar</h3>
@@ -291,6 +313,7 @@ export function HelpModal({ onClose }) {
 const TIPS = [
   { emoji: '🚶', title: 'Yürümek için', text: 'W A S D ya da ok tuşları. Shift ile koşarsın.' },
   { emoji: '💬', title: 'Sohbet', text: 'Enter’a bas, yaz, tekrar Enter. /yardım ile komutlar.' },
+  { emoji: '💗', title: 'Etkileşim', text: 'Birine tıkla: kalp, çiçek ya da fısıltı 🤫. 1-9 tuşları emoji uçurur.' },
   { emoji: '🗺️', title: 'Harita', text: 'Sağ üstteki haritadan yolunu bul. Rehber lobide, çeşmenin yanında.' },
 ]
 const TIP_START_MS = 1500
