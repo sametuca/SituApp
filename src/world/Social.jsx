@@ -177,7 +177,7 @@ export function ReactionBar({ onReact, touch }) {
 }
 
 // ---------- etkileşim menüsü (bir oyuncuya kalp, çiçek, fısıltı…) ----------
-export function InteractSheet({ peer, near, canInvite, touch, onClose, onChat, onGesture, onWhisper, onInvite }) {
+export function InteractSheet({ peer, near, canInvite, touch, extras = [], onClose, onChat, onGesture, onWhisper, onInvite }) {
   const [whisper, setWhisper] = useState(false)
   const [text, setText] = useState('')
   const input = useRef(null)
@@ -211,7 +211,9 @@ export function InteractSheet({ peer, near, canInvite, touch, onClose, onChat, o
         <img src={`/avatars/${peer.avatar}.png`} alt="" width="48" height="48" className="h-12 w-12 rounded-full border-2 border-white bg-white/60 object-cover object-top" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-base font-black text-[#4a3b5c]">{peer.name}</p>
-          <p className={`text-xs font-bold ${near ? 'text-emerald-500' : 'text-[#8a7a9c]'}`}>{near ? 'yakınında · jestler açık' : 'biraz uzakta · jest için yaklaş'}</p>
+          <p className={`text-xs font-bold ${near ? 'text-emerald-500' : 'text-[#8a7a9c]'}`}>
+            {peer.dnd ? '🌙 rahatsız etme açık · şimdilik ulaşılamaz' : near ? 'yakınında · jestler açık' : 'biraz uzakta · jest için yaklaş'}
+          </p>
         </div>
         <button onClick={onClose} aria-label="Kapat" className="grid h-9 w-9 place-items-center rounded-full text-sm font-black text-[#8a7a9c] hover:bg-[#ffd6e8]/70">
           ✕
@@ -249,6 +251,16 @@ export function InteractSheet({ peer, near, canInvite, touch, onClose, onChat, o
           </button>
         )}
       </div>
+
+      {extras.length > 0 && (
+        <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 border-t border-[#ece3f7] pt-2">
+          {extras.map((x) => (
+            <button key={x.key} onClick={x.onClick} className={`text-xs font-extrabold hover:underline ${x.danger ? 'text-rose-400' : 'text-[#8a7a9c]'}`}>
+              {x.emoji} {x.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {whisper && (
         <form onSubmit={sendWhisper} className="flex flex-col gap-1.5">

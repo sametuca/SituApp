@@ -36,6 +36,15 @@ npm run lint           # oxlint (World/LocalPlayer'daki react-hooks "immutabilit
 - `server/game.js`: WebSocket (`/ws`). Protokol dosyanın başındaki yorumda. **Odalar**: `city` ve `home:<sahip>`; konum/sohbet yalnızca aynı odadakilere gider, `canEnter` giriş iznini belirler. Ev anahtarı oyuncu adından türer (auth yok). Özel mesaj (`to`), isim/mesaj temizleme, hız sınırı, 100 oyuncu sınırı. **Kimlik doğrulama yok**: isim istemciden gelir.
 - `src/components/ui.jsx`: pastel tasarım sistemi (`ToyButton`, `Field`, `StepDots`, `PastelBackground`, `TONES` pembe/mavi). `src/index.css`: renk token'ları (`candy-*`, `ink`).
 
+## Özellik modülleri (yeni özellik eklerken bunu izle)
+
+Yeni sosyal özellikler çekirdek dosyaları şişirmeden kendi modüllerinde yaşar:
+- **Sunucu**: `server/features/<ad>.js` → `(ctx) => { api?, handlers?, onJoin?, onLeave?, welcome? }`; `server/features/index.js` listesine bir satır ekle (moderasyon her zaman ilk). `ctx = { players, send, broadcast(msg, exceptId, room, from?), dist, inRoom, clean, homeKey, publicInfo }`. Oyuncu nesnesinde `me.key` (kalıcı kimlik, şimdilik addan türer), `me.room`, `me.x/z`, `me.blocks`, `me.dnd`. Kişiye yönelik her eylemden önce çekirdekteki `refuse(me, target, kind)` benzeri engel/DND denetimi yapılmalı (modül içinden `ctx.features[0].api.reach(from, target, kind)`); metinler `ctx.features[0].api.censor(text)` ile süzülür.
+- **Kalıcı veri**: `server/store.js` (`user(key)` kullanıcı kaydı, `save()`); dosya `server/data/social.json` (git'e girmez). Kullanıcı alanları `store.js` içindeki `defaults()`te; yeni alan eklersen oraya ekle.
+- **İstemci**: `src/world/features/<ad>.jsx` içinde `useX(ctx)` hook'u → `{ peerActions?(peer), settingsSections?, overlays? }`; `src/world/features/index.jsx`teki `useFeatures` listesine bir satır ekle. `ctx = { net, say, touch, roster, focusRef, home, panel, setPanel, openChat, closeInteract }`. Ağ: `net.on(tip, fn)` ile mesaja abone ol (döner: abonelik iptali), `net.send(obj)` ile yolla. Panel açmak için `setPanel('<ad>')`.
+- Mesaj protokolü `server/game.js` başındaki yorumda; yeni mesajları oraya da yaz. Yeni dosya/çıktı kuralları: Türkçe arayüz, pastel stil, mobil öncelik.
+- Test: `npm run build` + sahte `ws` istemcileriyle sunucu kuralları + Playwright ile arayüz (CLAUDE.md "Test ipuçları"). `server/` değişince sunucuyu yeniden başlat.
+
 ## Tasarım kuralları (önemli)
 
 - **Tüm oyun pastel, stilize, oyuncak gibi olmalı.** Gerçekçi asset karışmamalı. Tutarlılık kullanıcı için en önemli şey.
@@ -59,7 +68,7 @@ Notlar:
 2. Mekanlara/binalara girebilme (iç mekanlar; binalar şu an dekor).
 3. Daha fazla sabit NPC (şu an yalnızca lobide Rehber).
 4. Kalıcı veri: evler dosya tabanlı (`server/data/homes.json`). Hesaplar hâlâ demo/localStorage. Gerçek veritabanı için Supabase projesi gerekir. Hesabındaki `motomeet` ve `insta-copy` Supabase projeleri **başka işlere ait, dokunma**.
-5. Moderasyon: küfür filtresi, engelle, şikâyet (fısıltı/jest spam'i için engelle özellikle gerekli). Gerçek auth (join mesajına token).
+5. Moderasyon: engelle/şikâyet/küfür-link filtresi/rahatsız etme YAPILDI (`features/moderation`). Şikâyetler `social.json` içinde `reports`ta birikiyor, görüntüleyen bir yönetici ekranı yok. Gerçek auth (join mesajına token) yok.
 6. Gerçek telefonda joystick/his testi yapılmadı.
 
 ## Test ipuçları

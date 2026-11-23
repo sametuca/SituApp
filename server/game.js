@@ -13,6 +13,9 @@
 //     { t: 'whisper', to, text }                   fısıltı: yalnızca yakındaki (≤ 7 m) hedefe gider, çevre "fısıldıyor" görür
 //     { t: 'gesture', to, kind }                   birine jest: heart | flower | wink | wave | kiss | dance (≤ 8 m)
 //     { t: 'typing', to }                          özel sohbette "yazıyor…" göstergesi
+//     { t: 'block', id } / { t: 'unblock', key }   engelle / engeli kaldır
+//     { t: 'report', id, reason }                  şikâyet (taciz | spam | uygunsuz | sahte | diger)
+//     { t: 'dnd', on }                             rahatsız etme modu
 //   sunucu → istemci
 //     { t: 'welcome', id, home, homeItems, homeOpen, x, z, players: [...], online }   home = kendi evinin anahtarı
 //     { t: 'room', room, owner, ownerName, items, players: [...] }   oda değişti (room: 'city' | 'home:<anahtar>')
@@ -22,6 +25,8 @@
 //     { t: 'whisper', id, name, to, toName, text, ts } sana (ya da senden) fısıltı;  { t: 'whispering', id }: yakında biri fısıldıyor
 //     { t: 'gesture', id, name, avatar, kind, emoji }  biri sana jest yaptı;  { t: 'match', id, name, avatar }: karşılıklı kalp!
 //     { t: 'typing', id }                              karşıdaki yazıyor
+//     { t: 'blocks', list: [{key,name}] }              engel listen;  { t: 'dnd', id, on }: birinin rahatsız etme durumu
+// Özellik modülleri (engel, profil, arkadaş, oyun…) server/features/ altındadır; bkz. features/index.js.
 //     { t: 'info', text } / { t: 'denied', reason }    kullanıcıya gösterilecek kısa mesaj
 //     { t: 'join', p } / { t: 'leave', id }
 //     { t: 'state', p: [[id, x, z, ry, animIdx], ...] }   ~10 Hz, yalnızca değişenler
@@ -37,6 +42,8 @@
 import { WebSocketServer } from 'ws'
 import crypto from 'node:crypto'
 import { getHome, homeExists, saveItems, setOpen } from './homes.js'
+import { moderate } from './profanity.js'
+import { FEATURE_FACTORIES } from './features/index.js'
 
 const WORLD_HALF = 60 // dünya sınırı (±m); istemci haritasıyla aynı olmalı
 const MAX_PLAYERS = 100
@@ -77,15 +84,35 @@ export function attachGameServer(httpServer) {
   const wss = new WebSocketServer({ server: httpServer, path: '/ws', maxPayload: MAX_PAYLOAD })
   const players = new Map() // id → oyuncu
 
-  const publicInfo = (p) => ({ id: p.id, name: p.name, avatar: p.avatar, x: p.x, z: p.z, ry: p.ry, anim: ANIMS.indexOf(p.anim) })
+  const publicInfo = (p) => ({ id: p.id, key: p.key, name: p.name, avatar: p.avatar, x: p.x, z: p.z, ry: p.ry, anim: ANIMS.indexOf(p.anim), dnd: Boolean(p.dnd) })
   const send = (ws, msg) => ws.readyState === 1 && ws.send(JSON.stringify(msg))
   // room verilirse yalnızca o odadakilere gider
-  const broadcast = (msg, exceptId, room) => {
+  // from verilirse, gönderenle arasında engel olan alıcılara gitmez
+  const broadcast = (msg, exceptId, room, from) => {
     const data = JSON.stringify(msg)
-    for (const p of players.values()) if (p.id !== exceptId && (!room || p.room === room) && p.ws.readyState === 1) p.ws.send(data)
+    for (const p of players.values()) {
+      if (p.id === exceptId || (room && p.room !== room) || p.ws.readyState !== 1) continue
+      if (from && mod.blockedPair(from, p)) continue
+      p.ws.send(data)
+    }
   }
   const dist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z)
   const inRoom = (room, exceptId) => [...players.values()].filter((p) => p.room === room && p.id !== exceptId)
+
+  // ---- özellik modülleri (server/features) ----
+  const ctx = { players, send, broadcast: (...a) => broadcast(...a), dist, inRoom, clean, homeKey, publicInfo }
+  const features = FEATURE_FACTORIES.map((make) => make(ctx))
+  ctx.features = features
+  const mod = features[0].api // moderation her zaman ilk modül
+  const handlers = Object.assign({}, ...features.map((f) => f.handlers ?? {}))
+  const emit = (hook, me) => features.forEach((f) => f[hook]?.(me))
+  // alıcıya ulaşabilir mi? Değilse gönderene sebebi söyler (engellenmişse sezdirmez). true = engellendi.
+  const refuse = (me, target, kind) => {
+    const why = mod.reach(me, target, kind)
+    if (!why) return false
+    if (why.text) send(me.ws, { t: 'info', text: why.text })
+    return true
+  }
 
   // ev anahtarı → davet edilen oyuncu id'leri (sunucu çalıştığı sürece; oyuncu çıkınca silinir)
   const invites = new Map()
@@ -138,10 +165,11 @@ export function attachGameServer(httpServer) {
           return ws.close()
         }
         const avatar = AVATARS.has(msg.avatar) ? msg.avatar : 'zeynep'
+        const joinName = moderate(clean(msg.name, 16), { contact: false })
         me = {
           id: crypto.randomUUID().slice(0, 8),
           ws,
-          name: clean(msg.name, 16) || 'Misafir',
+          name: (joinName.flagged ? '' : joinName.text) || 'Misafir',
           avatar,
           // lobi meydanında, çeşmenin güneyinde rastgele bir yere doğ
           x: (Math.random() - 0.5) * 6,
@@ -153,8 +181,11 @@ export function attachGameServer(httpServer) {
           room: 'city',
           homeKey: homeKey(msg.name),
         }
+        me.key = me.homeKey // kalıcı kimlik anahtarı (şimdilik addan türer)
         players.set(me.id, me)
+        emit('onJoin', me)
         send(ws, {
+          ...Object.assign({}, ...features.map((f) => f.welcome?.(me) ?? {})),
           t: 'welcome',
           id: me.id,
           home: me.homeKey,
@@ -171,6 +202,9 @@ export function attachGameServer(httpServer) {
       }
 
       if (!me) return
+
+      const handler = handlers[msg.t]
+      if (handler) return handler(me, msg)
 
       if (msg.t === 'move') {
         me.x = num(msg.x, WORLD_HALF)
@@ -198,6 +232,7 @@ export function attachGameServer(httpServer) {
         const wanted = typeof msg.name === 'string' ? clean(msg.name, 16).toLowerCase() : null
         const target = typeof msg.to === 'string' ? players.get(msg.to) : [...players.values()].find((o) => o.name.toLowerCase() === wanted)
         if (!target || target.id === me.id) return send(ws, { t: 'info', text: 'Bu isimde çevrimiçi biri bulunamadı.' })
+        if (refuse(me, target, 'invite')) return
         if (!invites.has(me.homeKey)) invites.set(me.homeKey, new Set())
         invites.get(me.homeKey).add(target.id)
         send(target.ws, { t: 'invited', owner: me.homeKey, ownerName: me.name })
@@ -206,20 +241,23 @@ export function attachGameServer(httpServer) {
         const now = Date.now()
         if (!REACTIONS.has(msg.e) || now - (me.lastReact ?? 0) < 500) return
         me.lastReact = now
-        broadcast({ t: 'react', id: me.id, e: msg.e }, undefined, me.room)
+        broadcast({ t: 'react', id: me.id, e: msg.e }, undefined, me.room, me)
       } else if (msg.t === 'whisper') {
         const now = Date.now()
-        const text = clean(msg.text, CHAT_MAX)
+        const raw = clean(msg.text, CHAT_MAX)
+        const text = mod.censor(raw)
         if (!text || now - (me.lastWhisper ?? 0) < CHAT_COOLDOWN_MS) return
         const target = typeof msg.to === 'string' ? players.get(msg.to) : null
         if (!target || target.id === me.id || target.room !== me.room) return send(ws, { t: 'info', text: 'Bu kişi artık burada değil.' })
         if (dist(me, target) > WHISPER_RANGE) return send(ws, { t: 'info', text: `🤫 ${target.name} çok uzakta. Fısıldamak için biraz yaklaş.` })
+        if (refuse(me, target, 'whisper')) return
         me.lastWhisper = now
+        mod.remember(me, 'fısıltı', raw)
         const w = { t: 'whisper', id: me.id, name: me.name, to: target.id, toName: target.name, text, ts: now }
         send(target.ws, w)
         send(ws, w)
         // yakındakiler yalnızca "fısıldıyor" görür, metni görmez
-        for (const o of inRoom(me.room, me.id)) if (o.id !== target.id && dist(o, me) <= WITNESS_RANGE) send(o.ws, { t: 'whispering', id: me.id })
+        for (const o of inRoom(me.room, me.id)) if (o.id !== target.id && dist(o, me) <= WITNESS_RANGE && !mod.blockedPair(me, o)) send(o.ws, { t: 'whispering', id: me.id })
       } else if (msg.t === 'gesture') {
         const now = Date.now()
         const emoji = GESTURES[msg.kind]
@@ -227,9 +265,10 @@ export function attachGameServer(httpServer) {
         const target = typeof msg.to === 'string' ? players.get(msg.to) : null
         if (!target || target.id === me.id || target.room !== me.room) return send(ws, { t: 'info', text: 'Bu kişi artık burada değil.' })
         if (dist(me, target) > GESTURE_RANGE) return send(ws, { t: 'info', text: `${target.name} çok uzakta, biraz yaklaş.` })
+        if (refuse(me, target, 'gesture')) return
         me.lastGesture = now
         send(target.ws, { t: 'gesture', id: me.id, name: me.name, avatar: me.avatar, kind: msg.kind, emoji })
-        broadcast({ t: 'react', id: me.id, e: emoji }, undefined, me.room)
+        broadcast({ t: 'react', id: me.id, e: emoji }, undefined, me.room, me)
         // karşılıklı kalp = eşleşme
         if (msg.kind === 'heart') {
           me.hearts = me.hearts ?? new Map()
@@ -247,21 +286,24 @@ export function attachGameServer(httpServer) {
         if (now - (me.lastTyping ?? 0) < 1000) return
         me.lastTyping = now
         const target = typeof msg.to === 'string' ? players.get(msg.to) : null
-        if (target && target.room === me.room) send(target.ws, { t: 'typing', id: me.id })
+        if (target && target.room === me.room && !mod.blockedPair(me, target)) send(target.ws, { t: 'typing', id: me.id })
       } else if (msg.t === 'chat') {
         const now = Date.now()
-        const text = clean(msg.text, CHAT_MAX)
+        const raw = clean(msg.text, CHAT_MAX)
+        const text = mod.censor(raw)
         if (!text || now - me.lastChat < CHAT_COOLDOWN_MS) return
         me.lastChat = now
         const target = typeof msg.to === 'string' ? players.get(msg.to) : null
         if (msg.to && (!target || target.room !== me.room)) return // hedef çıkmış/başka odada; mesajı herkese sızdırma
+        mod.remember(me, target ? 'özel' : 'herkese', raw)
         if (target) {
+          if (refuse(me, target, 'dm')) return
           // özel mesaj (DM): yalnızca alıcıya ve göndericiye
           const dm = { t: 'chat', id: me.id, name: me.name, text, ts: now, to: target.id, dm: true }
           send(target.ws, dm)
           send(ws, dm)
         } else {
-          broadcast({ t: 'chat', id: me.id, name: me.name, text, ts: now }, undefined, me.room)
+          broadcast({ t: 'chat', id: me.id, name: me.name, text, ts: now }, undefined, me.room, me)
         }
       }
     })
@@ -269,6 +311,7 @@ export function attachGameServer(httpServer) {
     ws.on('close', () => {
       if (!me) return
       players.delete(me.id)
+      emit('onLeave', me)
       for (const set of invites.values()) set.delete(me.id)
       for (const o of players.values()) o.hearts?.delete(me.id)
       broadcast({ t: 'leave', id: me.id }, undefined, me.room)

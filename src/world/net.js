@@ -25,6 +25,10 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
   const [spawn, setSpawn] = useState(null)
   const [room, setRoom] = useState('city') // 'city' | 'home:<sahip anahtarı>'
   const [homeKey, setHomeKey] = useState(null) // kendi evimin anahtarı (sunucu verir)
+  const [blocked, setBlocked] = useState([]) // engellediklerim: [{ key, name }]
+  const [dnd, setDndState] = useState(false) // rahatsız etme modum
+  const blockedKeys = useRef(new Set())
+  const listeners = useRef(new Map()) // özellik modülleri için: mesaj tipi → Set<fn>
   const [visit, setVisit] = useState(null) // başkasının evindeyken: { owner, ownerName, items }
   const [homeSync, setHomeSync] = useState(null) // bağlanınca sunucudaki kendi evim: { items | null, open, n }
   const roomRef = useRef('city')
@@ -60,8 +64,9 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
     let retry = 0
     let timer = null
 
-    const syncRoster = () => setRoster([...remotes.current.values()].map((p) => ({ id: p.id, name: p.name, avatar: p.avatar })))
+    const syncRoster = () => setRoster([...remotes.current.values()].map((p) => ({ id: p.id, key: p.key, name: p.name, avatar: p.avatar, dnd: Boolean(p.dnd) })))
     const addRemote = (p) => {
+      if (blockedKeys.current.has(p.key)) return // engellediklerim görünmez
       remotes.current.set(p.id, { ...p, anim: ANIMS[p.anim] ?? 'idle', tx: p.x, tz: p.z, tr: p.ry })
     }
 
@@ -80,10 +85,14 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
         } catch {
           return
         }
+        listeners.current.get(m.t)?.forEach((fn) => fn(m))
         switch (m.t) {
           case 'welcome':
             retry = 0
             selfId.current = m.id
+            blockedKeys.current = new Set((m.blocked ?? []).map((b) => b.key))
+            setBlocked(m.blocked ?? [])
+            setDndState(Boolean(m.dnd))
             remotes.current.clear()
             m.players.forEach(addRemote)
             setHomeKey(m.home)
@@ -118,6 +127,21 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
           case 'invited':
             onInvitedRef.current?.(m)
             break
+          case 'blocks':
+            blockedKeys.current = new Set(m.list.map((b) => b.key))
+            setBlocked(m.list)
+            for (const [id, r] of remotes.current) if (blockedKeys.current.has(r.key)) remotes.current.delete(id)
+            syncRoster()
+            break
+          case 'dnd': {
+            if (m.id === selfId.current) setDndState(m.on)
+            const r = remotes.current.get(m.id)
+            if (r) {
+              r.dnd = m.on
+              syncRoster()
+            }
+            break
+          }
           case 'react':
             reactions.current.set(m.id, { e: m.e, key: `${m.id}-${Date.now()}-${Math.random()}`, until: Date.now() + REACT_MS })
             break
@@ -247,10 +271,20 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
     },
     [send],
   )
+  /** Özellik modülleri için: belirli bir mesaj tipine abone ol. Döndürdüğü işlev aboneliği kaldırır. */
+  const on = useCallback((type, fn) => {
+    if (!listeners.current.has(type)) listeners.current.set(type, new Set())
+    listeners.current.get(type).add(fn)
+    return () => listeners.current.get(type)?.delete(fn)
+  }, [])
+  const block = useCallback((id) => send({ t: 'block', id }), [send])
+  const unblock = useCallback((key) => send({ t: 'unblock', key }), [send])
+  const report = useCallback((id, reason) => send({ t: 'report', id, reason }), [send])
+  const setDnd = useCallback((on) => send({ t: 'dnd', on }), [send])
   const saveHome = useCallback((items) => send({ t: 'home_save', items }), [send])
   const setHomeOpen = useCallback((open) => send({ t: 'home_open', open }), [send])
   /** Bir oyuncuyu evine davet et: { to: id } ya da { name }. */
   const invite = useCallback((who) => send({ t: 'invite', ...who }), [send])
 
-  return { status, online, roster, spawn, room, homeKey, visit, homeSync, saveHome, setHomeOpen, invite, sendReact, sendWhisper, sendGesture, sendTyping, remotes, bubbles, reactions, whispering, typing, selfId, sendMove, sendChat, enterRoom, feedMax: FEED_MAX }
+  return { on, send, blocked, dnd, block, unblock, report, setDnd, status, online, roster, spawn, room, homeKey, visit, homeSync, saveHome, setHomeOpen, invite, sendReact, sendWhisper, sendGesture, sendTyping, remotes, bubbles, reactions, whispering, typing, selfId, sendMove, sendChat, enterRoom, feedMax: FEED_MAX }
 }

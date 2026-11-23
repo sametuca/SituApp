@@ -7,6 +7,7 @@ import City from '../world/City'
 import HomeRoom from '../world/HomeRoom'
 import { EditToggle, FurnitureLayer, FurnitureSheet } from '../world/HomeEditor'
 import { FURNITURE_BY_ID } from '../world/furniture'
+import { useFeatures } from '../world/features'
 import { MAX_ITEMS, findFreeSpot, furnitureColliders, isValid, loadHome, newUid, saveHome } from '../world/homeLayout'
 import LocalPlayer from '../world/LocalPlayer'
 import RemotePlayers, { GuideNpc, SelfTag } from '../world/RemotePlayers'
@@ -151,6 +152,7 @@ function WorldScene({ avatar }) {
   const [match, setMatch] = useState(null) // karşılıklı kalp: { id, name, avatar }
   const [interactId, setInteractId] = useState(null) // etkileşim menüsü açık olan oyuncu
   const [, setTick] = useState(0)
+  const [panel, setPanel] = useState(null) // açık panel: 'settings' | özellik panelleri
   const synced = useRef(null) // sunucuyla en son eşleşen düzen (JSON); değişmediyse tekrar yollama
   const [help, setHelp] = useState(false)
   const tipsKey = `situapp_tips_seen_${user?.id ?? 'guest'}`
@@ -318,6 +320,18 @@ function WorldScene({ avatar }) {
   useEffect(() => {
     if (interactId && !net.roster.some((p) => p.id === interactId)) setInteractId(null) // karşı taraf ayrıldı/oda değişti
   }, [interactId, net.roster])
+  const feat = useFeatures({
+    net,
+    say,
+    touch,
+    roster: net.roster,
+    focusRef,
+    home,
+    panel,
+    setPanel,
+    openChat: (id) => openChat(id),
+    closeInteract: () => setInteractId(null),
+  })
   const sendGesture = (kind) => {
     if (!interactPeer) return
     if (!net.sendGesture(interactPeer.id, kind)) say('Şu an çevrimdışısın.')
@@ -416,6 +430,15 @@ function WorldScene({ avatar }) {
       if (!net.sendWhisper(msg, peer.id)) say('Şu an çevrimdışısın.')
       return
     }
+    if (['ayarlar', 'ayar'].includes(cmd)) return setPanel('settings')
+    if (cmd === 'engelle') {
+      const who = args.join(' ')
+      const peer = net.roster.find((p) => normalize(p.name) === normalize(who))
+      if (!who) return say('Kimi? Örnek: /engelle Elif (yakınındakiler için). Listeyi Ayarlar’dan yönet.')
+      if (!peer) return say(`“${who}” burada yok. Karakterine tıklayıp menüden de engelleyebilirsin.`)
+      net.block(peer.id)
+      return
+    }
     if (cmd === 'davet') {
       const who = args.join(' ')
       if (!who) return say('Kimi? Örnek: /davet Elif')
@@ -509,7 +532,7 @@ function WorldScene({ avatar }) {
         />
       </Canvas>
 
-      <TopBar zone={zone} online={net.online} status={net.status} onExit={() => navigate('/avatar')} onHelp={() => setHelp(true)} />
+      <TopBar zone={zone} online={net.online} status={net.status} dnd={net.dnd} onSettings={() => setPanel('settings')} onExit={() => navigate('/avatar')} onHelp={() => setHelp(true)} />
       <ZoneToast zone={zone} />
       {!home && <Minimap focusRef={focusRef} remotes={net.remotes} compact={touch} />}
       {touch ? (
@@ -533,6 +556,7 @@ function WorldScene({ avatar }) {
           near={distTo(interactPeer.id) <= WHISPER_RANGE - 0.2}
           canInvite={!home}
           touch={touch}
+          extras={feat.peerActions(interactPeer)}
           onClose={() => setInteractId(null)}
           onChat={() => {
             setInteractId(null)
@@ -592,6 +616,7 @@ function WorldScene({ avatar }) {
           }}
         />
       )}
+      {feat.overlays}
       {help && <HelpModal onClose={() => setHelp(false)} />}
       {showTips && !help && <TipStack onDone={closeTips} />}
       <div

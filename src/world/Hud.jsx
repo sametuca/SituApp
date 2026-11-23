@@ -5,7 +5,7 @@ import { BUILDINGS, GUIDE, ROAD_HALF, ZONES } from './layout'
 const glass = 'border-2 border-white bg-white/75 shadow-soft backdrop-blur-md'
 
 // ---------- üst çubuk ----------
-export function TopBar({ zone, online, status, onExit, onHelp }) {
+export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings }) {
   const dot = status === 'online' ? 'bg-emerald-400' : status === 'connecting' ? 'bg-amber-400' : 'bg-rose-400'
   const label = status === 'online' ? `${online} çevrimiçi` : status === 'connecting' ? 'Bağlanıyor…' : 'Çevrimdışı (tek başına)'
   return (
@@ -25,15 +25,23 @@ export function TopBar({ zone, online, status, onExit, onHelp }) {
         <div className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-extrabold text-[#8a7a9c] ${glass}`}>
           <span className={`h-2 w-2 rounded-full ${dot}`} />
           {label}
+          {dnd && <span title="Rahatsız etme açık"> · 🌙</span>}
         </div>
       </div>
-      <button
-        onClick={onHelp}
-        aria-label="Yardım"
-        className={`pointer-events-auto grid h-10 w-10 place-items-center rounded-full text-lg font-black text-[#ff7eb3] transition hover:bg-white ${glass}`}
-      >
-        ?
-      </button>
+      <div className="pointer-events-auto flex gap-2">
+        {onSettings && (
+          <button onClick={onSettings} aria-label="Ayarlar" className={`grid h-10 w-10 place-items-center rounded-full text-lg transition hover:bg-white ${glass}`}>
+            ⚙️
+          </button>
+        )}
+        <button
+          onClick={onHelp}
+          aria-label="Yardım"
+          className={`grid h-10 w-10 place-items-center rounded-full text-lg font-black text-[#ff7eb3] transition hover:bg-white ${glass}`}
+        >
+          ?
+        </button>
+      </div>
     </div>
   )
 }
@@ -223,7 +231,7 @@ export function HintBar() {
 }
 
 // ---------- modal çerçevesi ----------
-function Modal({ children, onClose, label }) {
+export function Modal({ children, onClose, label }) {
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
