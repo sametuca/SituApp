@@ -173,7 +173,8 @@ export function useProfile({ net, say, panel, setPanel, home }) {
         setIncoming([])
         if (isEmpty(m.profile) && !safeStore.get()) {
           safeStore.set()
-          setNudge(true)
+          // girişte ekran zaten kalabalık (öneri, rozet, ipuçları): hatırlatmayı biraz sonra göster
+          setTimeout(() => setNudge(true), 30000)
         }
       }),
       net.on('profile_saved', (m) => {
