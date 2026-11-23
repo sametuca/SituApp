@@ -177,7 +177,7 @@ export function ReactionBar({ onReact, touch }) {
 }
 
 // ---------- etkileşim menüsü (bir oyuncuya kalp, çiçek, fısıltı…) ----------
-export function InteractSheet({ peer, near, canInvite, touch, extras = [], onClose, onChat, onGesture, onWhisper, onInvite }) {
+export function InteractSheet({ peer, near, canInvite, touch, extras = [], header = null, onClose, onChat, onGesture, onWhisper, onInvite }) {
   const [whisper, setWhisper] = useState(false)
   const [text, setText] = useState('')
   const input = useRef(null)
@@ -219,6 +219,8 @@ export function InteractSheet({ peer, near, canInvite, touch, extras = [], onClo
           ✕
         </button>
       </div>
+
+      {header}
 
       <div className="grid grid-cols-3 gap-2">
         {GESTURES.map((g) => (

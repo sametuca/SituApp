@@ -1,11 +1,13 @@
 // Özellik modülleri (istemci). Her modül bir hook'tur: useX(ctx) → { peerActions?(peer), settingsSections?, overlays? }
 //   peerActions(peer): etkileşim menüsüne eklenecek düğmeler  [{ key, emoji, label, onClick, danger? }]
+//   peerHeader(peer):  etkileşim menüsünde kişinin altına çizilecek JSX (mini profil vb.)
 //   settingsSections:  Ayarlar paneline eklenecek JSX parçaları
 //   overlays:          ekranın üstüne çizilecek JSX (diyaloglar, bildirimler…)
 // ctx: { net, say, touch, openChat, closeInteract, roster, focusRef, home, panel, setPanel }
 // Yeni özellik: src/world/features/<ad>.jsx yaz, aşağıya bir satır ekle (kuralı bozma: hook sırası sabit olmalı).
 import { Modal } from '../Hud'
 import { useModeration } from './moderation'
+import { useProfile } from './profile'
 
 function SettingsPanel({ sections, onClose }) {
   return (
@@ -20,9 +22,10 @@ function SettingsPanel({ sections, onClose }) {
 }
 
 export function useFeatures(ctx) {
-  const parts = [useModeration(ctx)]
+  const parts = [useModeration(ctx), useProfile(ctx)]
 
   const peerActions = (peer) => parts.flatMap((p) => p.peerActions?.(peer) ?? [])
+  const peerHeader = (peer) => parts.map((p, i) => (p.peerHeader ? <div key={i}>{p.peerHeader(peer)}</div> : null))
   const settingsSections = parts.flatMap((p) => p.settingsSections ?? [])
   const overlays = (
     <>
@@ -30,5 +33,5 @@ export function useFeatures(ctx) {
       {parts.map((p, i) => (p.overlays ? <div key={i}>{p.overlays}</div> : null))}
     </>
   )
-  return { peerActions, overlays }
+  return { peerActions, peerHeader, overlays }
 }

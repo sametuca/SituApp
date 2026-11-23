@@ -557,6 +557,7 @@ function WorldScene({ avatar }) {
           canInvite={!home}
           touch={touch}
           extras={feat.peerActions(interactPeer)}
+          header={feat.peerHeader(interactPeer)}
           onClose={() => setInteractId(null)}
           onChat={() => {
             setInteractId(null)
