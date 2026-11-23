@@ -7,6 +7,7 @@
     "dev": "vite",
     "server": "node server/index.js",
     "assets": "node scripts/generate-assets.mjs",
+    "furniture": "node scripts/generate-furniture.mjs",
     "dev:all": "concurrently -n web,api -c blue,magenta \"npm:dev\" \"npm:server\"",
     "build": "vite build",
     "lint": "oxlint",

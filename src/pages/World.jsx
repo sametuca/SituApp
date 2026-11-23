@@ -1,10 +1,13 @@
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, useProgress } from '@react-three/drei'
 import { useAuth } from '../lib/AuthContext'
 import City from '../world/City'
 import HomeRoom from '../world/HomeRoom'
+import { EditToggle, FurnitureLayer, FurnitureSheet } from '../world/HomeEditor'
+import { FURNITURE_BY_ID } from '../world/furniture'
+import { MAX_ITEMS, findFreeSpot, furnitureColliders, isValid, loadHome, newUid, saveHome } from '../world/homeLayout'
 import LocalPlayer from '../world/LocalPlayer'
 import RemotePlayers, { GuideNpc, SelfTag } from '../world/RemotePlayers'
 import { useMultiplayer } from '../world/net'
@@ -134,6 +137,15 @@ function WorldScene({ avatar }) {
   const [home, setHome] = useState(null) // null = şehir; { owner, ownerName } = bir evin içindeyiz
   const [nearDoor, setNearDoor] = useState(false)
   const [fade, setFade] = useState(false)
+  // ev düzeni (şimdilik yalnızca kendi evin; tarayıcıda saklanır)
+  const homeOwner = user?.id ?? `guest-${name}`
+  const [furn, setFurn] = useState(() => loadHome(homeOwner))
+  const [editing, setEditing] = useState(false)
+  const [selected, setSelected] = useState(null)
+  const furnColliders = useMemo(() => furnitureColliders(furn), [furn])
+  useEffect(() => {
+    saveHome(homeOwner, furn)
+  }, [homeOwner, furn])
   const [help, setHelp] = useState(false)
   const tipsKey = `situapp_tips_seen_${user?.id ?? 'guest'}`
   const [showTips, setShowTips] = useState(() => !localStorage.getItem(tipsKey))
@@ -153,6 +165,8 @@ function WorldScene({ avatar }) {
   const goTo = useCallback(
     (target) => {
       setFade(true)
+      setEditing(false)
+      setSelected(null)
       setTimeout(() => {
         setNearDoor(false)
         if (target === 'city') {
@@ -170,6 +184,28 @@ function WorldScene({ avatar }) {
   )
   const ownHome = useCallback(() => ({ owner: net.homeKey ?? undefined, ownerName: name }), [net.homeKey, name])
   const doorGo = useCallback(() => goTo(home ? 'city' : ownHome()), [goTo, home, ownHome])
+
+  const addFurn = (id) => {
+    if (furn.length >= MAX_ITEMS) return say(`En fazla ${MAX_ITEMS} eşya koyabilirsin.`)
+    const spot = findFreeSpot(furn, id)
+    if (!spot) return say('Odada boş yer kalmadı 🛋️')
+    const uid = newUid()
+    setFurn((l) => [...l, { uid, id, x: spot.x, z: spot.z, ry: 0 }])
+    setSelected(uid)
+  }
+  const rotateFurn = () => {
+    const next = furn.map((i) => (i.uid === selected ? { ...i, ry: (i.ry + Math.PI / 2) % (Math.PI * 2) } : i))
+    if (!isValid(next, selected)) return say('Burada dönmeye yer yok.')
+    setFurn(next)
+  }
+  const removeFurn = () => {
+    setFurn((l) => l.filter((i) => i.uid !== selected))
+    setSelected(null)
+  }
+  const stopEditing = () => {
+    setEditing(false)
+    setSelected(null)
+  }
 
   const openChat = useCallback((target) => {
     chatTargetRef.current = target
@@ -193,6 +229,10 @@ function WorldScene({ avatar }) {
     return () => delete window.__focus
   }, [])
 
+  const editKeysRef = useRef({ on: false, rotate: () => {}, remove: () => {} })
+  useEffect(() => {
+    editKeysRef.current = { on: editing && Boolean(selected), rotate: rotateFurn, remove: removeFurn }
+  })
   const nearDoorRef = useRef(false)
   const doorGoRef = useRef(() => {})
   useEffect(() => {
@@ -206,6 +246,9 @@ function WorldScene({ avatar }) {
       const typing = e.target instanceof HTMLElement && ['INPUT', 'TEXTAREA'].includes(e.target.tagName)
       if (e.code === 'KeyH' && !typing) setHelp((h) => !h)
       if (e.code === 'KeyE' && !typing && nearDoorRef.current) doorGoRef.current()
+      if (typing || !editKeysRef.current.on) return
+      if (e.code === 'KeyR') editKeysRef.current.rotate()
+      if (e.code === 'Delete' || e.code === 'Backspace') editKeysRef.current.remove()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -273,7 +316,13 @@ function WorldScene({ avatar }) {
         <hemisphereLight args={['#ffffff', '#ffd6ea', 1.1]} />
 
         <Suspense fallback={null}>
-          {home ? <HomeRoom ownerName={home.ownerName} /> : <City focusRef={focusRef} />}
+          {home ? (
+            <HomeRoom ownerName={home.ownerName}>
+              <FurnitureLayer items={furn} setItems={setFurn} editing={editing} selected={selected} setSelected={setSelected} controlsRef={controlsRef} />
+            </HomeRoom>
+          ) : (
+            <City focusRef={focusRef} />
+          )}
           <LocalPlayer
             slug={slug}
             start={start}
@@ -281,7 +330,7 @@ function WorldScene({ avatar }) {
             controlsRef={controlsRef}
             joystickRef={joystickRef}
             onMove={net.sendMove}
-            collide={home ? resolveRoom : resolveCollisions}
+            collide={home ? (x, z) => resolveRoom(x, z, furnColliders) : resolveCollisions}
           >
             <SelfTag name={name} bubbles={net.bubbles} selfId={net.selfId} />
           </LocalPlayer>
@@ -317,18 +366,31 @@ function WorldScene({ avatar }) {
       {touch ? (
         <>
           <Joystick inputRef={joystickRef} />
-          {!chatTarget && <ChatFab onClick={() => openChat('public')} />}
+          {!chatTarget && !editing && <ChatFab onClick={() => openChat('public')} />}
         </>
       ) : (
         <>
-          {chatTarget !== 'public' && !sheetPeer && <ChatPanel feed={feed} onSend={onSend} status={net.status} />}
+          {chatTarget !== 'public' && !sheetPeer && !editing && <ChatPanel feed={feed} onSend={onSend} status={net.status} />}
           <HintBar />
         </>
       )}
       {nearPeer && !chatTarget && (
         <NearbyCard peer={nearPeer} touch={touch} onChat={() => openChat(nearPeer.id)} onDismiss={() => setDismissedId(nearPeer.id)} />
       )}
-      {nearDoor && !chatTarget && !fade && (
+      {home && !editing && !chatTarget && <EditToggle touch={touch} onClick={() => setEditing(true)} />}
+      {home && editing && (
+        <FurnitureSheet
+          count={furn.length}
+          max={MAX_ITEMS}
+          selected={selected}
+          selectedName={FURNITURE_BY_ID[furn.find((i) => i.uid === selected)?.id]?.name}
+          onAdd={addFurn}
+          onRotate={rotateFurn}
+          onRemove={removeFurn}
+          onClose={stopEditing}
+        />
+      )}
+      {nearDoor && !chatTarget && !fade && !editing && (
         <DoorPrompt emoji={home ? '🚪' : '🏠'} label={home ? 'Dışarı çık' : 'Evine gir'} action={home ? 'Çık' : 'Gir'} touch={touch} raised={Boolean(nearPeer)} onGo={doorGo} />
       )}
       {incoming && !chatTarget && peerOf(incoming.id) && (

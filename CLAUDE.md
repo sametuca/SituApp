@@ -28,6 +28,7 @@ npm run lint           # oxlint (World/LocalPlayer'daki react-hooks "immutabilit
   - `City.jsx`, `Prop.jsx`: şehir çizimi; GLB süs nesneleri `public/models/<mekan>/`.
   - `LocalPlayer.jsx`, `RemotePlayers.jsx`, `AvatarRig.jsx`: oyuncu, uzak oyuncular + Rehber NPC, rig'li avatar (kendi `AnimationMixer`'ı; drei `useAnimations` ilk açılışta T-pose'da kalıyordu).
   - `net.js`: `useMultiplayer` hook'u (konumlar ref'te tutulur, 10 Hz). `enterRoom('city' | { owner? })` ile oda değiştirir.
+  - `HomeEditor.jsx` + `homeLayout.js` + `furniture.js`: mobilya katalogu (11 eşya, `public/models/furniture/`), "🛋️ Döşe" modu (ekle, sürükle, döndür `R`, kaldır `Del`), SAT çakışma kontrolü, kapı önü boş kalır. Düzen şimdilik `localStorage`'da (`situapp_home_v1_<kullanıcı>`). Yeni eşya: `furniture.js`'e ekle → `npm run furniture -- --only <id>` (Meshy; bulutta `NODE_USE_ENV_PROXY=1` gerekir) → gltf-transform ile sıkıştır → `node scripts/measure-furniture.mjs` → önizleme PNG'sini 256 px WebP yap.
   - `HomeRoom.jsx`: ev iç mekânı (oyuncak evi gibi, duvarlar yalnızca içe bakar). Lobideki `🏠 Evim` binası (`HOME_DOOR`) ya da `/ev` ile girilir, kapı önünde `E` ile çıkılır. Odanın koordinatları `HOME_ROOM` (layout.js), çarpışma `resolveRoom`.
   - `Hud.jsx` (üst çubuk, harita, ipuçları, yardım, sohbet paneli), `Social.jsx` (joystick, yakın oyuncu kartı, DM çekmecesi), `useIsTouch.js`.
 - `server/game.js`: WebSocket (`/ws`). Protokol dosyanın başındaki yorumda. **Odalar**: `city` ve `home:<sahip>`; konum/sohbet yalnızca aynı odadakilere gider, `canEnter` giriş iznini belirler. Ev anahtarı oyuncu adından türer (auth yok). Özel mesaj (`to`), isim/mesaj temizleme, hız sınırı, 100 oyuncu sınırı. **Kimlik doğrulama yok**: isim istemciden gelir.
@@ -52,7 +53,7 @@ Notlar:
 
 ## Bekleyen işler (kullanıcının istediği, henüz yok)
 
-1. **Her kullanıcının kendi evi** (en önemlisi): ev girişi + iç mekân + oda sistemi YAPILDI. Kalan: mobilya yerleştirme, eve davet, evin kaydı.
+1. **Her kullanıcının kendi evi** (en önemlisi): ev girişi + iç mekân + oda sistemi YAPILDI. Mobilya yerleştirme YAPILDI (kayıt yerel). Kalan: eve davet, evin sunucuda kaydı.
 2. Mekanlara/binalara girebilme (iç mekanlar; binalar şu an dekor).
 3. Daha fazla sabit NPC (şu an yalnızca lobide Rehber).
 4. Kalıcı veri: sunucu hiçbir şey saklamıyor. Ev sistemi için veritabanı gerekir (Supabase projesi açmak ya da önce dosya tabanlı depolama). Hesabındaki `motomeet` ve `insta-copy` Supabase projeleri **başka işlere ait, dokunma**.

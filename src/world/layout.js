@@ -230,21 +230,42 @@ export const HOME_ROOM = {
 }
 export const HOME_ZONE = { id: 'home', name: 'Ev', emoji: '🏠', desc: 'Kendi küçük dünyan.' }
 
-/** Odada duvarlardan (ve ileride eşyalardan) çıkar. */
+/** Odada duvarlardan ve mobilyalardan (dönmüş kutular: { x, z, hw, hd, ry }) çıkar. */
 export function resolveRoom(x, z, colliders = []) {
   const m = PLAYER_RADIUS + 0.15
   x = Math.max(-HOME_ROOM.hw + m, Math.min(HOME_ROOM.hw - m, x))
   z = Math.max(-HOME_ROOM.hd + m, Math.min(HOME_ROOM.hd - 0.35, z))
   for (const c of colliders) {
+    // noktayı kutunun yerel eksenine çevir, en yakın noktaya göre dışarı it, geri çevir
+    const cos = Math.cos(c.ry)
+    const sin = Math.sin(c.ry)
     const dx = x - c.x
     const dz = z - c.z
-    const min = c.r + PLAYER_RADIUS
-    const d2 = dx * dx + dz * dz
-    if (d2 < min * min) {
-      const d = Math.sqrt(d2) || 0.0001
-      x = c.x + (dx / d) * min
-      z = c.z + (dz / d) * min
+    const lx = dx * cos - dz * sin
+    const lz = dx * sin + dz * cos
+    const nx = Math.max(-c.hw, Math.min(lx, c.hw))
+    const nz = Math.max(-c.hd, Math.min(lz, c.hd))
+    let ox = lx - nx
+    let oz = lz - nz
+    const d2 = ox * ox + oz * oz
+    if (d2 >= PLAYER_RADIUS * PLAYER_RADIUS) continue
+    let px
+    let pz
+    if (d2 === 0) {
+      // tam içindeyse en yakın kenara çık
+      const gaps = [c.hw - lx, lx + c.hw, c.hd - lz, lz + c.hd]
+      const k = gaps.indexOf(Math.min(...gaps))
+      px = k === 0 ? c.hw + PLAYER_RADIUS : k === 1 ? -c.hw - PLAYER_RADIUS : lx
+      pz = k === 2 ? c.hd + PLAYER_RADIUS : k === 3 ? -c.hd - PLAYER_RADIUS : lz
+    } else {
+      const d = Math.sqrt(d2)
+      ox /= d
+      oz /= d
+      px = nx + ox * PLAYER_RADIUS
+      pz = nz + oz * PLAYER_RADIUS
     }
+    x = c.x + px * cos + pz * sin
+    z = c.z - px * sin + pz * cos
   }
   return [x, z]
 }
