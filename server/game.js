@@ -6,10 +6,15 @@
 //     { t: 'move', x, z, ry, anim }          ~10 Hz
 //     { t: 'chat', text, to? }               to verilirse özel mesaj (yalnızca alıcı + gönderen)
 //     { t: 'room', to: 'city' | 'home', owner? }   odaya geç; 'home' + owner yoksa kendi evin
+//     { t: 'home_save', items }                    kendi evinin düzenini kaydet (kalıcı) ve içindekilere yay
+//     { t: 'home_open', open }                     evi herkese aç / yalnızca davetlilere kapat
+//     { t: 'invite', to? | name? }                 bir oyuncuyu evine davet et (id ya da ad)
 //   sunucu → istemci
-//     { t: 'welcome', id, home, x, z, players: [...], online }   home = kendi evinin anahtarı
-//     { t: 'room', room, owner, players: [...] }      oda değişti (room: 'city' | 'home:<anahtar>')
-//     { t: 'denied', reason }                          odaya girilemedi
+//     { t: 'welcome', id, home, homeItems, homeOpen, x, z, players: [...], online }   home = kendi evinin anahtarı
+//     { t: 'room', room, owner, ownerName, items, players: [...] }   oda değişti (room: 'city' | 'home:<anahtar>')
+//     { t: 'home_items', owner, items }                bulunduğun evin düzeni değişti
+//     { t: 'invited', owner, ownerName }               biri seni evine davet etti
+//     { t: 'info', text } / { t: 'denied', reason }    kullanıcıya gösterilecek kısa mesaj
 //     { t: 'join', p } / { t: 'leave', id }
 //     { t: 'state', p: [[id, x, z, ry, animIdx], ...] }   ~10 Hz, yalnızca değişenler
 //     { t: 'chat', id, name, text, ts, to?, dm? }
@@ -23,11 +28,12 @@
 // Gerçek hesaplara geçilince join mesajına oturum token'ı eklenip burada doğrulanmalı.
 import { WebSocketServer } from 'ws'
 import crypto from 'node:crypto'
+import { getHome, homeExists, saveItems, setOpen } from './homes.js'
 
 const WORLD_HALF = 60 // dünya sınırı (±m); istemci haritasıyla aynı olmalı
 const MAX_PLAYERS = 100
 const TICK_MS = 100
-const MAX_PAYLOAD = 2048
+const MAX_PAYLOAD = 8192 // ev kaydı (40 eşya) 2 KB'ı aşabilir
 const CHAT_COOLDOWN_MS = 700
 const CHAT_MAX = 140
 
@@ -64,15 +70,34 @@ export function attachGameServer(httpServer) {
   }
   const inRoom = (room, exceptId) => [...players.values()].filter((p) => p.room === room && p.id !== exceptId)
 
-  // oyuncu odaya girebilir mi? (ev davetleri/kilit sonraki adımda buraya eklenir)
-  const canEnter = (p, room) => room === 'city' || room === `home:${p.homeKey}`
+  // ev anahtarı → davet edilen oyuncu id'leri (sunucu çalıştığı sürece; oyuncu çıkınca silinir)
+  const invites = new Map()
+  const invited = (key, id) => invites.get(key)?.has(id)
+
+  // oyuncu odaya girebilir mi? Şehir serbest; ev: sahibi, davetli ya da ev herkese açıksa
+  const canEnter = (p, room) => {
+    if (room === 'city') return true
+    const key = room.slice(5)
+    if (key === p.homeKey) return true
+    if (!homeExists(key) && ![...players.values()].some((o) => o.homeKey === key)) return false
+    return invited(key, p.id) || Boolean(getHome(key)?.open)
+  }
+  const ownerNameOf = (key) => getHome(key)?.owner ?? [...players.values()].find((o) => o.homeKey === key)?.name ?? key
 
   const changeRoom = (p, room) => {
     if (p.room === room) return
     broadcast({ t: 'leave', id: p.id }, p.id, p.room)
     p.room = room
     p.dirty = false
-    send(p.ws, { t: 'room', room, owner: room.startsWith('home:') ? room.slice(5) : null, players: inRoom(room, p.id).map(publicInfo) })
+    const key = room.startsWith('home:') ? room.slice(5) : null
+    send(p.ws, {
+      t: 'room',
+      room,
+      owner: key,
+      ownerName: key ? ownerNameOf(key) : null,
+      items: key ? (getHome(key)?.items ?? []) : [],
+      players: inRoom(room, p.id).map(publicInfo),
+    })
     broadcast({ t: 'join', p: publicInfo(p) }, p.id, room)
   }
 
@@ -116,6 +141,8 @@ export function attachGameServer(httpServer) {
           t: 'welcome',
           id: me.id,
           home: me.homeKey,
+          homeItems: getHome(me.homeKey)?.items ?? null,
+          homeOpen: Boolean(getHome(me.homeKey)?.open),
           x: me.x,
           z: me.z,
           players: inRoom('city', me.id).map(publicInfo),
@@ -136,8 +163,28 @@ export function attachGameServer(httpServer) {
         me.dirty = true
       } else if (msg.t === 'room') {
         const room = msg.to === 'home' ? `home:${typeof msg.owner === 'string' ? homeKey(msg.owner) : me.homeKey}` : 'city'
-        if (!canEnter(me, room)) return send(ws, { t: 'denied', reason: 'Bu eve girmek için davet gerekiyor.' })
+        if (!canEnter(me, room)) return send(ws, { t: 'denied', reason: 'Bu eve girmek için davet gerekiyor ya da ev kapalı.' })
         changeRoom(me, room)
+      } else if (msg.t === 'home_save') {
+        const now = Date.now()
+        if (now - (me.lastSave ?? 0) < 200) return
+        me.lastSave = now
+        const items = saveItems(me.homeKey, me.name, msg.items)
+        broadcast({ t: 'home_items', owner: me.homeKey, items }, me.id, `home:${me.homeKey}`)
+      } else if (msg.t === 'home_open') {
+        setOpen(me.homeKey, me.name, msg.open)
+        send(ws, { t: 'info', text: msg.open ? '🔓 Evin herkese açık. Arkadaşların /ziyaret ' + me.name + ' yazarak gelebilir.' : '🔒 Evin yalnızca davetlilere açık.' })
+      } else if (msg.t === 'invite') {
+        const now = Date.now()
+        if (now - (me.lastInvite ?? 0) < 1000) return
+        me.lastInvite = now
+        const wanted = typeof msg.name === 'string' ? clean(msg.name, 16).toLowerCase() : null
+        const target = typeof msg.to === 'string' ? players.get(msg.to) : [...players.values()].find((o) => o.name.toLowerCase() === wanted)
+        if (!target || target.id === me.id) return send(ws, { t: 'info', text: 'Bu isimde çevrimiçi biri bulunamadı.' })
+        if (!invites.has(me.homeKey)) invites.set(me.homeKey, new Set())
+        invites.get(me.homeKey).add(target.id)
+        send(target.ws, { t: 'invited', owner: me.homeKey, ownerName: me.name })
+        send(ws, { t: 'info', text: `🏠 ${target.name} evine davet edildi.` })
       } else if (msg.t === 'chat') {
         const now = Date.now()
         const text = clean(msg.text, CHAT_MAX)
@@ -159,6 +206,7 @@ export function attachGameServer(httpServer) {
     ws.on('close', () => {
       if (!me) return
       players.delete(me.id)
+      for (const set of invites.values()) set.delete(me.id)
       broadcast({ t: 'leave', id: me.id }, undefined, me.room)
       broadcast({ t: 'online', n: players.size })
     })

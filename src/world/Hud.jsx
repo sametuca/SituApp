@@ -261,6 +261,9 @@ export function HelpModal({ onClose }) {
         <Row k="/ışınlan kafe">lobi, kafe, kulüp, park veya plaja git</Row>
         <Row k="/ev">kendi evine gir (lobideki 🏠 kapıdan da girebilirsin)</Row>
         <Row k="/dışarı">evden şehre dön</Row>
+        <Row k="/davet Elif">çevrimiçi birini evine çağır (yakınındaki oyuncu kartından 🏠 ile de olur)</Row>
+        <Row k="/ziyaret Elif">açık ya da davetli olduğun bir eve git</Row>
+        <Row k="/kapı aç">evini herkese aç · /kapı kapat: yalnızca davetliler</Row>
         <Row k="/yardım">bu paneli aç</Row>
       </ul>
 

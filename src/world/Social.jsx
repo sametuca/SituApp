@@ -86,10 +86,10 @@ export function Joystick({ inputRef }) {
 }
 
 // ---------- yakındaki oyuncu kartı ----------
-export function NearbyCard({ peer, touch, onChat, onDismiss }) {
+export function NearbyCard({ peer, touch, onChat, onInvite, onDismiss }) {
   return (
     <div
-      className={`absolute left-1/2 z-10 w-[min(92vw,20rem)] -translate-x-1/2 animate-pop ${touch ? 'bottom-44' : 'bottom-4'}`}
+      className={`absolute left-1/2 z-10 w-[min(94vw,24rem)] -translate-x-1/2 animate-pop ${touch ? 'bottom-44' : 'bottom-4'}`}
       role="status"
     >
       <div className={`flex items-center gap-3 rounded-3xl p-2.5 pr-3 ${glass}`}>
@@ -98,10 +98,17 @@ export function NearbyCard({ peer, touch, onChat, onDismiss }) {
           <p className="truncate text-sm font-black text-[#4a3b5c]">{peer.name}</p>
           <p className="text-xs font-bold text-[#8a7a9c]">yakınında 👋</p>
         </div>
-        <div className="w-28 shrink-0">
-          <ToyButton className="!rounded-xl !py-2 !text-sm" onClick={onChat}>
-            💬 Sohbet
-          </ToyButton>
+        <div className="flex shrink-0 gap-1.5">
+          {onInvite && (
+            <button onClick={onInvite} aria-label="Evine davet et" title="Evine davet et" className="grid h-10 w-10 place-items-center rounded-xl border-b-4 border-[#5fb0d8] bg-[#7fcdf3] text-lg shadow-soft active:translate-y-[2px] active:border-b-2">
+              🏠
+            </button>
+          )}
+          <div className="w-28">
+            <ToyButton className="!rounded-xl !py-2 !text-sm" onClick={onChat}>
+              💬 Sohbet
+            </ToyButton>
+          </div>
         </div>
         <button onClick={onDismiss} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black text-[#8a7a9c] hover:bg-[#ffd6e8]/70">
           ✕
@@ -129,6 +136,32 @@ export function DoorPrompt({ emoji, label, action, touch, raised, onGo }) {
           </ToyButton>
         </div>
       </div>
+    </div>
+  )
+}
+
+// ---------- ev daveti ----------
+export function InviteChip({ from, onGo, onClose }) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 20000)
+    return () => clearTimeout(t)
+  }, [from, onClose])
+  return (
+    <div className={`absolute left-1/2 top-24 z-20 flex w-[min(92vw,22rem)] -translate-x-1/2 animate-pop items-center gap-3 rounded-3xl p-2.5 pl-4 ${glass}`} role="status">
+      <span className="text-2xl" aria-hidden>
+        🏠
+      </span>
+      <p className="min-w-0 flex-1 text-sm font-black text-[#4a3b5c]">
+        {from.ownerName} seni evine çağırıyor
+      </p>
+      <div className="w-20 shrink-0">
+        <ToyButton className="!rounded-xl !py-2 !text-sm" onClick={onGo}>
+          Git
+        </ToyButton>
+      </div>
+      <button onClick={onClose} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black text-[#8a7a9c] hover:bg-[#ffd6e8]/70">
+        ✕
+      </button>
     </div>
   )
 }

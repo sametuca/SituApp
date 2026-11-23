@@ -12,10 +12,11 @@ import LocalPlayer from '../world/LocalPlayer'
 import RemotePlayers, { GuideNpc, SelfTag } from '../world/RemotePlayers'
 import { useMultiplayer } from '../world/net'
 import { ChatPanel, HelpModal, HintBar, Minimap, TipStack, TopBar, ZoneToast } from '../world/Hud'
-import { ChatFab, ChatSheet, DoorPrompt, IncomingChip, Joystick, NearbyCard } from '../world/Social'
+import { ChatFab, ChatSheet, DoorPrompt, IncomingChip, InviteChip, Joystick, NearbyCard } from '../world/Social'
 import { useIsTouch } from '../world/useIsTouch'
 import { HOME_DOOR, HOME_ROOM, HOME_ZONE, SPAWN, TELEPORTS, ZONES, resolveCollisions, resolveRoom, zoneAt } from '../world/layout'
 
+const NO_ITEMS = []
 const NEAR_ENTER = 4.5 // m: bu mesafeye girince "sohbet et" kartı çıkar
 const NEAR_LEAVE = 6.5 // m: bu mesafeyi aşınca kart kaybolur (titremesin diye ikisi farklı)
 
@@ -137,15 +138,13 @@ function WorldScene({ avatar }) {
   const [home, setHome] = useState(null) // null = şehir; { owner, ownerName } = bir evin içindeyiz
   const [nearDoor, setNearDoor] = useState(false)
   const [fade, setFade] = useState(false)
-  // ev düzeni (şimdilik yalnızca kendi evin; tarayıcıda saklanır)
+  // ev düzeni: kendi evin sunucuda kalıcıdır, tarayıcıdaki kopya yalnızca önbellektir
   const homeOwner = user?.id ?? `guest-${name}`
   const [furn, setFurn] = useState(() => loadHome(homeOwner))
   const [editing, setEditing] = useState(false)
   const [selected, setSelected] = useState(null)
-  const furnColliders = useMemo(() => furnitureColliders(furn), [furn])
-  useEffect(() => {
-    saveHome(homeOwner, furn)
-  }, [homeOwner, furn])
+  const [invite, setInvite] = useState(null) // { owner, ownerName }: biri seni evine çağırdı
+  const synced = useRef(null) // sunucuyla en son eşleşen düzen (JSON); değişmediyse tekrar yollama
   const [help, setHelp] = useState(false)
   const tipsKey = `situapp_tips_seen_${user?.id ?? 'guest'}`
   const [showTips, setShowTips] = useState(() => !localStorage.getItem(tipsKey))
@@ -159,31 +158,94 @@ function WorldScene({ avatar }) {
     if (m.dm && !m.self && chatTargetRef.current !== m.id) setIncoming({ id: m.id, name: m.name, text: m.text })
   }, [])
   const say = useCallback((text) => setFeed((f) => [...f, { kind: 'system', ts: Date.now(), text }].slice(-100)), [])
-  const net = useMultiplayer({ name, avatar: slug, onChat: addFeed, onDenied: say })
-
   // Şehir ↔ ev geçişi: ekran kısa süre kararır, sonra oyuncu yeni yere ışınlanır.
+  const swapScene = useCallback((target) => {
+    setFade(true)
+    setEditing(false)
+    setSelected(null)
+    setTimeout(() => {
+      setNearDoor(false)
+      if (target === 'city') {
+        setHome(null)
+        focusRef.current.teleport = [HOME_DOOR.x, HOME_DOOR.z, Math.PI / 2]
+      } else {
+        setHome(target)
+        focusRef.current.teleport = [HOME_ROOM.spawn[0], HOME_ROOM.spawn[1], Math.PI]
+      }
+      setTimeout(() => setFade(false), 120)
+    }, 220)
+  }, [])
+
+  // Başkasının evine girerken sahne, sunucu izin verince ('room' mesajı) değişir; reddedilirse olduğun yerde kalırsın.
+  const visitPending = useRef(false)
+  const onRoom = useCallback(
+    (m) => {
+      if (!visitPending.current || !m.owner) return
+      visitPending.current = false
+      swapScene({ owner: m.owner, ownerName: m.ownerName })
+    },
+    [swapScene],
+  )
+  const onDenied = useCallback(
+    (text) => {
+      visitPending.current = false
+      say(text)
+    },
+    [say],
+  )
+  const net = useMultiplayer({ name, avatar: slug, onChat: addFeed, onDenied, onInfo: say, onInvited: setInvite, onRoom })
+
   const goTo = useCallback(
     (target) => {
-      setFade(true)
-      setEditing(false)
-      setSelected(null)
-      setTimeout(() => {
-        setNearDoor(false)
-        if (target === 'city') {
-          setHome(null)
-          focusRef.current.teleport = [HOME_DOOR.x, HOME_DOOR.z, Math.PI / 2]
-        } else {
-          setHome(target)
-          focusRef.current.teleport = [HOME_ROOM.spawn[0], HOME_ROOM.spawn[1], Math.PI]
-        }
-        net.enterRoom(target === 'city' ? 'city' : { owner: target.owner })
-        setTimeout(() => setFade(false), 120)
-      }, 220)
+      swapScene(target)
+      net.enterRoom(target === 'city' ? 'city' : { owner: target.owner })
     },
-    [net],
+    [net, swapScene],
+  )
+  const visit = useCallback(
+    (owner) => {
+      setInvite(null)
+      visitPending.current = true
+      if (!net.enterRoom({ owner })) {
+        visitPending.current = false
+        say('Şu an çevrimdışısın, ziyaret edemezsin.')
+      }
+    },
+    [net, say],
   )
   const ownHome = useCallback(() => ({ owner: net.homeKey ?? undefined, ownerName: name }), [net.homeKey, name])
   const doorGo = useCallback(() => goTo(home ? 'city' : ownHome()), [goTo, home, ownHome])
+
+  const isOwnHome = Boolean(home) && (!home.owner || home.owner === net.homeKey)
+  const shownItems = !home ? NO_ITEMS : isOwnHome ? furn : (net.visit?.items ?? NO_ITEMS)
+  const furnColliders = useMemo(() => furnitureColliders(shownItems), [shownItems])
+
+  // sunucudaki evim: bağlanınca (ve yeniden bağlanınca) onu al; sunucuda yoksa buradakini yükle
+  const editingRef = useRef(false)
+  useEffect(() => {
+    editingRef.current = editing
+  }, [editing])
+  const sync = net.homeSync
+  useEffect(() => {
+    if (!sync || editingRef.current) return
+    if (sync.items) {
+      synced.current = JSON.stringify(sync.items)
+      setFurn(sync.items)
+    } else if (furn.length && net.saveHome(furn)) synced.current = JSON.stringify(furn)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sync?.n])
+  // düzen değişince: önbelleğe yaz, kısa beklemeyle sunucuya yolla (sunucudakiyle aynıysa yollama)
+  useEffect(() => {
+    saveHome(homeOwner, furn)
+    const json = JSON.stringify(furn)
+    if (synced.current === null) synced.current = json // ilk açılış: henüz sunucuyla eşleşmedik, yollama
+    if (json === synced.current) return
+    const t = setTimeout(() => {
+      if (net.saveHome(furn)) synced.current = json
+    }, 400)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [homeOwner, furn])
 
   const addFurn = (id) => {
     if (furn.length >= MAX_ITEMS) return say(`En fazla ${MAX_ITEMS} eşya koyabilirsin.`)
@@ -286,6 +348,25 @@ function WorldScene({ avatar }) {
       goTo('city')
       return say('Şehre döndün.')
     }
+    if (cmd === 'davet') {
+      const who = args.join(' ')
+      if (!who) return say('Kimi? Örnek: /davet Elif')
+      net.invite({ name: who })
+      return
+    }
+    if (['ziyaret', 'misafir'].includes(cmd)) {
+      const who = args.join(' ')
+      if (!who) return say('Kimin evine? Örnek: /ziyaret Elif')
+      visit(who)
+      return
+    }
+    if (cmd === 'kapi') {
+      const open = ['ac', 'acik'].includes(normalize(args[0] ?? ''))
+      const close = ['kapat', 'kapali'].includes(normalize(args[0] ?? ''))
+      if (!open && !close) return say('Örnek: /kapı aç (herkes gelebilir) ya da /kapı kapat (yalnızca davetliler)')
+      net.setHomeOpen(open)
+      return
+    }
     if (['isinlan', 'tp', 'git'].includes(cmd)) {
       if (home) return say('Işınlanmak için önce evden çık: /dışarı')
       const id = TELEPORTS[normalize(args[0] ?? '')] ?? TELEPORTS[(args[0] ?? '').toLowerCase()]
@@ -318,7 +399,7 @@ function WorldScene({ avatar }) {
         <Suspense fallback={null}>
           {home ? (
             <HomeRoom ownerName={home.ownerName}>
-              <FurnitureLayer items={furn} setItems={setFurn} editing={editing} selected={selected} setSelected={setSelected} controlsRef={controlsRef} />
+              <FurnitureLayer items={shownItems} setItems={setFurn} editing={editing && isOwnHome} selected={selected} setSelected={setSelected} controlsRef={controlsRef} />
             </HomeRoom>
           ) : (
             <City focusRef={focusRef} />
@@ -375,10 +456,10 @@ function WorldScene({ avatar }) {
         </>
       )}
       {nearPeer && !chatTarget && (
-        <NearbyCard peer={nearPeer} touch={touch} onChat={() => openChat(nearPeer.id)} onDismiss={() => setDismissedId(nearPeer.id)} />
+        <NearbyCard peer={nearPeer} touch={touch} onChat={() => openChat(nearPeer.id)} onInvite={!home ? () => net.invite({ to: nearPeer.id }) : undefined} onDismiss={() => setDismissedId(nearPeer.id)} />
       )}
-      {home && !editing && !chatTarget && <EditToggle touch={touch} onClick={() => setEditing(true)} />}
-      {home && editing && (
+      {home && isOwnHome && !editing && !chatTarget && <EditToggle touch={touch} onClick={() => setEditing(true)} />}
+      {home && isOwnHome && editing && (
         <FurnitureSheet
           count={furn.length}
           max={MAX_ITEMS}
@@ -393,6 +474,7 @@ function WorldScene({ avatar }) {
       {nearDoor && !chatTarget && !fade && !editing && (
         <DoorPrompt emoji={home ? '🚪' : '🏠'} label={home ? 'Dışarı çık' : 'Evine gir'} action={home ? 'Çık' : 'Gir'} touch={touch} raised={Boolean(nearPeer)} onGo={doorGo} />
       )}
+      {invite && !chatTarget && !editing && <InviteChip from={invite} onGo={() => visit(invite.owner)} onClose={() => setInvite(null)} />}
       {incoming && !chatTarget && peerOf(incoming.id) && (
         <IncomingChip from={incoming} onOpen={() => openChat(incoming.id)} onClose={() => setIncoming(null)} />
       )}

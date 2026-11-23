@@ -15,13 +15,15 @@ const wsUrl = () =>
  *   bubbles: Map<id, { text, until }>   (konuşma balonları)
  * roster (id listesi) yalnızca biri girip çıkınca değişir.
  */
-export function useMultiplayer({ name, avatar, onChat, onDenied }) {
+export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvited, onRoom }) {
   const [status, setStatus] = useState('connecting') // connecting | online | offline
   const [online, setOnline] = useState(1)
   const [roster, setRoster] = useState([])
   const [spawn, setSpawn] = useState(null)
   const [room, setRoom] = useState('city') // 'city' | 'home:<sahip anahtarı>'
   const [homeKey, setHomeKey] = useState(null) // kendi evimin anahtarı (sunucu verir)
+  const [visit, setVisit] = useState(null) // başkasının evindeyken: { owner, ownerName, items }
+  const [homeSync, setHomeSync] = useState(null) // bağlanınca sunucudaki kendi evim: { items | null, open, n }
   const roomRef = useRef('city')
   const wantRoom = useRef(null) // yeniden bağlanınca dönülecek oda isteği
   const remotes = useRef(new Map())
@@ -31,10 +33,17 @@ export function useMultiplayer({ name, avatar, onChat, onDenied }) {
   const lastSent = useRef({ t: 0, anim: '', x: 0, z: 0 })
   const onChatRef = useRef(onChat)
   const onDeniedRef = useRef(onDenied)
+  const onInfoRef = useRef(onInfo)
+  const onInvitedRef = useRef(onInvited)
+  const onRoomRef = useRef(onRoom)
+  const homeKeyRef = useRef(null)
   useEffect(() => {
     onChatRef.current = onChat
     onDeniedRef.current = onDenied
-  }, [onChat, onDenied])
+    onInfoRef.current = onInfo
+    onInvitedRef.current = onInvited
+    onRoomRef.current = onRoom
+  }, [onChat, onDenied, onInfo, onInvited, onRoom])
 
   useEffect(() => {
     let stopped = false
@@ -68,6 +77,8 @@ export function useMultiplayer({ name, avatar, onChat, onDenied }) {
             remotes.current.clear()
             m.players.forEach(addRemote)
             setHomeKey(m.home)
+            homeKeyRef.current = m.home
+            setHomeSync((h) => ({ items: m.homeItems, open: m.homeOpen, n: (h?.n ?? 0) + 1 }))
             setSpawn({ x: m.x, z: m.z })
             setOnline(m.online)
             setStatus('online')
@@ -80,10 +91,22 @@ export function useMultiplayer({ name, avatar, onChat, onDenied }) {
           case 'room':
             roomRef.current = m.room
             setRoom(m.room)
+            setVisit(m.owner && m.owner !== homeKeyRef.current ? { owner: m.owner, ownerName: m.ownerName, items: m.items ?? [] } : null)
             remotes.current.clear()
             bubbles.current.clear()
             m.players.forEach(addRemote)
             syncRoster()
+            onRoomRef.current?.(m)
+            break
+          case 'home_items':
+            // bulunduğum evin sahibi düzeni değiştirdi
+            setVisit((v) => (v && v.owner === m.owner ? { ...v, items: m.items } : v))
+            break
+          case 'invited':
+            onInvitedRef.current?.(m)
+            break
+          case 'info':
+            onInfoRef.current?.(m.text)
             break
           case 'denied':
             wantRoom.current = null
@@ -174,5 +197,15 @@ export function useMultiplayer({ name, avatar, onChat, onDenied }) {
     return ws?.readyState === 1
   }, [])
 
-  return { status, online, roster, spawn, room, homeKey, remotes, bubbles, selfId, sendMove, sendChat, enterRoom, feedMax: FEED_MAX }
+  const send = useCallback((msg) => {
+    const ws = wsRef.current
+    if (ws?.readyState === 1) ws.send(JSON.stringify(msg))
+    return ws?.readyState === 1
+  }, [])
+  const saveHome = useCallback((items) => send({ t: 'home_save', items }), [send])
+  const setHomeOpen = useCallback((open) => send({ t: 'home_open', open }), [send])
+  /** Bir oyuncuyu evine davet et: { to: id } ya da { name }. */
+  const invite = useCallback((who) => send({ t: 'invite', ...who }), [send])
+
+  return { status, online, roster, spawn, room, homeKey, visit, homeSync, saveHome, setHomeOpen, invite, remotes, bubbles, selfId, sendMove, sendChat, enterRoom, feedMax: FEED_MAX }
 }
