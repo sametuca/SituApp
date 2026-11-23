@@ -420,7 +420,7 @@ export function IncomingChip({ from, onOpen, onClose }) {
 }
 
 // ---------- sohbet çekmecesi (özel veya herkese açık) ----------
-export function ChatSheet({ peer, feed, onSend, onClose, touch, typing, onTyping }) {
+export function ChatSheet({ peer, feed, onSend, onClose, touch, typing, onTyping, readUpTo = 0 }) {
   const [text, setText] = useState('')
   const [emojis, setEmojis] = useState(false)
   const list = useRef(null)
@@ -497,7 +497,7 @@ export function ChatSheet({ peer, feed, onSend, onClose, touch, typing, onTyping
                     : 'self-start bg-[#f1e6ff] text-[#4a3b5c]'
             }`}
           >
-            {m.kind === 'system' ? `🧭 ${m.text}` : m.whisper ? `🤫 ${m.text}` : !peer && !m.self ? <><b>{m.name}: </b>{m.text}</> : m.text}
+            {m.kind === 'system' ? `🧭 ${m.text}` : m.whisper ? `🤫 ${m.text}` : !peer && !m.self ? <><b>{m.name}: </b>{m.text}</> : peer && m.self && m.dm ? <>{m.text}<span className={`ml-1.5 text-[11px] font-black ${m.ts <= readUpTo ? 'text-[#3b8fd6]' : 'text-[#2f4a5c]/50'}`} title={m.ts <= readUpTo ? 'Okundu' : 'Gönderildi'}>{m.ts <= readUpTo ? '✓✓' : '✓'}</span></> : m.text}
           </p>
         ))}
       </div>

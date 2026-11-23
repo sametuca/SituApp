@@ -5,7 +5,7 @@ import { BUILDINGS, GUIDE, ROAD_HALF, ZONES } from './layout'
 const glass = 'border-2 border-white bg-white/75 shadow-soft backdrop-blur-md'
 
 // ---------- üst çubuk ----------
-export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings }) {
+export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings, extraButtons }) {
   const dot = status === 'online' ? 'bg-emerald-400' : status === 'connecting' ? 'bg-amber-400' : 'bg-rose-400'
   const label = status === 'online' ? `${online} çevrimiçi` : status === 'connecting' ? 'Bağlanıyor…' : 'Çevrimdışı (tek başına)'
   return (
@@ -29,6 +29,7 @@ export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings }
         </div>
       </div>
       <div className="pointer-events-auto flex gap-2">
+        {extraButtons}
         {onSettings && (
           <button onClick={onSettings} aria-label="Ayarlar" className={`grid h-10 w-10 place-items-center rounded-full text-lg transition hover:bg-white ${glass}`}>
             ⚙️
