@@ -578,7 +578,7 @@ export function useFriends({ net, say, focusRef, home, panel, setPanel, openChat
   ]
 
   const badge = data.requests.length + data.unread
-  const extraButtons = (
+  const extraNodes = (
     <button
       onClick={() => {
         setStartTab(null)
@@ -612,5 +612,5 @@ export function useFriends({ net, say, focusRef, home, panel, setPanel, openChat
     </>
   )
 
-  return { peerActions, settingsSections, overlays, extraButtons, readAt }
+  return { peerActions, settingsSections, overlays, extraNodes, readAt }
 }

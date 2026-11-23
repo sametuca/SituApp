@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ToyButton } from '../components/ui'
+import { MicButton, StickerBubble, StickerPanel, VoiceBubble } from './features/media'
 import { CHAT_EMOJIS, GESTURES, GESTURE_BY_KIND, QUICK_REPLIES, REACTIONS, WHISPER_RANGE } from './interact'
 
 const glass = 'border-2 border-white bg-white/80 shadow-soft backdrop-blur-md'
@@ -422,9 +423,10 @@ export function IncomingChip({ from, onOpen, onClose }) {
 }
 
 // ---------- sohbet çekmecesi (özel veya herkese açık) ----------
-export function ChatSheet({ peer, feed, onSend, onClose, touch, typing, onTyping, readUpTo = 0 }) {
+export function ChatSheet({ peer, feed, onSend, onClose, touch, typing, onTyping, readUpTo = 0, onSticker, onVoice }) {
   const [text, setText] = useState('')
   const [emojis, setEmojis] = useState(false)
+  const [pickTab, setPickTab] = useState('emoji') // emoji | sticker
   const list = useRef(null)
   const input = useRef(null)
 
@@ -486,7 +488,12 @@ export function ChatSheet({ peer, feed, onSend, onClose, touch, typing, onTyping
             </span>
           </p>
         )}
-        {messages.map((m, i) => (
+        {messages.map((m, i) =>
+          m.sticker ? (
+            <StickerBubble key={`${m.ts}-${i}`} id={m.sticker} self={m.self} />
+          ) : m.voice ? (
+            <VoiceBubble key={`${m.ts}-${i}`} voice={m.voice} self={m.self} />
+          ) : (
           <p
             key={`${m.ts}-${i}`}
             className={`max-w-[85%] break-words rounded-2xl px-3 py-1.5 text-sm font-semibold ${
@@ -501,7 +508,8 @@ export function ChatSheet({ peer, feed, onSend, onClose, touch, typing, onTyping
           >
             {m.kind === 'system' ? `🧭 ${m.text}` : m.whisper ? `🤫 ${m.text}` : !peer && !m.self ? <><b>{m.name}: </b>{m.text}</> : peer && m.self && m.dm ? <>{m.text}<span className={`ml-1.5 text-[11px] font-black ${m.ts <= readUpTo ? 'text-[#3b8fd6]' : 'text-[#2f4a5c]/50'}`} title={m.ts <= readUpTo ? 'Okundu' : 'Gönderildi'}>{m.ts <= readUpTo ? '✓✓' : '✓'}</span></> : m.text}
           </p>
-        ))}
+          ),
+        )}
       </div>
 
       {peer && (
@@ -518,7 +526,27 @@ export function ChatSheet({ peer, feed, onSend, onClose, touch, typing, onTyping
         </div>
       )}
 
-      {emojis && (
+      {emojis && onSticker && (
+        <div className="flex gap-1.5" role="tablist" aria-label="Emoji ve çıkartma">
+          {[
+            ['emoji', '😊 Emoji'],
+            ['sticker', '🧸 Çıkartma'],
+          ].map(([id, label]) => (
+            <button key={id} type="button" role="tab" aria-selected={pickTab === id} onClick={() => setPickTab(id)} className={`flex-1 rounded-xl py-1.5 text-xs font-extrabold active:scale-95 ${pickTab === id ? 'bg-[#a88bff] text-white' : 'bg-[#f1e6ff] text-[#4a3b5c]'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+      {emojis && onSticker && pickTab === 'sticker' && (
+        <StickerPanel
+          onPick={(id) => {
+            onSticker(id)
+            setEmojis(false)
+          }}
+        />
+      )}
+      {emojis && (pickTab === 'emoji' || !onSticker) && (
         <div className="grid grid-cols-8 gap-1 rounded-2xl bg-[#faf6ff] p-1.5">
           {CHAT_EMOJIS.map((e) => (
             <button
@@ -557,6 +585,7 @@ export function ChatSheet({ peer, feed, onSend, onClose, touch, typing, onTyping
         <button type="submit" aria-label="Gönder" className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border-b-4 border-[#e85a98] bg-[#ff7eb3] text-lg text-white active:translate-y-0.5 active:border-b-2">
           ➤
         </button>
+        {onVoice && !text.trim() && <MicButton onSend={onVoice} />}
       </form>
     </div>
   )

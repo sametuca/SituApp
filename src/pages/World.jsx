@@ -332,6 +332,7 @@ function WorldScene({ avatar }) {
     chatTarget,
     openChat: (id) => openChat(id),
     closeInteract: () => setInteractId(null),
+    pushFeed: addFeed,
   })
   const sendGesture = (kind) => {
     if (!interactPeer) return
@@ -509,6 +510,7 @@ function WorldScene({ avatar }) {
           </LocalPlayer>
           <RemotePlayers roster={net.roster} remotes={net.remotes} bubbles={net.bubbles} reactions={net.reactions} whispering={net.whispering} onPick={(id) => { setChatTarget(null); chatTargetRef.current = null; setInteractId(id) }} />
           {!home && <GuideNpc focusRef={focusRef} tips={GUIDE_TIPS} />}
+          {feat.worldEffects}
         </Suspense>
 
         <ZoneWatcher key={home ? 'home' : 'city'} focusRef={focusRef} onChange={setZone} fixed={home ? HOME_ZONE : undefined} />
@@ -533,7 +535,7 @@ function WorldScene({ avatar }) {
         />
       </Canvas>
 
-      <TopBar zone={zone} online={net.online} status={net.status} dnd={net.dnd} onSettings={() => setPanel('settings')} extraButtons={feat.extraButtons} onExit={() => navigate('/avatar')} onHelp={() => setHelp(true)} />
+      <TopBar zone={zone} online={net.online} status={net.status} dnd={net.dnd} onSettings={() => setPanel('settings')} extraButtons={feat.extraButtons} extraNodes={feat.extraNodes} onExit={() => navigate('/avatar')} onHelp={() => setHelp(true)} />
       <ZoneToast zone={zone} />
       {!home && <Minimap focusRef={focusRef} remotes={net.remotes} compact={touch} />}
       {touch ? (
@@ -605,7 +607,18 @@ function WorldScene({ avatar }) {
         <IncomingChip from={incoming} onOpen={() => openChat(incoming.id)} onClose={() => setIncoming(null)} />
       )}
       {chatTarget && (chatTarget === 'public' || sheetPeer) && (
-        <ChatSheet peer={sheetPeer} feed={feed} onSend={onSheetSend} onClose={closeChat} touch={touch} typing={sheetPeer ? (net.typing.current.get(sheetPeer.id) ?? 0) > Date.now() : false} onTyping={net.sendTyping} readUpTo={sheetPeer ? (feat.readAt[sheetPeer.id] ?? 0) : 0} />
+        <ChatSheet
+          peer={sheetPeer}
+          feed={feed}
+          onSend={onSheetSend}
+          onClose={closeChat}
+          touch={touch}
+          typing={sheetPeer ? (net.typing.current.get(sheetPeer.id) ?? 0) > Date.now() : false}
+          onTyping={net.sendTyping}
+          readUpTo={sheetPeer ? (feat.readAt[sheetPeer.id] ?? 0) : 0}
+          onSticker={(id) => net.send({ t: 'sticker', id, ...(sheetPeer ? { to: sheetPeer.id } : {}) })}
+          onVoice={sheetPeer ? (v) => net.send({ t: 'voice', to: sheetPeer.id, ...v }) : undefined}
+        />
       )}
       {match && (
         <MatchOverlay

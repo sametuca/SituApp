@@ -8,5 +8,7 @@ import moderation from './moderation.js'
 import games from './games.js'
 import friends from './friends.js'
 import profile from './profile.js'
+import progress from './progress.js'
+import media from './media.js'
 
-export const FEATURE_FACTORIES = [moderation, games, friends, profile]
+export const FEATURE_FACTORIES = [moderation, games, friends, profile, progress, media]
