@@ -6,5 +6,6 @@
 // Yeni özellik: server/features/<ad>.js yaz, buraya bir satır ekle.
 import moderation from './moderation.js'
 import games from './games.js'
+import friends from './friends.js'
 
-export const FEATURE_FACTORIES = [moderation, games]
+export const FEATURE_FACTORIES = [moderation, games, friends]
