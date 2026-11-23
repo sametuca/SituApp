@@ -1,87 +1,146 @@
-import { useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useGLTF } from '@react-three/drei'
+import { useAuth } from '../lib/AuthContext'
+import { PastelBackground, TONES, ToyButton } from '../components/ui'
 
+const AvatarPreview = lazy(() => import('../components/3d/AvatarPreview'))
+
+// gender: 'f' → pembe tema, 'm' → mavi tema.
+// gradient: World'ün yedek (model yüklenemezse) rengi için eski alan; tint: kart rengi.
 const avatars = [
-  { id: 1, name: 'Zeynep', emoji: '👩🏻‍🦰', gradient: 'from-pink-500 to-rose-500' },
-  { id: 2, name: 'Deniz', emoji: '🧑🏽', gradient: 'from-blue-500 to-cyan-500' },
-  { id: 3, name: 'Elif', emoji: '👩🏽', gradient: 'from-purple-500 to-fuchsia-500' },
-  { id: 4, name: 'Kaan', emoji: '🧔🏻', gradient: 'from-amber-500 to-orange-500' },
-  { id: 5, name: 'Mira', emoji: '👩🏻', gradient: 'from-teal-500 to-emerald-500' },
-  { id: 6, name: 'Ege', emoji: '🧑🏻‍🦱', gradient: 'from-violet-500 to-indigo-500' },
+  { id: 1, name: 'Zeynep', gender: 'f', emoji: '👩🏻‍🦰', gradient: 'from-pink-500 to-rose-500', tint: 'bg-candy-pink/50' },
+  { id: 2, name: 'Deniz', gender: 'm', emoji: '🧑🏽', gradient: 'from-blue-500 to-cyan-500', tint: 'bg-candy-blue/60' },
+  { id: 3, name: 'Elif', gender: 'f', emoji: '👩🏽', gradient: 'from-purple-500 to-fuchsia-500', tint: 'bg-candy-lilac/60' },
+  { id: 4, name: 'Kaan', gender: 'm', emoji: '🧔🏻', gradient: 'from-amber-500 to-orange-500', tint: 'bg-candy-blue/40' },
+  { id: 5, name: 'Mira', gender: 'f', emoji: '👩🏻', gradient: 'from-teal-500 to-emerald-500', tint: 'bg-candy-mint/70' },
+  { id: 6, name: 'Ege', gender: 'm', emoji: '🧑🏻‍🦱', gradient: 'from-violet-500 to-indigo-500', tint: 'bg-candy-lilac/50' },
 ]
+
+const toneOf = (a) => (a.gender === 'm' ? 'blue' : 'pink')
+const PEDESTAL = { pink: '#ffb6d3', blue: '#a9ddf5' }
+const slugOf = (a) => a.name.toLowerCase()
 
 export default function AvatarSelect() {
   const navigate = useNavigate()
-  const [selected, setSelected] = useState(null)
+  const { user, signOut } = useAuth()
+  const [selected, setSelected] = useState(avatars[0])
+  const tone = toneOf(selected)
+
+  // seçim anında takılma olmasın diye tüm avatarları arka planda yükle
+  // (ilk karakter önce gelsin diye biraz gecikmeli)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      avatars.forEach((a) => useGLTF.preload(`/models/avatars/${slugOf(a)}.glb`))
+    }, 2500)
+    return () => clearTimeout(timer)
+  }, [])
 
   const handleContinue = () => {
-    if (!selected) return
-    localStorage.setItem('situapp_avatar', JSON.stringify(selected))
-    navigate('/location')
+    localStorage.setItem('situapp_avatar', JSON.stringify({ ...selected, tone }))
+    navigate('/world')
+  }
+
+  // ← → ile avatarlar arasında gez
+  const onKeyDown = (e) => {
+    const step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0
+    if (!step) return
+    e.preventDefault()
+    const i = avatars.findIndex((a) => a.id === selected.id)
+    setSelected(avatars[(i + step + avatars.length) % avatars.length])
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#0a0010] flex flex-col items-center px-6 py-10">
-      <div className="absolute inset-0 bg-gradient-to-br from-[#1a0030] via-[#0a0010] to-[#000820] -z-10" />
+    <PastelBackground tone={tone}>
+      <main className="mx-auto grid min-h-svh w-full max-w-5xl content-center gap-6 px-5 py-8 lg:grid-cols-[1.1fr_1fr] lg:gap-x-12">
+        <header className="flex flex-col items-center text-center lg:col-span-2">
+            <h1 className="mt-4 text-3xl font-black text-ink sm:text-4xl">Karakterini Seç</h1>
+          <p className="mt-1 text-sm font-bold text-ink-soft">Dünyada bu karakterle dolaşacak ve yeni insanlarla tanışacaksın.</p>
+        </header>
 
-      <div className="w-full max-w-md flex flex-col items-center gap-2 mb-8">
-        <p className="text-purple-300/70 text-xs tracking-widest uppercase">adım 1 / 2</p>
-        <h1 className="text-3xl font-bold text-white text-center">
-          Avatarını Seç
-        </h1>
-        <p className="text-white/50 text-sm text-center">
-          Kim olarak bağlantı kuracaksın?
-        </p>
-      </div>
+        {/* sahne */}
+        <section
+          aria-label="Karakter önizleme"
+          className="relative h-[22rem] overflow-hidden rounded-[2.5rem] border-2 border-white shadow-toy sm:h-[26rem] lg:h-[34rem]"
+        >
+          <div
+            aria-hidden
+            className={`absolute inset-0 bg-[radial-gradient(circle_at_50%_78%,#ffffff_0%,#ffd0e5_62%,#ffb6d3_100%)] transition-opacity duration-700 ${tone === 'pink' ? 'opacity-100' : 'opacity-0'}`}
+          />
+          <div
+            aria-hidden
+            className={`absolute inset-0 bg-[radial-gradient(circle_at_50%_78%,#ffffff_0%,#cdeaff_62%,#a9ddf5_100%)] transition-opacity duration-700 ${tone === 'blue' ? 'opacity-100' : 'opacity-0'}`}
+          />
+          {['left-[10%] top-[14%] text-3xl', 'right-[12%] top-[22%] text-2xl', 'left-[18%] bottom-[26%] text-xl', 'right-[16%] bottom-[32%] text-3xl'].map((c, i) => (
+            <span key={i} aria-hidden className={`absolute animate-float text-white/90 ${c}`} style={{ animationDelay: `${i * 0.9}s` }}>
+              ✦
+            </span>
+          ))}
+          <Suspense fallback={<div className="grid h-full place-items-center text-7xl">🧸</div>}>
+            <AvatarPreview slug={slugOf(selected)} rotatable pedestal={PEDESTAL[tone]} className="absolute inset-0 h-full w-full" />
+          </Suspense>
+          <p className="pointer-events-none absolute left-1/2 top-3 -translate-x-1/2 rounded-full bg-white/70 px-4 py-1 text-xs font-extrabold text-ink-soft backdrop-blur-sm">
+            ↔ sürükleyerek döndür
+          </p>
+        </section>
 
-      <div className="grid grid-cols-3 gap-3 w-full max-w-md mb-8">
-        {avatars.map((a) => {
-          const isActive = selected?.id === a.id
-          return (
-            <button
-              key={a.id}
-              onClick={() => setSelected(a)}
-              className={`relative aspect-square rounded-2xl flex flex-col items-center justify-center gap-1 transition-all duration-200 border-2 ${
-                isActive
-                  ? 'border-purple-400 scale-105 shadow-[0_0_25px_rgba(168,85,247,0.4)]'
-                  : 'border-white/10 hover:border-white/30'
-              }`}
-            >
-              <div
-                className={`w-full h-full rounded-2xl bg-gradient-to-br ${a.gradient} opacity-20 absolute inset-0`}
-              />
-              <span className="text-3xl relative z-10">{a.emoji}</span>
-              <span className="text-white/80 text-xs font-medium relative z-10">
-                {a.name}
-              </span>
-              {isActive && (
-                <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center z-10">
-                  <span className="text-white text-xs">✓</span>
-                </div>
-              )}
-            </button>
-          )
-        })}
-      </div>
+        {/* seçim paneli */}
+        <section className="flex flex-col justify-center gap-5">
+          <div
+            role="radiogroup"
+            aria-label="Karakter"
+            onKeyDown={onKeyDown}
+            className="grid grid-cols-3 gap-3 sm:grid-cols-6 lg:grid-cols-3"
+          >
+            {avatars.map((a) => {
+              const active = selected.id === a.id
+              return (
+                <button
+                  key={a.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  tabIndex={active ? 0 : -1}
+                  onClick={() => setSelected(a)}
+                  className={`group relative overflow-hidden rounded-3xl border-2 p-2.5 pb-2 transition-all duration-200 ${a.tint}
+                    focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-candy-lilac/60
+                    ${active ? `scale-105 shadow-toy ${TONES[toneOf(a)].ring}` : 'border-white hover:scale-[1.03]'}`}
+                >
+                  <img
+                    src={`/avatars/${slugOf(a)}.png`}
+                    alt=""
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    className="aspect-square w-full rounded-full border-2 border-white/80 bg-white/40 object-cover object-top"
+                  />
+                  <span className="mt-1 block text-center text-sm font-extrabold text-ink">{a.name}</span>
+                  {active && (
+                    <span className={`absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full text-xs font-black text-white ${TONES[toneOf(a)].badge}`}>
+                      ✓
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
 
-      <button
-        onClick={handleContinue}
-        disabled={!selected}
-        className={`w-full max-w-md py-4 rounded-2xl font-semibold text-lg transition-all duration-200 ${
-          selected
-            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-[0_0_30px_rgba(168,85,247,0.3)] active:scale-95'
-            : 'bg-white/5 text-white/30 cursor-not-allowed'
-        }`}
-      >
-        Devam Et
-      </button>
+          <ToyButton tone={tone} onClick={handleContinue}>
+            Bu Ben! Şehre Gir
+          </ToyButton>
 
-      <button
-        onClick={() => navigate('/')}
-        className="mt-4 text-white/30 text-sm"
-      >
-        ← Geri
-      </button>
-    </div>
+          <button
+            type="button"
+            onClick={async () => {
+              await signOut()
+              navigate('/')
+            }}
+            className="self-center text-sm font-bold text-ink-soft/70 hover:text-ink-soft"
+          >
+            Çıkış yap{user ? ` (${user.username})` : ''}
+          </button>
+        </section>
+      </main>
+    </PastelBackground>
   )
 }

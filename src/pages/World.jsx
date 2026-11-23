@@ -1,153 +1,274 @@
-import { Suspense, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Environment, ContactShadows, useGLTF } from '@react-three/drei'
-import { Box3, Vector3 } from 'three'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { Navigate, useNavigate } from 'react-router-dom'
+import { Canvas, useFrame } from '@react-three/fiber'
+import { OrbitControls, useProgress } from '@react-three/drei'
+import { useAuth } from '../lib/AuthContext'
+import City from '../world/City'
+import LocalPlayer from '../world/LocalPlayer'
+import RemotePlayers, { GuideNpc, SelfTag } from '../world/RemotePlayers'
+import { useMultiplayer } from '../world/net'
+import { ChatPanel, HelpModal, HintBar, Minimap, TipStack, TopBar, ZoneToast } from '../world/Hud'
+import { ChatFab, ChatSheet, IncomingChip, Joystick, NearbyCard } from '../world/Social'
+import { useIsTouch } from '../world/useIsTouch'
+import { SPAWN, TELEPORTS, ZONES, zoneAt } from '../world/layout'
 
-const locationThemes = {
-  cafe: { sky: '#3a2a1a', floor: '#5c4530', env: 'sunset' },
-  park: { sky: '#1a3a2a', floor: '#2d4a2d', env: 'forest' },
-  club: { sky: '#2a0a3a', floor: '#1a0a2a', env: 'night' },
-  beach: { sky: '#2a3a5a', floor: '#c2a878', env: 'dawn' },
+const NEAR_ENTER = 4.5 // m: bu mesafeye girince "sohbet et" kartı çıkar
+const NEAR_LEAVE = 6.5 // m: bu mesafeyi aşınca kart kaybolur (titremesin diye ikisi farklı)
+
+const AVATARS = ['zeynep', 'deniz', 'elif', 'kaan', 'mira', 'ege']
+const GUIDE_TIPS = [
+  'Selam! Ben Rehber 🧭 Takıldığın yer olursa sağ üstteki ? düğmesine bas.',
+  'Enter’a basıp yazarsan mesajın başının üstünde balon olur 💬',
+  'Shift’e basılı tutarsan koşarsın 🏃',
+  'Yollar lobiden dört yöne açılır: ☕ kuzey, 🪩 doğu, 🏖️ güney, 🌳 batı.',
+]
+
+function readAvatar() {
+  try {
+    return JSON.parse(localStorage.getItem('situapp_avatar'))
+  } catch {
+    return null
+  }
 }
 
-function Prop({ asset }) {
-  const { scene } = useGLTF(asset.url)
-  const object = useMemo(() => {
-    const clone = scene.clone(true)
-    // en büyük boyutu 1 birime normalle (asset.scale ile çarpılır), tabanı y=0'a oturt, x/z'de ortala
-    const box = new Box3().setFromObject(clone)
-    const size = box.getSize(new Vector3())
-    const k = 1 / (Math.max(size.x, size.y, size.z) || 1)
-    clone.scale.multiplyScalar(k)
-    const fit = new Box3().setFromObject(clone)
-    const c = fit.getCenter(new Vector3())
-    clone.position.set(-c.x, -fit.min.y, -c.z)
-    clone.traverse((o) => {
-      if (o.isMesh) o.castShadow = o.receiveShadow = true
-    })
-    return clone
-  }, [scene])
-  return (
-    <group position={asset.position} rotation={[0, asset.rotationY ?? 0, 0]} scale={asset.scale ?? 1}>
-      <primitive object={object} />
-    </group>
-  )
-}
+// "Işınlan" gibi komutlardaki Türkçe karakterleri sadeleştir
+const normalize = (s) => s.toLowerCase().replaceAll('ı', 'i').replaceAll('ş', 's').replaceAll('ğ', 'g').replaceAll('ü', 'u').replaceAll('ö', 'o').replaceAll('ç', 'c')
 
-function useLocationAssets(locationId) {
-  const [assets, setAssets] = useState([])
+function LoadingOverlay() {
+  const { progress } = useProgress()
+  const [hidden, setHidden] = useState(false)
   useEffect(() => {
-    let cancelled = false
-    fetch('/models/manifest.json')
-      .then((r) => (r.ok ? r.json() : []))
-      .then((list) => !cancelled && setAssets(list.filter((a) => a.location === locationId)))
-      .catch(() => !cancelled && setAssets([]))
-    return () => {
-      cancelled = true
-    }
-  }, [locationId])
-  return assets
+    if (progress < 100) return
+    const t = setTimeout(() => setHidden(true), 250)
+    return () => clearTimeout(t)
+  }, [progress])
+  if (hidden) return null
+  return (
+    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#ffe3f0] via-[#f1e6ff] to-[#dff3ff]">
+      <div className="h-12 w-12 animate-spin rounded-full border-4 border-candy-pink/50 border-t-candy-pink-deep" />
+      <p className="text-sm font-extrabold text-ink-soft">Şehir yükleniyor… %{Math.round(progress)}</p>
+    </div>
+  )
 }
 
-function AvatarBlob({ color }) {
-  return (
-    <mesh position={[0, 0.5, 0]} castShadow>
-      <capsuleGeometry args={[0.4, 0.8, 8, 16]} />
-      <meshStandardMaterial color={color} roughness={0.4} metalness={0.1} />
-    </mesh>
-  )
+/** Oyuncunun hangi mahallede olduğunu izler; değişince bildirir. */
+function ZoneWatcher({ focusRef, onChange }) {
+  const last = useRef(null)
+  useFrame(() => {
+    const z = zoneAt(focusRef.current.x, focusRef.current.z)
+    if (z.id !== last.current) {
+      last.current = z.id
+      onChange(z)
+    }
+  })
+  return null
+}
+
+/** Yakındaki en yakın oyuncuyu izler (4 kez/sn); değişince bildirir. */
+function ProximityWatcher({ focusRef, remotes, onChange }) {
+  const last = useRef(null)
+  const clock = useRef(0)
+  useFrame((_, dt) => {
+    clock.current += dt
+    if (clock.current < 0.25) return
+    clock.current = 0
+    const f = focusRef.current
+    const dist = (r) => Math.hypot(r.x - f.x, r.z - f.z)
+    const kept = last.current && remotes.current.get(last.current)
+    if (kept && dist(kept) < NEAR_LEAVE) return
+    let best = null
+    let bestD = NEAR_ENTER
+    for (const r of remotes.current.values()) {
+      const d = dist(r)
+      if (d < bestD) {
+        bestD = d
+        best = r.id
+      }
+    }
+    if (best !== last.current) {
+      last.current = best
+      onChange(best)
+    }
+  })
+  return null
 }
 
 export default function World() {
-  const navigate = useNavigate()
-  const [avatar, setAvatar] = useState(null)
-  const [location, setLocation] = useState(null)
-  const assets = useLocationAssets(location?.id)
+  const avatar = readAvatar()
+  if (!avatar?.name) return <Navigate to="/avatar" replace />
+  return <WorldScene avatar={avatar} />
+}
 
+function WorldScene({ avatar }) {
+  const navigate = useNavigate()
+  const { user } = useAuth()
+  const slug = AVATARS.includes(String(avatar.name).toLowerCase()) ? String(avatar.name).toLowerCase() : 'zeynep'
+  const name = user?.username ?? avatar.name
+
+  const focusRef = useRef({ x: SPAWN.x, z: SPAWN.z, ry: Math.PI, anim: 'idle', teleport: null })
+  const controlsRef = useRef(null)
+  const joystickRef = useRef({ x: 0, y: 0 })
+  const touch = useIsTouch()
+  const [nearId, setNearId] = useState(null)
+  const [dismissedId, setDismissedId] = useState(null)
+  const [chatTarget, setChatTarget] = useState(null) // null = kapalı, 'public' = herkese açık, aksi halde oyuncu id'si
+  const chatTargetRef = useRef(null)
+  const [incoming, setIncoming] = useState(null)
+  const [start] = useState(() => ({ x: SPAWN.x + (Math.random() - 0.5) * 6, z: SPAWN.z + Math.random() * 2 }))
+  const [zone, setZone] = useState(zoneAt(SPAWN.x, SPAWN.z))
+  const [help, setHelp] = useState(false)
+  const tipsKey = `situapp_tips_seen_${user?.id ?? 'guest'}`
+  const [showTips, setShowTips] = useState(() => !localStorage.getItem(tipsKey))
+  const [feed, setFeed] = useState(() => [
+    { kind: 'system', ts: 0, text: `Hoş geldin ${name}! Yardım için /yardım yaz ya da sağ üstteki ? düğmesine bas.` },
+  ])
+
+  const addFeed = useCallback((m) => {
+    setFeed((f) => [...f, { kind: 'chat', ...m }].slice(-100))
+    // başkasından özel mesaj geldi ve o sohbet açık değilse bildirim göster
+    if (m.dm && !m.self && chatTargetRef.current !== m.id) setIncoming({ id: m.id, name: m.name, text: m.text })
+  }, [])
+  const say = useCallback((text) => setFeed((f) => [...f, { kind: 'system', ts: Date.now(), text }].slice(-100)), [])
+  const net = useMultiplayer({ name, avatar: slug, onChat: addFeed })
+
+  const openChat = useCallback((target) => {
+    chatTargetRef.current = target
+    setChatTarget(target)
+    setIncoming(null)
+  }, [])
+  const closeChat = useCallback(() => openChat(null), [openChat])
+  const peerOf = (id) => net.roster.find((p) => p.id === id)
+  const nearPeer = nearId && nearId !== dismissedId && chatTarget !== nearId ? peerOf(nearId) : null
+  const sheetPeer = chatTarget && chatTarget !== 'public' ? peerOf(chatTarget) : null
+
+  // sohbet ettiğin oyuncu ayrılırsa çekmeceyi kapat
   useEffect(() => {
-    const a = localStorage.getItem('situapp_avatar')
-    const l = localStorage.getItem('situapp_location')
-    if (!a || !l) {
-      navigate('/')
+    if (chatTarget && chatTarget !== 'public' && !net.roster.some((p) => p.id === chatTarget)) openChat(null)
+  }, [chatTarget, net.roster, openChat])
+
+  // geliştirme: konsoldan oyuncu konumunu okuyabilmek için
+  useEffect(() => {
+    if (!import.meta.env.DEV) return
+    window.__focus = focusRef
+    return () => delete window.__focus
+  }, [])
+
+  // H tuşu: yardım
+  useEffect(() => {
+    const onKey = (e) => {
+      const typing = e.target instanceof HTMLElement && ['INPUT', 'TEXTAREA'].includes(e.target.tagName)
+      if (e.code === 'KeyH' && !typing) setHelp((h) => !h)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  const closeTips = useCallback(() => {
+    localStorage.setItem(tipsKey, '1')
+    setShowTips(false)
+  }, [tipsKey])
+
+  const runCommand = (text) => {
+    const [raw, ...args] = text.slice(1).trim().split(/\s+/)
+    const cmd = normalize(raw ?? '')
+    if (['yardim', 'help', 'h'].includes(cmd)) return setHelp(true)
+    if (cmd === 'mekanlar') {
+      ZONES.forEach((z) => say(`${z.emoji} ${z.name} — ${z.desc}`))
       return
     }
-    setAvatar(JSON.parse(a))
-    setLocation(JSON.parse(l))
-  }, [navigate])
+    if (cmd === 'yakindakiler') {
+      const f = focusRef.current
+      const near = [...net.remotes.current.values()]
+        .map((r) => ({ name: r.name, d: Math.hypot(r.x - f.x, r.z - f.z) }))
+        .filter((r) => r.d < 15)
+        .sort((a, b) => a.d - b.d)
+      say(near.length ? `Yakınındakiler: ${near.map((r) => `${r.name} (${Math.round(r.d)} m)`).join(', ')}` : 'Yakınında kimse yok. Kafe veya Kulüp’e uğrayabilirsin!')
+      return
+    }
+    if (['isinlan', 'tp', 'git'].includes(cmd)) {
+      const id = TELEPORTS[normalize(args[0] ?? '')] ?? TELEPORTS[(args[0] ?? '').toLowerCase()]
+      const z = ZONES.find((zn) => zn.id === id)
+      if (!z) return say('Nereye? Örnek: /ışınlan kafe — lobi, kafe, kulüp, park, plaj')
+      focusRef.current.teleport = z.spawn
+      return say(`${z.emoji} ${z.name}’a ışınlandın.`)
+    }
+    say('Bilinmeyen komut. /yardım yazarak komutları görebilirsin.')
+  }
 
-  if (!avatar || !location) return null
+  const onSheetSend = (text) => {
+    if (!sheetPeer) return onSend(text)
+    if (!net.sendChat(text, sheetPeer.id)) say('Şu an çevrimdışısın, mesaj gönderilemedi.')
+  }
 
-  const theme = locationThemes[location.id] ?? locationThemes.cafe
-  const avatarColor = avatar.gradient.includes('pink') ? '#ec4899'
-    : avatar.gradient.includes('blue') ? '#3b82f6'
-    : avatar.gradient.includes('purple') ? '#a855f7'
-    : avatar.gradient.includes('amber') ? '#f59e0b'
-    : avatar.gradient.includes('teal') ? '#14b8a6'
-    : '#8b5cf6'
+  const onSend = (text) => {
+    if (text.startsWith('/')) return runCommand(text)
+    if (!net.sendChat(text)) say('Şu an çevrimdışısın, mesaj gönderilemedi.')
+  }
 
   return (
-    <div className="relative w-full h-screen overflow-hidden" style={{ background: theme.sky }}>
-      <Canvas camera={{ position: [0, 1.5, 4], fov: 50 }} shadows>
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[3, 5, 2]} intensity={1.2} castShadow />
-        <Environment preset={theme.env} />
-
-        <AvatarBlob color={avatarColor} />
+    <div className="fixed inset-0 overflow-hidden bg-[#cfeaff]">
+      <Canvas shadows camera={{ fov: 55, near: 0.3, far: 300, position: [start.x, 4.2, start.z + 8] }}>
+        <color attach="background" args={['#cfeaff']} />
+        <fog attach="fog" args={['#e8f6ff', 50, 140]} />
+        <ambientLight intensity={0.7} />
+        <hemisphereLight args={['#ffffff', '#ffd6ea', 1.1]} />
 
         <Suspense fallback={null}>
-          {assets.map((a) => (
-            <Prop key={a.id} asset={a} />
-          ))}
+          <City focusRef={focusRef} />
+          <LocalPlayer slug={slug} start={start} focusRef={focusRef} controlsRef={controlsRef} joystickRef={joystickRef} onMove={net.sendMove}>
+            <SelfTag name={name} bubbles={net.bubbles} selfId={net.selfId} />
+          </LocalPlayer>
+          <RemotePlayers roster={net.roster} remotes={net.remotes} bubbles={net.bubbles} />
+          <GuideNpc focusRef={focusRef} tips={GUIDE_TIPS} />
         </Suspense>
 
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-          <circleGeometry args={[4, 32]} />
-          <meshStandardMaterial color={theme.floor} roughness={0.9} />
-        </mesh>
-
-        <ContactShadows position={[0, 0, 0]} opacity={0.5} scale={8} blur={2} far={2} />
-
+        <ZoneWatcher focusRef={focusRef} onChange={setZone} />
+        <ProximityWatcher
+          focusRef={focusRef}
+          remotes={net.remotes}
+          onChange={(id) => {
+            setNearId(id)
+            if (!id) setDismissedId(null) // uzaklaşınca bir sonraki yaklaşmada kart yine çıksın
+          }}
+        />
         <OrbitControls
+          ref={controlsRef}
+          makeDefault
           enablePan={false}
-          minDistance={2.5}
-          maxDistance={6}
-          minPolarAngle={Math.PI / 4}
-          maxPolarAngle={Math.PI / 2}
+          target={[start.x, 0.8, start.z]}
+          minDistance={3.5}
+          maxDistance={16}
+          minPolarAngle={0.35}
+          maxPolarAngle={Math.PI / 2.15}
         />
       </Canvas>
 
-      {/* top bar */}
-      <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3 bg-gradient-to-b from-black/60 to-transparent z-10">
-        <button
-          onClick={() => navigate('/location')}
-          className="w-9 h-9 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-white"
-        >
-          ←
-        </button>
-        <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-1.5">
-          <span>{location.emoji}</span>
-          <span className="text-white text-sm font-medium">{location.name}</span>
-        </div>
-        <div className="w-9 h-9 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-white text-sm">
-          {avatar.emoji}
-        </div>
-      </div>
-
-      {/* bottom placeholder for interactions */}
-      <div className="absolute bottom-0 left-0 right-0 px-4 pb-6 pt-10 bg-gradient-to-t from-black/70 to-transparent z-10">
-        <p className="text-white/70 text-sm text-center mb-3">
-          {avatar.name} olarak {location.name.toLowerCase()}dasın
-        </p>
-        <div className="flex gap-2 justify-center">
-          <button className="px-5 py-2.5 rounded-xl bg-white/10 backdrop-blur-sm text-white text-sm font-medium">
-            💬 Sohbet Başlat
-          </button>
-          <button className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-medium">
-            👋 Yakındakiler
-          </button>
-        </div>
-      </div>
+      <TopBar zone={zone} online={net.online} status={net.status} onExit={() => navigate('/avatar')} onHelp={() => setHelp(true)} />
+      <ZoneToast zone={zone} />
+      <Minimap focusRef={focusRef} remotes={net.remotes} compact={touch} />
+      {touch ? (
+        <>
+          <Joystick inputRef={joystickRef} />
+          {!chatTarget && <ChatFab onClick={() => openChat('public')} />}
+        </>
+      ) : (
+        <>
+          {chatTarget !== 'public' && !sheetPeer && <ChatPanel feed={feed} onSend={onSend} status={net.status} />}
+          <HintBar />
+        </>
+      )}
+      {nearPeer && !chatTarget && (
+        <NearbyCard peer={nearPeer} touch={touch} onChat={() => openChat(nearPeer.id)} onDismiss={() => setDismissedId(nearPeer.id)} />
+      )}
+      {incoming && !chatTarget && peerOf(incoming.id) && (
+        <IncomingChip from={incoming} onOpen={() => openChat(incoming.id)} onClose={() => setIncoming(null)} />
+      )}
+      {chatTarget && (chatTarget === 'public' || sheetPeer) && (
+        <ChatSheet peer={sheetPeer} feed={feed} onSend={onSheetSend} onClose={closeChat} touch={touch} />
+      )}
+      {help && <HelpModal onClose={() => setHelp(false)} />}
+      {showTips && !help && <TipStack onDone={closeTips} />}
+      <LoadingOverlay />
     </div>
   )
 }

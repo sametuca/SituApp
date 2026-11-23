@@ -1,0 +1,141 @@
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useFrame, useThree } from '@react-three/fiber'
+import { MathUtils, Vector3 } from 'three'
+import AvatarRig from './AvatarRig'
+import { resolveCollisions } from './layout'
+
+const WALK_SPEED = 3.2 // m/sn
+const RUN_SPEED = 6.5
+
+const MOVE_KEYS = {
+  KeyW: 'forward', ArrowUp: 'forward',
+  KeyS: 'back', ArrowDown: 'back',
+  KeyA: 'left', ArrowLeft: 'left',
+  KeyD: 'right', ArrowRight: 'right',
+  ShiftLeft: 'run', ShiftRight: 'run',
+}
+
+const isTyping = (e) => e.target instanceof HTMLElement && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)
+
+/**
+ * Yerel oyuncu: WASD / ok tuşları + Shift ile koşma, kameraya göre hareket, çarpışma, takip eden kamera.
+ * focusRef.current = { x, z, ry, anim, teleport } paylaşılan durumdur (HUD, güneş ışığı, minimap okur).
+ * focusRef.current.teleport = [x, z] atanırsa bir sonraki karede oyuncu oraya ışınlanır.
+ */
+export default function LocalPlayer({ slug, start, focusRef, controlsRef, joystickRef, onMove, children }) {
+  const camera = useThree((s) => s.camera)
+  const group = useRef()
+  const keys = useRef({})
+  const [anim, setAnim] = useState('idle')
+  const animRef = useRef('idle')
+  const v = useMemo(() => ({ fwd: new Vector3(), right: new Vector3(), dir: new Vector3(), up: new Vector3(0, 1, 0) }), [])
+  const placed = useRef(false)
+
+  useEffect(() => {
+    const down = (e) => {
+      const k = MOVE_KEYS[e.code]
+      if (!k || isTyping(e)) return
+      keys.current[k] = true
+      e.preventDefault()
+    }
+    const up = (e) => {
+      const k = MOVE_KEYS[e.code]
+      if (k) keys.current[k] = false
+    }
+    const blur = () => (keys.current = {})
+    window.addEventListener('keydown', down)
+    window.addEventListener('keyup', up)
+    window.addEventListener('blur', blur)
+    return () => {
+      window.removeEventListener('keydown', down)
+      window.removeEventListener('keyup', up)
+      window.removeEventListener('blur', blur)
+    }
+  }, [])
+
+  // kamerayı ve oyuncuyu verilen noktaya taşır (kamera ofseti korunur)
+  const placeAt = (x, z) => {
+    const g = group.current
+    const dx = x - g.position.x
+    const dz = z - g.position.z
+    g.position.set(x, 0, z)
+    camera.position.x += dx
+    camera.position.z += dz
+    controlsRef.current?.target.set(x, 0.8, z)
+  }
+
+  useFrame((_, dt) => {
+    const g = group.current
+    if (!g) return
+    const f = focusRef.current
+
+    if (!placed.current) {
+      placed.current = true
+      g.position.set(start.x, 0, start.z)
+      camera.position.set(start.x, 4.2, start.z + 8)
+      controlsRef.current?.target.set(start.x, 0.8, start.z)
+    }
+    if (f.teleport) {
+      const [tx, tz] = f.teleport
+      f.teleport = null
+      placeAt(tx, tz)
+    }
+
+    const k = keys.current
+    let fwdIn = (k.forward ? 1 : 0) - (k.back ? 1 : 0)
+    let rightIn = (k.right ? 1 : 0) - (k.left ? 1 : 0)
+    let running = Boolean(k.run)
+    let analog = 1 // joystick'te itme miktarı hızı ölçekler
+    const j = joystickRef?.current
+    const mag = j ? Math.hypot(j.x, j.y) : 0
+    if (mag > 0.15) {
+      fwdIn = -j.y // ekranda yukarı = ileri
+      rightIn = j.x
+      analog = Math.max(0.5, Math.min(1, mag))
+      running = mag > 0.85
+    }
+    const moving = Boolean(fwdIn || rightIn)
+
+    if (moving) {
+      const { fwd, right, dir, up } = v
+      camera.getWorldDirection(fwd)
+      fwd.y = 0
+      fwd.normalize()
+      right.crossVectors(fwd, up)
+      dir.copy(fwd).multiplyScalar(fwdIn).addScaledVector(right, rightIn).normalize()
+
+      const speed = (running ? RUN_SPEED : WALK_SPEED) * analog * Math.min(dt, 0.1)
+      const [nx, nz] = resolveCollisions(g.position.x + dir.x * speed, g.position.z + dir.z * speed)
+      const dx = nx - g.position.x
+      const dz = nz - g.position.z
+      g.position.x = nx
+      g.position.z = nz
+      camera.position.x += dx
+      camera.position.z += dz
+      controlsRef.current?.target.set(nx, 0.8, nz)
+
+      // yüzünü yürüdüğü yöne çevir (model +Z'ye bakar)
+      const target = Math.atan2(dir.x, dir.z)
+      const diff = MathUtils.euclideanModulo(target - g.rotation.y + Math.PI, Math.PI * 2) - Math.PI
+      g.rotation.y += diff * Math.min(1, dt * 12)
+    }
+
+    const next = moving ? (running ? 'run' : 'walk') : 'idle'
+    if (next !== animRef.current) {
+      animRef.current = next
+      setAnim(next)
+    }
+    f.x = g.position.x
+    f.z = g.position.z
+    f.ry = g.rotation.y
+    f.anim = next
+    onMove?.(f.x, f.z, f.ry, next)
+  })
+
+  return (
+    <group ref={group}>
+      <AvatarRig slug={slug} anim={anim} />
+      {children}
+    </group>
+  )
+}

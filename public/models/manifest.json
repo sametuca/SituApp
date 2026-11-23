@@ -1,0 +1,194 @@
+[
+  {
+    "id": "cafe-table",
+    "name": "Kafe masası",
+    "location": "cafe",
+    "prompt": "small round wooden cafe table with two cups, stylized cute cartoon virtual world game prop, chunky rounded shapes, smooth glossy toy-like plastic surface, bright saturated candy pastel colors, soft shading, simple clean flat textures, no realistic detail, single object, centered, isometric three-quarter view, plain white background",
+    "url": "/models/cafe/cafe-table.glb",
+    "thumbnail": null,
+    "position": [
+      -2.2,
+      0,
+      -1
+    ],
+    "rotationY": 0,
+    "scale": 1,
+    "createdAt": "2026-11-23T13:17:49.890Z"
+  },
+  {
+    "id": "cafe-chair",
+    "name": "Kafe sandalyesi",
+    "location": "cafe",
+    "prompt": "cozy wooden cafe chair with cushion, stylized cute cartoon virtual world game prop, chunky rounded shapes, smooth glossy toy-like plastic surface, bright saturated candy pastel colors, soft shading, simple clean flat textures, no realistic detail, single object, centered, isometric three-quarter view, plain white background",
+    "url": "/models/cafe/cafe-chair.glb",
+    "thumbnail": null,
+    "position": [
+      -1.4,
+      0,
+      -1.6
+    ],
+    "rotationY": 0.6,
+    "scale": 0.8,
+    "createdAt": "2026-11-23T13:17:49.890Z"
+  },
+  {
+    "id": "cafe-plant",
+    "name": "Saksı bitkisi",
+    "location": "cafe",
+    "prompt": "potted indoor plant in ceramic pot, stylized cute cartoon virtual world game prop, chunky rounded shapes, smooth glossy toy-like plastic surface, bright saturated candy pastel colors, soft shading, simple clean flat textures, no realistic detail, single object, centered, isometric three-quarter view, plain white background",
+    "url": "/models/cafe/cafe-plant.glb",
+    "thumbnail": null,
+    "position": [
+      2.4,
+      0,
+      -1.8
+    ],
+    "rotationY": 0,
+    "scale": 0.9,
+    "createdAt": "2026-11-23T13:17:49.890Z"
+  },
+  {
+    "id": "park-bench",
+    "name": "Park bankı",
+    "location": "park",
+    "prompt": "wooden park bench with metal legs, stylized cute cartoon virtual world game prop, chunky rounded shapes, smooth glossy toy-like plastic surface, bright saturated candy pastel colors, soft shading, simple clean flat textures, no realistic detail, single object, centered, isometric three-quarter view, plain white background",
+    "url": "/models/park/park-bench.glb",
+    "thumbnail": null,
+    "position": [
+      -2.4,
+      0,
+      -1.2
+    ],
+    "rotationY": 0.5,
+    "scale": 1.2,
+    "createdAt": "2026-11-23T13:17:49.890Z"
+  },
+  {
+    "id": "park-tree",
+    "name": "Ağaç",
+    "location": "park",
+    "prompt": "low poly stylized oak tree, stylized cute cartoon virtual world game prop, chunky rounded shapes, smooth glossy toy-like plastic surface, bright saturated candy pastel colors, soft shading, simple clean flat textures, no realistic detail, single object, centered, isometric three-quarter view, plain white background",
+    "url": "/models/park/park-tree.glb",
+    "thumbnail": null,
+    "position": [
+      2.6,
+      0,
+      -2
+    ],
+    "rotationY": 0,
+    "scale": 2,
+    "createdAt": "2026-11-23T13:17:49.890Z"
+  },
+  {
+    "id": "park-lamp",
+    "name": "Sokak lambası",
+    "location": "park",
+    "prompt": "vintage park street lamp, stylized cute cartoon virtual world game prop, chunky rounded shapes, smooth glossy toy-like plastic surface, bright saturated candy pastel colors, soft shading, simple clean flat textures, no realistic detail, single object, centered, isometric three-quarter view, plain white background",
+    "url": "/models/park/park-lamp.glb",
+    "thumbnail": null,
+    "position": [
+      1.6,
+      0,
+      1.8
+    ],
+    "rotationY": 0,
+    "scale": 1.6,
+    "createdAt": "2026-11-23T13:17:49.890Z"
+  },
+  {
+    "id": "club-ball",
+    "name": "Disko topu",
+    "location": "club",
+    "prompt": "shiny mirror disco ball, stylized cute cartoon virtual world game prop, chunky rounded shapes, smooth glossy toy-like plastic surface, bright saturated candy pastel colors, soft shading, simple clean flat textures, no realistic detail, single object, centered, isometric three-quarter view, plain white background",
+    "url": "/models/club/club-ball.glb",
+    "thumbnail": null,
+    "position": [
+      0,
+      2,
+      0
+    ],
+    "rotationY": 0,
+    "scale": 0.8,
+    "createdAt": "2026-11-23T13:17:49.890Z"
+  },
+  {
+    "id": "club-speaker",
+    "name": "Hoparlör",
+    "location": "club",
+    "prompt": "large black dj speaker with glowing neon trim, stylized cute cartoon virtual world game prop, chunky rounded shapes, smooth glossy toy-like plastic surface, bright saturated candy pastel colors, soft shading, simple clean flat textures, no realistic detail, single object, centered, isometric three-quarter view, plain white background",
+    "url": "/models/club/club-speaker.glb",
+    "thumbnail": null,
+    "position": [
+      -2.6,
+      0,
+      -1.5
+    ],
+    "rotationY": 0.5,
+    "scale": 1.2,
+    "createdAt": "2026-11-23T13:17:49.890Z"
+  },
+  {
+    "id": "club-booth",
+    "name": "DJ standı",
+    "location": "club",
+    "prompt": "futuristic dj booth with turntables and neon lights, stylized cute cartoon virtual world game prop, chunky rounded shapes, smooth glossy toy-like plastic surface, bright saturated candy pastel colors, soft shading, simple clean flat textures, no realistic detail, single object, centered, isometric three-quarter view, plain white background",
+    "url": "/models/club/club-booth.glb",
+    "thumbnail": null,
+    "position": [
+      0,
+      0,
+      -3
+    ],
+    "rotationY": 0,
+    "scale": 1.6,
+    "createdAt": "2026-11-23T13:17:49.890Z"
+  },
+  {
+    "id": "beach-umbrella",
+    "name": "Plaj şemsiyesi",
+    "location": "beach",
+    "prompt": "striped beach umbrella planted in sand, stylized cute cartoon virtual world game prop, chunky rounded shapes, smooth glossy toy-like plastic surface, bright saturated candy pastel colors, soft shading, simple clean flat textures, no realistic detail, single object, centered, isometric three-quarter view, plain white background",
+    "url": "/models/beach/beach-umbrella.glb",
+    "thumbnail": null,
+    "position": [
+      -2.2,
+      0,
+      -1.2
+    ],
+    "rotationY": 0,
+    "scale": 1.8,
+    "createdAt": "2026-11-23T13:17:49.890Z"
+  },
+  {
+    "id": "beach-lounger",
+    "name": "Şezlong",
+    "location": "beach",
+    "prompt": "wooden beach lounge chair with towel, stylized cute cartoon virtual world game prop, chunky rounded shapes, smooth glossy toy-like plastic surface, bright saturated candy pastel colors, soft shading, simple clean flat textures, no realistic detail, single object, centered, isometric three-quarter view, plain white background",
+    "url": "/models/beach/beach-lounger.glb",
+    "thumbnail": null,
+    "position": [
+      -1.4,
+      0,
+      0.8
+    ],
+    "rotationY": 0.8,
+    "scale": 1.2,
+    "createdAt": "2026-11-23T13:17:49.890Z"
+  },
+  {
+    "id": "beach-palm",
+    "name": "Palmiye",
+    "location": "beach",
+    "prompt": "stylized palm tree, stylized cute cartoon virtual world game prop, chunky rounded shapes, smooth glossy toy-like plastic surface, bright saturated candy pastel colors, soft shading, simple clean flat textures, no realistic detail, single object, centered, isometric three-quarter view, plain white background",
+    "url": "/models/beach/beach-palm.glb",
+    "thumbnail": null,
+    "position": [
+      2.6,
+      0,
+      -2
+    ],
+    "rotationY": 0,
+    "scale": 2.2,
+    "createdAt": "2026-11-23T13:17:49.890Z"
+  }
+]

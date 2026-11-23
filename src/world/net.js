@@ -1,0 +1,146 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
+
+const ANIMS = ['idle', 'walk', 'run']
+const SEND_INTERVAL_MS = 100
+const BUBBLE_MS = 6000
+const FEED_MAX = 100
+
+const wsUrl = () =>
+  import.meta.env.VITE_WS_URL ?? `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`
+
+/**
+ * Çok oyunculu bağlantı.
+ * Konumlar React state'inde değil ref'lerde tutulur (10 Hz güncelleme render'ı boğmasın):
+ *   remotes: Map<id, { id, name, avatar, x, z, ry, anim, tx, tz, tr }>
+ *   bubbles: Map<id, { text, until }>   (konuşma balonları)
+ * roster (id listesi) yalnızca biri girip çıkınca değişir.
+ */
+export function useMultiplayer({ name, avatar, onChat }) {
+  const [status, setStatus] = useState('connecting') // connecting | online | offline
+  const [online, setOnline] = useState(1)
+  const [roster, setRoster] = useState([])
+  const [spawn, setSpawn] = useState(null)
+  const remotes = useRef(new Map())
+  const bubbles = useRef(new Map())
+  const selfId = useRef(null)
+  const wsRef = useRef(null)
+  const lastSent = useRef({ t: 0, anim: '', x: 0, z: 0 })
+  const onChatRef = useRef(onChat)
+  useEffect(() => {
+    onChatRef.current = onChat
+  }, [onChat])
+
+  useEffect(() => {
+    let stopped = false
+    let retry = 0
+    let timer = null
+
+    const syncRoster = () => setRoster([...remotes.current.values()].map((p) => ({ id: p.id, name: p.name, avatar: p.avatar })))
+    const addRemote = (p) => {
+      remotes.current.set(p.id, { ...p, anim: ANIMS[p.anim] ?? 'idle', tx: p.x, tz: p.z, tr: p.ry })
+    }
+
+    const connect = () => {
+      if (stopped) return
+      setStatus('connecting')
+      const ws = new WebSocket(wsUrl())
+      wsRef.current = ws
+
+      ws.onopen = () => ws.send(JSON.stringify({ t: 'join', name, avatar }))
+
+      ws.onmessage = (ev) => {
+        let m
+        try {
+          m = JSON.parse(ev.data)
+        } catch {
+          return
+        }
+        switch (m.t) {
+          case 'welcome':
+            retry = 0
+            selfId.current = m.id
+            remotes.current.clear()
+            m.players.forEach(addRemote)
+            setSpawn({ x: m.x, z: m.z })
+            setOnline(m.online)
+            setStatus('online')
+            syncRoster()
+            break
+          case 'join':
+            addRemote(m.p)
+            syncRoster()
+            break
+          case 'leave':
+            remotes.current.delete(m.id)
+            bubbles.current.delete(m.id)
+            syncRoster()
+            break
+          case 'online':
+            setOnline(m.n)
+            break
+          case 'state':
+            for (const [id, x, z, ry, a] of m.p) {
+              const r = remotes.current.get(id)
+              if (!r) continue
+              r.tx = x
+              r.tz = z
+              r.tr = ry
+              r.anim = ANIMS[a] ?? 'idle'
+            }
+            break
+          case 'chat':
+            // özel mesajlar kafanın üstünde balon olarak görünmez
+            if (!m.dm) bubbles.current.set(m.id, { text: m.text, until: Date.now() + BUBBLE_MS })
+            onChatRef.current?.({ id: m.id, name: m.name, text: m.text, ts: m.ts, to: m.to, dm: Boolean(m.dm), self: m.id === selfId.current })
+            break
+          case 'full':
+            stopped = true
+            break
+        }
+      }
+
+      ws.onclose = () => {
+        // Eski soket (React StrictMode'un çift bağlanması veya yeniden bağlanma) yeni bağlantının
+        // referansını ve oyuncu listesini silmesin.
+        if (wsRef.current !== ws) return
+        wsRef.current = null
+        remotes.current.clear()
+        syncRoster()
+        if (stopped) return
+        setStatus('offline')
+        setOnline(1)
+        retry += 1
+        timer = setTimeout(connect, Math.min(1000 * 2 ** (retry - 1), 10000))
+      }
+      ws.onerror = () => ws.close()
+    }
+
+    connect()
+    return () => {
+      stopped = true
+      clearTimeout(timer)
+      wsRef.current?.close()
+    }
+  }, [name, avatar])
+
+  const sendMove = useCallback((x, z, ry, anim) => {
+    const ws = wsRef.current
+    if (!ws || ws.readyState !== 1) return
+    const now = performance.now()
+    const last = lastSent.current
+    const changed = anim !== last.anim
+    if (!changed && now - last.t < SEND_INTERVAL_MS) return
+    if (!changed && Math.abs(x - last.x) < 0.01 && Math.abs(z - last.z) < 0.01) return
+    lastSent.current = { t: now, anim, x, z }
+    ws.send(JSON.stringify({ t: 'move', x: +x.toFixed(2), z: +z.toFixed(2), ry: +ry.toFixed(2), anim }))
+  }, [])
+
+  /** to verilirse özel mesaj (yalnızca o oyuncuya). */
+  const sendChat = useCallback((text, to) => {
+    const ws = wsRef.current
+    if (ws?.readyState === 1) ws.send(JSON.stringify({ t: 'chat', text, ...(to ? { to } : {}) }))
+    return ws?.readyState === 1
+  }, [])
+
+  return { status, online, roster, spawn, remotes, bubbles, selfId, sendMove, sendChat, feedMax: FEED_MAX }
+}

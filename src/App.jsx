@@ -1,20 +1,21 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import LandingPage from './pages/LandingPage'
+import { AuthProvider, RequireAuth } from './lib/AuthContext'
+import AuthPage from './pages/AuthPage'
 import AvatarSelect from './pages/AvatarSelect'
-import LocationSelect from './pages/LocationSelect'
 import World from './pages/World'
 import AssetStudio from './pages/AssetStudio'
 
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/avatar" element={<AvatarSelect />} />
-        <Route path="/location" element={<LocationSelect />} />
-        <Route path="/world" element={<World />} />
-        <Route path="/studio" element={<AssetStudio />} />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<AuthPage />} />
+          <Route path="/avatar" element={<RequireAuth><AvatarSelect /></RequireAuth>} />
+          <Route path="/world" element={<RequireAuth><World /></RequireAuth>} />
+          <Route path="/studio" element={<AssetStudio />} />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   )
 }

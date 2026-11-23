@@ -7,6 +7,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { importAsset, readManifest } from './assets.js'
+import { attachGameServer } from './game.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 dotenv.config({ path: path.join(__dirname, '.env') })
@@ -144,9 +145,15 @@ app.post('/api/assets/import', async (req, res) => {
   }
 })
 
+let game = null
 app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, meshyConfigured: Boolean(MESHY_API_KEY) && MESHY_API_KEY !== 'your_meshy_api_key' })
+  res.json({
+    ok: true,
+    meshyConfigured: Boolean(MESHY_API_KEY) && MESHY_API_KEY !== 'your_meshy_api_key',
+    online: game?.online() ?? 0,
+  })
 })
 
-const PORT = 3001
-app.listen(PORT, () => console.log(`Meshy proxy running on http://localhost:${PORT}`))
+const PORT = Number(process.env.PORT) || 3001
+const server = app.listen(PORT, () => console.log(`SituApp sunucusu: http://localhost:${PORT} (WebSocket: /ws)`))
+game = attachGameServer(server)
