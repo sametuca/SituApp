@@ -27,6 +27,10 @@
 //     { t: 'typing', id }                              karşıdaki yazıyor
 //     { t: 'blocks', list: [{key,name}] }              engel listen;  { t: 'dnd', id, on }: birinin rahatsız etme durumu
 // Özellik modülleri (engel, profil, arkadaş, oyun…) server/features/ altındadır; bkz. features/index.js.
+//     profil (features/profile.js): { t:'profile_save', profile:{bio,age,city,tags} } → { t:'profile_saved', profile } ;
+//       { t:'profile', id } → { t:'profile', id, profile|null } ; welcome'a profile + profileTags (katalog) eklenir
+//     buz kırıcı: { t:'icebreaker', to } → alıcıya { t:'icebreaker', id, name, qid, q, a, b } ;
+//       { t:'icebreaker_answer', to, qid, pick:'a'|'b' } → gönderene { t:'icebreaker_answer', id, name, a, b, choice }
 //     { t: 'info', text } / { t: 'denied', reason }    kullanıcıya gösterilecek kısa mesaj
 //     { t: 'join', p } / { t: 'leave', id }
 //     { t: 'state', p: [[id, x, z, ry, animIdx], ...] }   ~10 Hz, yalnızca değişenler

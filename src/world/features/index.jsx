@@ -1,5 +1,6 @@
 // Özellik modülleri (istemci). Her modül bir hook'tur: useX(ctx) → { peerActions?(peer), settingsSections?, overlays? }
 //   peerActions(peer): etkileşim menüsüne eklenecek düğmeler  [{ key, emoji, label, onClick, danger? }]
+//   peerHeader(peer):  etkileşim menüsünde kişinin altına çizilecek JSX (mini profil vb.)
 //   settingsSections:  Ayarlar paneline eklenecek JSX parçaları
 //   overlays:          ekranın üstüne çizilecek JSX (diyaloglar, bildirimler…)
 // ctx: { net, say, touch, openChat, closeInteract, roster, focusRef, home, panel, setPanel, chatTarget }
@@ -9,6 +10,7 @@ import { Modal } from '../Hud'
 import { useModeration } from './moderation'
 import { useGames } from './games'
 import { useFriends } from './friends'
+import { useProfile } from './profile'
 
 function SettingsPanel({ sections, onClose }) {
   return (
@@ -23,9 +25,10 @@ function SettingsPanel({ sections, onClose }) {
 }
 
 export function useFeatures(ctx) {
-  const parts = [useModeration(ctx), useGames(ctx), useFriends(ctx)]
+  const parts = [useModeration(ctx), useGames(ctx), useFriends(ctx), useProfile(ctx)]
 
   const peerActions = (peer) => parts.flatMap((p) => p.peerActions?.(peer) ?? [])
+  const peerHeader = (peer) => parts.map((p, i) => (p.peerHeader ? <div key={i}>{p.peerHeader(peer)}</div> : null))
   const settingsSections = parts.flatMap((p) => p.settingsSections ?? [])
   const overlays = (
     <>
@@ -36,5 +39,5 @@ export function useFeatures(ctx) {
   // ana ekrandaki üst çubuğa eklenecek düğmeler, DM'de karşı tarafın okuma zamanları (id → ts)
   const extraButtons = parts.map((p, i) => (p.extraButtons ? <span key={i} className="contents">{p.extraButtons}</span> : null))
   const readAt = Object.assign({}, ...parts.map((p) => p.readAt))
-  return { peerActions, overlays, extraButtons, readAt }
+  return { peerActions, peerHeader, overlays, extraButtons, readAt }
 }
