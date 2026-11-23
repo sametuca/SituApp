@@ -15,20 +15,26 @@ const wsUrl = () =>
  *   bubbles: Map<id, { text, until }>   (konuşma balonları)
  * roster (id listesi) yalnızca biri girip çıkınca değişir.
  */
-export function useMultiplayer({ name, avatar, onChat }) {
+export function useMultiplayer({ name, avatar, onChat, onDenied }) {
   const [status, setStatus] = useState('connecting') // connecting | online | offline
   const [online, setOnline] = useState(1)
   const [roster, setRoster] = useState([])
   const [spawn, setSpawn] = useState(null)
+  const [room, setRoom] = useState('city') // 'city' | 'home:<sahip anahtarı>'
+  const [homeKey, setHomeKey] = useState(null) // kendi evimin anahtarı (sunucu verir)
+  const roomRef = useRef('city')
+  const wantRoom = useRef(null) // yeniden bağlanınca dönülecek oda isteği
   const remotes = useRef(new Map())
   const bubbles = useRef(new Map())
   const selfId = useRef(null)
   const wsRef = useRef(null)
   const lastSent = useRef({ t: 0, anim: '', x: 0, z: 0 })
   const onChatRef = useRef(onChat)
+  const onDeniedRef = useRef(onDenied)
   useEffect(() => {
     onChatRef.current = onChat
-  }, [onChat])
+    onDeniedRef.current = onDenied
+  }, [onChat, onDenied])
 
   useEffect(() => {
     let stopped = false
@@ -61,10 +67,27 @@ export function useMultiplayer({ name, avatar, onChat }) {
             selfId.current = m.id
             remotes.current.clear()
             m.players.forEach(addRemote)
+            setHomeKey(m.home)
             setSpawn({ x: m.x, z: m.z })
             setOnline(m.online)
             setStatus('online')
+            roomRef.current = 'city'
+            setRoom('city')
             syncRoster()
+            // bağlantı koptuysa ve bir evdeysek sunucuya aynı odaya dönmeyi söyle
+            if (wantRoom.current && wantRoom.current !== 'city') ws.send(JSON.stringify({ t: 'room', ...wantRoom.current }))
+            break
+          case 'room':
+            roomRef.current = m.room
+            setRoom(m.room)
+            remotes.current.clear()
+            bubbles.current.clear()
+            m.players.forEach(addRemote)
+            syncRoster()
+            break
+          case 'denied':
+            wantRoom.current = null
+            onDeniedRef.current?.(m.reason)
             break
           case 'join':
             addRemote(m.p)
@@ -142,5 +165,14 @@ export function useMultiplayer({ name, avatar, onChat }) {
     return ws?.readyState === 1
   }, [])
 
-  return { status, online, roster, spawn, remotes, bubbles, selfId, sendMove, sendChat, feedMax: FEED_MAX }
+  /** Odaya geç. target: 'city' | { home: true, owner? } (owner yoksa kendi evin). */
+  const enterRoom = useCallback((target) => {
+    const msg = target === 'city' ? { to: 'city' } : { to: 'home', ...(target.owner ? { owner: target.owner } : {}) }
+    wantRoom.current = target === 'city' ? null : msg
+    const ws = wsRef.current
+    if (ws?.readyState === 1) ws.send(JSON.stringify({ t: 'room', ...msg }))
+    return ws?.readyState === 1
+  }, [])
+
+  return { status, online, roster, spawn, room, homeKey, remotes, bubbles, selfId, sendMove, sendChat, enterRoom, feedMax: FEED_MAX }
 }

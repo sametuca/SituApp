@@ -20,9 +20,9 @@ const isTyping = (e) => e.target instanceof HTMLElement && (e.target.tagName ===
 /**
  * Yerel oyuncu: WASD / ok tuşları + Shift ile koşma, kameraya göre hareket, çarpışma, takip eden kamera.
  * focusRef.current = { x, z, ry, anim, teleport } paylaşılan durumdur (HUD, güneş ışığı, minimap okur).
- * focusRef.current.teleport = [x, z] atanırsa bir sonraki karede oyuncu oraya ışınlanır.
+ * focusRef.current.teleport = [x, z, ry?] atanırsa bir sonraki karede oyuncu oraya ışınlanır.
  */
-export default function LocalPlayer({ slug, start, focusRef, controlsRef, joystickRef, onMove, children }) {
+export default function LocalPlayer({ slug, start, focusRef, controlsRef, joystickRef, onMove, collide = resolveCollisions, children }) {
   const camera = useThree((s) => s.camera)
   const group = useRef()
   const keys = useRef({})
@@ -76,9 +76,10 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
       controlsRef.current?.target.set(start.x, 0.8, start.z)
     }
     if (f.teleport) {
-      const [tx, tz] = f.teleport
+      const [tx, tz, tr] = f.teleport
       f.teleport = null
       placeAt(tx, tz)
+      if (tr !== undefined) g.rotation.y = tr
     }
 
     const k = keys.current
@@ -105,7 +106,7 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
       dir.copy(fwd).multiplyScalar(fwdIn).addScaledVector(right, rightIn).normalize()
 
       const speed = (running ? RUN_SPEED : WALK_SPEED) * analog * Math.min(dt, 0.1)
-      const [nx, nz] = resolveCollisions(g.position.x + dir.x * speed, g.position.z + dir.z * speed)
+      const [nx, nz] = collide(g.position.x + dir.x * speed, g.position.z + dir.z * speed)
       const dx = nx - g.position.x
       const dz = nz - g.position.z
       g.position.x = nx

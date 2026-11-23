@@ -249,6 +249,7 @@ export function HelpModal({ onClose }) {
       <ul className="mt-2 flex flex-col gap-2">
         <Row k="W A S D">veya ok tuşlarıyla yürü</Row>
         <Row k="Shift">basılı tut, koş</Row>
+        <Row k="E">kapının önündeyken içeri gir / dışarı çık</Row>
         <Row k="Fare">sürükle: kamerayı döndür · tekerlek: yakınlaştır</Row>
       </ul>
 
@@ -258,6 +259,8 @@ export function HelpModal({ onClose }) {
         <Row k="/yakındakiler">yakınındaki oyuncuları listele</Row>
         <Row k="/mekanlar">şehirdeki mekanlar</Row>
         <Row k="/ışınlan kafe">lobi, kafe, kulüp, park veya plaja git</Row>
+        <Row k="/ev">kendi evine gir (lobideki 🏠 kapıdan da girebilirsin)</Row>
+        <Row k="/dışarı">evden şehre dön</Row>
         <Row k="/yardım">bu paneli aç</Row>
       </ul>
 

@@ -99,6 +99,9 @@ export const BUILDINGS = [
   b(-28, 41, 10, 8, 9, 'pink', 'n'),
   b(-41, 41, 8, 8, 12, 'lilac', 'n'),
 
+  // Herkesin kendi evine girdiği kapı (lobi meydanının güneybatısı)
+  b(-9, 10, 5, 5, 4.6, 'mint', 'e', '🏠 Evim', { homeDoor: true }),
+
   // Park çardağı
   { x: -30, z: 0, gazebo: true },
 ]
@@ -133,7 +136,7 @@ for (let i = 0; i < 6; i++) {
   const a = (i / 6) * Math.PI * 2 + Math.PI / 6
   PROPS.push(p('bench', Math.cos(a) * 7.2, Math.sin(a) * 7.2, 1.7, 0, -a + Math.PI / 2))
 }
-PROPS.push(p('tree', 9, 9, 3.4, 0.7), p('tree', -9, 9, 3.4, 0.7), p('tree', 9, -9, 3.4, 0.7), p('tree', -9, -9, 3.4, 0.7))
+PROPS.push(p('tree', 9, 9, 3.4, 0.7), p('tree', 9, -9, 3.4, 0.7), p('tree', -9, -9, 3.4, 0.7))
 // kafe sokağı: dışarıda masalar ve bitkiler
 for (const [x, z] of [[-6.2, -20], [-6.2, -24], [6.2, -20], [6.2, -24], [-6.2, -31], [6.2, -31]]) {
   PROPS.push(p('table', x, z, 1.3, 0.55), p('chair', x + (x < 0 ? -1.1 : 1.1), z, 1, 0.3, x < 0 ? -Math.PI / 2 : Math.PI / 2))
@@ -212,3 +215,36 @@ export function resolveCollisions(x, z) {
 
 // Rehber NPC: lobi meydanında, Rehber Merkezi'nin önünde
 export const GUIDE = { x: 10.5, z: -8, ry: -2.3, avatar: 'mira', name: 'Rehber', radius: 5 }
+
+// ---------- ev kapısı ve iç mekan ----------
+// Kapının önündeki nokta (şehirde): buraya gelince "Eve gir" çıkar, dışarı çıkınca buraya dönülür.
+export const HOME_DOOR = { x: -5.4, z: 10, radius: 2.6 }
+
+// Ev odası: orijin = oda merkezi; giriş kapısı güney duvarında (+z). Şehir çizilmez, aynı koordinat sistemi.
+export const HOME_ROOM = {
+  hw: 5, // yarı genişlik (x)
+  hd: 4.5, // yarı derinlik (z)
+  wallH: 3.4,
+  spawn: [0, 3.0], // girince doğduğun nokta
+  exit: { x: 0, z: 3.7, radius: 1.6 }, // kapının önü: "Dışarı çık"
+}
+export const HOME_ZONE = { id: 'home', name: 'Ev', emoji: '🏠', desc: 'Kendi küçük dünyan.' }
+
+/** Odada duvarlardan (ve ileride eşyalardan) çıkar. */
+export function resolveRoom(x, z, colliders = []) {
+  const m = PLAYER_RADIUS + 0.15
+  x = Math.max(-HOME_ROOM.hw + m, Math.min(HOME_ROOM.hw - m, x))
+  z = Math.max(-HOME_ROOM.hd + m, Math.min(HOME_ROOM.hd - 0.35, z))
+  for (const c of colliders) {
+    const dx = x - c.x
+    const dz = z - c.z
+    const min = c.r + PLAYER_RADIUS
+    const d2 = dx * dx + dz * dz
+    if (d2 < min * min) {
+      const d = Math.sqrt(d2) || 0.0001
+      x = c.x + (dx / d) * min
+      z = c.z + (dz / d) * min
+    }
+  }
+  return [x, z]
+}
