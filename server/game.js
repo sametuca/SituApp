@@ -16,6 +16,8 @@
 //     { t: 'block', id } / { t: 'unblock', key }   engelle / engeli kaldır
 //     { t: 'report', id, reason }                  şikâyet (taciz | spam | uygunsuz | sahte | diger)
 //     { t: 'dnd', on }                             rahatsız etme modu
+//     { t: 'voice', to, mime, dur, data } / { t: 'sticker', id, to? }   sesli mesaj, çıkartma (features/media.js)
+//     { t: 'progress_get' } / { t: 'suggest_get' | 'suggest_hi' | 'suggest_close' }   görev/rozet durumu, günün önerisi (features/progress.js)
 //   sunucu → istemci
 //     { t: 'welcome', id, home, homeItems, homeOpen, x, z, players: [...], online }   home = kendi evinin anahtarı
 //     { t: 'room', room, owner, ownerName, items, players: [...] }   oda değişti (room: 'city' | 'home:<anahtar>')
@@ -32,6 +34,7 @@
 //     { t: 'state', p: [[id, x, z, ry, animIdx], ...] }   ~10 Hz, yalnızca değişenler
 //     { t: 'chat', id, name, text, ts, to?, dm? }
 //     { t: 'online', n }
+//     { t: 'progress', p } / { t: 'quest_done', quest } / { t: 'badge', badge } / { t: 'event', event } / { t: 'suggest', s }   (features/progress.js)
 //
 // Odalar: herkes 'city' odasında başlar; evler 'home:<sahip anahtarı>' odalarıdır. Oyuncular, sohbet ve konum
 // güncellemeleri yalnızca aynı odadakilere gider. Ev anahtarı oyuncu adından türetilir (kimlik doğrulama gelince
@@ -48,7 +51,9 @@ import { FEATURE_FACTORIES } from './features/index.js'
 const WORLD_HALF = 60 // dünya sınırı (±m); istemci haritasıyla aynı olmalı
 const MAX_PLAYERS = 100
 const TICK_MS = 100
-const MAX_PAYLOAD = 8192 // ev kaydı (40 eşya) 2 KB'ı aşabilir
+const MAX_PAYLOAD = 144 * 1024 // yalnızca sesli mesaj (≤ 96 KB ses → ~128 KB base64) için; diğer mesajlar aşağıda 8 KB ile sınırlı
+const MAX_TEXT_PAYLOAD = 8192 // ev kaydı (40 eşya) 2 KB'ı aşabilir
+const BIG_TYPES = new Set(['voice'])
 const CHAT_COOLDOWN_MS = 700
 const CHAT_MAX = 140
 
@@ -104,6 +109,7 @@ export function attachGameServer(httpServer) {
   const features = FEATURE_FACTORIES.map((make) => make(ctx))
   ctx.features = features
   const mod = features[0].api // moderation her zaman ilk modül
+  const emitEvent = (...a) => ctx.emitEvent?.(...a) // ilerleme modülü (görev/rozet olayları)
   const handlers = Object.assign({}, ...features.map((f) => f.handlers ?? {}))
   const emit = (hook, me) => features.forEach((f) => f[hook]?.(me))
   // alıcıya ulaşabilir mi? Değilse gönderene sebebi söyler (engellenmişse sezdirmez). true = engellendi.
@@ -158,6 +164,7 @@ export function attachGameServer(httpServer) {
         return
       }
       if (!msg || typeof msg.t !== 'string') return
+      if (raw.length > MAX_TEXT_PAYLOAD && !BIG_TYPES.has(msg.t)) return
 
       if (msg.t === 'join' && !me) {
         if (players.size >= MAX_PLAYERS) {
@@ -212,16 +219,22 @@ export function attachGameServer(httpServer) {
         me.ry = num(msg.ry, 10)
         me.anim = ANIMS.includes(msg.anim) ? msg.anim : 'idle'
         me.dirty = true
+        emit('onMove', me)
       } else if (msg.t === 'room') {
         const room = msg.to === 'home' ? `home:${typeof msg.owner === 'string' ? homeKey(msg.owner) : me.homeKey}` : 'city'
         if (!canEnter(me, room)) return send(ws, { t: 'denied', reason: 'Bu eve girmek için davet gerekiyor ya da ev kapalı.' })
         changeRoom(me, room)
+        if (room !== 'city' && room.slice(5) !== me.homeKey) {
+          emitEvent(me, 'home_visit')
+          emitEvent({ key: room.slice(5) }, 'guest', 1, me)
+        }
       } else if (msg.t === 'home_save') {
         const now = Date.now()
         if (now - (me.lastSave ?? 0) < 200) return
         me.lastSave = now
         const items = saveItems(me.homeKey, me.name, msg.items)
         broadcast({ t: 'home_items', owner: me.homeKey, items }, me.id, `home:${me.homeKey}`)
+        emitEvent(me, 'furnish', items.length)
       } else if (msg.t === 'home_open') {
         setOpen(me.homeKey, me.name, msg.open)
         send(ws, { t: 'info', text: msg.open ? '🔓 Evin herkese açık. Arkadaşların /ziyaret ' + me.name + ' yazarak gelebilir.' : '🔒 Evin yalnızca davetlilere açık.' })
@@ -237,11 +250,13 @@ export function attachGameServer(httpServer) {
         invites.get(me.homeKey).add(target.id)
         send(target.ws, { t: 'invited', owner: me.homeKey, ownerName: me.name })
         send(ws, { t: 'info', text: `🏠 ${target.name} evine davet edildi.` })
+        emitEvent(me, 'invite', 1, target)
       } else if (msg.t === 'react') {
         const now = Date.now()
         if (!REACTIONS.has(msg.e) || now - (me.lastReact ?? 0) < 500) return
         me.lastReact = now
         broadcast({ t: 'react', id: me.id, e: msg.e }, undefined, me.room, me)
+        emitEvent(me, 'react')
       } else if (msg.t === 'whisper') {
         const now = Date.now()
         const raw = clean(msg.text, CHAT_MAX)
@@ -256,6 +271,7 @@ export function attachGameServer(httpServer) {
         const w = { t: 'whisper', id: me.id, name: me.name, to: target.id, toName: target.name, text, ts: now }
         send(target.ws, w)
         send(ws, w)
+        emitEvent(me, 'whisper', 1, target)
         // yakındakiler yalnızca "fısıldıyor" görür, metni görmez
         for (const o of inRoom(me.room, me.id)) if (o.id !== target.id && dist(o, me) <= WITNESS_RANGE && !mod.blockedPair(me, o)) send(o.ws, { t: 'whispering', id: me.id })
       } else if (msg.t === 'gesture') {
@@ -269,6 +285,8 @@ export function attachGameServer(httpServer) {
         me.lastGesture = now
         send(target.ws, { t: 'gesture', id: me.id, name: me.name, avatar: me.avatar, kind: msg.kind, emoji })
         broadcast({ t: 'react', id: me.id, e: emoji }, undefined, me.room, me)
+        emitEvent(me, 'gesture', 1, target)
+        emitEvent(me, `gesture_${msg.kind}`, 1, target)
         // karşılıklı kalp = eşleşme
         if (msg.kind === 'heart') {
           me.hearts = me.hearts ?? new Map()
@@ -279,6 +297,8 @@ export function attachGameServer(httpServer) {
             send(target.ws, { t: 'match', id: me.id, name: me.name, avatar: me.avatar })
             broadcast({ t: 'react', id: me.id, e: '💞' }, undefined, me.room)
             broadcast({ t: 'react', id: target.id, e: '💞' }, undefined, me.room)
+            emitEvent(me, 'match', 1, target)
+            emitEvent(target, 'match', 1, me)
           } else me.hearts.set(target.id, now)
         }
       } else if (msg.t === 'typing') {
@@ -302,8 +322,10 @@ export function attachGameServer(httpServer) {
           const dm = { t: 'chat', id: me.id, name: me.name, text, ts: now, to: target.id, dm: true }
           send(target.ws, dm)
           send(ws, dm)
+          emitEvent(me, 'chat', 1, target)
         } else {
           broadcast({ t: 'chat', id: me.id, name: me.name, text, ts: now }, undefined, me.room, me)
+          emitEvent(me, 'chat')
         }
       }
     })

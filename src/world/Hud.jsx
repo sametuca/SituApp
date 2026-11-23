@@ -5,18 +5,27 @@ import { BUILDINGS, GUIDE, ROAD_HALF, ZONES } from './layout'
 const glass = 'border-2 border-white bg-white/75 shadow-soft backdrop-blur-md'
 
 // ---------- üst çubuk ----------
-export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings }) {
+// extraButtons: özellik modüllerinin düğmeleri [{ key, emoji, label, onClick, badge? }] (sol sütunda, geri düğmesinin altında)
+export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings, extraButtons = [] }) {
   const dot = status === 'online' ? 'bg-emerald-400' : status === 'connecting' ? 'bg-amber-400' : 'bg-rose-400'
   const label = status === 'online' ? `${online} çevrimiçi` : status === 'connecting' ? 'Bağlanıyor…' : 'Çevrimdışı (tek başına)'
   return (
     <div className="pointer-events-none absolute left-0 right-0 top-0 z-10 flex items-start justify-between gap-2 px-3 py-3">
-      <button
-        onClick={onExit}
-        aria-label="Karakter seçimine dön"
-        className={`pointer-events-auto grid h-10 w-10 place-items-center rounded-full text-lg font-black text-[#4a3b5c] transition hover:bg-white ${glass}`}
-      >
-        ←
-      </button>
+      <div className="pointer-events-auto flex flex-col gap-2">
+        <button
+          onClick={onExit}
+          aria-label="Karakter seçimine dön"
+          className={`grid h-10 w-10 place-items-center rounded-full text-lg font-black text-[#4a3b5c] transition hover:bg-white ${glass}`}
+        >
+          ←
+        </button>
+        {extraButtons.map((b) => (
+          <button key={b.key} onClick={b.onClick} aria-label={b.label} title={b.label} className={`relative grid h-10 w-10 place-items-center rounded-full text-lg transition hover:bg-white active:scale-95 ${glass}`}>
+            {b.emoji}
+            {b.badge ? <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[#ff7eb3] px-1 text-[10px] font-black text-white">{b.badge}</span> : null}
+          </button>
+        ))}
+      </div>
       <div className="flex flex-col items-center gap-2">
         <div className={`flex items-center gap-2 rounded-full px-4 py-1.5 ${glass}`}>
           <span>{zone.emoji}</span>

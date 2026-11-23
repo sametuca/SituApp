@@ -5,5 +5,7 @@
 //   api                                             diğer modüllerin/çekirdeğin kullanacağı işlevler
 // Yeni özellik: server/features/<ad>.js yaz, buraya bir satır ekle.
 import moderation from './moderation.js'
+import progress from './progress.js'
+import media from './media.js'
 
-export const FEATURE_FACTORIES = [moderation]
+export const FEATURE_FACTORIES = [moderation, progress, media]
