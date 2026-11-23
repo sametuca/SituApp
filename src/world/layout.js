@@ -157,6 +157,29 @@ for (const [x, z] of [[-12, 31], [12, 31], [-11, 44], [11, 44]]) PROPS.push(p('p
 // mahalle köşelerinde ağaçlar
 for (const [x, z] of [[17, -33], [-17, -33], [17, 33], [-17, 33], [47 - 2, 14], [-47 + 2, -16]]) PROPS.push(p('tree', x, z, 3.6, 0.7))
 
+// ---------- oturma noktaları (birlikte yapılan şeyler: server/features/together.js de okur) ----------
+// Banklar 2, şezlonglar ve sandalyeler 1 kişilik. face: oturanın bakışı = prop.ry + face (modelin önü).
+// along: oturma yerlerinin dizildiği eksen (prop yerel X ya da Z), gap: iki kişi arası.
+const SEAT_DEFS = {
+  [M.bench]: { kind: 'bench', cap: 2, gap: 0.46, face: 0, along: 'x' },
+  [M.lounger]: { kind: 'lounger', cap: 1, gap: 0, face: 0, along: 'z' },
+  [M.chair]: { kind: 'chair', cap: 1, gap: 0, face: 0, along: 'x' },
+}
+export const SEATS = PROPS.flatMap((pr, i) => {
+  const d = SEAT_DEFS[pr.model]
+  if (!d) return []
+  const ax = d.along === 'x' ? [Math.cos(pr.ry), -Math.sin(pr.ry)] : [Math.sin(pr.ry), Math.cos(pr.ry)]
+  const slots = Array.from({ length: d.cap }, (_, k) => {
+    const o = (k - (d.cap - 1) / 2) * d.gap
+    return { x: +(pr.x + ax[0] * o).toFixed(2), z: +(pr.z + ax[1] * o).toFixed(2) }
+  })
+  return [{ id: `s${i}`, kind: d.kind, x: pr.x, z: pr.z, ry: pr.ry + d.face, slots }]
+})
+export const SEAT_LABEL = { bench: 'Banka otur', lounger: 'Şezlonga uzan', chair: 'Sandalyeye otur' }
+
+// Fotoğraf Stüdyosu'nun (lobi, güneydoğu) kapı önü: "Fotoğraf çek" istemi burada çıkar.
+export const PHOTO_SPOT = { x: 11, z: 17, radius: 3.2 }
+
 // ---------- çarpışma alanları ----------
 export const COLLIDERS = [
   { type: 'circle', x: 0, z: 0, r: 2.6 }, // çeşme

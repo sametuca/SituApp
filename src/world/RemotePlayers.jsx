@@ -4,6 +4,7 @@ import { Html } from '@react-three/drei'
 import { MathUtils } from 'three'
 import AvatarRig, { AVATAR_HEIGHT } from './AvatarRig'
 import { GUIDE } from './layout'
+import { together } from './features/togetherStore'
 
 /** Karakterin üstünde isim etiketi, konuşma balonu, uçan emoji tepkisi ve (fısıldıyorsa) 🤫. */
 function Tag({ name, bubble, accent, reaction, whisper }) {
@@ -95,7 +96,7 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
       onPointerOver={() => onPick && (document.body.style.cursor = 'pointer')}
       onPointerOut={() => (document.body.style.cursor = '')}
     >
-      <AvatarRig slug={avatar} anim={anim} />
+      <AvatarRig slug={avatar} anim={anim} pose={together.ref(id)} />
       <Tag name={name} bubble={bubble} reaction={reaction} whisper={whisper} />
     </group>
   )

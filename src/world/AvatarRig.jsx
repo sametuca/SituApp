@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import { AnimationMixer } from 'three'
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js'
+import { applyPose, makeRig } from './avatarPose'
 
 export const AVATAR_HEIGHT = 1.3
 const RIG_HEIGHT = 1.2 // meshy_rig çağrısındaki height_meters
@@ -11,7 +12,7 @@ const RIG_HEIGHT = 1.2 // meshy_rig çağrısındaki height_meters
  * Rig'li avatar modeli; anim ('idle' | 'walk' | 'run') değişince yumuşak geçiş yapar.
  * AnimationMixer doğrudan klonlanmış modele bağlanır (drei useAnimations ilk açılışta T-pose'da kalabiliyordu).
  */
-export default function AvatarRig({ slug, anim = 'idle' }) {
+export default function AvatarRig({ slug, anim = 'idle', pose }) {
   const { scene, animations } = useGLTF(`/models/avatars/${slug}.glb`)
   const current = useRef(null)
 
@@ -29,6 +30,7 @@ export default function AvatarRig({ slug, anim = 'idle' }) {
   }, [scene])
 
   const mixer = useMemo(() => new AnimationMixer(model), [model])
+  const rig = useMemo(() => makeRig(model), [model]) // oturma/dans için procedural duruş katmanı (pose: { current })
   const actions = useMemo(() => Object.fromEntries(animations.map((clip) => [clip.name, mixer.clipAction(clip)])), [animations, mixer])
 
   useEffect(() => {
@@ -47,6 +49,7 @@ export default function AvatarRig({ slug, anim = 'idle' }) {
       current.current = next
     }
     mixer.update(dt)
+    if (pose) applyPose(rig, pose.current, dt)
   })
 
   return <primitive object={model} />

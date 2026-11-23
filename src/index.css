@@ -91,3 +91,14 @@ body {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.08); }
 }
+
+/* Birlikte yapılan şeyler: süzülen kalp/yıldızlar ve fotoğraf flaşı */
+@keyframes together-rise {
+  0% { opacity: 0; transform: translateY(8px) scale(0.5); }
+  15% { opacity: 1; transform: translateY(-6px) scale(1.15); }
+  100% { opacity: 0; transform: translateY(-70px) scale(0.9) rotate(10deg); }
+}
+@keyframes together-flash {
+  0% { opacity: 0.95; }
+  100% { opacity: 0; }
+}

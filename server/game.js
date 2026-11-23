@@ -16,6 +16,8 @@
 //     { t: 'block', id } / { t: 'unblock', key }   engelle / engeli kaldır
 //     { t: 'report', id, reason }                  şikâyet (taciz | spam | uygunsuz | sahte | diger)
 //     { t: 'dnd', on }                             rahatsız etme modu
+//     { t: 'sit', seat, slot } / { t: 'pose_end' } / { t: 'poses' }      oturma (features/together.js; ayrıntı orada)
+//     { t: 'dance_invite', to } / { t: 'dance_reply', id, accept }       çift dans
 //   sunucu → istemci
 //     { t: 'welcome', id, home, homeItems, homeOpen, x, z, players: [...], online }   home = kendi evinin anahtarı
 //     { t: 'room', room, owner, ownerName, items, players: [...] }   oda değişti (room: 'city' | 'home:<anahtar>')
@@ -25,6 +27,7 @@
 //     { t: 'whisper', id, name, to, toName, text, ts } sana (ya da senden) fısıltı;  { t: 'whispering', id }: yakında biri fısıldıyor
 //     { t: 'gesture', id, name, avatar, kind, emoji }  biri sana jest yaptı;  { t: 'match', id, name, avatar }: karşılıklı kalp!
 //     { t: 'typing', id }                              karşıdaki yazıyor
+//     { t: 'pose', id, pose } / { t: 'poses', list } / { t: 'dance_offer' | 'dance_cancel' | 'sit_pair' }   bkz. features/together.js
 //     { t: 'blocks', list: [{key,name}] }              engel listen;  { t: 'dnd', id, on }: birinin rahatsız etme durumu
 // Özellik modülleri (engel, profil, arkadaş, oyun…) server/features/ altındadır; bkz. features/index.js.
 //     { t: 'info', text } / { t: 'denied', reason }    kullanıcıya gösterilecek kısa mesaj
@@ -130,6 +133,7 @@ export function attachGameServer(httpServer) {
 
   const changeRoom = (p, room) => {
     if (p.room === room) return
+    emit('onRoomChange', p) // özellik modülleri (oturma/dans) eski odadaki durumunu temizler
     broadcast({ t: 'leave', id: p.id }, p.id, p.room)
     p.room = room
     p.dirty = false
@@ -207,8 +211,11 @@ export function attachGameServer(httpServer) {
       if (handler) return handler(me, msg)
 
       if (msg.t === 'move') {
-        me.x = num(msg.x, WORLD_HALF)
-        me.z = num(msg.z, WORLD_HALF)
+        const mx = num(msg.x, WORLD_HALF)
+        const mz = num(msg.z, WORLD_HALF)
+        if (features.some((f) => f.onMove?.(me, mx, mz))) return // oturuyor/dans ediyor: konum kilitli
+        me.x = mx
+        me.z = mz
         me.ry = num(msg.ry, 10)
         me.anim = ANIMS.includes(msg.anim) ? msg.anim : 'idle'
         me.dirty = true

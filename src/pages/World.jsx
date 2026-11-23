@@ -8,6 +8,7 @@ import HomeRoom from '../world/HomeRoom'
 import { EditToggle, FurnitureLayer, FurnitureSheet } from '../world/HomeEditor'
 import { FURNITURE_BY_ID } from '../world/furniture'
 import { useFeatures } from '../world/features'
+import TogetherScene from '../world/features/TogetherScene'
 import { MAX_ITEMS, findFreeSpot, furnitureColliders, isValid, loadHome, newUid, saveHome } from '../world/homeLayout'
 import LocalPlayer from '../world/LocalPlayer'
 import RemotePlayers, { GuideNpc, SelfTag } from '../world/RemotePlayers'
@@ -487,6 +488,7 @@ function WorldScene({ avatar }) {
         <ambientLight intensity={0.7} />
         <hemisphereLight args={['#ffffff', '#ffd6ea', 1.1]} />
 
+        <TogetherScene focusRef={focusRef} home={Boolean(home)} base={home ? { bg: '#f9e3f1', fog: ['#f9e3f1', 30, 60] } : { bg: '#cfeaff', fog: ['#e8f6ff', 50, 140] }} />
         <Suspense fallback={null}>
           {home ? (
             <HomeRoom ownerName={home.ownerName}>

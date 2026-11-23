@@ -6,6 +6,7 @@
 // Yeni özellik: src/world/features/<ad>.jsx yaz, aşağıya bir satır ekle (kuralı bozma: hook sırası sabit olmalı).
 import { Modal } from '../Hud'
 import { useModeration } from './moderation'
+import { useTogether } from './together'
 
 function SettingsPanel({ sections, onClose }) {
   return (
@@ -20,7 +21,7 @@ function SettingsPanel({ sections, onClose }) {
 }
 
 export function useFeatures(ctx) {
-  const parts = [useModeration(ctx)]
+  const parts = [useModeration(ctx), useTogether(ctx)]
 
   const peerActions = (peer) => parts.flatMap((p) => p.peerActions?.(peer) ?? [])
   const settingsSections = parts.flatMap((p) => p.settingsSections ?? [])

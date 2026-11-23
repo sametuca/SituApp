@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { MathUtils, Vector3 } from 'three'
 import AvatarRig from './AvatarRig'
 import { resolveCollisions } from './layout'
+import { together } from './features/togetherStore'
 
 const WALK_SPEED = 3.2 // m/sn
 const RUN_SPEED = 6.5
@@ -95,7 +96,16 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
       analog = Math.max(0.5, Math.min(1, mag))
       running = mag > 0.85
     }
-    const moving = Boolean(fwdIn || rightIn)
+    let moving = Boolean(fwdIn || rightIn)
+
+    // oturuyor / dans ediyor: hareket girdisi duruşu bitirir (sunucuya haber verilir), aksi halde konum kilitli
+    if (together.self.current && moving) together.onBreak?.(true)
+    const posed = together.self.current
+    if (posed) {
+      moving = false
+      const diff = MathUtils.euclideanModulo(posed.ry - g.rotation.y + Math.PI, Math.PI * 2) - Math.PI
+      g.rotation.y += diff * Math.min(1, dt * 8)
+    }
 
     if (moving) {
       const { fwd, right, dir, up } = v
@@ -135,7 +145,7 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
 
   return (
     <group ref={group}>
-      <AvatarRig slug={slug} anim={anim} />
+      <AvatarRig slug={slug} anim={anim} pose={together.self} />
       {children}
     </group>
   )
