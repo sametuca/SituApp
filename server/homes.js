@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url'
 import { FURNITURE_BY_ID } from '../src/world/furniture.js'
 import { HOME_ROOM } from '../src/world/layout.js'
 
-const DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'data')
+const DIR = process.env.SITUAPP_DATA_DIR || path.join(path.dirname(fileURLToPath(import.meta.url)), 'data')
 const FILE = path.join(DIR, 'homes.json')
 export const MAX_ITEMS = 40
 

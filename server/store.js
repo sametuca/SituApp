@@ -6,7 +6,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'data')
+const DIR = process.env.SITUAPP_DATA_DIR || path.join(path.dirname(fileURLToPath(import.meta.url)), 'data')
 const FILE = path.join(DIR, 'social.json')
 
 let db = { users: {}, reports: [] }
