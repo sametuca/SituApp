@@ -4,7 +4,7 @@
 //  - gift_send/reply  hediye: ≤ 8 m, aynı oda, engel/DND denetimi; kabulde alıcının `gifts` envanterine düşer
 import crypto from 'node:crypto'
 import { save, user } from '../store.js'
-import { getDecor, getHome, setDecor, setGiftResolver } from '../homes.js'
+import { getDecor, setDecor, setGiftResolver } from '../homes.js'
 import { GIFT_BY_ID, GIFT_RANGE, sanitizeCos } from '../../src/world/cosmeticsData.js'
 
 const OFFER_TTL_MS = 90_000
@@ -118,6 +118,7 @@ export default function cosmetics(ctx) {
         if (u.gifts.length >= MAX_GIFTS) return send(me.ws, { t: 'info', text: '🎁 Hediye kutun dolu. Önce birkaç hediyeyi evine yerleştir.' })
         u.gifts.push({ uid: `g${crypto.randomUUID().replace(/-/g, '').slice(0, 10)}`, kind: o.kind, from: o.fromName, ts: Date.now() })
         save()
+        ctx.emitEvent?.(sender ?? me, 'gift', 1, me)
         send(me.ws, { t: 'gifts', list: giftList(me.key) })
         send(me.ws, { t: 'info', text: `🎁 ${gift.emoji} ${gift.name} envanterine eklendi (${o.fromName}). Evinde Döşe → Hediyeler’den yerleştirebilirsin.` })
         if (sender) {
@@ -126,6 +127,5 @@ export default function cosmetics(ctx) {
         }
       },
     },
-    api: { giftList, getHome },
   }
 }

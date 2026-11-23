@@ -6,7 +6,9 @@ import AvatarRig, { AVATAR_HEIGHT } from './AvatarRig'
 import { GUIDE } from './layout'
 
 /** Karakterin üstünde isim etiketi, konuşma balonu, uçan emoji tepkisi ve (fısıldıyorsa) 🤫. */
-function Tag({ name, bubble, accent, reaction, whisper }) {
+function Tag({ name, bubble: rawBubble, accent, reaction, whisper }) {
+  // bubble: metin ya da { text, big } (çıkartmalar büyük gösterilir)
+  const bubble = typeof rawBubble === 'string' ? { text: rawBubble } : rawBubble
   return (
     <Html position={[0, AVATAR_HEIGHT + 0.45, 0]} center distanceFactor={9} zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}>
       <div className="relative flex flex-col items-center gap-1">
@@ -16,8 +18,8 @@ function Tag({ name, bubble, accent, reaction, whisper }) {
           </span>
         )}
         {bubble && (
-          <div className="max-w-[220px] break-words rounded-2xl rounded-bl-md border-2 border-white bg-white px-3 py-1.5 text-center text-sm font-bold text-[#4a3b5c] shadow-lg">
-            {bubble}
+          <div className={`max-w-[220px] break-words rounded-2xl rounded-bl-md border-2 border-white bg-white text-center font-bold text-[#4a3b5c] shadow-lg ${bubble.big ? 'px-4 py-1 text-6xl leading-tight' : 'px-3 py-1.5 text-sm'}`}>
+            {bubble.text}
           </div>
         )}
         {whisper && !bubble && (
@@ -78,10 +80,10 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
       setAnim(r.anim)
     }
     const b = bubbles.current.get(id)
-    const text = b && b.until > Date.now() ? b.text : null
-    if (text !== bubbleRef.current) {
-      bubbleRef.current = text
-      setBubble(text)
+    const live = b && b.until > Date.now() ? b : null
+    if (live !== bubbleRef.current) {
+      bubbleRef.current = live
+      setBubble(live)
     }
   })
 
@@ -113,10 +115,10 @@ export function SelfTag({ name, bubbles, selfId, reactions }) {
   const reactKey = useRef(null)
   useFrame(() => {
     const b = selfId.current ? bubbles.current.get(selfId.current) : null
-    const text = b && b.until > Date.now() ? b.text : null
-    if (text !== ref.current) {
-      ref.current = text
-      setBubble(text)
+    const liveBubble = b && b.until > Date.now() ? b : null
+    if (liveBubble !== ref.current) {
+      ref.current = liveBubble
+      setBubble(liveBubble)
     }
     const r = selfId.current ? reactions?.current.get(selfId.current) : null
     const live = r && r.until > Date.now() ? r : null
