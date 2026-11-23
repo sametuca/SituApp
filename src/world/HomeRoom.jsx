@@ -1,15 +1,17 @@
 import { Html, RoundedBox } from '@react-three/drei'
 import { HOME_ROOM } from './layout'
 import Prop from './Prop'
+import { DecorFloor, RomanticLights, wallHex, wallTexture } from './HomeDecor'
 
 const { hw, hd, wallH } = HOME_ROOM
 
 // Duvarlar yalnızca içe bakan yüzü çizer (FrontSide): kamera dışarıdan bakınca duvar "şeffaf" olur, oyuncak ev gibi görünür.
-function Wall({ position, rotation, w, h = wallH, color }) {
+function Wall({ position, rotation, w, h = wallH, color, pattern }) {
+  const map = pattern && pattern !== 'plain' ? wallTexture(pattern, color, w, h) : null
   return (
     <mesh position={position} rotation={rotation} receiveShadow>
       <planeGeometry args={[w, h]} />
-      <meshStandardMaterial color={color} roughness={0.9} />
+      <meshStandardMaterial color={map ? '#ffffff' : color} map={map} roughness={0.9} />
     </mesh>
   )
 }
@@ -70,13 +72,13 @@ function Window({ x }) {
 }
 
 /** Işık: odayı doldurur, yumuşak gölge verir. */
-function RoomLights() {
+function RoomLights({ dim }) {
   return (
     <>
       <directionalLight
         castShadow
         position={[3.5, 9, 6]}
-        intensity={1.3}
+        intensity={dim ? 0.45 : 1.3}
         shadow-mapSize={[1024, 1024]}
         shadow-camera-left={-8}
         shadow-camera-right={8}
@@ -86,7 +88,7 @@ function RoomLights() {
         shadow-camera-far={30}
         shadow-bias={-0.0005}
       />
-      <pointLight position={[0, 3, 0]} intensity={14} distance={12} color="#fff0d9" />
+      <pointLight position={[0, 3, 0]} intensity={dim ? 4 : 14} distance={12} color="#fff0d9" />
     </>
   )
 }
@@ -94,11 +96,16 @@ function RoomLights() {
 /**
  * Evin iç mekânı: pastel, oyuncak gibi tek odalı ev.
  * children: odanın içine çizilecek ek nesneler (mobilya vb.).
+ * decor: { wall, pattern, floor, romantic } (features/cosmetics); yoksa varsayılan pembe oda.
  */
-export default function HomeRoom({ ownerName, children }) {
+export default function HomeRoom({ ownerName, decor, children }) {
+  const front = decor ? wallHex(decor.wall) : '#ffd9ea'
+  const side = decor ? wallHex(decor.wall) : '#ffe5f1'
+  const pattern = decor?.pattern
   return (
     <group>
-      <RoomLights />
+      <RoomLights dim={decor?.romantic} />
+      {decor?.romantic && <RomanticLights />}
 
       {/* dış zemin ve oda zemini */}
       <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
@@ -108,25 +115,13 @@ export default function HomeRoom({ ownerName, children }) {
       <RoundedBox args={[hw * 2 + 0.6, 0.2, hd * 2 + 0.6]} radius={0.08} position={[0, -0.1, 0]} receiveShadow>
         <meshStandardMaterial color="#ffd6e8" roughness={0.7} />
       </RoundedBox>
-      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[hw * 2, hd * 2]} />
-        <meshStandardMaterial color="#fff1d9" roughness={0.85} />
-      </mesh>
-      {/* halı */}
-      <mesh position={[0, 0.02, 0.2]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <circleGeometry args={[2.4, 48]} />
-        <meshStandardMaterial color="#dccfff" roughness={1} />
-      </mesh>
-      <mesh position={[0, 0.025, 0.2]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[1.7, 1.95, 48]} />
-        <meshStandardMaterial color="#ffc2dc" roughness={1} />
-      </mesh>
+      <DecorFloor floor={decor?.floor} />
 
       {/* duvarlar (içe bakar) */}
-      <Wall position={[0, wallH / 2, -hd]} rotation={[0, 0, 0]} w={hw * 2} color="#ffd9ea" />
-      <Wall position={[-hw, wallH / 2, 0]} rotation={[0, Math.PI / 2, 0]} w={hd * 2} color="#ffe5f1" />
-      <Wall position={[hw, wallH / 2, 0]} rotation={[0, -Math.PI / 2, 0]} w={hd * 2} color="#ffe5f1" />
-      <Wall position={[0, wallH / 2, hd]} rotation={[0, Math.PI, 0]} w={hw * 2} color="#ffd9ea" />
+      <Wall position={[0, wallH / 2, -hd]} rotation={[0, 0, 0]} w={hw * 2} color={front} pattern={pattern} />
+      <Wall position={[-hw, wallH / 2, 0]} rotation={[0, Math.PI / 2, 0]} w={hd * 2} color={side} pattern={pattern} />
+      <Wall position={[hw, wallH / 2, 0]} rotation={[0, -Math.PI / 2, 0]} w={hd * 2} color={side} pattern={pattern} />
+      <Wall position={[0, wallH / 2, hd]} rotation={[0, Math.PI, 0]} w={hw * 2} color={front} pattern={pattern} />
 
       {/* kalın duvar kenarları (dışarıdan da görünür) */}
       <Trim position={[0, wallH + 0.08, -hd]} args={[hw * 2 + 0.3, 0.18, 0.3]} color="#ffb6d3" />

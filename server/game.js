@@ -18,6 +18,9 @@
 //     { t: 'dnd', on }                             rahatsız etme modu
 //     { t: 'sit', seat, slot } / { t: 'pose_end' } / { t: 'poses' }      oturma (features/together.js; ayrıntı orada)
 //     { t: 'dance_invite', to } / { t: 'dance_reply', id, accept }       çift dans
+//     { t: 'cos_set', acc?, pet? }                 aksesuar {id,color}|null / evcil hayvan id|null seç (features/cosmetics)
+//     { t: 'decor_set', decor } / { t: 'decor_get', owner }   ev dekoru (yalnızca sahibi yazar; bulunduğun evi okursun)
+//     { t: 'gift_send', to, kind } / { t: 'gift_reply', offer, accept }   hediye gönder / gelen hediyeye cevap (≤ 8 m)
 //     { t: 'voice', to, mime, dur, data } / { t: 'sticker', id, to? }   sesli mesaj, çıkartma (features/media.js)
 //     { t: 'progress_get' } / { t: 'suggest_get' | 'suggest_hi' | 'suggest_close' }   görev/rozet durumu, günün önerisi (features/progress.js)
 //   sunucu → istemci
@@ -32,6 +35,8 @@
 //     { t: 'pose', id, pose } / { t: 'poses', list } / { t: 'dance_offer' | 'dance_cancel' | 'sit_pair' }   bkz. features/together.js
 //     { t: 'blocks', list: [{key,name}] }              engel listen;  { t: 'dnd', id, on }: birinin rahatsız etme durumu
 // Özellik modülleri (engel, profil, arkadaş, oyun…) server/features/ altındadır; bkz. features/index.js.
+//     { t: 'cos', id, cos } (+ join/room oyuncularında `cos`)    birinin aksesuarı/evcil hayvanı;  welcome: cos, gifts, decor
+//     { t: 'decor', owner, decor }  { t: 'gifts', list }  { t: 'gift_offer', offer, from, fromName, kind }
 //     profil (features/profile.js): { t:'profile_save', profile:{bio,age,city,tags} } → { t:'profile_saved', profile } ;
 //       { t:'profile', id } → { t:'profile', id, profile|null } ; welcome'a profile + profileTags (katalog) eklenir
 //     buz kırıcı: { t:'icebreaker', to } → alıcıya { t:'icebreaker', id, name, qid, q, a, b } ;
@@ -96,7 +101,7 @@ export function attachGameServer(httpServer) {
   const wss = new WebSocketServer({ server: httpServer, path: '/ws', maxPayload: MAX_PAYLOAD })
   const players = new Map() // id → oyuncu
 
-  const publicInfo = (p) => ({ id: p.id, key: p.key, name: p.name, avatar: p.avatar, x: p.x, z: p.z, ry: p.ry, anim: ANIMS.indexOf(p.anim), dnd: Boolean(p.dnd) })
+  const publicInfo = (p) => ({ id: p.id, key: p.key, name: p.name, avatar: p.avatar, x: p.x, z: p.z, ry: p.ry, anim: ANIMS.indexOf(p.anim), dnd: Boolean(p.dnd), cos: p.cos ?? null })
   const send = (ws, msg) => ws.readyState === 1 && ws.send(JSON.stringify(msg))
   // room verilirse yalnızca o odadakilere gider
   // from verilirse, gönderenle arasında engel olan alıcılara gitmez

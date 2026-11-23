@@ -155,7 +155,7 @@ function ProfileEditor({ initial, catalog, onSave, onClose }) {
 }
 
 /** Profil, ilgi etiketleri ve buz kırıcı kartlar (sunucu: server/features/profile.js). */
-export function useProfile({ net, say, panel, setPanel }) {
+export function useProfile({ net, say, panel, setPanel, home }) {
   const [mine, setMine] = useState(null)
   const [catalog, setCatalog] = useState([])
   const [cache, setCache] = useState({}) // oyuncu id → profil | null
@@ -231,7 +231,7 @@ export function useProfile({ net, say, panel, setPanel }) {
           }}
         />
       )}
-      {nudge && !panel && (
+      {nudge && !panel && !home && (
         <div className={`absolute inset-x-3 bottom-24 z-20 mx-auto flex max-w-sm animate-pop flex-col gap-2 rounded-3xl p-4 ${glass}`} role="status">
           <p className="text-base font-black text-[#4a3b5c]">Profilini tamamla 💗</p>
           <p className="text-xs font-semibold text-[#8a7a9c]">Kısa bir tanıtım ve ilgi alanları ekle; ortak ilgileri olanlar seni daha kolay bulur.</p>

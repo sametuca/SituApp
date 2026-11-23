@@ -7,7 +7,8 @@
 //   extraNodes:        üst çubuğun sağ grubuna hazır JSX düğmeler
 //   readAt:            { oyuncuId: ts } DM okundu bilgisi
 //   worldEffects:      <Canvas> içine çizilecek R3F düğümleri (sezon efektleri…)
-// ctx: { net, say, touch, openChat, closeInteract, roster, focusRef, home, panel, setPanel, chatTarget, pushFeed }
+// ctx: { net, say, touch, openChat, closeInteract, roster, focusRef, home, panel, setPanel, chatTarget, pushFeed, slug }
+// Ek dönüş alanları: homeDecor (HomeRoom'a), editorTabs (Döşe çekmecesine sekme), sceneNodes (Canvas içine R3F düğümleri: evcil hayvan).
 // Yeni özellik: src/world/features/<ad>.jsx yaz, aşağıya bir satır ekle (kuralı bozma: hook sırası sabit olmalı).
 import { Modal } from '../Hud'
 import { useModeration } from './moderation'
@@ -17,6 +18,7 @@ import { useProfile } from './profile'
 import { useProgress } from './progress'
 import { useMedia } from './media'
 import { useTogether } from './together'
+import { useCosmetics } from './cosmetics'
 
 function SettingsPanel({ sections, onClose }) {
   return (
@@ -31,7 +33,7 @@ function SettingsPanel({ sections, onClose }) {
 }
 
 export function useFeatures(ctx) {
-  const parts = [useModeration(ctx), useGames(ctx), useFriends(ctx), useProfile(ctx), useProgress(ctx), useMedia(ctx), useTogether(ctx)]
+  const parts = [useModeration(ctx), useGames(ctx), useFriends(ctx), useProfile(ctx), useProgress(ctx), useMedia(ctx), useTogether(ctx), useCosmetics(ctx)]
 
   const peerActions = (peer) => parts.flatMap((p) => p.peerActions?.(peer) ?? [])
   const peerHeader = (peer) => parts.map((p, i) => (p.peerHeader ? <div key={i}>{p.peerHeader(peer)}</div> : null))
@@ -47,5 +49,9 @@ export function useFeatures(ctx) {
   // hazır JSX üst çubuk düğmeleri ve DM'de karşı tarafın okuma zamanları (id → ts)
   const extraNodes = parts.map((p, i) => (p.extraNodes ? <span key={i} className="contents">{p.extraNodes}</span> : null))
   const readAt = Object.assign({}, ...parts.map((p) => p.readAt))
-  return { peerActions, peerHeader, overlays, extraButtons, extraNodes, readAt, worldEffects }
+  // kişiselleştirme: ev dekoru, döşeme sekmeleri, evcil hayvan katmanı
+  const homeDecor = parts.find((p) => p.homeDecor)?.homeDecor
+  const editorTabs = parts.flatMap((p) => p.editorTabs ?? [])
+  const sceneNodes = parts.map((p, i) => (p.sceneNodes ? <group key={i}>{p.sceneNodes}</group> : null))
+  return { peerActions, peerHeader, overlays, extraButtons, extraNodes, readAt, worldEffects, homeDecor, editorTabs, sceneNodes }
 }

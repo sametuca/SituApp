@@ -98,14 +98,14 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
       onPointerOver={() => onPick && (document.body.style.cursor = 'pointer')}
       onPointerOut={() => (document.body.style.cursor = '')}
     >
-      <AvatarRig slug={avatar} anim={anim} pose={together.ref(id)} />
+      <AvatarRig slug={avatar} anim={anim} pose={together.ref(id)} cosId={id} />
       <Tag name={name} bubble={bubble} reaction={reaction} whisper={whisper} />
     </group>
   )
 })
 
 export default function RemotePlayers({ roster, remotes, bubbles, reactions, whispering, onPick }) {
-  return roster.map((p) => <RemoteAvatar key={p.id} {...p} remotes={remotes} bubbles={bubbles} reactions={reactions} whispering={whispering} onPick={onPick} />)
+  return roster.map(({ key: _playerKey, ...p }) => <RemoteAvatar key={p.id} {...p} remotes={remotes} bubbles={bubbles} reactions={reactions} whispering={whispering} onPick={onPick} />)
 }
 
 /** Yerel oyuncunun isim etiketi ve kendi konuşma balonu (LocalPlayer'ın çocuğu olarak çizilir). */

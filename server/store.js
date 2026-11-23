@@ -42,6 +42,7 @@ const defaults = () => ({
   stats: {},
   quests: null,
   cosmetics: { accessory: null, pet: null },
+  gifts: [], // kabul edilen hediyeler: [{ uid, kind, from, ts }]
   lastSeen: 0,
 })
 

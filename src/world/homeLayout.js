@@ -2,6 +2,7 @@
 // Öğe: { uid, id, x, z, ry }  (ry: Y ekseni dönüşü, 90°'nin katları; konumlar oda merkezine göre metre)
 import dims from './furnitureDims.json'
 import { FURNITURE_BY_ID } from './furniture'
+import { GIFT_BY_ID } from './cosmeticsData'
 import { HOME_ROOM } from './layout'
 
 export const MAX_ITEMS = 40
@@ -13,6 +14,7 @@ const DOOR_KEEP = { x: 0, z: HOME_ROOM.hd - 0.9, hw: 1.5, hd: 1.0 }
 
 /** Mobilyanın dönmemiş ayak izi (genişlik x derinlik, metre). */
 export function footprint(id) {
+  if (GIFT_BY_ID[id]) return { w: GIFT_BY_ID[id].fw, d: GIFT_BY_ID[id].fd } // hediyeler (cosmeticsData)
   const d = dims[id]
   const size = FURNITURE_BY_ID[id]?.size ?? 1
   if (!d) return { w: 1, d: 1 }
@@ -92,9 +94,9 @@ export function loadHome(owner) {
     const raw = JSON.parse(localStorage.getItem(key(owner)))
     if (!Array.isArray(raw)) return []
     return raw
-      .filter((i) => FURNITURE_BY_ID[i?.id] && Number.isFinite(i.x) && Number.isFinite(i.z))
+      .filter((i) => (FURNITURE_BY_ID[i?.id] || GIFT_BY_ID[i?.id]) && Number.isFinite(i.x) && Number.isFinite(i.z))
       .slice(0, MAX_ITEMS)
-      .map((i) => ({ uid: String(i.uid ?? newUid()), id: i.id, x: i.x, z: i.z, ry: Number.isFinite(i.ry) ? i.ry : 0 }))
+      .map((i) => ({ uid: String(i.uid ?? newUid()), id: i.id, x: i.x, z: i.z, ry: Number.isFinite(i.ry) ? i.ry : 0, ...(GIFT_BY_ID[i.id] && i.from ? { from: String(i.from).slice(0, 16) } : {}) }))
   } catch {
     return []
   }
