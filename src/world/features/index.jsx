@@ -2,10 +2,12 @@
 //   peerActions(peer): etkileşim menüsüne eklenecek düğmeler  [{ key, emoji, label, onClick, danger? }]
 //   settingsSections:  Ayarlar paneline eklenecek JSX parçaları
 //   overlays:          ekranın üstüne çizilecek JSX (diyaloglar, bildirimler…)
-// ctx: { net, say, touch, openChat, closeInteract, roster, focusRef, home, panel, setPanel }
+// ctx: { net, say, touch, openChat, closeInteract, roster, focusRef, home, panel, setPanel, slug }
+// Ek dönüş alanları: homeDecor (HomeRoom'a), editorTabs (Döşe çekmecesine sekme), sceneNodes (Canvas içine R3F düğümleri).
 // Yeni özellik: src/world/features/<ad>.jsx yaz, aşağıya bir satır ekle (kuralı bozma: hook sırası sabit olmalı).
 import { Modal } from '../Hud'
 import { useModeration } from './moderation'
+import { useCosmetics } from './cosmetics'
 
 function SettingsPanel({ sections, onClose }) {
   return (
@@ -20,7 +22,7 @@ function SettingsPanel({ sections, onClose }) {
 }
 
 export function useFeatures(ctx) {
-  const parts = [useModeration(ctx)]
+  const parts = [useModeration(ctx), useCosmetics(ctx)]
 
   const peerActions = (peer) => parts.flatMap((p) => p.peerActions?.(peer) ?? [])
   const settingsSections = parts.flatMap((p) => p.settingsSections ?? [])
@@ -30,5 +32,9 @@ export function useFeatures(ctx) {
       {parts.map((p, i) => (p.overlays ? <div key={i}>{p.overlays}</div> : null))}
     </>
   )
-  return { peerActions, overlays }
+  // sahne/ev/düzenleyici kancaları (R3F düğümleri Canvas içinde çizilir): ev dekoru, döşeme sekmeleri, evcil hayvan katmanı
+  const homeDecor = parts.find((p) => p.homeDecor)?.homeDecor
+  const editorTabs = parts.flatMap((p) => p.editorTabs ?? [])
+  const sceneNodes = parts.map((p, i) => (p.sceneNodes ? <group key={i}>{p.sceneNodes}</group> : null))
+  return { peerActions, overlays, homeDecor, editorTabs, sceneNodes }
 }

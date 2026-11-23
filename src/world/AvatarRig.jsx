@@ -3,15 +3,17 @@ import { useFrame } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import { AnimationMixer } from 'three'
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js'
+import { HeadAccessory } from './Accessories'
 
 export const AVATAR_HEIGHT = 1.3
 const RIG_HEIGHT = 1.2 // meshy_rig çağrısındaki height_meters
 
 /**
  * Rig'li avatar modeli; anim ('idle' | 'walk' | 'run') değişince yumuşak geçiş yapar.
+ * cosId verilirse aksesuarı (cosStore) kafa kemiğine takar.
  * AnimationMixer doğrudan klonlanmış modele bağlanır (drei useAnimations ilk açılışta T-pose'da kalabiliyordu).
  */
-export default function AvatarRig({ slug, anim = 'idle' }) {
+export default function AvatarRig({ slug, anim = 'idle', cosId }) {
   const { scene, animations } = useGLTF(`/models/avatars/${slug}.glb`)
   const current = useRef(null)
 
@@ -49,5 +51,10 @@ export default function AvatarRig({ slug, anim = 'idle' }) {
     mixer.update(dt)
   })
 
-  return <primitive object={model} />
+  return (
+    <>
+      <primitive object={model} />
+      {cosId && <HeadAccessory model={model} cosId={cosId} />}
+    </>
+  )
 }

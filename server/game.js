@@ -16,6 +16,9 @@
 //     { t: 'block', id } / { t: 'unblock', key }   engelle / engeli kaldır
 //     { t: 'report', id, reason }                  şikâyet (taciz | spam | uygunsuz | sahte | diger)
 //     { t: 'dnd', on }                             rahatsız etme modu
+//     { t: 'cos_set', acc?, pet? }                 aksesuar {id,color}|null / evcil hayvan id|null seç (features/cosmetics)
+//     { t: 'decor_set', decor } / { t: 'decor_get', owner }   ev dekoru (yalnızca sahibi yazar; bulunduğun evi okursun)
+//     { t: 'gift_send', to, kind } / { t: 'gift_reply', offer, accept }   hediye gönder / gelen hediyeye cevap (≤ 8 m)
 //   sunucu → istemci
 //     { t: 'welcome', id, home, homeItems, homeOpen, x, z, players: [...], online }   home = kendi evinin anahtarı
 //     { t: 'room', room, owner, ownerName, items, players: [...] }   oda değişti (room: 'city' | 'home:<anahtar>')
@@ -27,6 +30,8 @@
 //     { t: 'typing', id }                              karşıdaki yazıyor
 //     { t: 'blocks', list: [{key,name}] }              engel listen;  { t: 'dnd', id, on }: birinin rahatsız etme durumu
 // Özellik modülleri (engel, profil, arkadaş, oyun…) server/features/ altındadır; bkz. features/index.js.
+//     { t: 'cos', id, cos } (+ join/room oyuncularında `cos`)    birinin aksesuarı/evcil hayvanı;  welcome: cos, gifts, decor
+//     { t: 'decor', owner, decor }  { t: 'gifts', list }  { t: 'gift_offer', offer, from, fromName, kind }
 //     { t: 'info', text } / { t: 'denied', reason }    kullanıcıya gösterilecek kısa mesaj
 //     { t: 'join', p } / { t: 'leave', id }
 //     { t: 'state', p: [[id, x, z, ry, animIdx], ...] }   ~10 Hz, yalnızca değişenler
@@ -84,7 +89,7 @@ export function attachGameServer(httpServer) {
   const wss = new WebSocketServer({ server: httpServer, path: '/ws', maxPayload: MAX_PAYLOAD })
   const players = new Map() // id → oyuncu
 
-  const publicInfo = (p) => ({ id: p.id, key: p.key, name: p.name, avatar: p.avatar, x: p.x, z: p.z, ry: p.ry, anim: ANIMS.indexOf(p.anim), dnd: Boolean(p.dnd) })
+  const publicInfo = (p) => ({ id: p.id, key: p.key, name: p.name, avatar: p.avatar, x: p.x, z: p.z, ry: p.ry, anim: ANIMS.indexOf(p.anim), dnd: Boolean(p.dnd), cos: p.cos ?? null })
   const send = (ws, msg) => ws.readyState === 1 && ws.send(JSON.stringify(msg))
   // room verilirse yalnızca o odadakilere gider
   // from verilirse, gönderenle arasında engel olan alıcılara gitmez

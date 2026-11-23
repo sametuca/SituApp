@@ -1,5 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Prop from './Prop'
+import { PlacedGift } from './Gifts'
+import { GIFT_BY_ID } from './cosmeticsData'
 import { FURNITURE, FURNITURE_BY_ID, furnitureUrl } from './furniture'
 import { clampToRoom, footprint, isValid, snap } from './homeLayout'
 import { HOME_ROOM } from './layout'
@@ -69,7 +71,7 @@ export function FurnitureLayer({ items, setItems, editing, selected, setSelected
   return (
     <group>
       {items.map((it) => {
-        const def = FURNITURE_BY_ID[it.id]
+        const def = FURNITURE_BY_ID[it.id] ?? GIFT_BY_ID[it.id] // hediyeler ayrı katalogdan (cosmeticsData)
         if (!def) return null
         const isSel = editing && selected === it.uid
         const f = footprint(it.id)
@@ -82,7 +84,7 @@ export function FurnitureLayer({ items, setItems, editing, selected, setSelected
               </mesh>
             )}
             <group onPointerDown={(e) => grab(e, it)}>
-              <Prop model={furnitureUrl(it.id)} x={it.x} z={it.z} ry={it.ry} scale={def.size} />
+              {GIFT_BY_ID[it.id] ? <PlacedGift id={it.id} x={it.x} z={it.z} ry={it.ry} from={it.from} /> : <Prop model={furnitureUrl(it.id)} x={it.x} z={it.z} ry={it.ry} scale={def.size} />}
             </group>
           </group>
         )
@@ -109,8 +111,13 @@ export function EditToggle({ onClick, touch }) {
   )
 }
 
-/** Alttan açılan döşeme çekmecesi: katalog + seçili mobilya düğmeleri. */
-export function FurnitureSheet({ count, max, selected, selectedName, onAdd, onRotate, onRemove, onClose }) {
+/**
+ * Alttan açılan döşeme çekmecesi: katalog + seçili mobilya düğmeleri.
+ * tabs (özellik modüllerinden): [{ key, label, render(tabApi) }]; tabApi = { furn, place } — "Dekor", "Hediyeler" gibi ek sekmeler.
+ */
+export function FurnitureSheet({ count, max, selected, selectedName, onAdd, onRotate, onRemove, onClose, tabs = [], tabApi }) {
+  const [tab, setTab] = useState('items')
+  const extra = tabs.find((t) => t.key === tab)
   return (
     <div className="absolute inset-x-0 bottom-0 z-20 mx-auto w-full max-w-2xl animate-pop px-2 pb-2" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
       <div className={`rounded-[1.75rem] p-3 ${glass}`}>
@@ -135,6 +142,22 @@ export function FurnitureSheet({ count, max, selected, selectedName, onAdd, onRo
             ✓ Bitti
           </button>
         </div>
+        {tabs.length > 0 && (
+          <div className="mb-2 flex gap-1.5 overflow-x-auto">
+            {[{ key: 'items', label: '🛋️ Eşyalar' }, ...tabs].map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                className={`shrink-0 rounded-full border-2 border-white px-3 py-1 text-xs font-extrabold transition ${tab === t.key ? 'bg-[#a88bff] text-white' : 'bg-white/70 text-[#4a3b5c] hover:bg-white'}`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        )}
+        {extra ? (
+          extra.render(tabApi)
+        ) : (
         <div className="flex gap-2 overflow-x-auto pb-1">
           {FURNITURE.map((f) => (
             <button
@@ -147,6 +170,7 @@ export function FurnitureSheet({ count, max, selected, selectedName, onAdd, onRo
             </button>
           ))}
         </div>
+        )}
       </div>
     </div>
   )

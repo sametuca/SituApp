@@ -135,7 +135,7 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
 
   return (
     <group ref={group}>
-      <AvatarRig slug={slug} anim={anim} />
+      <AvatarRig slug={slug} anim={anim} cosId="self" />
       {children}
     </group>
   )

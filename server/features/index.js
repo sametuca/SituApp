@@ -5,5 +5,6 @@
 //   api                                             diğer modüllerin/çekirdeğin kullanacağı işlevler
 // Yeni özellik: server/features/<ad>.js yaz, buraya bir satır ekle.
 import moderation from './moderation.js'
+import cosmetics from './cosmetics.js'
 
-export const FEATURE_FACTORIES = [moderation]
+export const FEATURE_FACTORIES = [moderation, cosmetics]

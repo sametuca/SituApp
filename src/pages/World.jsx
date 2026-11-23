@@ -8,6 +8,7 @@ import HomeRoom from '../world/HomeRoom'
 import { EditToggle, FurnitureLayer, FurnitureSheet } from '../world/HomeEditor'
 import { FURNITURE_BY_ID } from '../world/furniture'
 import { useFeatures } from '../world/features'
+import { GIFT_BY_ID } from '../world/cosmeticsData'
 import { MAX_ITEMS, findFreeSpot, furnitureColliders, isValid, loadHome, newUid, saveHome } from '../world/homeLayout'
 import LocalPlayer from '../world/LocalPlayer'
 import RemotePlayers, { GuideNpc, SelfTag } from '../world/RemotePlayers'
@@ -272,12 +273,14 @@ function WorldScene({ avatar }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [homeOwner, furn])
 
-  const addFurn = (id) => {
+  // extra: hediye yerleştirirken { uid, from } (hediyeler envanterden gelir, features/cosmetics)
+  const addFurn = (id, extra) => {
     if (furn.length >= MAX_ITEMS) return say(`En fazla ${MAX_ITEMS} eşya koyabilirsin.`)
+    if (extra?.uid && furn.some((i) => i.uid === extra.uid)) return say('Bu hediye zaten odada.')
     const spot = findFreeSpot(furn, id)
     if (!spot) return say('Odada boş yer kalmadı 🛋️')
-    const uid = newUid()
-    setFurn((l) => [...l, { uid, id, x: spot.x, z: spot.z, ry: 0 }])
+    const uid = extra?.uid ?? newUid()
+    setFurn((l) => [...l, { uid, id, x: spot.x, z: spot.z, ry: 0, ...(extra?.from ? { from: extra.from } : {}) }])
     setSelected(uid)
   }
   const rotateFurn = () => {
@@ -331,6 +334,7 @@ function WorldScene({ avatar }) {
     setPanel,
     openChat: (id) => openChat(id),
     closeInteract: () => setInteractId(null),
+    slug,
   })
   const sendGesture = (kind) => {
     if (!interactPeer) return
@@ -431,6 +435,7 @@ function WorldScene({ avatar }) {
       return
     }
     if (['ayarlar', 'ayar'].includes(cmd)) return setPanel('settings')
+    if (['gardirop', 'kiyafet'].includes(cmd)) return setPanel('wardrobe')
     if (cmd === 'engelle') {
       const who = args.join(' ')
       const peer = net.roster.find((p) => normalize(p.name) === normalize(who))
@@ -489,7 +494,7 @@ function WorldScene({ avatar }) {
 
         <Suspense fallback={null}>
           {home ? (
-            <HomeRoom ownerName={home.ownerName}>
+            <HomeRoom ownerName={home.ownerName} decor={feat.homeDecor}>
               <FurnitureLayer items={shownItems} setItems={setFurn} editing={editing && isOwnHome} selected={selected} setSelected={setSelected} controlsRef={controlsRef} />
             </HomeRoom>
           ) : (
@@ -508,6 +513,7 @@ function WorldScene({ avatar }) {
           </LocalPlayer>
           <RemotePlayers roster={net.roster} remotes={net.remotes} bubbles={net.bubbles} reactions={net.reactions} whispering={net.whispering} onPick={(id) => { setChatTarget(null); chatTargetRef.current = null; setInteractId(id) }} />
           {!home && <GuideNpc focusRef={focusRef} tips={GUIDE_TIPS} />}
+          {feat.sceneNodes}
         </Suspense>
 
         <ZoneWatcher key={home ? 'home' : 'city'} focusRef={focusRef} onChange={setZone} fixed={home ? HOME_ZONE : undefined} />
@@ -588,8 +594,10 @@ function WorldScene({ avatar }) {
           count={furn.length}
           max={MAX_ITEMS}
           selected={selected}
-          selectedName={FURNITURE_BY_ID[furn.find((i) => i.uid === selected)?.id]?.name}
+          selectedName={(FURNITURE_BY_ID[furn.find((i) => i.uid === selected)?.id] ?? GIFT_BY_ID[furn.find((i) => i.uid === selected)?.id])?.name}
           onAdd={addFurn}
+          tabs={feat.editorTabs}
+          tabApi={{ furn, place: addFurn }}
           onRotate={rotateFurn}
           onRemove={removeFurn}
           onClose={stopEditing}

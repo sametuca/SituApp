@@ -95,7 +95,7 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
       onPointerOver={() => onPick && (document.body.style.cursor = 'pointer')}
       onPointerOut={() => (document.body.style.cursor = '')}
     >
-      <AvatarRig slug={avatar} anim={anim} />
+      <AvatarRig slug={avatar} anim={anim} cosId={id} />
       <Tag name={name} bubble={bubble} reaction={reaction} whisper={whisper} />
     </group>
   )
