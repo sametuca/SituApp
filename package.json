@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "server": "node server/index.js",
+    "assets": "node scripts/generate-assets.mjs",
     "dev:all": "concurrently -n web,api -c blue,magenta \"npm:dev\" \"npm:server\"",
     "build": "vite build",
     "lint": "oxlint",

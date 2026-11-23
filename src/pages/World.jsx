@@ -1,13 +1,53 @@
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Environment, ContactShadows } from '@react-three/drei'
+import { OrbitControls, Environment, ContactShadows, useGLTF } from '@react-three/drei'
+import { Box3, Vector3 } from 'three'
 
 const locationThemes = {
   cafe: { sky: '#3a2a1a', floor: '#5c4530', env: 'sunset' },
   park: { sky: '#1a3a2a', floor: '#2d4a2d', env: 'forest' },
   club: { sky: '#2a0a3a', floor: '#1a0a2a', env: 'night' },
   beach: { sky: '#2a3a5a', floor: '#c2a878', env: 'dawn' },
+}
+
+function Prop({ asset }) {
+  const { scene } = useGLTF(asset.url)
+  const object = useMemo(() => {
+    const clone = scene.clone(true)
+    // en büyük boyutu 1 birime normalle (asset.scale ile çarpılır), tabanı y=0'a oturt, x/z'de ortala
+    const box = new Box3().setFromObject(clone)
+    const size = box.getSize(new Vector3())
+    const k = 1 / (Math.max(size.x, size.y, size.z) || 1)
+    clone.scale.multiplyScalar(k)
+    const fit = new Box3().setFromObject(clone)
+    const c = fit.getCenter(new Vector3())
+    clone.position.set(-c.x, -fit.min.y, -c.z)
+    clone.traverse((o) => {
+      if (o.isMesh) o.castShadow = o.receiveShadow = true
+    })
+    return clone
+  }, [scene])
+  return (
+    <group position={asset.position} rotation={[0, asset.rotationY ?? 0, 0]} scale={asset.scale ?? 1}>
+      <primitive object={object} />
+    </group>
+  )
+}
+
+function useLocationAssets(locationId) {
+  const [assets, setAssets] = useState([])
+  useEffect(() => {
+    let cancelled = false
+    fetch('/models/manifest.json')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list) => !cancelled && setAssets(list.filter((a) => a.location === locationId)))
+      .catch(() => !cancelled && setAssets([]))
+    return () => {
+      cancelled = true
+    }
+  }, [locationId])
+  return assets
 }
 
 function AvatarBlob({ color }) {
@@ -23,6 +63,7 @@ export default function World() {
   const navigate = useNavigate()
   const [avatar, setAvatar] = useState(null)
   const [location, setLocation] = useState(null)
+  const assets = useLocationAssets(location?.id)
 
   useEffect(() => {
     const a = localStorage.getItem('situapp_avatar')
@@ -53,6 +94,12 @@ export default function World() {
         <Environment preset={theme.env} />
 
         <AvatarBlob color={avatarColor} />
+
+        <Suspense fallback={null}>
+          {assets.map((a) => (
+            <Prop key={a.id} asset={a} />
+          ))}
+        </Suspense>
 
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
           <circleGeometry args={[4, 32]} />

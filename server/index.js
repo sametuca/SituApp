@@ -6,6 +6,8 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { importAsset, readManifest } from './assets.js'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 dotenv.config({ path: path.join(__dirname, '.env') })
 const DATA_DIR = path.join(__dirname, 'data')
@@ -126,6 +128,20 @@ app.delete('/api/characters/:id', async (req, res) => {
   const next = list.filter((c) => c.id !== req.params.id)
   await writeCharacters(next)
   res.json({ ok: true })
+})
+
+// Oyun asset'leri (public/models/manifest.json)
+app.get('/api/assets', async (_req, res) => {
+  res.json(await readManifest())
+})
+
+// Meshy çıktısını indirip oyuna ekle
+app.post('/api/assets/import', async (req, res) => {
+  try {
+    res.json(await importAsset(req.body))
+  } catch (err) {
+    res.status(400).json({ error: err.message })
+  }
 })
 
 app.get('/api/health', (_req, res) => {

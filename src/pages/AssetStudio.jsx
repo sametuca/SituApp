@@ -9,6 +9,15 @@ const artStyles = [
   { id: 'sculpture', label: 'Heykelsi' },
 ]
 
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001'
+
+const WORLD_LOCATIONS = [
+  { id: 'cafe', label: '☕ Kafe' },
+  { id: 'park', label: '🌳 Park' },
+  { id: 'club', label: '🪩 Gece Kulübü' },
+  { id: 'beach', label: '🏖️ Plaj' },
+]
+
 const STAGE_LABELS = {
   preview: 'Taslak oluşturuluyor',
   refine: 'Doku & detay ekleniyor',
@@ -25,6 +34,8 @@ export default function AssetStudio() {
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
   const [characters, setCharacters] = useState([])
+  const [worldLocation, setWorldLocation] = useState('cafe')
+  const [added, setAdded] = useState(null)
 
   useEffect(() => {
     listCharacters().then(setCharacters).catch(() => {})
@@ -36,6 +47,7 @@ export default function AssetStudio() {
     setError(null)
     setResult(null)
     setProgress(null)
+    setAdded(null)
     try {
       const data = await generateModel({
         prompt,
@@ -65,6 +77,31 @@ export default function AssetStudio() {
     setPrompt('')
     setResult(null)
     setStatus('idle')
+  }
+
+  const handleAddToWorld = async () => {
+    if (!result?.model_urls?.glb) return
+    setError(null)
+    try {
+      const res = await fetch(`${API_BASE}/api/assets/import`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name || prompt.slice(0, 24),
+          location: worldLocation,
+          prompt,
+          glbUrl: result.model_urls.glb,
+          thumbnailUrl: result.thumbnail_url,
+          position: [-2 + Math.random() * 4, 0, -2 + Math.random() * 2],
+          scale: 1.5,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Eklenemedi')
+      setAdded(data.url)
+    } catch (err) {
+      setError(err.message)
+    }
   }
 
   const handleDelete = async (id) => {
@@ -161,13 +198,34 @@ export default function AssetStudio() {
         </div>
 
         {result?.model_urls?.glb && (
-          <button
-            onClick={handleSave}
-            className="mt-4 w-full md:w-auto px-6 py-3 rounded-xl bg-white/10 text-white font-medium border border-white/20"
-          >
-            ✓ Karaktere kaydet
-          </button>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button
+              onClick={handleSave}
+              className="px-6 py-3 rounded-xl bg-white/10 text-white font-medium border border-white/20"
+            >
+              ✓ Karaktere kaydet
+            </button>
+            <select
+              value={worldLocation}
+              onChange={(e) => setWorldLocation(e.target.value)}
+              className="bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-white"
+            >
+              {WORLD_LOCATIONS.map((l) => (
+                <option key={l.id} value={l.id} className="text-black">
+                  {l.label}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={handleAddToWorld}
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium"
+            >
+              🌍 Dünyaya ekle
+            </button>
+            {added && <span className="text-emerald-400 text-sm">Eklendi: {added}</span>}
+          </div>
         )}
+        {status === 'done' && error && <p className="text-red-400 text-sm mt-2">{error}</p>}
 
         {/* saved characters */}
         <div className="mt-10">
