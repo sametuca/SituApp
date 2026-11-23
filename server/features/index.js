@@ -5,6 +5,11 @@
 //   api                                             diğer modüllerin/çekirdeğin kullanacağı işlevler
 // Yeni özellik: server/features/<ad>.js yaz, buraya bir satır ekle.
 import moderation from './moderation.js'
+import games from './games.js'
+import friends from './friends.js'
+import profile from './profile.js'
+import progress from './progress.js'
+import media from './media.js'
 import together from './together.js'
 
-export const FEATURE_FACTORIES = [moderation, together]
+export const FEATURE_FACTORIES = [moderation, games, friends, profile, progress, media, together]

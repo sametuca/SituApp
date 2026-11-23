@@ -102,6 +102,7 @@ export default function together(ctx) {
       taken.set(`${seat.id}:${slotIdx}`, me.id)
       startPose(me, { kind: 'sit', style: seat.kind, seat: seat.id, slot: slotIdx, x: slot.x, z: slot.z, ry: +seat.ry.toFixed(3) })
       announce(me)
+      ctx.emitEvent?.(me, 'sit')
 
       // yan yana oturanlar: ikisine 💞 ve "Sohbet et" kısayolu (engel/DND varsa sessiz)
       for (const o of neighbours) {
@@ -127,6 +128,14 @@ export default function together(ctx) {
       const list = []
       for (const o of players.values()) if (o.room === me.room && o.pose && (o.id === me.id || !mod().blockedPair(me, o))) list.push({ id: o.id, pose: publicPose(o.pose) })
       send(me.ws, { t: 'poses', list })
+    },
+
+    /** İstemci fotoğraf çekince bildirir (yalnızca görev/rozet sayacı için; en çok 3 sn'de bir). */
+    photo_taken(me) {
+      const now = Date.now()
+      if (now - (me.lastPhoto ?? 0) < 3000) return
+      me.lastPhoto = now
+      ctx.emitEvent?.(me, 'photo')
     },
 
     dance_invite(me, msg) {
@@ -198,6 +207,8 @@ export default function together(ctx) {
       from.poseTimer = setTimeout(() => endPose(from), DANCE_MS)
       announce(from)
       announce(me)
+      ctx.emitEvent?.(from, 'dance', 1, me)
+      ctx.emitEvent?.(me, 'dance', 1, from)
       broadcast({ t: 'react', id: from.id, e: '💃' }, undefined, from.room, from)
       broadcast({ t: 'react', id: me.id, e: '💃' }, undefined, me.room, me)
     },
@@ -206,7 +217,7 @@ export default function together(ctx) {
   return {
     handlers,
     /** Çekirdeğin 'move' dalı çağırır: true dönerse konum güncellemesi yok sayılır. */
-    onMove(me, x, z) {
+    moveVeto(me, x, z) {
       const pose = me.pose
       if (!pose) return false
       if (Date.now() < (me.poseGrace ?? 0)) return true

@@ -1,11 +1,21 @@
 // Özellik modülleri (istemci). Her modül bir hook'tur: useX(ctx) → { peerActions?(peer), settingsSections?, overlays? }
 //   peerActions(peer): etkileşim menüsüne eklenecek düğmeler  [{ key, emoji, label, onClick, danger? }]
+//   peerHeader(peer):  etkileşim menüsünde kişinin altına çizilecek JSX (mini profil vb.)
 //   settingsSections:  Ayarlar paneline eklenecek JSX parçaları
 //   overlays:          ekranın üstüne çizilecek JSX (diyaloglar, bildirimler…)
-// ctx: { net, say, touch, openChat, closeInteract, roster, focusRef, home, panel, setPanel }
+//   extraButtons:      üst çubuğa düğmeler [{ key, emoji, label, onClick, badge? }] (sol sütun)
+//   extraNodes:        üst çubuğun sağ grubuna hazır JSX düğmeler
+//   readAt:            { oyuncuId: ts } DM okundu bilgisi
+//   worldEffects:      <Canvas> içine çizilecek R3F düğümleri (sezon efektleri…)
+// ctx: { net, say, touch, openChat, closeInteract, roster, focusRef, home, panel, setPanel, chatTarget, pushFeed }
 // Yeni özellik: src/world/features/<ad>.jsx yaz, aşağıya bir satır ekle (kuralı bozma: hook sırası sabit olmalı).
 import { Modal } from '../Hud'
 import { useModeration } from './moderation'
+import { useGames } from './games'
+import { useFriends } from './friends'
+import { useProfile } from './profile'
+import { useProgress } from './progress'
+import { useMedia } from './media'
 import { useTogether } from './together'
 
 function SettingsPanel({ sections, onClose }) {
@@ -21,15 +31,21 @@ function SettingsPanel({ sections, onClose }) {
 }
 
 export function useFeatures(ctx) {
-  const parts = [useModeration(ctx), useTogether(ctx)]
+  const parts = [useModeration(ctx), useGames(ctx), useFriends(ctx), useProfile(ctx), useProgress(ctx), useMedia(ctx), useTogether(ctx)]
 
   const peerActions = (peer) => parts.flatMap((p) => p.peerActions?.(peer) ?? [])
+  const peerHeader = (peer) => parts.map((p, i) => (p.peerHeader ? <div key={i}>{p.peerHeader(peer)}</div> : null))
   const settingsSections = parts.flatMap((p) => p.settingsSections ?? [])
+  const extraButtons = parts.flatMap((p) => p.extraButtons ?? []) // üst çubuk düğmeleri [{ key, emoji, label, onClick, badge? }]
+  const worldEffects = parts.map((p, i) => (p.worldEffects ? <group key={i}>{p.worldEffects}</group> : null)) // Canvas içine
   const overlays = (
     <>
       {ctx.panel === 'settings' && <SettingsPanel sections={settingsSections} onClose={() => ctx.setPanel(null)} />}
       {parts.map((p, i) => (p.overlays ? <div key={i}>{p.overlays}</div> : null))}
     </>
   )
-  return { peerActions, overlays }
+  // hazır JSX üst çubuk düğmeleri ve DM'de karşı tarafın okuma zamanları (id → ts)
+  const extraNodes = parts.map((p, i) => (p.extraNodes ? <span key={i} className="contents">{p.extraNodes}</span> : null))
+  const readAt = Object.assign({}, ...parts.map((p) => p.readAt))
+  return { peerActions, peerHeader, overlays, extraButtons, extraNodes, readAt, worldEffects }
 }

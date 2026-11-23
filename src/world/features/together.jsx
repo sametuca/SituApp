@@ -262,6 +262,7 @@ export function useTogether(ctx) {
         const item = { id: Date.now().toString(36), ts: Date.now(), url: out.thumb }
         setAlbum(saveToAlbum(who, item))
         setPhoto(out)
+        send({ t: 'photo_taken' })
       } catch {
         if (alive) say('Fotoğraf çekilemedi 😿 Tekrar dene.')
       } finally {
