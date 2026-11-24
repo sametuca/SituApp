@@ -107,7 +107,7 @@ export function ZoneToast({ zone }) {
 // Küçük harita: oyuncuyu ortalar, yakın çevreyi (±LOCAL_R m) gösterir, mekân ikonları + yakındaki oyuncular. Dokununca büyür:
 // tüm şehir + bölge adları + bölgelere ışınlanma düğmeleri. Çizim canvas'ta (yüksek çözünürlük).
 const LOCAL_R = 30 // küçük harita yarıçapı (m)
-const WORLD_R = 52 // büyük harita yarıçapı (m)
+const WORLD_R = 60 // büyük harita yarıçapı (m)
 const iconCache = new Map()
 const iconOf = (emoji) => {
   const src = emojiSrc(emoji)
@@ -137,12 +137,14 @@ function drawMap(ctx, S, big, f, remotes) {
     ctx.arc(S / 2, S / 2, S / 2, 0, Math.PI * 2)
     ctx.clip() // yuvarlak, oyuncu ortada
   }
-  ctx.fillStyle = '#bfe9c9' // çimen
+  ctx.fillStyle = '#9fdcef' // deniz (adanın dört yanı)
   ctx.fillRect(0, 0, S, S)
-  ctx.fillStyle = '#9fd8f5' // deniz
-  ctx.fillRect(0, Z(46), S, S)
+  ctx.fillStyle = '#f6e3b0' // kıyı kumu
+  ctx.fillRect(X(-53.5), Z(-53.5), len(107), len(107))
+  ctx.fillStyle = '#bfe9c9' // çimen
+  ctx.fillRect(X(-50), Z(-50), len(100), len(100))
   ctx.fillStyle = '#ffe9b8' // plaj kumu
-  ctx.fillRect(X(-14), Z(30), len(28), len(16))
+  ctx.fillRect(X(-14), Z(30), len(28), len(20))
   ctx.fillStyle = '#e9d3dc' // kaldırımlar (arnavut kaldırımı tonu)
   ctx.fillRect(X(-ROAD_HALF - 1.4), 0, len(ROAD_HALF * 2 + 2.8), S)
   ctx.fillRect(X(-12), Z(-ROAD_HALF - 1.4), S, len(ROAD_HALF * 2 + 2.8)) // doğu-batı: batıda (park) yol yok

@@ -6,6 +6,7 @@ import { BLANKETS, BUILDINGS, GAZEBO, PROPS, ROAD_HALF } from './layout'
 import Prop from './Prop'
 import { Em } from '../components/emoji'
 import { SKY_MATS, skyLive } from './Sky'
+import { worldClock } from './worldClock'
 
 const FACING = { s: 0, n: Math.PI, e: Math.PI / 2, w: -Math.PI / 2 }
 
@@ -381,6 +382,71 @@ function Sun({ focusRef }) {
   )
 }
 
+// ---------- deniz: adanın dört yanı (Meshy dokulu, animasyonlu) ----------
+const ISLAND = 50 // çim yarıçapı; ardından RIM m'lik kum şeridi, sonra deniz
+const RIM = 3.5
+const WATER_COLOR = new Color('#a6e6f5')
+const WATER_NIGHT = new Color('#3f5a9c')
+
+function Sea() {
+  const water = useLoader(TextureLoader, '/textures/water.webp')
+  const foam = useLoader(TextureLoader, '/textures/foam.webp')
+  const [deep, swell, ring] = useMemo(() => {
+    const mk = (src, m, size) => {
+      const t = src.clone()
+      t.wrapS = t.wrapT = RepeatWrapping
+      t.colorSpace = SRGBColorSpace
+      t.anisotropy = 8
+      t.repeat.set(size / m, size / m)
+      t.needsUpdate = true
+      return t
+    }
+    return [mk(water, 14, 700), mk(foam, 9, 700), mk(foam, 7, 120)]
+  }, [water, foam])
+  const mat = useRef()
+  const mat2 = useRef()
+  const matRing = useRef()
+  const plane = useRef()
+  useFrame(({ clock }, dt) => {
+    const t = clock.elapsedTime
+    deep.offset.x += dt * 0.010
+    deep.offset.y += dt * 0.006
+    swell.offset.x -= dt * 0.012
+    swell.offset.y += dt * 0.008
+    ring.offset.x += dt * 0.02
+    if (plane.current) plane.current.position.y = -0.05 + Math.sin(t * 0.7) * 0.025 // yavaş kabarma
+    const night = Number.isFinite(worldClock.night) ? worldClock.night : 0
+    if (mat.current) mat.current.color.copy(WATER_COLOR).lerp(WATER_NIGHT, night * 0.85)
+    if (mat2.current) mat2.current.opacity = 0.16 + Math.sin(t * 0.9) * 0.05
+    if (matRing.current) matRing.current.opacity = 0.38 + Math.sin(t * 1.6) * 0.14 // kıyıda köpük nefes alır
+  })
+  const edge = ISLAND + RIM
+  const strips = [
+    [0, -edge - 0.9, edge * 2 + 3.6, 1.8],
+    [0, edge + 0.9, edge * 2 + 3.6, 1.8],
+    [-edge - 0.9, 0, 1.8, edge * 2],
+    [edge + 0.9, 0, 1.8, edge * 2],
+  ]
+  return (
+    <group>
+      <mesh ref={plane} position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[700, 700]} />
+        <meshStandardMaterial ref={mat} map={deep} roughness={0.25} metalness={0.05} emissive="#3aa9c9" emissiveIntensity={0.06} />
+      </mesh>
+      <mesh position={[0, -0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[700, 700]} />
+        <meshBasicMaterial ref={mat2} map={swell} transparent opacity={0.18} depthWrite={false} />
+      </mesh>
+      {strips.map(([x, z, w, d], i) => (
+        <mesh key={i} position={[x, -0.02, z]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[w, d]} />
+          <meshBasicMaterial ref={i === 0 ? matRing : undefined} map={ring} transparent opacity={0.6} depthWrite={false} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
 const DASHES = Array.from({ length: 23 }, (_, i) => -44 + i * 4).filter((t) => Math.abs(t) > 12.5)
 const PARK_X = -12 // batıya doğru asfalt biter; parkta patika başlar
 
@@ -391,14 +457,18 @@ export default function City({ focusRef }) {
       <Sun focusRef={focusRef} />
 
       {/* zemin ve mahalle zeminleri */}
-      <Flat w={180} d={180} y={0} tex="grass" />
+      <Sea />
+      <Flat w={ISLAND * 2} d={ISLAND * 2} y={0} tex="grass" /> {/* ada */}
+      {/* kıyı kumu: adanın dört kenarında */}
+      <Flat x={0} z={-ISLAND - RIM / 2} w={ISLAND * 2 + RIM * 2} d={RIM} y={Y.floor} tex="sand" />
+      <Flat x={0} z={ISLAND + RIM / 2} w={ISLAND * 2 + RIM * 2} d={RIM} y={Y.floor} tex="sand" />
+      <Flat x={-ISLAND - RIM / 2} z={0} w={RIM} d={ISLAND * 2} y={Y.floor} tex="sand" />
+      <Flat x={ISLAND + RIM / 2} z={0} w={RIM} d={ISLAND * 2} y={Y.floor} tex="sand" />
       <Flat x={0} z={-30} w={28} d={36} y={Y.floor} tex="cobble" color="#fff3ea" /> {/* kafe: sıcak kaldırım taşı */}
       <Flat x={30} z={0} w={36} d={28} y={Y.floor} tex="cobble" color="#e3d6ff" /> {/* kulüp */}
       <Flat x={-30} z={0} w={36} d={28} y={Y.floor} tex="grass" color="#f4fff6" /> {/* park çimi */}
       <Flat x={0} z={38.5} w={28} d={17} y={Y.floor} tex="sand" /> {/* plaj kumu */}
-      <Flat x={0} z={46} w={92} d={3} y={Y.floor} tex="sand" />
-      <Flat x={0} z={70} w={200} d={48} y={0.03} color="#9fd8f5" /> {/* deniz */}
-      <Flat x={0} z={46.4} w={200} d={0.8} y={0.035} color="#e8f7ff" /> {/* köpük */}
+      <Flat x={0} z={48.5} w={100} d={3} y={Y.floor} tex="sand" />
       <mesh position={[-33, 0.04, -6]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[3.6, 40]} />
         <meshStandardMaterial color="#a9ddf5" roughness={0.15} />

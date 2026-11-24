@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { zoneAt } from '../layout'
+import { PLAY_LIMIT, zoneAt } from '../layout'
 import { VENUE_BY_ID, venueIdOf } from '../venues'
 import { subscribeWorld, worldClock } from '../worldClock'
 import { createMusic, OUTDOOR, VENUE_SCENE, ZONE_SCENE } from '../audio/music'
@@ -97,8 +97,17 @@ export function useAudio({ net, focusRef, home, panel }) {
       }
     })
     const poll = setInterval(sync, 500)
+    // kıyı dalgaları: adanın kenarına (PLAY_LIMIT) yaklaştıkça artar; evde/mekânda yok
+    const shoreTimer = setInterval(() => {
+      if (!music) return
+      const indoors = homeRef.current || String(roomRef.current).startsWith('venue:')
+      const f = focusRef.current
+      const edge = PLAY_LIMIT - Math.max(Math.abs(f.x), Math.abs(f.z)) // kenara kalan mesafe (m)
+      music.setShore(indoors ? 0 : Math.pow(Math.max(0, 1 - edge / 22), 1.4))
+    }, 250)
     return () => {
       clearInterval(poll)
+      clearInterval(shoreTimer)
       offReady()
       offWorld?.()
       music?.stop()

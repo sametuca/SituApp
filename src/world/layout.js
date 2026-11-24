@@ -5,7 +5,7 @@
 import { VENUE_BY_LABEL } from './venues.js'
 
 export const WORLD_HALF = 60
-export const PLAY_LIMIT = 46 // oyuncunun yürüyebildiği sınır
+export const PLAY_LIMIT = 52 // oyuncunun yürüyebildiği sınır
 export const ROAD_HALF = 3 // yolların yarı genişliği
 
 export const PALETTE = {

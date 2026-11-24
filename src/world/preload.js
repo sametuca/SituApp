@@ -32,7 +32,7 @@ const load = (urls) =>
 
 export function preloadCritical(slug) {
   load([`/models/avatars/${slug}.glb`, ...CITY])
-  for (const n of ['grass', 'asphalt', 'cobble', 'sand', 'brick', 'siding', 'mosaic', 'plaster', 'shingle']) useLoader.preload(TextureLoader, `/textures/${n}.webp`) // yer dokuları (City.jsx Flat)
+  for (const n of ['grass', 'asphalt', 'cobble', 'sand', 'brick', 'siding', 'mosaic', 'plaster', 'shingle', 'water', 'foam']) useLoader.preload(TextureLoader, `/textures/${n}.webp`) // yer dokuları (City.jsx Flat)
 }
 
 export function preloadLater() {

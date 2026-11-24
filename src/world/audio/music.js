@@ -280,6 +280,11 @@ export function createMusic(ac, out) {
   moodFilter.connect(moodGain).connect(out)
   const rainBus = ac.createGain()
   rainBus.connect(out)
+  // kıyı dalgaları: adaya yaklaştıkça duyulur (setShore 0..1); iki gürültü katmanı yavaş kabarıp çekilir
+  const shoreBus = ac.createGain()
+  shoreBus.gain.value = 0
+  shoreBus.connect(out)
+  let shoreStop = null
   const mood = { night: 0, rain: false, outdoor: true }
   let cur = null
   let timer = null
@@ -352,6 +357,20 @@ export function createMusic(ac, out) {
       Object.assign(mood, patch)
       applyMood()
     },
+    /** Kıyıya yakınlık 0..1 (0 = uzak/iç mekân). Dalga sesi bu seviyeyle açılıp kısılır. */
+    setShore(level) {
+      const now = ac.currentTime
+      const l = Math.max(0, Math.min(1, level))
+      if (l > 0.02 && !shoreStop) {
+        const a = noiseLayer(ac, shoreBus, { type: 'lowpass', f: 850, q: 0.4, g: 0.16, lfo: { rate: 0.1, depth: 0.9 }, t: now, fade: 2 })
+        const b = noiseLayer(ac, shoreBus, { type: 'highpass', f: 3200, q: 0.4, g: 0.02, lfo: { rate: 0.14, depth: 0.95 }, t: now, fade: 2 })
+        shoreStop = (at, f) => (a(at, f), b(at, f))
+      } else if (l <= 0.02 && shoreStop) {
+        shoreStop(now + 1.5, 2)
+        shoreStop = null
+      }
+      shoreBus.gain.setTargetAtTime(l, now, 0.6)
+    },
     start() {
       if (!timer) timer = setInterval(tick, 100)
     },
@@ -362,6 +381,8 @@ export function createMusic(ac, out) {
       cur = null
       rainStop?.(ac.currentTime, 1)
       rainStop = null
+      shoreStop?.(ac.currentTime, 1)
+      shoreStop = null
     },
     mood,
   }
