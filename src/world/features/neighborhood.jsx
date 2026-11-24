@@ -189,7 +189,7 @@ export function useNeighborhood(ctx) {
     near && !home && !venue && !busy ? (
       <DoorPrompt
         emoji={near.open || mine ? '🔓' : '🔒'}
-        label={mine ? 'Evine gir' : `${near.name} evi${near.open ? ' · herkese açık' : ' · kapalı (davet gerekir)'}`}
+        label={mine ? 'Evine gir' : `${near.name} · ${near.open ? 'herkese açık' : 'davetle'}`}
         action="Gir"
         touch={ctx.touch}
         raised={false}

@@ -138,11 +138,11 @@ function fenceGeometry(style) {
       }
       parts.push(piece(BOX, '#ffd3e6', mx, 0.32, mz, ry, len, 0.07, 0.05), piece(BOX, '#ffd3e6', mx, 0.7, mz, ry, len, 0.07, 0.05))
     } else if (style === 'hedge') {
-      const n = Math.max(2, Math.round(len / 0.55))
+      const n = Math.max(2, Math.round(len / 0.48))
       for (let i = 0; i <= n; i++) {
         const [x, z] = at((i / n) * len)
-        parts.push(piece(BALL, i % 2 ? '#8fdcb4' : '#a9e8c6', x, 0.46, z, 0, 1.0, 0.9, 0.9))
-        if (i % 3 === 1) parts.push(piece(BALL, i % 2 ? '#ff9fc6' : '#fff0a8', x + dz * 0.3, 0.92, z - dx * 0.3, 0, 0.2, 0.2, 0.2))
+        parts.push(piece(BALL, i % 2 ? '#8fdcb4' : '#a9e8c6', x, 0.4, z, 0, 0.85, 0.8, 0.75))
+        if (i % 3 === 1) parts.push(piece(BALL, i % 2 ? '#ff9fc6' : '#fff0a8', x + dz * 0.3, 0.78, z - dx * 0.3, 0, 0.2, 0.2, 0.2))
       }
     } else {
       const n = Math.max(1, Math.round(len / 1.7))
@@ -325,7 +325,7 @@ export default function Neighborhood({ focusRef }) {
       {PLOTS.map((p) => (
         <Plot key={p.id} plot={p} data={plotStore.plots.get(p.id)} />
       ))}
-      {LAMP_Z.flatMap((z) => [-1, 1].map((s) => <Prop key={`${z}${s}`} model={LAMP} x={STREET_X + s * (STREET_HALF + 0.5)} z={z} scale={3} />))}
+      {LAMP_Z.flatMap((z) => [-1, 1].map((s) => <Prop key={`${z}${s}`} model={LAMP} x={STREET_X + s * (STREET_HALF + 0.5)} z={z} scale={2.4} />))}
       <StreetLabel x={STREET_X} z={-15} text="🏘️ Konut Mahallesi" focusRef={focusRef} />
       <StreetLabel x={STREET_X} z={15} text="🏘️ Konut Mahallesi" focusRef={focusRef} />
     </group>
