@@ -4,6 +4,7 @@
 // Test/geliştirme URL parametreleri: ?hour=21 (saati sabitler), ?daylen=3 (bir günü 3 dk'da döndürür; ?hour başlangıç saati),
 // ?weather=rain (sunucu havasını yok sayar).
 // Her saniye worldClock'a yayımlanır (publishWorld): hour, phase, night, sunset, weather.
+import { Ico } from '../../components/Icon'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import WeatherFx from '../WeatherFx'
 import { currentHour, fmtHour, nightAt, phaseOf, publishWorld, realHour, setHourSource, sunsetAt } from '../worldClock'
@@ -143,7 +144,7 @@ export function useSky({ net, touch, home, venue, focusRef }) {
   const wEmoji = WEATHER_EMOJI[weather]
   const menuNodes = (
     <div className="flex items-center gap-3 rounded-2xl bg-[#f3f0fa] px-3 py-2 text-sm font-extrabold text-[#4a3b5c]">
-      <span className="text-lg">{PHASE_EMOJI[now.phase]}</span>
+      <Ico name={now.phase === 'night' ? 'night' : now.phase === 'day' ? 'day' : 'dusk'} size={22} />
       <span className="flex-1">
         <span className="tabular-nums">{fmtHour(now.hour)}</span>
         <span className="ml-1 text-xs font-bold text-[#8a7a9c]">

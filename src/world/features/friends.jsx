@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Modal } from '../Hud'
 import Portrait from '../Portrait'
+import { Ico } from '../../components/Icon'
 
 // Arkadaşlık, varlık, mesaj kutusu, okundu bilgisi ve tarayıcı bildirimi (sunucu: server/features/friends.js).
 
@@ -587,7 +588,7 @@ export function useFriends({ net, say, focusRef, home, venue, panel, setPanel, o
       }}
       className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#fff0f6]"
     >
-      <span className="text-lg">💗</span>
+      <Ico name="friends" size={22} />
       <span className="flex-1">Arkadaşlar</span>
       {badge > 0 && !net.dnd && (
         <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[#ff7eb3] px-1 text-[10px] font-black text-white">{badge}</span>

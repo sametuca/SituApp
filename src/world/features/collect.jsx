@@ -183,7 +183,7 @@ export function useCollect(ctx) {
   }, [nearCol, pick])
 
   return {
-    extraButtons: [{ key: 'collection', emoji: '🧺', label: 'Koleksiyon', onClick: () => setPanel('collection') }],
+    extraButtons: [{ key: 'collection', icon: 'collection', label: 'Koleksiyon', onClick: () => setPanel('collection') }],
     sceneNodes: where ? <CollectiblesLayer where={where} focusRef={focusRef} store={store} onNear={setNear} onPick={pick} pops={pops} /> : null,
     overlays: (
       <>

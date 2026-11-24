@@ -3,6 +3,7 @@ import Prop from './Prop'
 import { PlacedGift } from './Gifts'
 import { GIFT_BY_ID } from './cosmeticsData'
 import { FURNITURE, FURNITURE_BY_ID, FURNITURE_SETS, furnitureUrl } from './furniture'
+import { Ico } from '../components/Icon'
 import { clampToRoom, footprint, isValid, snap } from './homeLayout'
 import { HOME_ROOM } from './layout'
 
@@ -106,7 +107,7 @@ export function EditToggle({ onClick, touch }) {
       onClick={onClick}
       className={`absolute right-3 z-10 flex items-center gap-2 rounded-full px-4 py-2 text-sm font-extrabold text-[#4a3b5c] transition hover:bg-white ${glass} ${touch ? 'top-16' : 'top-16'}`}
     >
-      🛋️ Döşe
+      <Ico name="sofa" size={20} /> Döşe
     </button>
   )
 }

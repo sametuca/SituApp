@@ -252,7 +252,7 @@ export function useProgress({ net, say, focusRef, home, venue, panel, setPanel, 
 
   const remaining = prog ? prog.quests.filter((q) => !q.done).length : 0
   const extraButtons = [
-    { key: 'quests', emoji: '⭐', label: 'Görevler ve rozetler', onClick: () => setPanel('quests'), badge: remaining || undefined },
+    { key: 'quests', icon: 'quests', label: 'Görevler ve rozetler', onClick: () => setPanel('quests'), badge: remaining || undefined },
     ...(event ? [{ key: 'event', emoji: event.emoji, label: event.name, onClick: () => setPanel('event') }] : []),
   ]
 

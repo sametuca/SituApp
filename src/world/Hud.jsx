@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ToyButton } from '../components/ui'
 import { emojiSrc } from '../components/emoji'
+import { Ico } from '../components/Icon'
 import { BUILDINGS, GUIDE, ROAD_HALF, ZONES } from './layout'
 
 const glass = 'border-2 border-white bg-white/75 shadow-soft backdrop-blur-md'
@@ -27,11 +28,11 @@ export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings, 
           aria-label="Karakter seçimine dön"
           className={`grid h-10 w-10 place-items-center rounded-full text-lg font-black text-[#4a3b5c] transition hover:bg-white ${glass}`}
         >
-          ←
+          <Ico name="back" size={22} />
         </button>
         {extraButtons.map((b) => (
           <button key={b.key} onClick={b.onClick} aria-label={b.label} title={b.label} className={`relative grid h-10 w-10 place-items-center rounded-full text-lg transition hover:bg-white active:scale-95 ${glass}`}>
-            {b.emoji}
+            {b.icon ? <Ico name={b.icon} size={22} /> : b.emoji}
             {b.badge ? <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[#ff7eb3] px-1 text-[10px] font-black text-white">{b.badge}</span> : null}
           </button>
         ))}
@@ -58,7 +59,7 @@ export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings, 
           aria-expanded={menu}
           className={`relative grid h-10 w-10 place-items-center rounded-full text-lg transition hover:bg-white ${glass}`}
         >
-          ⚙️
+          <Ico name="settings" size={22} />
           {menuBadge > 0 && <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full border-2 border-white bg-[#ff7eb3] px-1 text-[9px] font-black text-white">{menuBadge}</span>}
         </button>
         {menu && (
@@ -66,12 +67,12 @@ export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings, 
             {menuNodes}
             {onSettings && (
               <button onClick={onSettings} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#fff0f6]">
-                <span className="text-lg">⚙️</span>
+                <Ico name="settings" size={22} />
                 <span className="flex-1">Ayarlar</span>
               </button>
             )}
             <button onClick={onHelp} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#fff0f6]">
-              <span className="text-lg">❓</span>
+              <Ico name="help" size={22} />
               <span className="flex-1">Yardım</span>
             </button>
           </div>

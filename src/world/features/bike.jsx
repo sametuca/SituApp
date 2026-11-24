@@ -57,6 +57,6 @@ export function useBike({ venue, net, say }) {
 
   const extraButtons = venue
     ? []
-    : [{ key: 'bike', emoji: riding ? '🚶' : '🚲', label: riding ? 'Bisikletten in (B)' : bike.rented ? 'Bisiklete bin (B)' : 'Bisiklet kirala (20 altın)', onClick: tryToggle }]
+    : [{ key: 'bike', icon: riding ? 'walk' : 'bike', label: riding ? 'Bisikletten in (B)' : bike.rented ? 'Bisiklete bin (B)' : 'Bisiklet kirala (20 altın)', onClick: tryToggle }]
   return { extraButtons }
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Ico } from '../components/Icon'
 import { ToyButton } from '../components/ui'
 import { MicButton, StickerBubble, StickerPanel, VoiceBubble } from './features/media'
 import { CHAT_EMOJIS, GESTURES, GESTURE_BY_KIND, QUICK_REPLIES, REACTIONS, WHISPER_RANGE } from './interact'
@@ -172,7 +173,7 @@ export function ReactionBar({ onReact, touch }) {
         aria-expanded={open}
         className={`grid ${touch ? 'h-14 w-14 text-2xl' : 'h-11 w-11 text-xl'} place-items-center rounded-full transition hover:bg-white ${glass}`}
       >
-        😊
+        <Ico name="smile" size={touch ? 30 : 26} />
       </button>
     </div>
   )
@@ -595,7 +596,7 @@ export function ChatFab({ onClick }) {
       className={`absolute z-10 grid h-14 w-14 place-items-center rounded-full text-2xl ${glass}`}
       style={{ right: 'max(1rem, env(safe-area-inset-right))', bottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
     >
-      💬
+      <Ico name="chat" size={28} />
     </button>
   )
 }

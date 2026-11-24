@@ -195,7 +195,7 @@ export function useAudio({ net, focusRef, home, panel }) {
   const extraButtons = [
     {
       key: 'audio',
-      emoji: st.muted ? '🔇' : '🔊',
+      icon: st.muted ? 'soundOff' : 'soundOn',
       label: st.muted ? 'Sesi aç' : 'Sesi kapat',
       onClick: () => {
         ensureStarted()

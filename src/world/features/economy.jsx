@@ -1,5 +1,6 @@
 // Altın göstergesi (üst çubukta 🪙 sayısı) ve kazanç bildirimi. Sunucu: server/features/economy.js.
 import { useEffect, useState } from 'react'
+import { Ico } from '../../components/Icon'
 
 const glass = 'border-2 border-white bg-white/75 shadow-soft backdrop-blur-md'
 const WHY = { dj: 'DJ kazancı' }
@@ -27,7 +28,7 @@ export function useEconomy({ net }) {
 
   const extraNodes = (
     <div className={`flex h-10 items-center gap-1.5 rounded-full px-3 text-sm font-black text-[#4a3b5c] ${glass}`} title="Altın" aria-label={`${coins} altın`}>
-      🪙 <span className="tabular-nums">{coins}</span>
+      <Ico name="coins" size={20} /> <span className="tabular-nums">{coins}</span>
     </div>
   )
 
