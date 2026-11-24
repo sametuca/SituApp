@@ -6,6 +6,7 @@ import { ToyButton } from '../../components/ui'
 import { DoorPrompt } from '../Social'
 import { PHOTO_SPOT, SEATS, SEAT_LABEL, resolveCollisions, zoneAt } from '../layout'
 import { AlbumModal, Countdown, PhotoPreview, composePhoto, loadAlbum, removeFromAlbum, saveToAlbum } from './photo'
+import { venueLayout, venueSeats } from '../venueLayout'
 import { together } from './togetherStore'
 
 const glass = 'border-2 border-white bg-white/85 shadow-soft backdrop-blur-md'
@@ -123,7 +124,7 @@ function PhotoPrompt({ touch, raised, onShoot, onAlbum }) {
 
 // ---------- ana hook ----------
 export function useTogether(ctx) {
-  const { net, say, touch, roster, focusRef, home, panel, setPanel, openChat, closeInteract } = ctx
+  const { net, say, touch, roster, focusRef, home, venue, panel, setPanel, openChat, closeInteract } = ctx
   const { on, send } = net
   const who = net.homeKey
 
@@ -184,7 +185,7 @@ export function useTogether(ctx) {
       on('leave', (m) => together.poses.delete(m.id)),
       on('dance_offer', (m) => setOffer({ id: m.id, name: m.name, avatar: m.avatar, until: Date.now() + (m.ttl ?? 20000) })),
       on('dance_cancel', (m) => setOffer((o) => (o?.id === m.id ? null : o))),
-      on('sit_pair', (m) => setPair({ id: m.id, name: m.name, avatar: m.avatar })),
+      on('sit_pair', (m) => setPair({ id: m.id, name: m.name, avatar: m.avatar, kind: m.kind })),
     ]
     send({ t: 'poses' })
     return () => {
@@ -224,7 +225,7 @@ export function useTogether(ctx) {
       if (!fromInput && s.kind === 'sit') {
         // koltuğun önüne (sandalyede arkasına: önünde masa var) çık
         const dir = s.style === 'chair' ? -1 : 1
-        const [x, z] = resolveCollisions(s.x + Math.sin(s.ry) * 0.75 * dir, s.z + Math.cos(s.ry) * 0.75 * dir)
+        const [x, z] = (together.collide ?? resolveCollisions)(s.x + Math.sin(s.ry) * 0.75 * dir, s.z + Math.cos(s.ry) * 0.75 * dir)
         focusRef.current.teleport = [x, z, s.ry]
       }
     },
@@ -302,10 +303,11 @@ export function useTogether(ctx) {
 
       // koltuk
       let opt = null
-      if (!home && !posed) {
+      const seats = venue ? venueSeats(venue) : home ? null : SEATS // evde koltuk yok; mekânda iç mekân koltukları
+      if (seats && !posed) {
         const taken = together.takenSeats()
         let best = SIT_PROMPT
-        for (const seat of SEATS) {
+        for (const seat of seats) {
           if (Math.abs(seat.x - f.x) > 4 || Math.abs(seat.z - f.z) > 4) continue
           seat.slots.forEach((sl, i) => {
             if (taken.has(`${seat.id}:${i}`)) return
@@ -318,13 +320,14 @@ export function useTogether(ctx) {
         }
       }
       setSeatOpt((p) => (p?.seat === opt?.seat && p?.slot === opt?.slot ? p : opt))
-      setPhotoNear(!home && Math.hypot(f.x - PHOTO_SPOT.x, f.z - PHOTO_SPOT.z) < PHOTO_SPOT.radius)
+      const spot = venue ? venueLayout(venue)?.photo : home ? null : PHOTO_SPOT // şehirde dış nokta, Fotoğraf Stüdyosu'nda iç nokta
+      setPhotoNear(Boolean(spot) && Math.hypot(f.x - spot.x, f.z - spot.z) < spot.radius)
 
       // yakında biri var mı + gün batımı adayı
       let any = false
       let cand = null
       let candD = SUNSET_DIST
-      const onBeach = !home && zoneAt(f.x, f.z).id === 'beach'
+      const onBeach = !home && !venue && zoneAt(f.x, f.z).id === 'beach'
       for (const r of net.remotes.current.values()) {
         const d = Math.hypot(r.x - f.x, r.z - f.z)
         if (d < NEAR_ANY) any = true
@@ -358,7 +361,7 @@ export function useTogether(ctx) {
       together.sky.target = 0
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [home, focusRef])
+  }, [home, venue, focusRef])
 
   // ---- eylemler ----
   const sit = useCallback(() => {
@@ -439,7 +442,7 @@ export function useTogether(ctx) {
             <span className="text-2xl" aria-hidden>
               💞
             </span>
-            <p className="min-w-0 flex-1 truncate text-sm font-black text-[#4a3b5c]">{pair.name} ile yan yanasınız</p>
+            <p className="min-w-0 flex-1 truncate text-sm font-black text-[#4a3b5c]">{pair.kind === 'table' ? `☕ ${pair.name} ile masayı paylaşıyorsunuz` : `${pair.name} ile yan yanasınız`}</p>
             <button
               onClick={() => {
                 openChat(pair.id)

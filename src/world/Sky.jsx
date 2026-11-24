@@ -312,7 +312,9 @@ function WetSheen({ focusRef }) {
 const EASE_WX = 3 // sn: hava geçişi
 const MAX_HOUR_SPEED = 3.5 // saat/sn: mod değişiminde saatin akış hızı
 
-export default function Sky({ home, focusRef }) {
+// home: ev içi (sabit ışık). interior: mekân içi { bg, fog: [renk, near, far], dim } (gün-geceden bağımsız, temaya göre loş).
+export default function Sky({ home: homeProp, interior = null, focusRef }) {
+  const home = Boolean(homeProp || interior)
   const scene = useThree((s) => s.scene)
   const amb = useRef()
   const hemi = useRef()
@@ -377,12 +379,14 @@ export default function Sky({ home, focusRef }) {
     SKY_MATS.fountainTop.emissiveIntensity = 0.3 + night * 1.1
 
     // ev içi: gün-geceden bağımsız sabit değerler
-    const bg = home ? tmp.set(HOME_BG) : k.bg
+    const dimK = interior ? 1 - (interior.dim ?? 0) * 0.75 : 1
+    const bg = interior ? tmp.set(interior.bg) : home ? tmp.set(HOME_BG) : k.bg
     skyBase.bg.copy(bg)
     if (home) {
-      skyBase.fog[0].set(HOME_FOG[0])
-      skyBase.fog[1] = HOME_FOG[1]
-      skyBase.fog[2] = HOME_FOG[2]
+      const fg = interior ? interior.fog : HOME_FOG
+      skyBase.fog[0].set(fg[0])
+      skyBase.fog[1] = fg[1]
+      skyBase.fog[2] = fg[2]
     } else {
       skyBase.fog[0].copy(k.fog)
       skyBase.fog[1] = fn
@@ -399,12 +403,12 @@ export default function Sky({ home, focusRef }) {
     }
     if (amb.current) {
       amb.current.color.copy(home ? tmp.set('#ffffff') : k.amb)
-      amb.current.intensity = home ? 0.7 : k.ambI * (1 - 0.1 * over)
+      amb.current.intensity = home ? 0.7 * dimK : k.ambI * (1 - 0.1 * over)
     }
     if (hemi.current) {
       hemi.current.color.copy(home ? tmp.set('#ffffff') : k.hs)
       hemi.current.groundColor.copy(home ? tmp.set('#ffd6ea') : k.hg)
-      hemi.current.intensity = home ? 1.1 : k.hI * (1 - 0.1 * over)
+      hemi.current.intensity = home ? 1.1 * dimK : k.hI * (1 - 0.1 * over)
     }
   })
 

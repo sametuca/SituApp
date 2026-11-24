@@ -384,7 +384,7 @@ function Cards({ cards, onDismiss, onAnswer, onOpen }) {
 const EMPTY = { list: [], requests: [], unread: 0 }
 
 /** Arkadaş ekle, arkadaş paneli, varlık bildirimleri, mesaj kutusu, okundu bilgisi, tarayıcı bildirimi. */
-export function useFriends({ net, say, focusRef, home, panel, setPanel, openChat, closeInteract, chatTarget }) {
+export function useFriends({ net, say, focusRef, home, venue, panel, setPanel, openChat, closeInteract, chatTarget }) {
   const [data, setData] = useState(EMPTY)
   const [inbox, setInbox] = useState([])
   const [fresh, setFresh] = useState(() => new Set()) // panel açıkken "yeni" işaretli mesaj id'leri
@@ -397,7 +397,7 @@ export function useFriends({ net, say, focusRef, home, panel, setPanel, openChat
   // en güncel değerler (abonelikler bir kez kurulur)
   const live = useRef({})
   useEffect(() => {
-    live.current = { say, focusRef, home, alert, dnd: net.dnd, chatTarget, selfId: net.selfId, send: net.send }
+    live.current = { say, focusRef, home: home || venue, alert, dnd: net.dnd, chatTarget, selfId: net.selfId, send: net.send }
   })
   const [startTab, setStartTab] = useState(null)
 
@@ -458,7 +458,7 @@ export function useFriends({ net, say, focusRef, home, panel, setPanel, openChat
         live.current.alert('Yeni mesaj 💌', `${m.from} sana mesaj bıraktı`, 'mail')
       }),
       on('goto', (m) => {
-        if (live.current.home) return live.current.say('Önce evden çık, sonra arkadaşının yanına gidebilirsin.')
+        if (live.current.home) return live.current.say('Önce dışarı çık, sonra arkadaşının yanına gidebilirsin.')
         live.current.focusRef.current.teleport = [m.x, m.z]
         live.current.say(`💗 ${m.name} yanına ışınlandın.`)
       }),

@@ -177,7 +177,7 @@ function SuggestCard({ s, onHi, onClose }) {
 }
 
 // ---------------------------------------------------------------- hook
-export function useProgress({ net, say, focusRef, home, panel, setPanel, roster }) {
+export function useProgress({ net, say, focusRef, home, venue, panel, setPanel, roster }) {
   const { on, send, status } = net
   const [prog, setProg] = useState(null)
   const [event, setEvent] = useState(null)
@@ -297,6 +297,6 @@ export function useProgress({ net, say, focusRef, home, panel, setPanel, roster 
     </>
   )
 
-  const worldEffects = event && fxOn && !home ? <EventFx fx={event.fx} focusRef={focusRef} /> : null
+  const worldEffects = event && fxOn && !home && !venue ? <EventFx fx={event.fx} focusRef={focusRef} /> : null
   return { extraButtons, settingsSections, overlays, worldEffects }
 }

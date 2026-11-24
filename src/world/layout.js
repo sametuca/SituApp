@@ -2,6 +2,8 @@
 // Birim: metre. Orijin (0,0) = lobi meydanının merkezi. +x doğu, -z kuzey, +z güney.
 // Sunucudaki WORLD_HALF (server/game.js) ile aynı olmalı.
 
+import { VENUE_BY_LABEL } from './venues.js'
+
 export const WORLD_HALF = 60
 export const PLAY_LIMIT = 46 // oyuncunun yürüyebildiği sınır
 export const ROAD_HALF = 3 // yolların yarı genişliği
@@ -46,14 +48,15 @@ export const SPAWN = { x: 0, z: 7 }
 
 // ---------- binalar ----------
 // facing: kapının baktığı yön ('n' = -z, 's' = +z, 'e' = +x, 'w' = -x)
-const b = (x, z, w, d, h, color, facing, label, extra = {}) => ({ x, z, w, d, h, color: PALETTE[color], roof: ROOF[color], facing, label, ...extra })
+// venue: girilebilen mekân kimliği (venues.js; etiket birebir eşleşir). Kapı konumu: venueDoors.js
+const b = (x, z, w, d, h, color, facing, label, extra = {}) => ({ x, z, w, d, h, color: PALETTE[color], roof: ROOF[color], facing, label, venue: VENUE_BY_LABEL[label]?.id, ...extra })
 
 export const BUILDINGS = [
   // lobi meydanındaki dört önemli yapı
-  b(17, -17, 8, 8, 6, 'blue', 'w', '🧭 Rehber Merkezi'),
-  b(-17, -17, 8, 8, 6, 'pink', 'e', '💇 Kuaför & Stil'),
-  b(17, 17, 8, 8, 6, 'lilac', 'w', '📸 Fotoğraf Stüdyosu'),
-  b(-17, 17, 8, 8, 6, 'peach', 'e', '🍰 Tatlı Dükkanı'),
+  b(17, -17, 8, 8, 6, 'blue', 's', '🧭 Rehber Merkezi'),
+  b(-17, -17, 8, 8, 6, 'pink', 's', '💇 Kuaför & Stil'),
+  b(17, 17, 8, 8, 6, 'lilac', 's', '📸 Fotoğraf Stüdyosu'),
+  b(-17, 17, 8, 8, 6, 'peach', 'n', '🍰 Tatlı Dükkanı'),
 
   // Kafe Sokağı (kuzey)
   b(-9.7, -18, 6, 7, 5, 'yellow', 'e', '☕ Kafe', { shop: true }),
@@ -67,7 +70,7 @@ export const BUILDINGS = [
 
   // Gece Kulübü (doğu)
   b(26, -9.7, 14, 8, 7, 'lilac', 's', '🪩 Gece Kulübü', { neon: true }),
-  b(40, -9.7, 7, 8, 6, 'pink', 's', '🍹 Bar', { shop: true }),
+  b(41.5, -9.7, 7, 8, 6, 'pink', 's', '🍹 Bar', { shop: true }),
   b(19, 9.7, 7, 6, 5, 'blue', 'n', '🎮 Oyun Salonu', { shop: true }),
   b(30, 9.7, 8, 6, 6, 'yellow', 'n', '🍔 Fast Food', { shop: true }),
   b(41, 9.7, 7, 6, 5, 'mint', 'n'),
@@ -143,16 +146,17 @@ for (const [x, z] of [[-6.2, -20], [-6.2, -24], [6.2, -20], [6.2, -24], [-6.2, -
 }
 for (const [x, z] of [[-6.5, -15], [6.5, -15], [-6.5, -38], [6.5, -38]]) PROPS.push(p('plant', x, z, 1.4, 0.4))
 // gece kulübü: girişin önünde hoparlörler, DJ standı
-PROPS.push(p('booth', 26, -4.6, 2.6, 1.2), p('speaker', 20.5, -4.6, 2, 0.6), p('speaker', 31.5, -4.6, 2, 0.6))
+PROPS.push(p('booth', 22.6, -4.6, 2.6, 1.2), p('speaker', 20.5, -4.6, 2, 0.6), p('speaker', 31.5, -4.6, 2, 0.6))
 PROPS.push(p('speaker', 38, 4.6, 1.8, 0.5), p('lamp', 44, 4.6, 3, 0.35))
 // park: ağaçlar, banklar
 for (const [x, z] of [[-18, -9], [-24, -10], [-36, -10], [-44, -8], [-20, 9], [-26, 10], [-37, 9], [-44, 6], [-42, -1], [-18, 1]]) PROPS.push(p('tree', x, z, 3.6, 0.7))
 PROPS.push(p('bench', -22, -5, 1.7, 0, 0), p('bench', -22, 5, 1.7, 0, Math.PI), p('bench', -36, -5, 1.7, 0, 0), p('bench', -36, 5, 1.7, 0, Math.PI))
 for (const x of [-16, -26, -34, -44]) PROPS.push(p('lamp', x, 3.8, 3, 0.35))
-// plaj: şemsiyeler, şezlonglar, palmiyeler
+// plaj: şemsiyeler, şezlonglar (üçünün yanında ikinci şezlong: yan yana uzanınca sohbet kısayolu), palmiyeler
 for (const [x, z] of [[-8, 33], [-1, 36], [7, 34], [-6, 41], [5, 42]]) {
   PROPS.push(p('umbrella', x, z, 2.6, 0.3), p('lounger', x + 1.6, z + 1.4, 1.7, 0, 0.6))
 }
+for (const [x, z] of [[-8, 33], [7, 34], [-6, 41]]) PROPS.push(p('lounger', x + 2.55, z + 0.75, 1.7, 0, 0.6))
 for (const [x, z] of [[-12, 31], [12, 31], [-11, 44], [11, 44]]) PROPS.push(p('palm', x, z, 4.6, 0.5))
 // mahalle köşelerinde ağaçlar
 for (const [x, z] of [[17, -33], [-17, -33], [17, 33], [-17, 33], [47 - 2, 14], [-47 + 2, -16]]) PROPS.push(p('tree', x, z, 3.6, 0.7))
@@ -165,27 +169,49 @@ const SEAT_DEFS = {
   [M.lounger]: { kind: 'lounger', cap: 1, gap: 0, face: 0, along: 'z' },
   [M.chair]: { kind: 'chair', cap: 1, gap: 0, face: 0, along: 'x' },
 }
-export const SEATS = PROPS.flatMap((pr, i) => {
+// Park piknik battaniyeleri (procedural, City.jsx çizer): 2 kişilik, yere oturulur (style 'floor').
+export const BLANKETS = [
+  { x: -22, z: -1.2, ry: 0.2, c: '#ff9fc6', c2: '#fff3f8' },
+  { x: -40, z: -3.4, ry: -0.5, c: '#7fcdf3', c2: '#fff3f8' },
+  { x: -33, z: 7.6, ry: 0.4, c: '#ffd35e', c2: '#fff7dc' },
+  { x: -28, z: -7.6, ry: -0.2, c: '#8fdcb4', c2: '#f3fff8' },
+]
+const slotsOf = (x, z, ry, d) => {
+  const ax = d.along === 'x' ? [Math.cos(ry), -Math.sin(ry)] : [Math.sin(ry), Math.cos(ry)]
+  return Array.from({ length: d.cap }, (_, k) => {
+    const o = (k - (d.cap - 1) / 2) * d.gap
+    return { x: +(x + ax[0] * o).toFixed(2), z: +(z + ax[1] * o).toFixed(2) }
+  })
+}
+const SEATS_PROPS = PROPS.flatMap((pr, i) => {
   const d = SEAT_DEFS[pr.model]
   if (!d) return []
-  const ax = d.along === 'x' ? [Math.cos(pr.ry), -Math.sin(pr.ry)] : [Math.sin(pr.ry), Math.cos(pr.ry)]
-  const slots = Array.from({ length: d.cap }, (_, k) => {
-    const o = (k - (d.cap - 1) / 2) * d.gap
-    return { x: +(pr.x + ax[0] * o).toFixed(2), z: +(pr.z + ax[1] * o).toFixed(2) }
-  })
-  return [{ id: `s${i}`, kind: d.kind, x: pr.x, z: pr.z, ry: pr.ry + d.face, slots }]
+  return [{ id: `s${i}`, kind: d.kind, x: pr.x, z: pr.z, ry: pr.ry + d.face, slots: slotsOf(pr.x, pr.z, pr.ry, d) }]
 })
-export const SEAT_LABEL = { bench: 'Banka otur', lounger: 'Şezlonga uzan', chair: 'Sandalyeye otur' }
+const SEATS_BLANKET = BLANKETS.map((bl, i) => ({ id: `bl${i}`, kind: 'blanket', style: 'floor', x: bl.x, z: bl.z, ry: bl.ry, slots: slotsOf(bl.x, bl.z, bl.ry, { cap: 2, gap: 1.5, along: 'x' }) }))
+// yan yana şezlonglar tek "grup": biri diğerinin yanına uzanınca sohbet kısayolu çıkar (sunucu da bunu okur)
+const loungers = SEATS_PROPS.filter((s) => s.kind === 'lounger')
+loungers.forEach((a, i) => {
+  loungers.slice(i + 1).forEach((c) => {
+    if (Math.hypot(a.x - c.x, a.z - c.z) < 3.2) a.group = c.group = a.group ?? c.group ?? `lg${i}`
+  })
+})
+export const SEATS = [...SEATS_PROPS, ...SEATS_BLANKET]
+export const SEAT_LABEL = { bench: 'Banka otur', lounger: 'Şezlonga uzan', chair: 'Sandalyeye otur', blanket: 'Battaniyeye otur', table: 'Masaya otur', stool: 'Taburede otur', sofa: 'Kanepeye otur' }
 
-// Fotoğraf Stüdyosu'nun (lobi, güneydoğu) kapı önü: "Fotoğraf çek" istemi burada çıkar.
-export const PHOTO_SPOT = { x: 11, z: 17, radius: 3.2 }
+// Fotoğraf Stüdyosu'nun (lobi, güneydoğu; kapısı güneye bakar) kapı önü: "Fotoğraf çek" istemi burada çıkar.
+export const PHOTO_SPOT = { x: 17, z: 27.4, radius: 2.7 }
 
 // ---------- çarpışma alanları ----------
 export const COLLIDERS = [
   { type: 'circle', x: 0, z: 0, r: 2.6 }, // çeşme
   { type: 'circle', x: GAZEBO.x, z: GAZEBO.z, r: GAZEBO.r }, // çardak
   { type: 'circle', x: -36, z: 12.5, r: 0.01 },
-  ...BUILDINGS.filter((bd) => !bd.gazebo).map((bd) => ({ type: 'box', x: bd.x, z: bd.z, hw: bd.w / 2 + 0.15, hd: bd.d / 2 + 0.15 })),
+  // e/w yönüne bakan binalar 90° döner: genişlik z, derinlik x ekseninde
+  ...BUILDINGS.filter((bd) => !bd.gazebo).map((bd) => {
+    const side = bd.facing === 'e' || bd.facing === 'w'
+    return { type: 'box', x: bd.x, z: bd.z, hw: (side ? bd.d : bd.w) / 2 + 0.15, hd: (side ? bd.w : bd.d) / 2 + 0.15 }
+  }),
   ...PROPS.filter((pr) => pr.r > 0).map((pr) => ({ type: 'circle', x: pr.x, z: pr.z, r: pr.r })),
 ]
 
