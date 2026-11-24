@@ -181,7 +181,7 @@ const SEATS_PROPS = PROPS.flatMap((pr, i) => {
   if (!d) return []
   return [{ id: `s${i}`, kind: d.kind, x: pr.x, z: pr.z, ry: pr.ry + d.face, slots: slotsOf(pr.x, pr.z, pr.ry, d) }]
 })
-const SEATS_BLANKET = BLANKETS.map((bl, i) => ({ id: `bl${i}`, kind: 'blanket', style: 'floor', x: bl.x, z: bl.z, ry: bl.ry, slots: slotsOf(bl.x, bl.z, bl.ry, { cap: 2, gap: 1.5, along: 'x' }) }))
+const SEATS_BLANKET = BLANKETS.map((bl, i) => ({ id: `bl${i}`, kind: 'blanket', style: 'floor', x: bl.x, z: bl.z, ry: bl.ry, slots: slotsOf(bl.x, bl.z, bl.ry, { cap: 2, gap: 1.2, along: 'x' }) }))
 // yan yana şezlonglar tek "grup": biri diğerinin yanına uzanınca sohbet kısayolu çıkar (sunucu da bunu okur)
 const loungers = SEATS_PROPS.filter((s) => s.kind === 'lounger')
 loungers.forEach((a, i) => {
