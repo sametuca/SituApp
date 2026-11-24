@@ -10,6 +10,7 @@ import { VENUE_BY_ID, VENUE_ROOM } from '../world/venues'
 import { ENTERABLE, venueDoor } from '../world/venueDoors'
 import { resolveVenueRoom, venueLayout, venueTheme } from '../world/venueLayout'
 import { together } from '../world/features/togetherStore'
+import { plotNav } from '../world/features/neighborhoodStore'
 import { EditToggle, FurnitureLayer, FurnitureSheet } from '../world/HomeEditor'
 import { FURNITURE_BY_ID } from '../world/furniture'
 import { useFeatures } from '../world/features'
@@ -212,7 +213,10 @@ function WorldScene({ avatar }) {
       venueRef.current = null
       if (target === 'city') {
         setHome(null)
-        focusRef.current.teleport = [HOME_DOOR.x, HOME_DOOR.z, Math.PI / 2]
+        // Konut Mahallesi kapısından girildiyse o kapının önüne, aksi halde lobideki Evim kapısına dön
+        const exit = plotNav.exit
+        plotNav.exit = null
+        focusRef.current.teleport = exit ?? [HOME_DOOR.x, HOME_DOOR.z, Math.PI / 2]
       } else {
         setHome(target)
         focusRef.current.teleport = [HOME_ROOM.spawn[0], HOME_ROOM.spawn[1], Math.PI]
@@ -417,6 +421,7 @@ function WorldScene({ avatar }) {
     closeInteract: () => setInteractId(null),
     slug,
     pushFeed: addFeed,
+    enterHome: (owner) => (owner === net.homeKey ? goTo(ownHome()) : visit(owner)), // Konut Mahallesi kapıları
   })
   const venueTh = useMemo(() => (venue ? venueTheme(venue) : null), [venue])
   const venueDim = venueTh?.dim ?? 0

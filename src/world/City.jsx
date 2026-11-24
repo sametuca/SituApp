@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { Html, RoundedBox } from '@react-three/drei'
 import { BLANKETS, BUILDINGS, GAZEBO, PROPS, ROAD_HALF } from './layout'
 import Prop from './Prop'
+import Neighborhood from './Neighborhood'
 import { SKY_MATS, skyLive } from './Sky'
 
 const FACING = { s: 0, n: Math.PI, e: Math.PI / 2, w: -Math.PI / 2 }
@@ -246,6 +247,7 @@ export default function City({ focusRef }) {
       {BLANKETS.map((b, i) => (
         <Blanket key={i} b={b} />
       ))}
+      <Neighborhood focusRef={focusRef} />
     </group>
   )
 }
