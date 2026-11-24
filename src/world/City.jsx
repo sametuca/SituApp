@@ -4,6 +4,7 @@ import { CanvasTexture, Color, RepeatWrapping, SRGBColorSpace, TextureLoader } f
 import { Html, RoundedBox } from '@react-three/drei'
 import { BLANKETS, BUILDINGS, GAZEBO, PROPS, ROAD_HALF } from './layout'
 import Prop from './Prop'
+import Plants from './Plants'
 import { Em } from '../components/emoji'
 import { SKY_MATS, skyLive } from './Sky'
 import { worldClock } from './worldClock'
@@ -419,7 +420,6 @@ function Sea() {
   }, [])
   const mat = useRef()
   const mat2 = useRef()
-  const matRing = useRef()
   const plane = useRef()
   useFrame(({ clock }, dt) => {
     const t = clock.elapsedTime
@@ -432,15 +432,35 @@ function Sea() {
     const night = Number.isFinite(worldClock.night) ? worldClock.night : 0
     if (mat.current) mat.current.color.copy(WATER_COLOR).lerp(WATER_NIGHT, night * 0.85)
     if (mat2.current) mat2.current.opacity = 0.16 + Math.sin(t * 0.9) * 0.05
-    if (matRing.current) matRing.current.opacity = 0.42 + Math.sin(t * 1.6) * 0.14 // kıyıda köpük nefes alır
   })
   const edge = ISLAND + RIM
-  const strips = [
-    [0, -edge - 1.2, edge * 2 + 4.8, 2.6],
-    [0, edge + 1.2, edge * 2 + 4.8, 2.6],
-    [-edge - 1.2, 0, 2.6, edge * 2],
-    [edge + 1.2, 0, 2.6, edge * 2],
-  ]
+  // kıyıya vuran dalgalar: her kenarda 3 bant, aynı döngüde faz farklı; açıktan kıyıya yürür, kıyıda sönüp kaybolur
+  const WAVES = 3
+  const CYCLE = 6.5 // sn
+  const TRAVEL = 6 // m
+  const sides = [
+    [0, -1],
+    [0, 1],
+    [-1, 0],
+    [1, 0],
+  ] // kenar normalleri (açık denize doğru)
+  const bands = useRef([])
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime
+    bands.current.forEach((m, i) => {
+      if (!m) return
+      const side = sides[Math.floor(i / WAVES)]
+      const k = i % WAVES
+      const ph = ((t / CYCLE + k / WAVES) % 1) // 0 = açıkta, 1 = kıyıda
+      const dist = (1 - ph) * TRAVEL + 0.4
+      const len = edge * 2 + 4
+      m.position.set(side[0] * (edge + dist) + (side[0] ? 0 : 0), -0.025, side[1] * (edge + dist))
+      m.scale.set(side[0] ? 1 : 1, 1, 1)
+      const env = Math.sin(ph * Math.PI) // belirir, kıyıda yok olur
+      m.material.opacity = 0.5 * env * env + (ph > 0.85 ? 0.12 * (1 - (ph - 0.85) / 0.15) : 0)
+      m.userData.len = len
+    })
+  })
   return (
     <group>
       <mesh ref={plane} position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
@@ -451,12 +471,17 @@ function Sea() {
         <planeGeometry args={[700, 700]} />
         <meshBasicMaterial ref={mat2} map={swell} transparent opacity={0.18} depthWrite={false} />
       </mesh>
-      {strips.map(([x, z, w, d], i) => (
-        <mesh key={i} position={[x, -0.02, z]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[w, d]} />
-          <meshBasicMaterial ref={i === 0 ? matRing : undefined} map={ring} alphaMap={fade} transparent opacity={0.6} depthWrite={false} />
-        </mesh>
-      ))}
+      {sides.flatMap(([nx], si) =>
+        Array.from({ length: WAVES }, (_, k) => {
+          const i = si * WAVES + k
+          return (
+            <mesh key={i} ref={(m) => (bands.current[i] = m)} rotation={[-Math.PI / 2, 0, 0]}>
+              <planeGeometry args={nx ? [1.6, edge * 2 + 4] : [edge * 2 + 4, 1.6]} />
+              <meshBasicMaterial map={ring} alphaMap={fade} transparent opacity={0} depthWrite={false} />
+            </mesh>
+          )
+        }),
+      )}
     </group>
   )
 }
@@ -514,6 +539,7 @@ export default function City({ focusRef }) {
       {PROPS.map((p, i) => (
         <Prop key={i} {...p} />
       ))}
+      <Plants />
       {BLANKETS.map((b, i) => (
         <Blanket key={i} b={b} />
       ))}

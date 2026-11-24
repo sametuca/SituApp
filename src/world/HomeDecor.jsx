@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { Line } from '@react-three/drei'
 import { CanvasTexture, Color, RepeatWrapping, Shape, SRGBColorSpace } from 'three'
 import { HOME_ROOM } from './layout'
+import { useFloorTexture } from './floorTex'
 import { Heart } from './Gifts'
 import { WALL_COLORS } from './cosmeticsData'
 
@@ -71,8 +72,11 @@ export const wallHex = (id) => WALL_COLORS.find((c) => c.id === id)?.hex ?? WALL
 /** Odanın zemini: ahşap (tahta) / halı / fayans. floor tanımsızsa eski düz zemin. Dairesel halı yalnızca ahşap/eski zeminde. */
 export function DecorFloor({ floor }) {
   const { hw, hd } = HOME_ROOM
+  const meshyName = floor === 'wood' || floor === 'tile' ? floor : 'wood'
+  const meshyTex = useFloorTexture(meshyName, hw * 2, hd * 2) // hook koşulsuz; yalnızca ahşap/fayansta kullanılır
   const tex = useMemo(() => {
-    if (floor === 'wood') {
+    if (floor === 'wood' || floor === 'tile') return meshyTex
+    if (floor === 'wood-old') {
       const base = canvasTexture('wood', 256, 256, (g, W, H) => {
         const tones = ['#ffe9c9', '#ffdfb8', '#fff0d8', '#ffe3c0']
         const rows = 4
@@ -106,7 +110,7 @@ export function DecorFloor({ floor }) {
         }
       })
     }
-    if (floor === 'tile') {
+    if (floor === 'tile-old') {
       const base = canvasTexture('tile', 128, 128, (g, W, H) => {
         g.fillStyle = '#d6f5e6'
         g.fillRect(0, 0, W, H)
@@ -126,7 +130,7 @@ export function DecorFloor({ floor }) {
       return repeated(base, 'tile', hw * 2, hd * 2)
     }
     return null
-  }, [floor])
+  }, [floor, meshyTex])
 
   return (
     <>

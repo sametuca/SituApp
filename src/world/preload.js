@@ -9,7 +9,7 @@ import { PROPS } from './layout'
 import { FURNITURE, furnitureUrl } from './furniture'
 
 const AVATARS = ['zeynep', 'deniz', 'elif', 'kaan', 'mira', 'ege']
-const CITY = [...new Set([...PROPS.map((p) => p.model), '/models/venues/picnic-blanket.glb'])]
+const CITY = [...new Set([...PROPS.map((p) => p.model), '/models/venues/picnic-blanket.glb', '/models/plants/bush.glb', '/models/plants/tuft.glb'])]
 const VENUE_ITEMS = [
   'arcade-cabinet', 'bakery-oven', 'bar-stool', 'bottle-shelf', 'cake-display', 'camera-tripod', 'cash-register', 'claw-machine', 'clothes-rack', 'coffee-machine',
   'counter', 'dj-stand', 'icecream-freezer', 'karaoke-mic', 'salon-chair', 'salon-mirror', 'samovar', 'softbox-light', 'stage-podium', 'surfboard-a', 'surfboard-b', 'world-globe',
@@ -32,7 +32,7 @@ const load = (urls) =>
 
 export function preloadCritical(slug) {
   load([`/models/avatars/${slug}.glb`, ...CITY])
-  for (const n of ['grass', 'asphalt', 'cobble', 'sand', 'brick', 'siding', 'mosaic', 'plaster', 'shingle', 'water', 'foam']) useLoader.preload(TextureLoader, `/textures/${n}.webp`) // yer dokuları (City.jsx Flat)
+  for (const n of ['grass', 'asphalt', 'cobble', 'sand', 'brick', 'siding', 'mosaic', 'plaster', 'shingle', 'water', 'foam', 'wood', 'tile', 'carpet']) useLoader.preload(TextureLoader, `/textures/${n}.webp`) // yer dokuları (City.jsx Flat)
 }
 
 export function preloadLater() {

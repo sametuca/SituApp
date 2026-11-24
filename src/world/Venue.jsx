@@ -5,7 +5,8 @@ import { useFrame } from '@react-three/fiber'
 import { RoundedBox, useGLTF } from '@react-three/drei'
 import { AdditiveBlending, Box3, CanvasTexture, Color, DoubleSide, NearestFilter, RepeatWrapping, SRGBColorSpace, Vector3 } from 'three'
 import { VENUE_ROOM } from './venues'
-import { venueLayout } from './venueLayout'
+import { mix, venueLayout } from './venueLayout'
+import { useFloorTexture } from './floorTex'
 import Prop from './Prop'
 import { venueStore } from './features/venueStore'
 
@@ -486,25 +487,12 @@ function ExitDoor() {
   )
 }
 
-function Floor({ th }) {
-  const tex = useCanvasTexture(
-    (g, W, H) => {
-      g.fillStyle = th.floor[0]
-      g.fillRect(0, 0, W, H)
-      g.fillStyle = th.floor[1]
-      g.fillRect(0, 0, W / 2, H / 2)
-      g.fillRect(W / 2, H / 2, W / 2, H / 2)
-    },
-    64,
-    64,
-    [th.floor[0], th.floor[1]],
-  )
-  useEffect(() => {
-    tex.wrapS = tex.wrapT = RepeatWrapping
-    tex.magFilter = NearestFilter
-    tex.repeat.set(hw, hd)
-    tex.needsUpdate = true
-  }, [tex])
+const FLOOR_KIND = { cafe: 'wood', tea: 'wood', bakery: 'wood', books: 'wood', bar: 'wood', dessert: 'tile', icecream: 'tile', fastfood: 'tile', salon: 'tile', studio: 'tile', shop: 'tile', guide: 'tile', airport: 'tile', club: 'carpet', arcade: 'carpet' }
+
+function Floor({ th, type }) {
+  const kind = FLOOR_KIND[type] ?? 'wood'
+  const tex = useFloorTexture(kind, hw * 2, hd * 2)
+  const tint = mix(th.floor[0], '#ffffff', th.dark ? 0.4 : 0.6) // pastel ton: tema rengi açılıp dokuyla çarpılır
   return (
     <>
       <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
@@ -516,7 +504,7 @@ function Floor({ th }) {
       </RoundedBox>
       <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[hw * 2, hd * 2]} />
-        <meshStandardMaterial map={tex} roughness={0.8} />
+        <meshStandardMaterial map={tex} color={tint} roughness={0.8} />
       </mesh>
     </>
   )
@@ -552,7 +540,7 @@ export default function Venue({ id }) {
     <group>
       <Lights th={th} />
       {L.type === 'club' && <ClubLights />}
-      <Floor th={th} />
+      <Floor th={th} type={L.type} />
       <Wall position={[0, 0, -hd]} rotation={[0, 0, 0]} w={hw * 2} color={th.wall} band={1.0} bandColor={th.band} />
       <Wall position={[-hw, 0, 0]} rotation={[0, Math.PI / 2, 0]} w={hd * 2} color={th.wall2} band={1.0} bandColor={th.band} />
       <Wall position={[hw, 0, 0]} rotation={[0, -Math.PI / 2, 0]} w={hd * 2} color={th.wall2} band={1.0} bandColor={th.band} />
