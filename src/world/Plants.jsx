@@ -1,8 +1,8 @@
-// Çalılar ve çim öbekleri: Meshy GLB'leri (public/models/plants/), yerleri plants.js'ten; her model tek InstancedMesh seti (ucuz).
+// Çalılar ve çim öbekleri: Meshy GLB'leri (public/models/plants/), yerleri plantSpots.js'ten; her model tek InstancedMesh seti (ucuz).
 import { useEffect, useMemo, useRef } from 'react'
 import { useGLTF } from '@react-three/drei'
 import { Box3, Matrix4, Quaternion, Vector3 } from 'three'
-import { BUSHES, TUFTS } from './plants'
+import { BUSHES, TUFTS } from './plantSpots'
 
 export const PLANT_URLS = ['/models/plants/bush.glb', '/models/plants/tuft.glb']
 
