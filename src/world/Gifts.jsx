@@ -17,7 +17,7 @@ export function makeHeartShape() {
   return s
 }
 
-export function Heart({ size = 1, color = '#ff7eb3', depth = 0.25, glow = false, ...p }) {
+export function Heart({ size = 1, color = '#71dedd', depth = 0.25, glow = false, ...p }) {
   const shape = useMemo(() => makeHeartShape(), [])
   return (
     <mesh scale={size} {...p}>

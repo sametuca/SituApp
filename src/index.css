@@ -12,9 +12,9 @@
   --color-ink-soft: #8a7a9c;
   --color-cream: #fff8f6;
 
-  --color-candy-pink: #ffb6d3;
-  --color-candy-pink-deep: #ff7eb3;
-  --color-candy-pink-dark: #e85a98;
+  --color-candy-pink: #9fe8e8;
+  --color-candy-pink-deep: #71dedd;
+  --color-candy-pink-dark: #53c1bf;
   --color-candy-blue: #a9ddf5;
   --color-candy-blue-deep: #5fc0ea;
   --color-candy-blue-dark: #3a9fd0;
@@ -145,3 +145,20 @@ img.em {
 html {
   font-size: clamp(16px, 0.55vw + 10px, 24px);
 }
+
+/* Toplama kutlamaları (collect.jsx): halka, parıltı, seviye atlama */
+@keyframes cel-icon { 0% { transform: scale(0.2) rotate(-25deg); opacity: 0; } 45% { transform: scale(1.35) rotate(8deg); opacity: 1; } 70% { transform: scale(0.95) rotate(-3deg); } 100% { transform: scale(1) rotate(0); } }
+@keyframes cel-ring { 0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.9; } 100% { transform: translate(-50%, -50%) scale(2.6); opacity: 0; } }
+@keyframes cel-float { 0% { opacity: 0; transform: translateY(14px) scale(0.6); } 20% { opacity: 1; transform: translateY(0) scale(1.15); } 80% { opacity: 1; } 100% { opacity: 0; transform: translateY(-34px) scale(1); } }
+@keyframes cel-banner { 0% { transform: translateY(-30px) scale(0.5); opacity: 0; } 18% { transform: translateY(0) scale(1.12); opacity: 1; } 28% { transform: scale(1); } 85% { opacity: 1; } 100% { transform: translateY(-14px) scale(0.96); opacity: 0; } }
+@keyframes cel-flash { 0% { opacity: 0; } 12% { opacity: 0.55; } 100% { opacity: 0; } }
+@keyframes cel-spin { to { transform: rotate(360deg); } }
+@keyframes cel-bar { 0% { width: var(--from); } 100% { width: var(--to); } }
+
+/* Kamera eğitimi: el sağa-sola sürükler (Hud.jsx CameraTutorial) */
+@keyframes hand-drag {
+  0%, 100% { transform: translateX(-84px) rotate(-14deg); }
+  50% { transform: translateX(84px) rotate(14deg); }
+}
+@keyframes hand-press { 0%, 8%, 92%, 100% { transform: scale(1); } 16%, 84% { transform: scale(0.88); } }
+@keyframes hand-arrow { 0%, 100% { opacity: 0.25; } 50% { opacity: 0.9; } }

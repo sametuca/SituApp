@@ -93,7 +93,7 @@ function Avatar({ name, pkey, size = 'h-11 w-11' }) {
 
 function Pill({ onClick, children, tone = 'pink', disabled, label }) {
   const tones = {
-    pink: 'border-[#e85a98] bg-[#ff7eb3] text-white',
+    pink: 'border-[#53c1bf] bg-[#71dedd] text-white',
     lilac: 'border-[#c9b6f5] bg-[#e9ddff] text-[#5b3fa8]',
     ghost: 'border-[#e6dcf3] bg-white text-[#8a7a9c]',
   }
@@ -137,7 +137,7 @@ function Composer({ target, onSend, onCancel }) {
         <Pill tone="ghost" onClick={onCancel}>
           Vazgeç
         </Pill>
-        <button type="submit" className="min-h-10 rounded-xl border-b-4 border-[#e85a98] bg-[#ff7eb3] px-4 py-1.5 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2">
+        <button type="submit" className="min-h-10 rounded-xl border-b-4 border-[#53c1bf] bg-[#71dedd] px-4 py-1.5 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2">
           Gönder
         </button>
       </div>
@@ -218,7 +218,7 @@ function FriendsPanel({ data, inbox, fresh, roster, onClose, api, startTab }) {
               setTab(k)
               if (k === 'mail') api.openMail()
             }}
-            className={`min-w-0 flex-1 truncate rounded-full border-2 px-2 py-2 text-xs font-extrabold ${tab === k ? 'border-white bg-[#ff7eb3] text-white shadow-soft' : 'border-transparent bg-[#f6f0ff] text-[#8a7a9c]'}`}
+            className={`min-w-0 flex-1 truncate rounded-full border-2 px-2 py-2 text-xs font-extrabold ${tab === k ? 'border-white bg-[#71dedd] text-white shadow-soft' : 'border-transparent bg-[#f6f0ff] text-[#8a7a9c]'}`}
           >
             {label}
           </button>
@@ -291,10 +291,10 @@ function FriendsPanel({ data, inbox, fresh, roster, onClose, api, startTab }) {
               <>
                 <ul className="flex flex-col gap-2">
                   {[...inbox].reverse().map((m) => (
-                    <li key={m.id} className={`rounded-2xl p-2.5 ${fresh.has(m.id) ? 'bg-[#ffe3f0]' : 'bg-[#f6f0ff]'}`}>
+                    <li key={m.id} className={`rounded-2xl p-2.5 ${fresh.has(m.id) ? 'bg-[#e8faf9]' : 'bg-[#f6f0ff]'}`}>
                       <div className="flex items-center gap-2">
                         <p className="min-w-0 flex-1 truncate text-sm font-black text-[#4a3b5c]">
-                          {fresh.has(m.id) && <span className="mr-1 rounded-full bg-[#ff7eb3] px-1.5 py-0.5 text-[10px] text-white">yeni</span>}
+                          {fresh.has(m.id) && <span className="mr-1 rounded-full bg-[#71dedd] px-1.5 py-0.5 text-[10px] text-white">yeni</span>}
                           {m.name}
                         </p>
                         <span className="text-xs font-bold text-[#8a7a9c]">{ago(m.ts)}</span>
@@ -321,7 +321,7 @@ function FriendsPanel({ data, inbox, fresh, roster, onClose, api, startTab }) {
                     </li>
                   ))}
                 </ul>
-                <button onClick={() => api.deleteMail('all')} className="mt-3 w-full rounded-2xl py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#ffd6e8]/60">
+                <button onClick={() => api.deleteMail('all')} className="mt-3 w-full rounded-2xl py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#def7f7]/60">
                   Hepsini sil
                 </button>
               </>
@@ -330,7 +330,7 @@ function FriendsPanel({ data, inbox, fresh, roster, onClose, api, startTab }) {
         )}
       </div>
 
-      <button onClick={onClose} className="mt-4 w-full rounded-2xl border-b-4 border-[#e85a98] bg-[#ff7eb3] py-3 text-base font-extrabold text-white active:translate-y-[3px] active:border-b-[1px]">
+      <button onClick={onClose} className="mt-4 w-full rounded-2xl border-b-4 border-[#53c1bf] bg-[#71dedd] py-3 text-base font-extrabold text-white active:translate-y-[3px] active:border-b-[1px]">
         Kapat
       </button>
     </Modal>
@@ -347,7 +347,7 @@ function Cards({ cards, onDismiss, onAnswer, onOpen }) {
           <div className="flex items-center gap-3">
             {c.avatar ? <Avatar name={c.avatar} pkey={c.key} size="h-10 w-10" /> : <span className="text-2xl">{c.emoji}</span>}
             <p className="min-w-0 flex-1 text-sm font-black text-[#4a3b5c]">{c.text}</p>
-            <button onClick={() => onDismiss(c.id)} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black text-[#8a7a9c] hover:bg-[#ffd6e8]/70">
+            <button onClick={() => onDismiss(c.id)} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black text-[#8a7a9c] hover:bg-[#def7f7]/70">
               ✕
             </button>
           </div>
@@ -355,7 +355,7 @@ function Cards({ cards, onDismiss, onAnswer, onOpen }) {
             <div className="mt-2 flex gap-2">
               <button
                 onClick={() => onAnswer(c, true)}
-                className="min-h-10 flex-1 rounded-xl border-b-4 border-[#e85a98] bg-[#ff7eb3] py-1.5 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2"
+                className="min-h-10 flex-1 rounded-xl border-b-4 border-[#53c1bf] bg-[#71dedd] py-1.5 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2"
               >
                 💗 Kabul et
               </button>
@@ -586,12 +586,12 @@ export function useFriends({ net, say, focusRef, home, venue, panel, setPanel, o
         setStartTab(null)
         setPanel('friends')
       }}
-      className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#fff0f6]"
+      className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#f3fcfc]"
     >
       <Ico name="friends" size={22} />
       <span className="flex-1">Arkadaşlar</span>
       {badge > 0 && !net.dnd && (
-        <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[#ff7eb3] px-1 text-[10px] font-black text-white">{badge}</span>
+        <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[#71dedd] px-1 text-[10px] font-black text-white">{badge}</span>
       )}
     </button>
   )

@@ -59,6 +59,10 @@ export default function cosmetics(ctx) {
         if (now - (me.lastCos ?? 0) < 400) return
         me.lastCos = now
         const c = sanitizeCos(msg)
+        if (c.pet && !ctx.petActive?.(me)) {
+          delete c.pet // evcil hayvan süresi bitti (features/pets.js)
+          send(me.ws, { t: 'info', text: '🐾 Evcil hayvan süren bitti. Gardırop’tan 1 hafta daha ekleyebilirsin.' })
+        }
         if (!('acc' in c) && !('pet' in c)) return
         me.cos = { ...me.cos, ...c }
         const u = user(me.key)

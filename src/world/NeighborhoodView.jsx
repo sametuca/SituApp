@@ -136,13 +136,13 @@ function fenceGeometry(style) {
         const [x, z] = at((i / n) * len)
         parts.push(piece(BOX, '#fffaf2', x, 0.48, z, ry, 0.14, 0.96, 0.06), piece(TIP, '#fffaf2', x, 1.04, z, ry + Math.PI / 4))
       }
-      parts.push(piece(BOX, '#ffd3e6', mx, 0.32, mz, ry, len, 0.07, 0.05), piece(BOX, '#ffd3e6', mx, 0.7, mz, ry, len, 0.07, 0.05))
+      parts.push(piece(BOX, '#dbf7f6', mx, 0.32, mz, ry, len, 0.07, 0.05), piece(BOX, '#dbf7f6', mx, 0.7, mz, ry, len, 0.07, 0.05))
     } else if (style === 'hedge') {
       const n = Math.max(2, Math.round(len / 0.48))
       for (let i = 0; i <= n; i++) {
         const [x, z] = at((i / n) * len)
         parts.push(piece(BALL, i % 2 ? '#8fdcb4' : '#a9e8c6', x, 0.4, z, 0, 0.85, 0.8, 0.75))
-        if (i % 3 === 1) parts.push(piece(BALL, i % 2 ? '#ff9fc6' : '#fff0a8', x + dz * 0.3, 0.78, z - dx * 0.3, 0, 0.2, 0.2, 0.2))
+        if (i % 3 === 1) parts.push(piece(BALL, i % 2 ? '#8ce4e4' : '#fff0a8', x + dz * 0.3, 0.78, z - dx * 0.3, 0, 0.2, 0.2, 0.2))
       }
     } else {
       const n = Math.max(1, Math.round(len / 1.7))
@@ -154,7 +154,7 @@ function fenceGeometry(style) {
     }
   }
   // kapı direkleri
-  for (const sx of [-GT, GT]) parts.push(piece(BOX, '#ff9fc6', sx, 0.65, FF, 0, 0.2, 1.3, 0.2), piece(BALL, '#ffd35e', sx, 1.4, FF, 0, 0.3, 0.3, 0.3))
+  for (const sx of [-GT, GT]) parts.push(piece(BOX, '#8ce4e4', sx, 0.65, FF, 0, 0.2, 1.3, 0.2), piece(BALL, '#ffd35e', sx, 1.4, FF, 0, 0.3, 0.3, 0.3))
   const geo = mergeGeometries(parts)
   fenceCache[style] = geo
   return geo

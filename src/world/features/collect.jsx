@@ -5,12 +5,13 @@ import { ToyButton } from '../../components/ui'
 import { Modal } from '../Hud'
 import { DoorPrompt } from '../Social'
 import CollectiblesLayer from '../CollectiblesLayer'
-import { COLLECTIBLE_BY_ID, COLLECT_PROMPT, HIDDEN_CHESTS, KINDS, KIND_ORDER, TOTAL_BY_KIND } from '../collectibles'
+import { COLLECTIBLE_BY_ID, COLLECT_PROMPT, HIDDEN_CHESTS, KINDS, KIND_ORDER, TOTAL_BY_KIND, levelOf } from '../collectibles'
+import { CollectBurst, LevelUp } from './collectCelebration'
 
 const isTyping = (e) => e.target instanceof HTMLElement && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)
 const sfx = (name) => window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: name }))
 
-function Bar({ value, max, tone = '#ff7eb3' }) {
+function Bar({ value, max, tone = '#71dedd' }) {
   return (
     <div className="h-2.5 w-full overflow-hidden rounded-full bg-[#f1e6ff]">
       <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${Math.round((Math.min(value, max) / (max || 1)) * 100)}%`, background: tone }} />
@@ -38,7 +39,7 @@ function CollectionPanel({ data, onClose }) {
             role="tab"
             aria-selected={tab === id}
             onClick={() => setTab(id)}
-            className={`flex-1 rounded-2xl px-2 py-2.5 text-sm font-extrabold transition active:scale-95 ${tab === id ? 'bg-[#ff7eb3] text-white shadow-soft' : 'bg-[#f6f0ff] text-[#4a3b5c]'}`}
+            className={`flex-1 rounded-2xl px-2 py-2.5 text-sm font-extrabold transition active:scale-95 ${tab === id ? 'bg-[#71dedd] text-white shadow-soft' : 'bg-[#f6f0ff] text-[#4a3b5c]'}`}
           >
             {label}
           </button>
@@ -68,7 +69,7 @@ function CollectionPanel({ data, onClose }) {
                     {done && <span className="text-lg">🏆</span>}
                   </div>
                   <div className="mt-2 flex items-center gap-2">
-                    <Bar value={n} max={k.series.goal} tone={done ? '#ffc94d' : '#ff7eb3'} />
+                    <Bar value={n} max={k.series.goal} tone={done ? '#ffc94d' : '#71dedd'} />
                     <span className="shrink-0 text-xs font-extrabold tabular-nums text-[#8a7a9c]">
                       {Math.min(n, k.series.goal)}/{k.series.goal}
                     </span>
@@ -116,11 +117,16 @@ export function useCollect(ctx) {
   const [data, setData] = useState(null)
   const [near, setNear] = useState(null)
   const [pops, setPops] = useState([])
+  const [bursts, setBursts] = useState([]) // { key, kind, gain, xp }
+  const [levelUp, setLevelUp] = useState(null)
+  const xpRef = useRef(null) // son bilinen toplam ⭐
+  const lastGain = useRef({ kind: 'star', gain: 1 })
   const lastSend = useRef(0)
 
   const applyState = useCallback((m) => {
     const now = Date.now()
     const until = {}
+    if (m?.s?.xp != null) xpRef.current = m.s.xp
     for (const [id, ttl] of Object.entries(m?.c ?? {})) until[id] = now + ttl
     store.current.until = until
     setData(m ?? null)
@@ -149,6 +155,18 @@ export function useCollect(ctx) {
           setTimeout(() => setPops((p) => p.filter((x) => x.key !== key)), 1400)
         }
         sfx(m.kind === 'chest' ? 'badge' : m.kind === 'heart' ? 'quest' : 'pop')
+        lastGain.current = { kind: m.kind, gain: m.stars }
+      }),
+      on('collect_xp', (m) => {
+        const before = xpRef.current ?? Math.max(0, m.xp - lastGain.current.gain - (m.bonus ?? 0))
+        xpRef.current = m.xp
+        const key = Math.random()
+        setBursts((b) => [...b.slice(-2), { key, kind: m.kind, gain: lastGain.current.gain + (m.bonus ?? 0), xp: m.xp }])
+        if (levelOf(m.xp).level > levelOf(before).level) {
+          setLevelUp(levelOf(m.xp).level)
+          sfx('badge')
+          setTimeout(() => sfx('quest'), 350)
+        }
       }),
     ]
     return () => offs.forEach((off) => off())
@@ -188,6 +206,10 @@ export function useCollect(ctx) {
     overlays: (
       <>
         {nearCol && !panel && <DoorPrompt emoji={KINDS[nearCol.kind].emoji} label={KINDS[nearCol.kind].name} action="Topla" touch={touch} raised onGo={() => pick(nearCol.id)} />}
+        {bursts.map((b) => (
+          <CollectBurst key={b.key} ev={b} onDone={() => setBursts((x) => x.filter((y) => y.key !== b.key))} />
+        ))}
+        {levelUp && <LevelUp level={levelUp} onDone={() => setLevelUp(null)} />}
         {panel === 'collection' && <CollectionPanel data={data} onClose={() => setPanel(null)} />}
       </>
     ),

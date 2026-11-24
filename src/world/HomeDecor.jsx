@@ -94,7 +94,7 @@ export function DecorFloor({ floor }) {
       return canvasTexture('rugfloor', 512, 460, (g, W, H) => {
         g.fillStyle = '#f2d9ff'
         g.fillRect(0, 0, W, H)
-        g.strokeStyle = '#ffb6d3'
+        g.strokeStyle = '#9fe8e8'
         g.lineWidth = 14
         g.strokeRect(26, 26, W - 52, H - 52)
         g.strokeStyle = '#ffffff'
@@ -146,7 +146,7 @@ export function DecorFloor({ floor }) {
           </mesh>
           <mesh position={[0, 0.025, 0.2]} rotation={[-Math.PI / 2, 0, 0]}>
             <ringGeometry args={[1.7, 1.95, 48]} />
-            <meshStandardMaterial color="#ffc2dc" roughness={1} />
+            <meshStandardMaterial color="#a8ebea" roughness={1} />
           </mesh>
         </>
       )}
@@ -155,7 +155,7 @@ export function DecorFloor({ floor }) {
 }
 
 // ---------- romantik ışık ----------
-const BULBS = ['#ffd0e4', '#ffeaa8', '#dcc8ff', '#c9efff']
+const BULBS = ['#d9f6f6', '#ffeaa8', '#dcc8ff', '#c9efff']
 
 function starShape() {
   const s = new Shape()
@@ -198,7 +198,7 @@ function LightString({ from, to, sag = 0.32, count = 14, ornament }) {
   })
   return (
     <group>
-      <Line points={pts} color="#ffc2dc" lineWidth={1.2} />
+      <Line points={pts} color="#a8ebea" lineWidth={1.2} />
       {pts.map((p, i) => (
         <group key={i} position={p}>
           <mesh ref={(m) => (refs.current[i] = m)}>
@@ -207,7 +207,7 @@ function LightString({ from, to, sag = 0.32, count = 14, ornament }) {
           </mesh>
           {ornament && i % 4 === 2 && (
             <group position={[0, -0.28, 0]}>
-              <Line points={[[0, 0.28, 0], [0, 0.05, 0]]} color="#ffc2dc" lineWidth={1} />
+              <Line points={[[0, 0.28, 0], [0, 0.05, 0]]} color="#a8ebea" lineWidth={1} />
               {ornament(i)}
             </group>
           )}
@@ -223,15 +223,15 @@ export function RomanticLights() {
   const y = 3.15
   return (
     <group>
-      <pointLight position={[0, 2.6, 0]} intensity={9} distance={11} color="#ff9ec8" />
+      <pointLight position={[0, 2.6, 0]} intensity={9} distance={11} color="#8be4e3" />
       <pointLight position={[-3.2, 2.2, -2.6]} intensity={4} distance={7} color="#ffd2a0" />
       <pointLight position={[3.2, 2.2, -2.6]} intensity={4} distance={7} color="#e0c0ff" />
-      <LightString from={[-hw + 0.3, y, -hd + 0.18]} to={[hw - 0.3, y, -hd + 0.18]} count={18} ornament={() => <Heart size={0.26} color="#ff6aa6" depth={0.12} glow />} />
-      <LightString from={[-hw + 0.18, y, -hd + 0.3]} to={[-hw + 0.18, y, hd - 0.6]} count={16} sag={0.28} ornament={(i) => <Star size={0.24} color={i % 8 === 2 ? '#ffe58a' : '#ffd0e4'} />} />
+      <LightString from={[-hw + 0.3, y, -hd + 0.18]} to={[hw - 0.3, y, -hd + 0.18]} count={18} ornament={() => <Heart size={0.26} color="#61dada" depth={0.12} glow />} />
+      <LightString from={[-hw + 0.18, y, -hd + 0.3]} to={[-hw + 0.18, y, hd - 0.6]} count={16} sag={0.28} ornament={(i) => <Star size={0.24} color={i % 8 === 2 ? '#ffe58a' : '#d9f6f6'} />} />
       <LightString from={[hw - 0.18, y, -hd + 0.3]} to={[hw - 0.18, y, hd - 0.6]} count={16} sag={0.28} ornament={(i) => <Star size={0.24} color={i % 8 === 2 ? '#ffe58a' : '#dcc8ff'} />} />
       {/* duvarda parlayan kalpler */}
       {[[-0.75, 2.4, 0.5], [0.15, 2.85, 0.34], [0.95, 2.35, 0.42]].map(([x, yy, s], i) => (
-        <Heart key={i} size={s} color="#ff7eb3" depth={0.1} glow position={[x, yy, -hd + 0.1]} />
+        <Heart key={i} size={s} color="#71dedd" depth={0.1} glow position={[x, yy, -hd + 0.1]} />
       ))}
     </group>
   )

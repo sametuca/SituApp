@@ -18,7 +18,7 @@ import { PROPS } from './layout'
 import { nightAt, smooth, sunsetAt, worldClock } from './worldClock'
 import { together } from './features/togetherStore'
 
-const HOME_BG = '#f9e3f1'
+const HOME_BG = '#e7f5f3'
 const HOME_FOG = [HOME_BG, 30, 60]
 
 /** TogetherScene.SkyTint'e verilen canlı "taban" renkleri (bu modül her karede günceller). */
@@ -40,7 +40,7 @@ export const skyLive = {
 /** Şehir binalarının/çeşmenin paylaşılan malzemeleri (City.jsx kullanır; Sky gece parlatır). */
 export const SKY_MATS = {
   window: new MeshStandardMaterial({ color: '#fff6cf', emissive: '#ffe49a', emissiveIntensity: 0.35, roughness: 0.3 }),
-  neonPink: new MeshStandardMaterial({ color: '#ff8ad8', emissive: '#ff5fcf', emissiveIntensity: 1.4 }),
+  neonPink: new MeshStandardMaterial({ color: '#7be0d4', emissive: '#58d8c7', emissiveIntensity: 1.4 }),
   neonBlue: new MeshStandardMaterial({ color: '#8fd8ff', emissive: '#4fc3ff', emissiveIntensity: 1.4 }),
   water: new MeshStandardMaterial({ color: '#9fdcff', roughness: 0.1, metalness: 0.1, emissive: '#6cc7f5', emissiveIntensity: 0.25 }),
   fountainTop: new MeshStandardMaterial({ color: '#a9ddf5', roughness: 0.2, emissive: '#6cc7f5', emissiveIntensity: 0.3 }),
@@ -50,8 +50,8 @@ export const SKY_MATS = {
 const C = (s) => new Color(s)
 const KEYS = {
   night: { bg: C('#3b3f80'), fog: C('#4d4f93'), sun: C('#b4c0ff'), sunI: 0.55, amb: C('#9aa4ff'), ambI: 0.55, hs: C('#8e9cff'), hg: C('#6b5aa6'), hI: 0.65, fn: 40, ff: 125 },
-  dawn: { bg: C('#ffd0da'), fog: C('#ffe1e6'), sun: C('#ffc6a0'), sunI: 1.0, amb: C('#fff0f4'), ambI: 0.55, hs: C('#ffe1ee'), hg: C('#ffd6ea'), hI: 0.85, fn: 45, ff: 130 },
-  day: { bg: C('#cfeaff'), fog: C('#e8f6ff'), sun: C('#ffffff'), sunI: 1.6, amb: C('#ffffff'), ambI: 0.7, hs: C('#ffffff'), hg: C('#ffd6ea'), hI: 1.1, fn: 50, ff: 140 },
+  dawn: { bg: C('#d9f4f6'), fog: C('#e7f7f9'), sun: C('#ffc6a0'), sunI: 1.0, amb: C('#f3fcfc'), ambI: 0.55, hs: C('#e7f9f9'), hg: C('#def7f6'), hI: 0.85, fn: 45, ff: 130 },
+  day: { bg: C('#cfeaff'), fog: C('#e8f6ff'), sun: C('#ffffff'), sunI: 1.6, amb: C('#ffffff'), ambI: 0.7, hs: C('#ffffff'), hg: C('#def7f6'), hI: 1.1, fn: 50, ff: 140 },
   dusk: { bg: C('#ffb494'), fog: C('#ffcdb9'), sun: C('#ff9f6b'), sunI: 1.1, amb: C('#ffd5c4'), ambI: 0.55, hs: C('#ffc7b0'), hg: C('#d9a7e8'), hI: 0.75, fn: 45, ff: 130 },
   dusk2: { bg: C('#8f6fb8'), fog: C('#a98bc4'), sun: C('#c99aff'), sunI: 0.8, amb: C('#cdb0ff'), ambI: 0.5, hs: C('#b79be8'), hg: C('#8a63b0'), hI: 0.65, fn: 42, ff: 128 },
 }
@@ -139,7 +139,7 @@ function Heavens() {
     const N = 170
     const pos = []
     const col = []
-    const pal = [C('#ffffff'), C('#fff3b8'), C('#ffd0ea'), C('#cfe6ff')]
+    const pal = [C('#ffffff'), C('#fff3b8'), C('#d9f6f4'), C('#cfe6ff')]
     for (let i = 0; i < N; i++) {
       const az = r() * Math.PI * 2
       const el = 0.12 + Math.acos(1 - r() * 0.92) * 0.95 // üst yarım küre
@@ -407,7 +407,7 @@ export default function Sky({ home: homeProp, interior = null, focusRef }) {
     }
     if (hemi.current) {
       hemi.current.color.copy(home ? tmp.set('#ffffff') : k.hs)
-      hemi.current.groundColor.copy(home ? tmp.set('#ffd6ea') : k.hg)
+      hemi.current.groundColor.copy(home ? tmp.set('#def7f6') : k.hg)
       hemi.current.intensity = home ? 1.1 * dimK : k.hI * (1 - 0.1 * over)
     }
   })
@@ -415,7 +415,7 @@ export default function Sky({ home: homeProp, interior = null, focusRef }) {
   return (
     <>
       <ambientLight ref={amb} intensity={0.7} />
-      <hemisphereLight ref={hemi} args={['#ffffff', '#ffd6ea', 1.1]} />
+      <hemisphereLight ref={hemi} args={['#ffffff', '#def7f6', 1.1]} />
       {!home && (
         <>
           <Heavens />

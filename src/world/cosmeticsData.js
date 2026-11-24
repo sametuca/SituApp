@@ -3,7 +3,7 @@
 
 /** 6 pastel renk (aksesuar rengi). */
 export const PASTELS = [
-  { id: 'pink', name: 'Pembe', hex: '#ff9ec8' },
+  { id: 'pink', name: 'Turkuaz', hex: '#8be4e3' },
   { id: 'lilac', name: 'Mor', hex: '#bba0ff' },
   { id: 'blue', name: 'Mavi', hex: '#8fd0ff' },
   { id: 'mint', name: 'Nane', hex: '#8fe3c0' },
@@ -27,7 +27,10 @@ export const PETS = [
   { id: 'cat', name: 'Kedi', emoji: '🐱' },
   { id: 'bunny', name: 'Tavşan', emoji: '🐰' },
   { id: 'chick', name: 'Civciv', emoji: '🐥' },
+  { id: 'dog', name: 'Köpek', emoji: '🐶' },
 ]
+export const PET_WEEK_MS = 7 * 24 * 3600 * 1000 // evcil hayvan süresi (ilk hafta ücretsiz)
+export const PET_RENEW_PRICE = 80 // 🪙 / hafta
 export const PET_BY_ID = Object.fromEntries(PETS.map((p) => [p.id, p]))
 
 /** İstemciden gelen kozmetik seçimini doğrular. Dönüş: { acc?: {id,color}|null, pet?: id|null } (verilmeyen alan yok). */
@@ -45,7 +48,7 @@ export function sanitizeCos(c) {
 
 // ---------- ev dekoru ----------
 export const WALL_COLORS = [
-  { id: 'pink', name: 'Pembe', hex: '#ffd9ea' },
+  { id: 'pink', name: 'Turkuaz', hex: '#e0f8f7' },
   { id: 'lilac', name: 'Mor', hex: '#e6dcff' },
   { id: 'blue', name: 'Mavi', hex: '#d4ebff' },
   { id: 'mint', name: 'Nane', hex: '#d3f5e4' },

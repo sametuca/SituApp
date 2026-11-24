@@ -84,7 +84,7 @@ function Board({ x, y, z, ry = 0, w, h, lines, bg, fg, frame, big, map }) {
       g.fillRect(0, 0, W, H)
       if (map) {
         // basit şehir haritası
-        const zones = [['#ffe3ef', 0.04, 0.04, 0.44, 0.44], ['#e6dcff', 0.52, 0.04, 0.44, 0.44], ['#bdeccb', 0.04, 0.52, 0.44, 0.44], ['#ffe9b8', 0.52, 0.52, 0.44, 0.44]]
+        const zones = [['#e8faf9', 0.04, 0.04, 0.44, 0.44], ['#e6dcff', 0.52, 0.04, 0.44, 0.44], ['#bdeccb', 0.04, 0.52, 0.44, 0.44], ['#ffe9b8', 0.52, 0.52, 0.44, 0.44]]
         for (const [c, a, b, cw, ch] of zones) {
           g.fillStyle = c
           g.beginPath()
@@ -94,7 +94,7 @@ function Board({ x, y, z, ry = 0, w, h, lines, bg, fg, frame, big, map }) {
         g.fillStyle = '#d9cdee'
         g.fillRect(W * 0.46, 0, W * 0.08, H)
         g.fillRect(0, H * 0.46, W, H * 0.08)
-        g.fillStyle = '#ffb6d3'
+        g.fillStyle = '#9fe8e8'
         g.beginPath()
         g.arc(W / 2, H / 2, W * 0.07, 0, 7)
         g.fill()
@@ -245,7 +245,7 @@ function DiscoBall({ x, z, y }) {
 
 function Lasers({ x, z, y }) {
   const g = useRef()
-  const cols = ['#ff5fcf', '#4fc3ff', '#ffe45e', '#7dff9c', '#c28bff']
+  const cols = ['#58d8c7', '#4fc3ff', '#ffe45e', '#7dff9c', '#c28bff']
   useFrame(({ clock }, dt) => {
     if (!g.current) return
     const k = venueStore.singing ? 1.8 : 1
@@ -291,7 +291,7 @@ function ClubLights() {
     <>
       <pointLight ref={a} distance={9} />
       <pointLight ref={b} distance={9} />
-      <pointLight ref={c} position={[4.4, 3.2, -2.4]} distance={7} color="#ffd6f5" />
+      <pointLight ref={c} position={[4.4, 3.2, -2.4]} distance={7} color="#def7f3" />
     </>
   )
 }
@@ -423,7 +423,7 @@ function Item({ it }) {
     case 'salonchair':
       return <Glb model={V('salon-chair')} x={it.x} z={it.z} ry={it.ry} h={1.05} />
     case 'surf':
-      return <Glb model={V(it.c === '#ff9fc6' || it.c === '#ffd35e' || it.c === '#b79cff' ? 'surfboard-a' : 'surfboard-b')} x={it.x} z={it.z} ry={it.ry} h={it.len} tilt={-0.1} />
+      return <Glb model={V(it.c === '#8ce4e4' || it.c === '#ffd35e' || it.c === '#b79cff' ? 'surfboard-a' : 'surfboard-b')} x={it.x} z={it.z} ry={it.ry} h={it.len} tilt={-0.1} />
     case 'rack':
       return <Glb model={V('clothes-rack')} x={it.x} z={it.z} h={1.7} />
     case 'globe':
@@ -456,7 +456,7 @@ function Item({ it }) {
         </mesh>
       )
     case 'book':
-      return <Box x={it.x} z={it.z} y={it.y} w={0.3} h={0.04} d={0.22} c="#ff9fc6" shadow={false} />
+      return <Box x={it.x} z={it.z} y={it.y} w={0.3} h={0.04} d={0.22} c="#8ce4e4" shadow={false} />
     case 'lamp':
       return (
         <group position={[it.x, it.y, it.z]}>
@@ -569,7 +569,7 @@ function Lights({ th }) {
         shadow-camera-far={30}
         shadow-bias={-0.0005}
       />
-      <pointLight position={[0, 3, 0]} intensity={14 * (1 - dim * 0.6)} distance={13} color={dim > 0.5 ? '#ffb3e6' : '#fff0d9'} />
+      <pointLight position={[0, 3, 0]} intensity={14 * (1 - dim * 0.6)} distance={13} color={dim > 0.5 ? '#9ce8df' : '#fff0d9'} />
     </>
   )
 }

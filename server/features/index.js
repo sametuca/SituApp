@@ -20,5 +20,6 @@ import economy from './economy.js'
 import dj from './dj.js'
 import housing from './housing.js'
 import rental from './rental.js'
+import pets from './pets.js'
 
-export const FEATURE_FACTORIES = [moderation, games, friends, profile, progress, media, together, cosmetics, npcs, weather, venues, collect, economy, dj, housing, rental]
+export const FEATURE_FACTORIES = [moderation, games, friends, profile, progress, media, together, cosmetics, npcs, weather, venues, collect, economy, dj, housing, rental, pets]

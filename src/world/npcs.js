@@ -177,6 +177,19 @@ export const AFK_BOTS = [
   { id: 'afk5', avatar: 'elif', name: 'ThrowawayTulip', x: 17.5, z: 8.5, ry: -0.6 },
 ]
 
+// NPC görünümü: oyunculardan ayırt edilsin diye her NPC'nin rolüne göre aksesuarı (şapka, gözlük, kulaklık…) ve ayağında rol halkası vardır.
+const NPC_ACC = {
+  gazeteci: ['hat', 'blue'], balon: ['hat', 'yellow'], muzisyen: ['headphones', 'lilac'], cicekci: ['flowers', 'mint'], bahcivan: ['hat', 'mint'],
+  kopekci: ['shades', 'blue'], cankurtaran: ['shades', 'yellow'], dondurmaci: ['hat', 'peach'], guvenlik: ['shades', 'lilac'], hayran: ['headphones', 'mint'],
+  kediler: ['bunny', 'peach'], turist: ['hat', 'blue'],
+}
+const VENUE_ACC = [['hat', 'mint'], ['hat', 'peach'], ['hat', 'yellow'], ['hat', 'blue'], ['hat', 'lilac']]
+export const npcAccessory = (n) => {
+  const a = NPC_ACC[n.id] ?? VENUE_ACC[[...n.id].reduce((x, c) => x + c.charCodeAt(0), 0) % VENUE_ACC.length]
+  return { id: a[0], color: a[1] }
+}
+export const NPC_SCALE = 1.06 // oyuncu avatarlarından biraz büyük
+
 export const NPCS = [...CITY.map((n) => ({ where: 'city', ...n })), ...venueNpcs]
 export const NPC_BY_ID = Object.fromEntries(NPCS.map((n) => [n.id, n]))
 export const npcsFor = (where) => NPCS.filter((n) => n.where === where)

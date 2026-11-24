@@ -43,7 +43,7 @@ function Slider({ label, value, onChange, onRelease }) {
         onPointerUp={onRelease}
         onKeyUp={onRelease}
         aria-label={label}
-        className="h-2 min-w-0 flex-1 cursor-pointer accent-[#ff7eb3]"
+        className="h-2 min-w-0 flex-1 cursor-pointer accent-[#71dedd]"
       />
       <span className="w-8 shrink-0 text-right text-xs font-bold tabular-nums text-[#8a7a9c]">{value}</span>
     </label>
@@ -228,7 +228,7 @@ export function useAudio({ net, focusRef, home, panel }) {
             ensureStarted()
             setSettings({ muted: !st.muted })
           }}
-          className={`relative h-7 w-12 shrink-0 rounded-full border-2 border-white shadow-soft transition ${st.muted ? 'bg-[#d8cfe6]' : 'bg-[#ff7eb3]'}`}
+          className={`relative h-7 w-12 shrink-0 rounded-full border-2 border-white shadow-soft transition ${st.muted ? 'bg-[#d8cfe6]' : 'bg-[#71dedd]'}`}
         >
           <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${st.muted ? 'left-0.5' : 'left-[22px]'}`} />
         </button>

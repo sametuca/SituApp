@@ -14,14 +14,14 @@ export const ROAD_HALF = 4.3 // yolların yarı genişliği (8,6 m asfalt + her 
 export const ROAD_END = { north: -96, south: 48, east: 96 } // ana yolların uçları (batı: park patikası)
 
 export const PALETTE = {
-  pink: '#ffc2dc',
+  pink: '#a8ebea',
   blue: '#b9e3ff',
   yellow: '#ffe9a8',
   mint: '#c4f0d8',
   lilac: '#dccfff',
   peach: '#ffd5bf',
 }
-const ROOF = { pink: '#ff9fc6', blue: '#7fcdf3', yellow: '#ffd35e', mint: '#8fdcb4', lilac: '#b79cff', peach: '#ffb48c' }
+const ROOF = { pink: '#8ce4e4', blue: '#7fcdf3', yellow: '#ffd35e', mint: '#8fdcb4', lilac: '#b79cff', peach: '#ffb48c' }
 
 // ---------- mahalleler ----------
 export const ZONES = [
@@ -59,7 +59,8 @@ export const TELEPORTS = {
   golet: 'pond', 'gölet': 'pond', mahalle: 'hills', hills: 'hills', liman: 'harbor', harbor: 'harbor',
 }
 
-export const SPAWN = { x: -22, z: 0 } // herkes parkta başlar
+export const SPAWN = { x: -22, z: 0 } // eski hesaplar parkta başlar
+export const BEACH_START = { x: 0, z: 43, ry: Math.PI } // yeni hesap havalimanından çıkınca kumsalda doğar, kuzeye (şehre) bakar
 
 // ---------- binalar ----------
 // facing: kapının baktığı yön ('n' = -z, 's' = +z, 'e' = +x, 'w' = -x)
@@ -180,12 +181,15 @@ for (const [x, z] of [[-18, -9], [-24, -10], [-36, -10], [-44, -8], [-20, 9], [-
 PROPS.push(p('bench', -22, -5, 1.7, 0, 0), p('bench', -22, 5, 1.7, 0, Math.PI), p('bench', -36, -5, 1.7, 0, 0), p('bench', -36, 5, 1.7, 0, Math.PI))
 // park patikası (x -12…-26, z ±1,6): lambalar patikanın iki yanında, aynı hizada
 for (const x of [-16, -22]) PROPS.push(p('lamp', x, 2.6, 3, 0.35), p('lamp', x, -2.6, 3, 0.35))
-// plaj: şemsiyeler, şezlonglar (üçünün yanında ikinci şezlong: yan yana uzanınca sohbet kısayolu), palmiyeler
-for (const [x, z] of [[-8.5, 33], [9, 37], [7, 34], [-8.5, 41], [8, 42]]) {
-  PROPS.push(p('umbrella', x, z, 2.6, 0.3), p('lounger', x + 1.6, z + 1.4, 1.7, 0, 0.6))
+// plaj: şemsiyeler ve şezlonglar DENİZ KENARINDA (yoldan uzak, kıyıya bakar); iki şezlong yan yana = sohbet kısayolu grubu
+for (const side of [-1, 1]) {
+  for (const [dx, z] of [[9.5, 41.5], [12.5, 45]]) {
+    const x = side * dx
+    PROPS.push(p('umbrella', x, z, 2.6, 0.3))
+    PROPS.push(p('lounger', x - 0.75, z + 1.7, 1.7, 0, 0), p('lounger', x + 0.75, z + 1.7, 1.7, 0, 0)) // yan yana, denize (güneye) bakıyor
+  }
 }
-for (const [x, z] of [[-8.5, 33], [7, 34], [-8.5, 41]]) PROPS.push(p('lounger', x + 2.55, z + 0.75, 1.7, 0, 0.6))
-for (const [x, z] of [[-12, 31], [12, 31], [-11, 44], [11, 44]]) PROPS.push(p('palm', x, z, 4.6, 0.5))
+for (const [x, z] of [[-12, 31], [12, 31], [-11, 48], [11, 48]]) PROPS.push(p('palm', x, z, 4.6, 0.5))
 // mahalle köşelerinde ağaçlar
 for (const [x, z] of [[17, -33], [17, 33], [47 - 2, 14]]) PROPS.push(p('tree', x, z, 3.6, 0.7))
 
@@ -224,8 +228,8 @@ const SEAT_DEFS = {
 }
 // Park piknik battaniyeleri (procedural, City.jsx çizer): 2 kişilik, yere oturulur (style 'floor').
 export const BLANKETS = [
-  { x: -21, z: -7.5, ry: 0.2, c: '#ff9fc6', c2: '#fff3f8' },
-  { x: -40, z: -4.5, ry: -0.5, c: '#7fcdf3', c2: '#fff3f8' },
+  { x: -21, z: -7.5, ry: 0.2, c: '#8ce4e4', c2: '#f5fdfd' },
+  { x: -40, z: -4.5, ry: -0.5, c: '#7fcdf3', c2: '#f5fdfd' },
   { x: -33, z: 7.6, ry: 0.4, c: '#ffd35e', c2: '#fff7dc' },
   { x: -28, z: -7.6, ry: -0.2, c: '#8fdcb4', c2: '#f3fff8' },
 ]

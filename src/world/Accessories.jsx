@@ -38,7 +38,7 @@ function Crown({ color }) {
       })}
       <mesh position={[0, 0, 0.455]}>
         <sphereGeometry args={[0.06, 12, 12]} />
-        <Mat color="#ff7eb3" />
+        <Mat color="#71dedd" />
       </mesh>
     </group>
   )
@@ -125,7 +125,7 @@ function BunnyEars({ color }) {
           </mesh>
           <mesh position={[0, 0.0, 0.045]} scale={[0.55, 1, 0.5]}>
             <capsuleGeometry args={[0.085, 0.38, 6, 14]} />
-            <Mat color="#ffd3e6" />
+            <Mat color="#dbf7f6" />
           </mesh>
         </group>
       ))}
@@ -199,7 +199,7 @@ const PARTS = { crown: Crown, bow: Bow, shades: Shades, headphones: Headphones, 
 /** Baş birimi koordinatlarında tek bir aksesuar. */
 export function AccessoryMesh({ id, color }) {
   const Part = PARTS[id]
-  const hex = PASTEL_BY_ID[color]?.hex ?? '#ff9ec8'
+  const hex = PASTEL_BY_ID[color]?.hex ?? '#8be4e3'
   return Part ? <Part color={hex} /> : null
 }
 

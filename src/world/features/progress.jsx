@@ -14,7 +14,7 @@ const readFx = () => {
 }
 
 // ---------------------------------------------------------------- küçük parçalar
-function Bar({ value, max, tone = '#ff7eb3' }) {
+function Bar({ value, max, tone = '#71dedd' }) {
   return (
     <div className="h-2.5 w-full overflow-hidden rounded-full bg-[#f1e6ff]">
       <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${Math.round((Math.min(value, max) / max) * 100)}%`, background: tone }} />
@@ -26,7 +26,7 @@ const PIECES = Array.from({ length: 26 }, (_, i) => ({
   dx: Math.round(Math.cos((i / 26) * Math.PI * 2) * (90 + (i % 3) * 40)),
   dy: Math.round(Math.sin((i / 26) * Math.PI * 2) * (70 + (i % 4) * 30) - 30),
   rot: (i * 47) % 360,
-  color: ['#ff7eb3', '#a9ddf5', '#ffe48f', '#b9ebcf', '#d6c7ff'][i % 5],
+  color: ['#71dedd', '#a9ddf5', '#ffe48f', '#b9ebcf', '#d6c7ff'][i % 5],
   delay: (i % 5) * 0.03,
 }))
 
@@ -46,7 +46,7 @@ function Celebration({ toast }) {
         ))}
         <div className="flex w-[min(86vw,19rem)] flex-col items-center gap-1 rounded-[2rem] border-2 border-white bg-white/95 px-6 py-5 text-center shadow-toy">
           <span className="text-5xl [animation:star-bounce_0.9s_ease-out]">{quest ? '⭐' : toast.emoji}</span>
-          <p className="text-xs font-extrabold uppercase tracking-wide text-[#ff7eb3]">{quest ? 'Görev tamamlandı!' : 'Yeni rozet!'}</p>
+          <p className="text-xs font-extrabold uppercase tracking-wide text-[#71dedd]">{quest ? 'Görev tamamlandı!' : 'Yeni rozet!'}</p>
           <p className="text-lg font-black text-[#4a3b5c]">{quest ? `${toast.emoji} ${toast.title}` : toast.name}</p>
           <p className="text-sm font-bold text-[#8a7a9c]">{quest ? `+${toast.stars} ⭐ kazandın` : toast.desc}</p>
         </div>
@@ -76,7 +76,7 @@ function QuestPanel({ prog, onClose }) {
             role="tab"
             aria-selected={tab === id}
             onClick={() => setTab(id)}
-            className={`flex-1 rounded-2xl px-2 py-2.5 text-sm font-extrabold transition active:scale-95 ${tab === id ? 'bg-[#ff7eb3] text-white shadow-soft' : 'bg-[#f6f0ff] text-[#4a3b5c]'}`}
+            className={`flex-1 rounded-2xl px-2 py-2.5 text-sm font-extrabold transition active:scale-95 ${tab === id ? 'bg-[#71dedd] text-white shadow-soft' : 'bg-[#f6f0ff] text-[#4a3b5c]'}`}
           >
             {label}
           </button>
@@ -87,7 +87,7 @@ function QuestPanel({ prog, onClose }) {
         <p className="mt-6 text-center text-sm font-semibold text-[#8a7a9c]">Yükleniyor… (çevrimdışıysan görevler görünmez)</p>
       ) : tab === 'quests' ? (
         <>
-          {prog.streak > 0 && <p className="mt-3 text-sm font-extrabold text-[#e85a98]">🔥 {prog.streak} günlük seri</p>}
+          {prog.streak > 0 && <p className="mt-3 text-sm font-extrabold text-[#53c1bf]">🔥 {prog.streak} günlük seri</p>}
           <ul className="mt-3 flex flex-col gap-2.5">
             {prog.quests.map((q) => (
               <li key={q.id} className={`rounded-2xl border-2 px-3 py-2.5 ${q.done ? 'border-[#b9ebcf] bg-[#effcf4]' : 'border-white bg-[#fbf7ff]'} shadow-soft`}>
@@ -97,7 +97,7 @@ function QuestPanel({ prog, onClose }) {
                   <span className="shrink-0 rounded-full bg-[#fff3c4] px-2 py-0.5 text-xs font-black text-[#7a5b00]">+{q.stars} ⭐</span>
                 </div>
                 <div className="mt-2 flex items-center gap-2">
-                  <Bar value={q.progress} max={q.goal} tone={q.done ? '#7ed6a4' : '#ff7eb3'} />
+                  <Bar value={q.progress} max={q.goal} tone={q.done ? '#7ed6a4' : '#71dedd'} />
                   <span className="shrink-0 text-xs font-extrabold tabular-nums text-[#8a7a9c]">
                     {q.progress}/{q.goal}
                   </span>
@@ -161,15 +161,15 @@ function SuggestCard({ s, onHi, onClose }) {
     <div className="absolute left-16 right-32 top-24 z-20 flex max-w-[22rem] animate-pop items-center gap-3 rounded-3xl border-2 border-white bg-white/90 p-3 shadow-toy backdrop-blur-md">
       <img src={`/avatars/${s.avatar}.png`} alt="" width="44" height="44" className="h-11 w-11 shrink-0 rounded-full border-2 border-white bg-white/60 object-cover object-top" />
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#ff7eb3]">Bugünün önerisi</p>
+        <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#71dedd]">Bugünün önerisi</p>
         <p className="line-clamp-2 text-sm font-black text-[#4a3b5c]">
           {s.name} {tags ? <>{tags} <span className="font-bold text-[#8a7a9c]">ortak ilgi</span></> : <span className="font-bold text-[#8a7a9c]">✨ tanışmaya ne dersin?</span>}
         </p>
-        <button onClick={onHi} className="mt-1.5 rounded-xl border-b-4 border-[#e85a98] bg-[#ff7eb3] px-3 py-1.5 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2">
+        <button onClick={onHi} className="mt-1.5 rounded-xl border-b-4 border-[#53c1bf] bg-[#71dedd] px-3 py-1.5 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2">
           👋 Merhaba de
         </button>
       </div>
-      <button onClick={onClose} aria-label="Öneriyi kapat" className="grid h-9 w-9 shrink-0 place-items-center self-start rounded-full text-sm font-black text-[#8a7a9c] hover:bg-[#ffd6e8]/70">
+      <button onClick={onClose} aria-label="Öneriyi kapat" className="grid h-9 w-9 shrink-0 place-items-center self-start rounded-full text-sm font-black text-[#8a7a9c] hover:bg-[#def7f7]/70">
         ✕
       </button>
     </div>

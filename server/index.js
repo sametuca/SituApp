@@ -20,7 +20,7 @@ const CHARACTERS_FILE = path.join(DATA_DIR, 'characters.json')
 
 const app = express()
 app.use(cors())
-app.use(express.json())
+app.use(express.json({ limit: '32kb' }))
 
 const MESHY_API_KEY = process.env.MESHY_API_KEY
 const MESHY_BASE = 'https://api.meshy.ai'
@@ -148,6 +148,9 @@ app.post('/api/assets/import', async (req, res) => {
     res.status(400).json({ error: err.message })
   }
 })
+
+import { feedbackHandler } from './feedback.js'
+app.post('/api/feedback', feedbackHandler)
 
 let game = null
 app.get('/api/health', (_req, res) => {

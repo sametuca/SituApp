@@ -17,12 +17,12 @@ function ReportDialog({ peer, onPick, onClose }) {
       <p className="mt-1 text-sm font-semibold text-[#8a7a9c]">Son mesajları da moderatöre iletilir. Dilersen ayrıca engelleyebilirsin.</p>
       <div className="mt-4 flex flex-col gap-2">
         {REASONS.map(([k, label]) => (
-          <button key={k} onClick={() => onPick(k)} className="rounded-2xl border-2 border-white bg-[#ffe3f0]/80 px-4 py-3 text-left text-sm font-extrabold text-[#4a3b5c] active:scale-[0.98] hover:bg-[#ffd0e6]">
+          <button key={k} onClick={() => onPick(k)} className="rounded-2xl border-2 border-white bg-[#e8faf9]/80 px-4 py-3 text-left text-sm font-extrabold text-[#4a3b5c] active:scale-[0.98] hover:bg-[#d9f6f5]">
             {label}
           </button>
         ))}
       </div>
-      <button onClick={onClose} className="mt-3 w-full rounded-2xl py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#ffd6e8]/60">
+      <button onClick={onClose} className="mt-3 w-full rounded-2xl py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#def7f7]/60">
         Vazgeç
       </button>
     </Modal>

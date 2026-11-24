@@ -150,8 +150,8 @@ export default function HomeRoom({ ownerName, decor, tier = 1, children }) {
     const t = setTimeout(() => setSignReady(true), 900)
     return () => clearTimeout(t)
   }, [])
-  const front = decor ? wallHex(decor.wall) : '#ffd9ea'
-  const side = decor ? wallHex(decor.wall) : '#ffe5f1'
+  const front = decor ? wallHex(decor.wall) : '#e0f8f7'
+  const side = decor ? wallHex(decor.wall) : '#eafafa'
   const pattern = decor?.pattern
   return (
     <group>
@@ -164,7 +164,7 @@ export default function HomeRoom({ ownerName, decor, tier = 1, children }) {
         <meshStandardMaterial color="#f7e7ff" roughness={1} />
       </mesh>
       <RoundedBox args={[hw * 2 + 0.6, 0.2, hd * 2 + 0.6]} radius={0.08} position={[0, -0.1, 0]} receiveShadow>
-        <meshStandardMaterial color="#ffd6e8" roughness={0.7} />
+        <meshStandardMaterial color="#def7f7" roughness={0.7} />
       </RoundedBox>
       <DecorFloor floor={decor?.floor} />
 
@@ -175,9 +175,9 @@ export default function HomeRoom({ ownerName, decor, tier = 1, children }) {
       <Wall position={[0, wallH / 2, hd]} rotation={[0, Math.PI, 0]} w={hw * 2} color={front} pattern={pattern} />
 
       {/* kalın duvar kenarları (dışarıdan da görünür) */}
-      <Trim position={[0, wallH + 0.08, -hd]} args={[hw * 2 + 0.3, 0.18, 0.3]} color="#ffb6d3" />
-      <Trim position={[-hw, wallH + 0.08, 0]} args={[0.3, 0.18, hd * 2 + 0.3]} color="#ffb6d3" />
-      <Trim position={[hw, wallH + 0.08, 0]} args={[0.3, 0.18, hd * 2 + 0.3]} color="#ffb6d3" />
+      <Trim position={[0, wallH + 0.08, -hd]} args={[hw * 2 + 0.3, 0.18, 0.3]} color="#9fe8e8" />
+      <Trim position={[-hw, wallH + 0.08, 0]} args={[0.3, 0.18, hd * 2 + 0.3]} color="#9fe8e8" />
+      <Trim position={[hw, wallH + 0.08, 0]} args={[0.3, 0.18, hd * 2 + 0.3]} color="#9fe8e8" />
       <Trim position={[0, 0.16, -hd + 0.06]} args={[hw * 2, 0.32, 0.12]} color="#fffaf2" />
       <Trim position={[-hw + 0.06, 0.16, 0]} args={[0.12, 0.32, hd * 2]} color="#fffaf2" />
       <Trim position={[hw - 0.06, 0.16, 0]} args={[0.12, 0.32, hd * 2]} color="#fffaf2" />

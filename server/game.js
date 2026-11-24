@@ -20,6 +20,7 @@
 //     { t: 'dj_get' | 'dj_join' | 'dj_leave' | 'dj_play', url | 'dj_stop' | 'dj_fire' }   Gece Kulübü DJ vardiyası (features/dj.js; ayrıntı orada)
 //     { t: 'home_upgrade' }                        evi bir üst kademeye yükselt (features/housing.js; sunucu → { t:'home_tier', owner, tier }, welcome.homeTier, room.tier)
 //     { t: 'rent', kind }                          Havalimanı'nda bisiklet kirala (araba hiçbir koşulda kiralanamaz; features/rental.js; sunucu → { t:'rental', kind, until }, welcome.bikeUntil)
+//     { t: 'pet_adopt', pet }                      ilk girişte 1 haftalık ücretsiz evcil hayvan (cat|dog; features/pets.js); { t:'pet_renew' } 80 🪙 ile +1 hafta; sunucu → { t:'pet_until', until }, welcome.petUntil/petOffer
 //     { t: 'coins_get' }                           altın bakiyesi (features/economy.js; sunucu → { t: 'coins', n, d, why }, welcome.coins)
 //     { t: 'dnd', on }                             rahatsız etme modu
 //     { t: 'sit', seat, slot } / { t: 'pose_end' } / { t: 'poses' }      oturma (features/together.js; ayrıntı orada)

@@ -92,7 +92,7 @@ export async function composePhoto(shot, who) {
   const g = c.getContext('2d')
 
   const bg = g.createLinearGradient(0, 0, W, H)
-  bg.addColorStop(0, '#ffd3e6')
+  bg.addColorStop(0, '#dbf7f6')
   bg.addColorStop(0.5, '#e9ddff')
   bg.addColorStop(1, '#c9ebff')
   g.fillStyle = bg
@@ -129,20 +129,20 @@ export async function composePhoto(shot, who) {
   g.restore()
 
   // köşelerde kalp ve yıldız
-  heart(g, PAD + 6, PAD + 6, 34, '#ff7eb3')
+  heart(g, PAD + 6, PAD + 6, 34, '#71dedd')
   star(g, W - PAD - 6, PAD + 4, 22, '#ffd35e')
-  heart(g, W - PAD - 30, PAD + ph - 12, 22, '#ffb6d3')
+  heart(g, W - PAD - 30, PAD + ph - 12, 22, '#9fe8e8')
 
   // alt şerit: damga + tarih
   const d = new Date()
   const stamp = `${pad2(d.getDate())}.${pad2(d.getMonth() + 1)}.${d.getFullYear()} · ${pad2(d.getHours())}:${pad2(d.getMinutes())}`
   const baseY = PAD + ph + 80
   g.textBaseline = 'alphabetic'
-  g.fillStyle = '#e85a98'
+  g.fillStyle = '#53c1bf'
   g.font = '900 52px Nunito, system-ui, sans-serif'
   g.textAlign = 'left'
   g.fillText('SituApp', PAD + 4, baseY)
-  heart(g, PAD + 4 + g.measureText('SituApp').width + 26, baseY - 20, 18, '#ff7eb3')
+  heart(g, PAD + 4 + g.measureText('SituApp').width + 26, baseY - 20, 18, '#71dedd')
   g.fillStyle = '#6d5a85'
   g.font = '800 30px Nunito, system-ui, sans-serif'
   g.textAlign = 'right'
@@ -172,7 +172,7 @@ export function download(url, name = `situapp-${Date.now()}.jpg`) {
 }
 
 const btn = 'flex-1 rounded-2xl border-b-4 py-2.5 text-sm font-extrabold active:translate-y-[2px] active:border-b-2'
-const pink = `${btn} border-[#e85a98] bg-[#ff7eb3] text-white`
+const pink = `${btn} border-[#53c1bf] bg-[#71dedd] text-white`
 const lilac = `${btn} border-[#c9b6f5] bg-[#e9ddff] text-[#5b3fa8]`
 
 /** 3-2-1 geri sayımı (kamera DOM'u çekmez; yalnızca poz verme zamanı). */
@@ -180,7 +180,7 @@ export function Countdown({ n }) {
   return (
     <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center" role="status" aria-live="assertive">
       <div className="flex flex-col items-center gap-2">
-        <span key={n} className="animate-pop text-[8rem] font-black leading-none text-white [text-shadow:0_6px_0_#e85a98,0_14px_30px_rgba(168,139,255,0.6)]">
+        <span key={n} className="animate-pop text-[8rem] font-black leading-none text-white [text-shadow:0_6px_0_#53c1bf,0_14px_30px_rgba(168,139,255,0.6)]">
           {n}
         </span>
         <span className="rounded-full border-2 border-white bg-white/85 px-4 py-1 text-sm font-black text-[#4a3b5c] shadow-soft">Poz ver! 🤳</span>
@@ -205,10 +205,10 @@ export function PhotoPreview({ photo, onAgain, onAlbum, onClose }) {
         </button>
       </div>
       <div className="mt-2 flex gap-2">
-        <button onClick={onAlbum} className="flex-1 rounded-2xl py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#ffd6e8]/60">
+        <button onClick={onAlbum} className="flex-1 rounded-2xl py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#def7f7]/60">
           🖼️ Albüm
         </button>
-        <button onClick={onClose} className="flex-1 rounded-2xl py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#ffd6e8]/60">
+        <button onClick={onClose} className="flex-1 rounded-2xl py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#def7f7]/60">
           Kapat
         </button>
       </div>
@@ -240,7 +240,7 @@ export function AlbumModal({ list, onDelete, onClose }) {
               🗑️ Sil
             </button>
           </div>
-          <button onClick={() => setOpen(null)} className="mt-2 w-full rounded-2xl py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#ffd6e8]/60">
+          <button onClick={() => setOpen(null)} className="mt-2 w-full rounded-2xl py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#def7f7]/60">
             ← Albüme dön
           </button>
         </>
@@ -256,7 +256,7 @@ export function AlbumModal({ list, onDelete, onClose }) {
         </div>
       )}
       {!shown && (
-        <button onClick={onClose} className="mt-4 w-full rounded-2xl border-b-4 border-[#e85a98] bg-[#ff7eb3] py-3 text-base font-extrabold text-white active:translate-y-[3px] active:border-b-[1px]">
+        <button onClick={onClose} className="mt-4 w-full rounded-2xl border-b-4 border-[#53c1bf] bg-[#71dedd] py-3 text-base font-extrabold text-white active:translate-y-[3px] active:border-b-[1px]">
           Tamam
         </button>
       )}

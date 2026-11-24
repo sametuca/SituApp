@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { screenK } from './screenK'
 import { useFrame, useLoader } from '@react-three/fiber'
-import { CanvasTexture, Color, RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
+import { CanvasTexture, Color, DataTexture, LinearFilter, RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
 import { Html, RoundedBox } from '@react-three/drei'
 import { BLANKETS, BUILDINGS, GAZEBO, ISLAND, PROPS, RIM, ROAD_END, ROAD_HALF } from './layout'
 import { useCull } from './cull'
@@ -20,8 +20,37 @@ const Y = { floor: 0.02, sidewalk: 0.04, road: 0.06, plaza: 0.08, mark: 0.1 }
 export const GROUND_TEX = { grass: 4.5, asphalt: 5, cobble: 3.2, sand: 4 } // doku adı → bir kiremitin kapladığı metre
 export const GROUND_URLS = Object.keys(GROUND_TEX).map((n) => `/textures/${n}.webp`)
 
-/** tex: GROUND_TEX adı. Doku dünya ölçüsünde döşenir (kiremit boyu metre), renk tonu `color` ile çarpılır (pastel ton verir). */
-function Flat({ x = 0, z = 0, w, d, y, color = '#ffffff', round, tex }) {
+// Yumuşak kenar: alt zeminle karışsın diye alfa haritası (kenara `feather` m kala saydamlaşır). Keskin geçişler "2006 oyunu" gibi duruyordu.
+const featherCache = new Map()
+function featherTexture(w, d, f, round) {
+  const key = `${round ? `r${round}` : `${w}x${d}`}|${f}`
+  let t = featherCache.get(key)
+  if (t) return t
+  const N = 96
+  const data = new Uint8Array(N * N * 4)
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      const u = (i + 0.5) / N
+      const v = (j + 0.5) / N
+      let edge
+      if (round) edge = (1 - Math.hypot(u - 0.5, v - 0.5) * 2) * round // dairesel: merkezden uzaklık
+      else edge = Math.min(u * w, (1 - u) * w, v * d, (1 - v) * d)
+      const x = Math.max(0, Math.min(1, edge / f))
+      const a = Math.round(255 * x * x * (3 - 2 * x))
+      const k = (j * N + i) * 4
+      data[k] = data[k + 1] = data[k + 2] = a
+      data[k + 3] = 255
+    }
+  }
+  t = new DataTexture(data, N, N)
+  t.minFilter = t.magFilter = LinearFilter
+  t.needsUpdate = true
+  featherCache.set(key, t)
+  return t
+}
+
+/** tex: GROUND_TEX adı. Doku dünya ölçüsünde döşenir (kiremit boyu metre), renk tonu `color` ile çarpılır (pastel ton). feather: kenar yumuşatma (m). */
+function Flat({ x = 0, z = 0, w, d, y, color = '#ffffff', round, tex, feather = 0 }) {
   const base = useLoader(TextureLoader, `/textures/${tex ?? 'grass'}.webp`)
   const map = useMemo(() => {
     if (!tex) return null
@@ -35,10 +64,11 @@ function Flat({ x = 0, z = 0, w, d, y, color = '#ffffff', round, tex }) {
     t.needsUpdate = true
     return t
   }, [base, tex, w, d, round, x, z])
+  const alpha = useMemo(() => (feather > 0 ? featherTexture(round ? round * 2 : w, round ? round * 2 : d, feather, round ? round * 2 : 0) : null), [feather, w, d, round])
   return (
-    <mesh position={[x, y, z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+    <mesh position={[x, y, z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow renderOrder={alpha ? 1 : 0}>
       {round ? <circleGeometry args={[round, 64]} /> : <planeGeometry args={[w, d]} />}
-      <meshStandardMaterial color={color} map={map} roughness={0.95} />
+      <meshStandardMaterial color={color} map={map} alphaMap={alpha} transparent={Boolean(alpha)} depthWrite={!alpha} roughness={0.95} />
     </mesh>
   )
 }
@@ -62,7 +92,7 @@ function splitLabel(text) {
 }
 
 // Modern harita pini: renkli halkalı yuvarlak rozet + 3D ikon + sivri uç; yakında ad etiketi açılır.
-function Label({ text, y, x, z, zOff = 0, focusRef, accent = '#ff8fb8' }) {
+function Label({ text, y, x, z, zOff = 0, focusRef, accent = '#7fe0e1' }) {
   const [mode, setMode] = useState(2) // 0 gizli, 1 yalnız rozet, 2 rozet + ad
   const clock = useRef(0)
   useFrame(({ camera }, dt) => {
@@ -104,12 +134,12 @@ function Label({ text, y, x, z, zOff = 0, focusRef, accent = '#ff8fb8' }) {
 // Her bina, sırasına göre bir stil alır (komşu binalar farklı olur): cephe dokusu (Meshy), çatı biçimi, pencere türü ve süsler.
 const WALL_TEX = { brick: 2.4, siding: 2.0, mosaic: 2.6, plaster: 4, shingle: 2.0 } // doku adı → bir kiremitin metre boyu
 const STYLES = [
-  { wall: 'brick', roofType: 'gable', win: 'arch', shutters: true, chimney: true, door: '#c46b8e' },
+  { wall: 'brick', roofType: 'gable', win: 'arch', shutters: true, chimney: true, door: '#5fa2a2' },
   { wall: 'siding', roofType: 'flat', win: 'round', flowerbox: true, door: '#3aa6a0' },
   { wall: 'mosaic', roofType: 'hip', win: 'wide', door: '#e8873a' },
   { wall: 'plaster', roofType: 'flat', win: 'rect', balcony: true, door: '#8a6bd1' },
   { wall: 'brick', roofType: 'hip', win: 'rect', shutters: true, chimney: true, door: '#5b86d6' },
-  { wall: 'siding', roofType: 'gable', win: 'wide', flowerbox: true, door: '#d6577a' },
+  { wall: 'siding', roofType: 'gable', win: 'wide', flowerbox: true, door: '#50aab0' },
 ]
 const lighten = (hex, t) => `#${new Color(hex).lerp(new Color('#ffffff'), t).getHexString()}`
 
@@ -228,7 +258,7 @@ function Window({ kind, x, y, z, w, accent, shutters, flowerbox }) {
           {[-0.4, 0, 0.4].map((fx) => (
             <mesh key={fx} position={[fx * (w / 1.6), 0.24, 0]}>
               <sphereGeometry args={[0.17, 10, 8]} />
-              <meshStandardMaterial color={fx === 0 ? '#ffd35e' : '#ff7eb3'} roughness={0.6} />
+              <meshStandardMaterial color={fx === 0 ? '#ffd35e' : '#71dedd'} roughness={0.6} />
             </mesh>
           ))}
         </group>
@@ -335,7 +365,7 @@ function Gazebo() {
     <group position={[GAZEBO.x, 0, GAZEBO.z]}>
       <mesh position={[0, 0.15, 0]} receiveShadow>
         <cylinderGeometry args={[3.2, 3.3, 0.3, 32]} />
-        <meshStandardMaterial color="#ffe3ef" roughness={0.6} />
+        <meshStandardMaterial color="#e8faf9" roughness={0.6} />
       </mesh>
       {posts.map((a, i) => (
         <mesh key={i} position={[Math.cos(a) * 2.7, 1.8, Math.sin(a) * 2.7]} castShadow>
@@ -541,11 +571,11 @@ export default function City({ focusRef }) {
       <Flat x={ISLAND.x0 - RIM / 2} z={cz} w={RIM} d={D} y={Y.floor} tex="sand" />
       <Flat x={ISLAND.x1 + RIM / 2} z={cz} w={RIM} d={D} y={Y.floor} tex="sand" />
       <Pond x={-30} z={30} r={7} />
-      <Flat x={0} z={-30} w={28} d={36} y={Y.floor} tex="cobble" color="#fff3ea" /> {/* kafe: sıcak kaldırım taşı */}
-      <Flat x={30} z={0} w={36} d={28} y={Y.floor} tex="cobble" color="#e3d6ff" /> {/* kulüp */}
-      <Flat x={-30} z={0} w={36} d={28} y={Y.floor} tex="grass" color="#f4fff6" /> {/* park çimi */}
-      <Flat x={0} z={38.5} w={28} d={17} y={Y.floor} tex="sand" /> {/* plaj kumu */}
-      <Flat x={0} z={48.5} w={W} d={3} y={Y.floor} tex="sand" />
+      <Flat x={0} z={-30} w={28} d={36} y={Y.floor} tex="cobble" color="#fff3ea" feather={3} /> {/* kafe: sıcak kaldırım taşı */}
+      <Flat x={30} z={0} w={36} d={28} y={Y.floor} tex="cobble" color="#e3d6ff" feather={3} /> {/* kulüp */}
+      <Flat x={0} z={39} w={34} d={22} y={Y.floor} tex="sand" feather={4} />
+      <Flat x={0} z={47} w={90} d={8} y={Y.floor} tex="sand" feather={3} /> {/* plaj kumu */}
+      
       <mesh position={[-33, 0.04, -6]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[3.6, 40]} />
         <meshStandardMaterial color="#a9ddf5" roughness={0.15} />
@@ -554,7 +584,7 @@ export default function City({ focusRef }) {
       {/* kaldırım + yollar */}
       <Flat x={0} z={nsCz} w={swW} d={nsLen} y={Y.sidewalk} tex="cobble" color="#fdf6ff" />
       <Flat x={ewCx} z={0} w={ewLen} d={swW} y={Y.sidewalk} tex="cobble" color="#fdf6ff" />
-      <Flat x={-19} z={0} w={14} d={3.4} y={Y.sidewalk} tex="cobble" color="#fff0f4" /> {/* park patikası: lobiden çardağa */}
+      <Flat x={-19} z={0} w={14} d={3.4} y={Y.sidewalk} tex="cobble" color="#f3fcfc" /> {/* park patikası: lobiden çardağa */}
       <Flat x={0} z={nsCz} w={road} d={nsLen} y={Y.road} tex="asphalt" />
       <Flat x={ewCx} z={0} w={ewLen} d={road} y={Y.road} tex="asphalt" />
       {DASHES.map((t) => (
@@ -565,10 +595,10 @@ export default function City({ focusRef }) {
       ))}
 
       {/* lobi meydanı */}
-      <Flat round={12} y={Y.plaza} tex="cobble" color="#ffeef6" />
-      <Ring r0={6.6} r1={7.1} y={Y.mark} color="#ffd3e6" />
+      <Flat round={12} y={Y.plaza} tex="cobble" color="#f1fcfb" />
+      <Ring r0={6.6} r1={7.1} y={Y.mark} color="#dbf7f6" />
       <Ring r0={9.6} r1={10.2} y={Y.mark} color="#cfeaff" />
-      <Flat round={3.4} y={Y.mark} color="#ffd3e6" />
+      <Flat round={3.4} y={Y.mark} color="#dbf7f6" />
       <Gazebo />
 
       {BUILDINGS.filter((b) => !b.gazebo).map((b, i) => (

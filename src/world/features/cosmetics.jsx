@@ -14,6 +14,7 @@ import {
   GIFT_RANGE,
   PASTELS,
   PETS,
+  PET_RENEW_PRICE,
   WALL_COLORS,
   WALL_PATTERNS,
 } from '../cosmeticsData'
@@ -40,7 +41,7 @@ function PreviewStage({ slug }) {
   return (
     <>
       <ambientLight intensity={0.9} />
-      <hemisphereLight args={['#ffffff', '#ffd6ea', 1.2]} />
+      <hemisphereLight args={['#ffffff', '#def7f6', 1.2]} />
       <directionalLight position={[2, 4, 3]} intensity={1.4} />
       <group ref={group} position={[-0.25, 0, 0]}>
         <Suspense fallback={null}>
@@ -76,11 +77,36 @@ function PreviewPet() {
   return kind ? <PetModel kind={kind} /> : null
 }
 
-function Wardrobe({ slug, cos, onSave, onClose }) {
+/** İlk giriş: 1 haftalık ücretsiz evcil hayvan seçimi (kedi ya da köpek). */
+function PetAdopt({ onPick, onLater }) {
+  return (
+    <Modal onClose={onLater} label="Evcil hayvan seç">
+      <div className="text-center">
+        <h2 className="text-2xl font-black text-[#4a3b5c]">Bir dost seç 🐾</h2>
+        <p className="mt-1 text-sm font-semibold text-[#8a7a9c]">Hoş geldin hediyesi: yeni arkadaşın 1 hafta boyunca seninle gezer. Sonra Gardırop’tan yenileyebilirsin.</p>
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          {PETS.filter((p) => p.id === 'cat' || p.id === 'dog').map((p) => (
+            <button key={p.id} onClick={() => onPick(p.id)} className="rounded-3xl border-2 border-white bg-gradient-to-b from-[#f3f0fa] to-white p-4 shadow-soft transition active:scale-95 hover:-translate-y-0.5">
+              <div className="grid h-20 place-items-center text-6xl">{p.emoji}</div>
+              <p className="mt-1 text-base font-black text-[#4a3b5c]">{p.name}</p>
+              <p className="text-[11px] font-bold text-[#8a7a9c]">1 hafta ücretsiz</p>
+            </button>
+          ))}
+        </div>
+        <button onClick={onLater} className="mt-4 text-xs font-extrabold text-[#8a7a9c] hover:underline">
+          Şimdi değil
+        </button>
+      </div>
+    </Modal>
+  )
+}
+
+function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
   const [acc, setAcc] = useState(cos?.acc ?? null)
   const [pet, setPet] = useState(cos?.pet ?? null)
   const [tab, setTab] = useState('acc')
   const [color, setColor] = useState(cos?.acc?.color ?? 'pink')
+  const petLeft = Math.max(0, Math.ceil((petUntil - Date.now()) / 3600000)) // kalan saat
 
   useEffect(() => {
     cosStore.set('preview', { acc, pet })
@@ -96,7 +122,7 @@ function Wardrobe({ slug, cos, onSave, onClose }) {
   return (
     <Modal onClose={onClose} label="Gardırop">
       <h2 className="text-2xl font-black text-[#4a3b5c]">Gardırop 👗</h2>
-      <div className="mt-3 h-48 overflow-hidden rounded-3xl border-2 border-white bg-gradient-to-b from-[#ffe3f0] via-[#f1e6ff] to-[#dff3ff] shadow-soft">
+      <div className="mt-3 h-48 overflow-hidden rounded-3xl border-2 border-white bg-gradient-to-b from-[#e8faf9] via-[#f1e6ff] to-[#dff3ff] shadow-soft">
         <Canvas camera={{ position: [0, 1.0, 2.6], fov: 32 }} dpr={[1, 2]} onCreated={({ camera }) => camera.lookAt(0, 0.8, 0)}>
           {import.meta.env.DEV && <DevCam />}
           <PreviewStage slug={slug} />
@@ -133,16 +159,26 @@ function Wardrobe({ slug, cos, onSave, onClose }) {
           </div>
         </>
       ) : (
-        <div className="mt-3 grid grid-cols-4 gap-2">
-          <ItemButton active={!pet} emoji="🚫" label="Yok" onClick={() => setPet(null)} />
-          {PETS.map((p) => (
-            <ItemButton key={p.id} active={pet === p.id} emoji={p.emoji} label={p.name} onClick={() => setPet(p.id)} />
-          ))}
-        </div>
+        <>
+          <div className="mt-3 flex items-center justify-between gap-2 rounded-2xl bg-[#f3f0fa] px-3 py-2">
+            <p className="text-xs font-extrabold text-[#4a3b5c]">
+              {petLeft > 0 ? `🐾 Bakım süresi: ${petLeft >= 48 ? `${Math.ceil(petLeft / 24)} gün` : `${petLeft} saat`}` : '🐾 Evcil hayvan süresi bitti'}
+            </p>
+            <button onClick={onRenew} disabled={coins < PET_RENEW_PRICE} className="rounded-full bg-[#ffe48f] px-3 py-1 text-[11px] font-black text-[#8a5a00] shadow transition active:scale-95 disabled:opacity-50">
+              +1 hafta · {PET_RENEW_PRICE} 🪙
+            </button>
+          </div>
+          <div className="mt-3 grid grid-cols-4 gap-2">
+            <ItemButton active={!pet} emoji="🚫" label="Yok" onClick={() => setPet(null)} />
+            {PETS.map((p) => (
+              <ItemButton key={p.id} active={pet === p.id} emoji={p.emoji} label={p.name} onClick={() => (petLeft > 0 ? setPet(p.id) : onRenew())} />
+            ))}
+          </div>
+        </>
       )}
 
       <div className="mt-4 flex gap-2">
-        <button onClick={onClose} className="rounded-2xl px-4 py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#ffd6e8]/60">
+        <button onClick={onClose} className="rounded-2xl px-4 py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#def7f7]/60">
           Vazgeç
         </button>
         <ToyButton className="!py-3 !text-base" onClick={() => onSave({ acc, pet })}>
@@ -176,7 +212,7 @@ function GiftPicker({ peer, onPick, onClose }) {
       <p className="mt-1 text-xs font-semibold text-[#8a7a9c]">En fazla {GIFT_RANGE} m yakınında olmalısın. {peer.name} kabul ederse hediye onun envanterine düşer ve evine yerleştirebilir.</p>
       <div className="mt-4 grid grid-cols-2 gap-3">
         {GIFTS.map((g) => (
-          <button key={g.id} onClick={() => onPick(g.id)} className="flex flex-col items-center gap-1 rounded-3xl border-2 border-white bg-[#fff1f7] p-3 shadow-soft transition hover:bg-[#ffe3f0] active:scale-95">
+          <button key={g.id} onClick={() => onPick(g.id)} className="flex flex-col items-center gap-1 rounded-3xl border-2 border-white bg-[#f4fcfc] p-3 shadow-soft transition hover:bg-[#e8faf9] active:scale-95">
             <span className="text-5xl" aria-hidden>
               {g.emoji}
             </span>
@@ -184,7 +220,7 @@ function GiftPicker({ peer, onPick, onClose }) {
           </button>
         ))}
       </div>
-      <button onClick={onClose} className="mt-3 w-full rounded-2xl py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#ffd6e8]/60">
+      <button onClick={onClose} className="mt-3 w-full rounded-2xl py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#def7f7]/60">
         Vazgeç
       </button>
     </Modal>
@@ -261,7 +297,7 @@ function DecorTab({ decor, onChange }) {
         role="switch"
         aria-checked={decor.romantic}
         onClick={() => onChange({ romantic: !decor.romantic })}
-        className={`mt-1 flex items-center justify-center gap-2 rounded-2xl border-2 border-white px-4 py-2.5 text-sm font-extrabold transition active:scale-[0.98] ${decor.romantic ? 'bg-gradient-to-r from-[#ff9ec8] to-[#bba0ff] text-white shadow-soft' : 'bg-white/80 text-[#4a3b5c]'}`}
+        className={`mt-1 flex items-center justify-center gap-2 rounded-2xl border-2 border-white px-4 py-2.5 text-sm font-extrabold transition active:scale-[0.98] ${decor.romantic ? 'bg-gradient-to-r from-[#8be4e3] to-[#bba0ff] text-white shadow-soft' : 'bg-white/80 text-[#4a3b5c]'}`}
       >
         💗 Romantik ışık modu {decor.romantic ? '· açık' : '· kapalı'}
       </button>
@@ -301,13 +337,22 @@ function GiftsTab({ gifts, furn, place }) {
  * Kişiselleştirme: gardırop paneli (panel === 'wardrobe'), evcil hayvan katmanı, ev dekoru ve hediyeleşme.
  * Döndürür: peerActions, settingsSections, overlays + (özel) homeDecor, editorTabs, sceneNodes.
  */
-export function useCosmetics({ net, say, home, focusRef, panel, setPanel, closeInteract, slug }) {
+export function useCosmetics({ net, say, home, venue, focusRef, panel, setPanel, closeInteract, slug }) {
   const [self, setSelf] = useState(null) // { acc, pet }
+  const [petUntil, setPetUntil] = useState(0)
+  const [petOffer, setPetOffer] = useState(false) // ilk girişte 1 haftalık ücretsiz evcil hayvan seçimi
+  const [petOfferReady, setPetOfferReady] = useState(false)
+  const [coins, setCoins] = useState(0)
   const [gifts, setGifts] = useState([])
   const [decors, setDecors] = useState({}) // ev anahtarı → dekor
   const [offers, setOffers] = useState([])
   const [giftTo, setGiftTo] = useState(null)
   const decorTimer = useRef(null)
+  useEffect(() => {
+    if (!petOffer || venue || home) return undefined
+    const t = setTimeout(() => setPetOfferReady(true), 1800) // şehre çıkınca kısa bir beklemeyle
+    return () => clearTimeout(t)
+  }, [petOffer, venue, home])
   const on = net.on
   const send = net.send
   const homeKey = net.homeKey
@@ -321,8 +366,13 @@ export function useCosmetics({ net, say, home, focusRef, panel, setPanel, closeI
         setSelf(m.cos ?? null)
         setOthers(m.players)
         setGifts(m.gifts ?? [])
+        setPetUntil(m.petUntil ?? 0)
+        setPetOffer(Boolean(m.petOffer))
+        setCoins(m.coins ?? 0)
         if (m.home) setDecors((d) => ({ ...d, [m.home]: m.decor ?? null }))
       }),
+      on('pet_until', (m) => (setPetUntil(m.until ?? 0), setPetOffer(false))),
+      on('coins', (m) => setCoins(m.n)),
       on('join', (m) => cosStore.set(m.p.id, m.p.cos)),
       on('leave', (m) => cosStore.remove(m.id)),
       on('room', (m) => {
@@ -411,6 +461,9 @@ export function useCosmetics({ net, say, home, focusRef, panel, setPanel, closeI
         <Wardrobe
           slug={slug}
           cos={self}
+          petUntil={petUntil}
+          coins={coins}
+          onRenew={() => send({ t: 'pet_renew' })}
           onClose={() => setPanel(null)}
           onSave={(sel) => {
             send({ t: 'cos_set', acc: sel.acc, pet: sel.pet })
@@ -419,6 +472,7 @@ export function useCosmetics({ net, say, home, focusRef, panel, setPanel, closeI
           }}
         />
       )}
+      {petOffer && petOfferReady && !venue && !home && <PetAdopt onPick={(pet) => send({ t: 'pet_adopt', pet })} onLater={() => setPetOffer(false)} />}
       {giftTo && (
         <GiftPicker
           peer={giftTo}

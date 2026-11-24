@@ -81,7 +81,7 @@ export function FurnitureLayer({ items, setItems, editing, selected, setSelected
             {isSel && (
               <mesh position={[it.x, 0.035, it.z]} rotation={[-Math.PI / 2, 0, -it.ry]}>
                 <planeGeometry args={[f.w + 0.3, f.d + 0.3]} />
-                <meshBasicMaterial color={isValid(items, it.uid) ? '#7be0a8' : '#ff7a8a'} transparent opacity={0.55} />
+                <meshBasicMaterial color={isValid(items, it.uid) ? '#7be0a8' : '#6ecfdd'} transparent opacity={0.55} />
               </mesh>
             )}
             <group onPointerDown={(e) => grab(e, it)}>
@@ -135,12 +135,12 @@ export function FurnitureSheet({ count, max, selected, selectedName, onAdd, onRo
               <button onClick={onRotate} aria-label="Döndür" className="grid h-9 w-9 place-items-center rounded-full border-2 border-white bg-[#e9ddff] text-lg shadow-soft">
                 ↻
               </button>
-              <button onClick={onRemove} aria-label="Kaldır" className="grid h-9 w-9 place-items-center rounded-full border-2 border-white bg-[#ffd0dc] text-lg shadow-soft">
+              <button onClick={onRemove} aria-label="Kaldır" className="grid h-9 w-9 place-items-center rounded-full border-2 border-white bg-[#d9f4f6] text-lg shadow-soft">
                 🗑
               </button>
             </>
           )}
-          <button onClick={onClose} className="rounded-full border-b-4 border-[#e85a98] bg-[#ff7eb3] px-4 py-1.5 text-sm font-extrabold text-white shadow-soft active:translate-y-[2px] active:border-b-2">
+          <button onClick={onClose} className="rounded-full border-b-4 border-[#53c1bf] bg-[#71dedd] px-4 py-1.5 text-sm font-extrabold text-white shadow-soft active:translate-y-[2px] active:border-b-2">
             ✓ Bitti
           </button>
         </div>
@@ -167,7 +167,7 @@ export function FurnitureSheet({ count, max, selected, selectedName, onAdd, onRo
               key={st.id}
               onClick={() => setSet(st.id)}
               aria-pressed={set === st.id}
-              className={`shrink-0 rounded-full border-2 border-white px-3 py-1 text-[11px] font-extrabold transition ${set === st.id ? 'bg-[#ff7eb3] text-white' : 'bg-white/70 text-[#4a3b5c] hover:bg-white'}`}
+              className={`shrink-0 rounded-full border-2 border-white px-3 py-1 text-[11px] font-extrabold transition ${set === st.id ? 'bg-[#71dedd] text-white' : 'bg-white/70 text-[#4a3b5c] hover:bg-white'}`}
             >
               {st.emoji} {st.name}
             </button>

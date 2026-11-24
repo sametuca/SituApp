@@ -21,14 +21,14 @@ const TYPE_THEME = {
   cafe: { floor: ['#f7e4cb', '#efd3b0'] },
   tea: { floor: ['#f3dec4', '#e8c9a4'] },
   bakery: { floor: ['#fbead2', '#f4d9b4'] },
-  dessert: { floor: ['#ffeaf3', '#ffd9e9'] },
+  dessert: { floor: ['#eefbfb', '#e0f8f8'] },
   icecream: { floor: ['#eafaff', '#d4f1fb'] },
   fastfood: { floor: ['#fff1c9', '#ffe29a'] },
   books: { floor: ['#ead7bd', '#dfc5a3'] },
   bar: { floor: ['#6a4a70', '#59405f'], dark: '#2a1c3a', dim: 0.55 },
   club: { floor: ['#2b2146', '#241c3d'], dark: '#1c1433', dim: 0.85 },
   arcade: { floor: ['#3a2d63', '#32265a'], dark: '#241a4a', dim: 0.6 },
-  salon: { floor: ['#fde6ef', '#f9d3e3'] },
+  salon: { floor: ['#eaf9f9', '#daf2f2'] },
   studio: { floor: ['#f1ecf8', '#e6def2'] },
   shop: { floor: ['#fdf0cf', '#f8e2a8'] },
   guide: { floor: ['#e7f1ff', '#d6e6fb'] },
@@ -38,7 +38,7 @@ const TYPE_THEME = {
 /** Mekânın renk teması (bina renklerinden türer). */
 export function venueTheme(id) {
   const v = VENUE_BY_ID[id]
-  const bd = VENUE_DOORS[id]?.building ?? { color: '#ffd9ea', roof: '#ff9fc6' }
+  const bd = VENUE_DOORS[id]?.building ?? { color: '#e0f8f7', roof: '#8ce4e4' }
   const t = TYPE_THEME[v?.type] ?? TYPE_THEME.cafe
   const dark = Boolean(t.dark)
   const wall = dark ? mix(bd.color, t.dark, 0.72) : mix(bd.color, '#ffffff', 0.3)
@@ -294,7 +294,7 @@ function build(v) {
       const bcx = v.id === 'bar' ? -1.2 : 0
       add({ t: 'bottles', x: bcx - 1.6, z: -hd + 0.25, w: 2.8 })
       add({ t: 'bottles', x: bcx + 1.6, z: -hd + 0.25, w: 2.8 })
-      add({ t: 'neon', x: -4.6, y: 2.4, z: -hd + 0.05, w: 1.5, c: '#ff8ad8' })
+      add({ t: 'neon', x: -4.6, y: 2.4, z: -hd + 0.05, w: 1.5, c: '#7be0d4' })
       add({ t: 'neon', x: 4.6, y: 2.4, z: -hd + 0.05, w: 1.5, c: '#8fd8ff' })
       const sx = v.id === 'bar' ? [-3.9, -2.8, -1.7, -0.6, 0.5, 1.6] : [-2.9, -1.8, -0.7, 0.4, 1.5, 2.6]
       sx.forEach((x, i) => stoolAt(`st${i}`, x, -0.7, Math.PI, `p${Math.floor(i / 2)}`))
@@ -316,7 +316,7 @@ function build(v) {
       const st = { x: 4.4, z: -3.0, w: 2.6, d: 3.0 }
       L.stage = { ...st, spot: { x: 4.4, z: -2.55, ry: 0 } }
       add({ t: 'stage', ...st })
-      add({ t: 'board', x: 4.4, y: 2.25, z: -hd + 0.04, ry: 0, w: 2.6, h: 1.1, lines: ['🎤 KARAOKE', '♪ sırada sen varsın ♪'], bg: '#33205e', fg: '#ffb3f0', frame: '#ff8ad8', big: true })
+      add({ t: 'board', x: 4.4, y: 2.25, z: -hd + 0.04, ry: 0, w: 2.6, h: 1.1, lines: ['🎤 KARAOKE', '♪ sırada sen varsın ♪'], bg: '#33205e', fg: '#9ce8da', frame: '#7be0d4', big: true })
       add({ t: 'glb', m: 'speaker', x: 3.45, z: -4.25, s: 1.9 }, { x: 3.45, z: -4.25, hw: 0.4, hd: 0.4, ry: 0 })
       add({ t: 'glb', m: 'speaker', x: 5.35, z: -4.25, s: 1.9 }, { x: 5.35, z: -4.25, hw: 0.4, hd: 0.4, ry: 0 })
       add({ t: 'glb', m: 'speaker', x: -2.7, z: -4.3, s: 2.0 }, { x: -2.7, z: -4.3, hw: 0.45, hd: 0.45, ry: 0 })
@@ -324,9 +324,9 @@ function build(v) {
       add({ t: 'mic', x: 4.4, z: -2.1 })
       // yan koltuklar (batı duvarı)
       sofaAt('sofaA', -5.3, -1.3, Math.PI / 2, 2.0, '#b79cff')
-      sofaAt('sofaB', -5.3, 0.9, Math.PI / 2, 2.0, '#ff8ad8')
+      sofaAt('sofaB', -5.3, 0.9, Math.PI / 2, 2.0, '#7be0d4')
       sofaAt('sofaC', 5.3, 1.4, -Math.PI / 2, 2.0, '#7fcdf3')
-      add({ t: 'neon', x: -hw + 0.05, y: 2.3, z: 0, w: 4, c: '#ff8ad8', ry: Math.PI / 2 })
+      add({ t: 'neon', x: -hw + 0.05, y: 2.3, z: 0, w: 4, c: '#7be0d4', ry: Math.PI / 2 })
       add({ t: 'neon', x: hw - 0.05, y: 2.3, z: 0, w: 4, c: '#8fd8ff', ry: -Math.PI / 2 })
       L.karaoke = { stage: st, spot: L.stage.spot }
       // DJ vardiyası: tezgâhın arkasında, NPC alanının solunda (features/dj.js)
@@ -338,7 +338,7 @@ function build(v) {
       sign()
       counter(npc.x, 3.6, { top: '#4a3f7a' })
       add({ t: 'register', x: npc.x, z: counterZ, y: 1.0 })
-      const cols = [th.accent, '#7fcdf3', '#ffd35e', '#8fdcb4', '#ff8ad8', '#b79cff']
+      const cols = [th.accent, '#7fcdf3', '#ffd35e', '#8fdcb4', '#7be0d4', '#b79cff']
       ;[-5.0, -3.8, -2.6, -1.4, -0.2, 1.0].forEach((x, i) => add({ t: 'cabinet', x, z: -hd + 0.6, ry: 0, w: 0.85, d: 0.8, c: cols[i % cols.length] }, true))
       // orta ada: sırt sırta iki kabin sırası
       ;[-4.2, -3.0, -1.8].forEach((x, i) => {
@@ -385,7 +385,7 @@ function build(v) {
       add({ t: 'backdrop', x: bx, z: -hd + 0.03, w: 4.6, h: 3.0, c: mix(th.accent, '#ffffff', 0.45), c2: mix(th.pastel, '#ffffff', 0.5) })
       add({ t: 'softbox', x: bx - 2.7, z: -1.0, ry: 0.5 }, { x: bx - 2.7, z: -1.0, hw: 0.35, hd: 0.35, ry: 0 })
       add({ t: 'softbox', x: bx + 2.5, z: -1.0, ry: -0.5 }, { x: bx + 2.5, z: -1.0, hw: 0.35, hd: 0.35, ry: 0 })
-      sofaAt('sofaA', bx, -3.6, 0, 2.2, '#ff9fc6')
+      sofaAt('sofaA', bx, -3.6, 0, 2.2, '#8ce4e4')
       add({ t: 'box', x: bx + 2.0, z: -3.6, w: 0.7, d: 0.7, h: 0.5, c: '#fffaf2' }, true)
       add({ t: 'ball', x: bx + 2.0, y: 0.8, z: -3.6, r: 0.3, c: th.accent })
       L.photo = { x: bx, z: -1.0, radius: 2.2 }
@@ -402,7 +402,7 @@ function build(v) {
       sign()
       counter(npc.x + 2.4, 3.4)
       add({ t: 'register', x: npc.x + 2.4, z: counterZ, y: 1.0 })
-      const bcols = [['#ff9fc6', '#fff3f8'], ['#7fcdf3', '#ffffff'], ['#ffd35e', '#fff7dc'], ['#8fdcb4', '#ffffff'], ['#b79cff', '#fff3f8'], ['#ffb48c', '#ffffff']]
+      const bcols = [['#8ce4e4', '#f5fdfd'], ['#7fcdf3', '#ffffff'], ['#ffd35e', '#fff7dc'], ['#8fdcb4', '#ffffff'], ['#b79cff', '#f5fdfd'], ['#ffb48c', '#ffffff']]
       ;[4.5, 3.4, 2.3, 1.2].forEach((x, i) => add({ t: 'surf', x, z: -hd + 0.5, ry: 0, c: bcols[i][0], c2: bcols[i][1], len: 2.0 }))
       ;[-0.5, 0.3].forEach((z, i) => add({ t: 'surf', x: hw - 0.45, z: z + 0.5, ry: -Math.PI / 2, c: bcols[4 + i][0], c2: bcols[4 + i][1], len: 2.0 }))
       ;[-1.0, 0.0, 1.0].forEach((z, i) => add({ t: 'surf', x: -hw + 0.45, z: z + 0.5, ry: Math.PI / 2, c: bcols[i][0], c2: bcols[i][1], len: 2.0 }))

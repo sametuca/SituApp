@@ -18,8 +18,8 @@ export const HALF_DAY_MS = 12 * 3600 * 1000
 // model: public/models/collectibles/<id>.glb (en büyük boyut `size` metreye ölçeklenir), y: yerden yükseklik (süzülme ortası); ground: tabanı yere oturur, süzülmez
 export const KINDS = {
   star: { id: 'star', emoji: '⭐', name: 'Yıldız parçası', plural: 'Yıldız parçaları', model: '/models/collectibles/star.glb', size: 0.62, y: 0.85, stars: 1, respawn: 'half', glow: '#ffe48f', series: { goal: 25, bonus: 5, name: 'Yıldız Avcısı' } },
-  heart: { id: 'heart', emoji: '💗', name: 'Kalp taşı', plural: 'Kalp taşları', model: '/models/collectibles/heartstone.glb', size: 0.6, y: 0.8, stars: 2, respawn: 'day', glow: '#ff9fc6', series: { goal: 10, bonus: 6, name: 'Kalp Koleksiyoncusu' } },
-  flower: { id: 'flower', emoji: '🌸', name: 'Çiçek', plural: 'Çiçekler', model: '/models/collectibles/flower.glb', size: 0.7, y: 0, ground: true, stars: 1, respawn: 'half', glow: '#ffc2dc', series: { goal: 30, bonus: 6, name: 'Çiçek Bahçıvanı' } },
+  heart: { id: 'heart', emoji: '💗', name: 'Kalp taşı', plural: 'Kalp taşları', model: '/models/collectibles/heartstone.glb', size: 0.6, y: 0.8, stars: 2, respawn: 'day', glow: '#8ce4e4', series: { goal: 10, bonus: 6, name: 'Kalp Koleksiyoncusu' } },
+  flower: { id: 'flower', emoji: '🌸', name: 'Çiçek', plural: 'Çiçekler', model: '/models/collectibles/flower.glb', size: 0.7, y: 0, ground: true, stars: 1, respawn: 'half', glow: '#a8ebea', series: { goal: 30, bonus: 6, name: 'Çiçek Bahçıvanı' } },
   balloon: { id: 'balloon', emoji: '🎈', name: 'Balon', plural: 'Balonlar', model: '/models/collectibles/balloon.glb', size: 0.95, y: 1.45, stars: 1, respawn: 'half', glow: '#a9ddf5', series: { goal: 10, bonus: 5, name: 'Balon Ustası' } },
   shell: { id: 'shell', emoji: '🐚', name: 'Deniz kabuğu', plural: 'Deniz kabukları', model: '/models/collectibles/shell.glb', size: 0.5, y: 0.5, stars: 1, respawn: 'half', glow: '#ffd5bf', series: { goal: 10, bonus: 5, name: 'Kabuk Toplayıcı' } },
   chest: { id: 'chest', emoji: '🧰', name: 'Hazine sandığı', plural: 'Hazine sandıkları', model: '/models/collectibles/chest.glb', size: 0.9, y: 0, ground: true, stars: 5, respawn: 'day', glow: '#ffe48f', series: { goal: 5, bonus: 10, name: 'Hazine Avcısı' } },
@@ -79,3 +79,13 @@ export const collectiblesIn = (room) => byRoom[room] ?? []
 
 /** Bu mekânın/şehrin odası için ipucu etiketi (panel). */
 export const TOTAL_BY_KIND = Object.fromEntries(KIND_ORDER.map((k) => [k, list.filter((c) => c.kind === k).length]))
+
+// ---- seviye (toplanan ⭐ toplamından): seviye L için gereken ⭐ = 3·(L-1)²  (2→3, 3→12, 4→27, 5→48 …)
+export const xpForLevel = (l) => 3 * (l - 1) * (l - 1)
+export function levelOf(xp) {
+  const t = Math.max(0, xp | 0)
+  const level = Math.floor(Math.sqrt(t / 3)) + 1
+  const base = xpForLevel(level)
+  const next = xpForLevel(level + 1)
+  return { level, xp: t, base, next, into: t - base, span: next - base }
+}

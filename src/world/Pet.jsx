@@ -8,7 +8,7 @@ import Prop from './Prop'
 // Evcil hayvanlar: Meshy GLB (statik), hareket procedural (zıplama, nefes, sağa sola bakma). Yaklaşık 0,5 m boyunda.
 // Sunucu trafiği yok: konum, sahibin konumundan (yerel: focusRef, uzak: remotes) istemcide türetilir.
 
-const PET_URL = { cat: '/models/pets/pet-cat.glb', bunny: '/models/pets/pet-bunny.glb', chick: '/models/pets/pet-chick.glb' }
+const PET_URL = { cat: '/models/pets/pet-cat.glb', bunny: '/models/pets/pet-bunny.glb', chick: '/models/pets/pet-chick.glb', dog: '/models/pets/pet-dog.glb' }
 const PET_SIZE = 0.5 // en büyük boyut (m); avatar 1,3 m
 Object.values(PET_URL).forEach((u) => useGLTF.preload(u))
 

@@ -8,7 +8,8 @@ import { Html } from '@react-three/drei'
 import { Em } from '../components/emoji'
 import { MathUtils } from 'three'
 import AvatarRig, { AVATAR_HEIGHT } from './AvatarRig'
-import { AFK_BOTS, CLICK_RADIUS, GREET_RADIUS, TALK_RADIUS, displayName, npcsFor, posAt } from './npcs'
+import { AFK_BOTS, CLICK_RADIUS, GREET_RADIUS, NPC_SCALE, TALK_RADIUS, displayName, npcAccessory, npcsFor, posAt } from './npcs'
+import { cosStore } from './cosStore'
 
 const ACTIVE_ON = 34 // m: bu kadar yakındaysa model yüklenir/çizilir
 const ACTIVE_OFF = 40
@@ -18,7 +19,7 @@ const TAG_DIST = 18 // m: etiket (Html) bu kadar yakındaysa
 const M = ({ color }) => <meshStandardMaterial color={color} roughness={0.85} />
 
 function Balloons() {
-  const cols = ['#ff9fc6', '#7fcdf3', '#ffd35e', '#b79cff']
+  const cols = ['#8ce4e4', '#7fcdf3', '#ffd35e', '#b79cff']
   return (
     <group position={[0.42, 1.0, 0.12]}>
       {cols.map((c, i) => (
@@ -47,7 +48,7 @@ function Stool() {
 }
 
 function Flowers() {
-  const cols = ['#ff9fc6', '#ffd35e', '#ffffff', '#b79cff', '#ff7eb3']
+  const cols = ['#8ce4e4', '#ffd35e', '#ffffff', '#b79cff', '#71dedd']
   return (
     <group position={[0.65, 0, 0.25]}>
       <mesh position={[0, 0.2, 0]} castShadow>
@@ -69,7 +70,7 @@ function IceCart() {
     <group position={[0.95, 0, 0.1]}>
       <mesh position={[0, 0.4, 0]} castShadow>
         <boxGeometry args={[0.7, 0.55, 1.0]} />
-        <M color="#ffc2dc" />
+        <M color="#a8ebea" />
       </mesh>
       <mesh position={[0, 0.7, 0]}>
         <boxGeometry args={[0.74, 0.06, 1.04]} />
@@ -77,7 +78,7 @@ function IceCart() {
       </mesh>
       <mesh position={[0, 1.45, 0]} castShadow>
         <coneGeometry args={[0.85, 0.35, 8]} />
-        <M color="#ff9fc6" />
+        <M color="#8ce4e4" />
       </mesh>
       <mesh position={[0, 1.07, 0]}>
         <cylinderGeometry args={[0.025, 0.025, 0.75, 6]} />
@@ -179,6 +180,14 @@ const NpcView = memo(function NpcView({ npc, focusRef, onTalk }) {
   const pose = useMemo(() => (npc.pose ? { current: npc.pose } : undefined), [npc.pose])
   const Prop = npc.prop && PROPS[npc.prop]
 
+  // NPC aksesuarı (cosStore: oda değişiminde silinirse yeniden yazılır)
+  useEffect(() => {
+    const id = `npc:${npc.id}`
+    const put = () => !cosStore.get(id) && cosStore.set(id, { acc: npcAccessory(npc), pet: null })
+    put()
+    return cosStore.subscribe(put)
+  }, [npc])
+
   // konuşma balonu: yalnızca bu NPC ile konuşulurken (diyalog çekmecesi 'situapp:npc-say' yollar)
   useEffect(() => {
     const on = (e) => {
@@ -242,7 +251,14 @@ const NpcView = memo(function NpcView({ npc, focusRef, onTalk }) {
       >
         {active && (
           <Suspense fallback={null}>
-            <AvatarRig slug={npc.avatar} anim={anim} pose={pose} />
+            <group scale={NPC_SCALE}>
+              <AvatarRig slug={npc.avatar} anim={anim} pose={pose} cosId={`npc:${npc.id}`} />
+            </group>
+            {/* rol halkası: oyunculardan ayırt eden turuncu zemin işareti */}
+            <mesh position={[0, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[0.55, 0.7, 32]} />
+              <meshBasicMaterial color="#ffb48c" transparent opacity={0.8} depthWrite={false} />
+            </mesh>
             {Prop && <Prop />}
           </Suspense>
         )}

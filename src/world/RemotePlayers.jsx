@@ -187,7 +187,7 @@ export function GuideNpc({ focusRef, tips }) {
   return (
     <group position={[GUIDE.x, 0, GUIDE.z]} rotation={[0, GUIDE.ry, 0]}>
       <AvatarRig slug={GUIDE.avatar} anim="idle" />
-      <Tag name="🧭 Rehber" bubble={bubble} accent="bg-[#ff7eb3]" />
+      <Tag name="🧭 Rehber" bubble={bubble} accent="bg-[#71dedd]" />
     </group>
   )
 }

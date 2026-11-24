@@ -56,7 +56,7 @@ export default function AvatarPreview({ slug = 'zeynep', className = '', rotatab
         gl={{ alpha: true }}
         onCreated={({ camera }) => camera.lookAt(0, TARGET_Y, 0)}
       >
-        <hemisphereLight args={['#ffffff', '#ffd6ea', 1.6]} />
+        <hemisphereLight args={['#ffffff', '#def7f6', 1.6]} />
         <directionalLight position={[2, 3, 3]} intensity={1.6} />
         <Suspense fallback={null}>
           <Model key={slug} slug={slug} />

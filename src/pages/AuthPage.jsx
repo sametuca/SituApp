@@ -148,6 +148,7 @@ export default function AuthPage() {
           <h1 className="text-5xl font-black tracking-tight text-ink">
             Situ<span className="text-candy-pink-deep">App</span>
           </h1>
+          <span className="mx-auto mt-1 inline-block rounded-full border-2 border-white bg-[#fff3c8] px-3 py-0.5 text-[11px] font-black uppercase tracking-widest text-[#8a5a00] shadow-soft">Pre-alpha</span>
           <p className="mt-1 text-sm font-bold tracking-wide text-ink-soft">
             Avatarını seç. Mekânı bul. Bağlantını kur. 💫
           </p>

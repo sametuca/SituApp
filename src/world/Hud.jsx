@@ -33,7 +33,7 @@ export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings, 
         {extraButtons.map((b) => (
           <button key={b.key} onClick={b.onClick} aria-label={b.label} title={b.label} className={`relative grid h-10 w-10 place-items-center rounded-full text-lg transition hover:bg-white active:scale-95 ${glass}`}>
             {b.icon ? <Ico name={b.icon} size={22} /> : b.emoji}
-            {b.badge ? <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[#ff7eb3] px-1 text-[10px] font-black text-white">{b.badge}</span> : null}
+            {b.badge ? <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[#71dedd] px-1 text-[10px] font-black text-white">{b.badge}</span> : null}
           </button>
         ))}
       </div>
@@ -60,18 +60,18 @@ export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings, 
           className={`relative grid h-10 w-10 place-items-center rounded-full text-lg transition hover:bg-white ${glass}`}
         >
           <Ico name="settings" size={22} />
-          {menuBadge > 0 && <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full border-2 border-white bg-[#ff7eb3] px-1 text-[9px] font-black text-white">{menuBadge}</span>}
+          {menuBadge > 0 && <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full border-2 border-white bg-[#71dedd] px-1 text-[9px] font-black text-white">{menuBadge}</span>}
         </button>
         {menu && (
           <div className="absolute right-0 top-12 z-20 flex w-64 flex-col gap-1 rounded-3xl border-2 border-white bg-white/95 p-2 shadow-soft backdrop-blur-md" onClick={() => setMenu(false)}>
             {menuNodes}
             {onSettings && (
-              <button onClick={onSettings} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#fff0f6]">
+              <button onClick={onSettings} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#f3fcfc]">
                 <Ico name="settings" size={22} />
                 <span className="flex-1">Ayarlar</span>
               </button>
             )}
-            <button onClick={onHelp} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#fff0f6]">
+            <button onClick={onHelp} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#f3fcfc]">
               <Ico name="help" size={22} />
               <span className="flex-1">Yardım</span>
             </button>
@@ -149,7 +149,7 @@ function drawMap(ctx, S, big, f, remotes) {
   ctx.beginPath()
   ctx.arc(X(-30), Z(30), len(7), 0, Math.PI * 2)
   ctx.fill()
-  ctx.fillStyle = '#e9d3dc' // kaldırımlar (arnavut kaldırımı tonu)
+  ctx.fillStyle = '#bbd3d3' // kaldırımlar (arnavut kaldırımı tonu)
   const nsY0 = Z(ROAD_END.north)
   const nsH = len(ROAD_END.south - ROAD_END.north)
   const ewW = len(ROAD_END.east + 12)
@@ -159,7 +159,7 @@ function drawMap(ctx, S, big, f, remotes) {
   ctx.fillStyle = '#d8cfe6' // yollar
   ctx.fillRect(X(-ROAD_HALF), nsY0, len(ROAD_HALF * 2), nsH)
   ctx.fillRect(X(-12), Z(-ROAD_HALF), ewW, len(ROAD_HALF * 2))
-  ctx.fillStyle = '#f7d9e6' // lobi meydanı
+  ctx.fillStyle = '#dff1f1' // lobi meydanı
   ctx.beginPath()
   ctx.arc(X(0), Z(0), len(11), 0, Math.PI * 2)
   ctx.fill()
@@ -218,7 +218,7 @@ function drawMap(ctx, S, big, f, remotes) {
     ctx.stroke()
   }
   // Rehber
-  ctx.fillStyle = '#ff7eb3'
+  ctx.fillStyle = '#71dedd'
   ctx.beginPath()
   ctx.arc(X(GUIDE.x), Z(GUIDE.z), 3.4, 0, Math.PI * 2)
   ctx.fill()
@@ -232,7 +232,7 @@ function drawMap(ctx, S, big, f, remotes) {
   ctx.translate(X(f.x), Z(f.z))
   ctx.rotate(-f.ry + Math.PI)
   ctx.fillStyle = '#ffffff'
-  ctx.strokeStyle = '#e85a98'
+  ctx.strokeStyle = '#53c1bf'
   ctx.lineWidth = 2.2
   ctx.beginPath()
   ctx.moveTo(0, -8)
@@ -276,7 +276,7 @@ export function Minimap({ focusRef, remotes, compact }) {
         {big && (
           <div className="mt-1 flex flex-wrap justify-center gap-1 px-0.5 pb-0.5">
             {ZONES.map((z) => (
-              <button key={z.id} onClick={() => travel(z)} className="flex items-center gap-1 rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-extrabold text-[#4a3b5c] transition hover:bg-[#ffd6e8] active:scale-95">
+              <button key={z.id} onClick={() => travel(z)} className="flex items-center gap-1 rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-extrabold text-[#4a3b5c] transition hover:bg-[#def7f7] active:scale-95">
                 <span>{z.emoji}</span>
                 {z.name.replace(' Meydanı', '').replace(' Sokağı', '').replace('Gece ', '')}
               </button>
@@ -331,7 +331,7 @@ export function ChatPanel({ feed, onSend, status }) {
             key={`${m.ts}-${i}`}
             className={`w-fit max-w-full break-words rounded-2xl px-3 py-1 text-sm font-semibold ${
               m.kind === 'system'
-                ? 'bg-[#ff7eb3]/90 text-white'
+                ? 'bg-[#71dedd]/90 text-white'
                 : m.whisper
                   ? 'border-2 border-dashed border-[#c9b6f5] bg-[#f4edff]/95 italic text-[#5b3fa8]'
                   : m.self
@@ -419,7 +419,7 @@ export function HelpModal({ onClose }) {
     <Modal onClose={onClose} label="Yardım">
       <h2 className="text-2xl font-black text-[#4a3b5c]">Yardım 🧭</h2>
 
-      <h3 className="mt-4 text-sm font-extrabold uppercase tracking-wide text-[#ff7eb3]">Hareket</h3>
+      <h3 className="mt-4 text-sm font-extrabold uppercase tracking-wide text-[#71dedd]">Hareket</h3>
       <ul className="mt-2 flex flex-col gap-2">
         <Row k="W A S D">veya ok tuşlarıyla yürü</Row>
         <Row k="Shift">basılı tut, koş</Row>
@@ -427,7 +427,7 @@ export function HelpModal({ onClose }) {
         <Row k="Fare">sürükle: kamerayı döndür · tekerlek: yakınlaştır</Row>
       </ul>
 
-      <h3 className="mt-4 text-sm font-extrabold uppercase tracking-wide text-[#ff7eb3]">Sohbet</h3>
+      <h3 className="mt-4 text-sm font-extrabold uppercase tracking-wide text-[#71dedd]">Sohbet</h3>
       <ul className="mt-2 flex flex-col gap-2">
         <Row k="Enter">yazmaya başla / gönder · Esc: vazgeç</Row>
         <Row k="/yakındakiler">yakınındaki oyuncuları listele</Row>
@@ -443,14 +443,14 @@ export function HelpModal({ onClose }) {
         <Row k="/yardım">bu paneli aç</Row>
       </ul>
 
-      <h3 className="mt-4 text-sm font-extrabold uppercase tracking-wide text-[#ff7eb3]">Flört 💗</h3>
+      <h3 className="mt-4 text-sm font-extrabold uppercase tracking-wide text-[#71dedd]">Flört 💗</h3>
       <ul className="mt-2 flex flex-col gap-2">
         <Row k="Karaktere tıkla">ya da yakındaki kartta 💗: kalp, çiçek, göz kırp, öpücük, selam, dans</Row>
         <Row k="🤫 Fısılda">yalnızca o kişi duyar; etraftakiler yazdığını görmez</Row>
         <Row k="💞 Eşleşme">ikiniz de birbirine kalp gönderirseniz (10 dk içinde) eşleşirsiniz</Row>
       </ul>
 
-      <h3 className="mt-4 text-sm font-extrabold uppercase tracking-wide text-[#ff7eb3]">Mekanlar</h3>
+      <h3 className="mt-4 text-sm font-extrabold uppercase tracking-wide text-[#71dedd]">Mekanlar</h3>
       <ul className="mt-2 flex flex-col gap-1 text-sm font-semibold text-[#4a3b5c]">
         {ZONES.map((z) => (
           <li key={z.id}>
@@ -459,7 +459,7 @@ export function HelpModal({ onClose }) {
         ))}
       </ul>
 
-      <p className="mt-4 rounded-2xl bg-[#ffd6e8]/60 px-4 py-3 text-xs font-bold text-[#4a3b5c]">
+      <p className="mt-4 rounded-2xl bg-[#def7f7]/60 px-4 py-3 text-xs font-bold text-[#4a3b5c]">
         🤝 Herkese saygılı ol. Rahatsız edici biriyle karşılaşırsan konuşmayı bırak ve uzaklaş.
       </p>
 
@@ -467,6 +467,58 @@ export function HelpModal({ onClose }) {
         <ToyButton onClick={onClose}>Anladım</ToyButton>
       </div>
     </Modal>
+  )
+}
+
+// ---------- kamera eğitimi: el sağa-sola sürükler ----------
+/** İlk şehir girişinde bir kez: animasyonlu el kamerayı çevirmeyi gösterir. İlk gerçek sürüklemede ya da ~10 sn sonra kapanır. */
+export function CameraTutorial({ touch, onDone }) {
+  // başka bir pencere (evcil hayvan seçimi vb.) açıkken el gösterilmez
+  const [blocked, setBlocked] = useState(false)
+  useEffect(() => {
+    const id = setInterval(() => setBlocked(Boolean(document.querySelector('[role="dialog"][aria-modal="true"]'))), 300)
+    return () => clearInterval(id)
+  }, [])
+  useEffect(() => {
+    if (blocked) return undefined
+    const t = setTimeout(onDone, 10000)
+    let dist = 0
+    let last = null
+    const move = (e) => {
+      if (e.pointerType === 'mouse' && e.buttons === 0) return
+      if (last) dist += Math.abs(e.clientX - last.x)
+      last = { x: e.clientX }
+      if (dist > 160) onDone()
+    }
+    const up = () => (last = null)
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+    return () => {
+      clearTimeout(t)
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+    }
+  }, [onDone, blocked])
+  if (blocked) return null
+  return (
+    <div className="pointer-events-none absolute inset-x-0 bottom-[22%] z-30 grid place-items-center" role="status">
+      <div className="flex w-[min(21rem,calc(100vw-1.5rem))] animate-pop flex-col items-center gap-2 rounded-[2rem] border-2 border-white bg-white/85 px-5 pb-4 pt-3 shadow-toy backdrop-blur-md">
+        <div className="relative flex h-24 w-full items-center justify-center">
+          <span className="absolute left-3 text-4xl font-black text-[#71dedd]" style={{ animation: 'hand-arrow 1.8s ease-in-out infinite' }}>‹</span>
+          <span className="absolute right-3 text-4xl font-black text-[#71dedd]" style={{ animation: 'hand-arrow 1.8s ease-in-out 0.9s infinite' }}>›</span>
+          <div className="absolute h-1.5 w-40 rounded-full bg-gradient-to-r from-transparent via-[#71dedd]/50 to-transparent" />
+          <div style={{ animation: 'hand-drag 2.4s ease-in-out infinite' }}>
+            <div style={{ animation: 'hand-press 2.4s ease-in-out infinite', filter: 'drop-shadow(0 6px 8px rgba(74,59,92,.3))' }}>
+              <Ico name="hand" size={64} />
+            </div>
+          </div>
+        </div>
+        <p className="text-center text-sm font-black text-[#4a3b5c]">Kamerayı çevir</p>
+        <p className="text-center text-xs font-bold text-[#8a7a9c]">
+          {touch ? 'Parmağını ekranda sağa-sola kaydır. İki parmakla yakınlaştır.' : 'Sol tuşu basılı tutup sağa-sola sürükle. Tekerlekle yakınlaştır.'}
+        </p>
+      </div>
+    </div>
   )
 }
 
@@ -505,29 +557,30 @@ export function StartGuide({ touch, ready = true, inCity, inAirport = false, onD
     return (
       <div className={`pointer-events-auto absolute left-1/2 top-[5.6rem] z-10 flex w-[min(22rem,calc(100vw-1.5rem))] -translate-x-1/2 animate-pop items-center gap-3 rounded-2xl py-2 pl-3 pr-3 ${glass}`} role="status">
         <span className="text-2xl">🔑</span>
-        <p className="text-xs font-extrabold leading-snug text-[#4a3b5c]">Kiralama memuru Selin’le konuş: <b className="text-[#ff7eb3]">bisiklet kirala</b>, sonra karşıdaki kapıdan şehre çık.</p>
+        <p className="text-xs font-extrabold leading-snug text-[#4a3b5c]">Kiralama memuru Selin’le konuş: <b className="text-[#71dedd]">bisiklet kirala</b>, sonra karşıdaki kapıdan şehre çık.</p>
       </div>
     )
   }
   if (!shown || !inCity) return null
+  if (stage === 'camera') return <CameraTutorial touch={touch} onDone={() => setStage('bike')} />
   const text =
     stage === 'camera' ? (
       touch ? (
-        <>Kamerayı çevirmek için ekranda parmağını <b className="text-[#ff7eb3]">sağa-sola kaydır</b>. İki parmakla yakınlaştır.</>
+        <>Kamerayı çevirmek için ekranda parmağını <b className="text-[#71dedd]">sağa-sola kaydır</b>. İki parmakla yakınlaştır.</>
       ) : (
-        <>Kamerayı çevirmek için sol tuşa basıp <b className="text-[#ff7eb3]">sağa-sola sürükle</b>. Tekerlekle yakınlaştır.</>
+        <>Kamerayı çevirmek için sol tuşa basıp <b className="text-[#71dedd]">sağa-sola sürükle</b>. Tekerlekle yakınlaştır.</>
       )
     ) : touch ? (
-      <>Soldaki <b className="text-[#ff7eb3]">🚲 düğmesi</b> bisiklet kiralar (20 🪙) ve hızlıca gezdirir.</>
+      <>Soldaki <b className="text-[#71dedd]">🚲 düğmesi</b> bisiklet kiralar (20 🪙) ve hızlıca gezdirir.</>
     ) : (
-      <><b className="text-[#ff7eb3]">B</b> tuşu (ya da soldaki 🚲) bisiklet kiralar (20 🪙) ve hızlıca gezdirir.</>
+      <><b className="text-[#71dedd]">B</b> tuşu (ya da soldaki 🚲) bisiklet kiralar (20 🪙) ve hızlıca gezdirir.</>
     )
   const icon = stage === 'camera' ? (touch ? '👆' : '🎥') : '🚲'
   return (
     <div className={`pointer-events-auto absolute left-1/2 top-[5.6rem] z-10 flex w-[min(20rem,calc(100vw-1.5rem))] -translate-x-1/2 animate-pop items-center gap-3 rounded-2xl py-2 pl-3 pr-8 ${glass}`} role="status" key={stage}>
       <span className="text-2xl">{icon}</span>
       <p className="text-xs font-extrabold leading-snug text-[#4a3b5c]">{text}</p>
-      <button onClick={onDone} aria-label="İpucunu kapat" className="absolute right-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full text-[10px] font-black text-[#8a7a9c] hover:bg-[#ffd6e8]/70">
+      <button onClick={onDone} aria-label="İpucunu kapat" className="absolute right-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full text-[10px] font-black text-[#8a7a9c] hover:bg-[#def7f7]/70">
         ✕
       </button>
     </div>

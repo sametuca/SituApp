@@ -27,7 +27,7 @@ import { GESTURE_BY_KIND, REACTIONS, WHISPER_RANGE } from '../world/interact'
 import { useIsTouch } from '../world/useIsTouch'
 import { HOME_TIERS, applyHomeTier } from '../world/homeTiers'
 import { useRiding } from '../world/bikeStore'
-import { HOME_DOOR, HOME_ROOM, HOME_ZONE, SPAWN, TELEPORTS, ZONES, resolveCollisions, resolveRoom, zoneAt } from '../world/layout'
+import { BEACH_START, HOME_DOOR, HOME_ROOM, HOME_ZONE, SPAWN, TELEPORTS, ZONES, resolveCollisions, resolveRoom, zoneAt } from '../world/layout'
 
 const NO_ITEMS = []
 const START_VENUE = 'havalimani'
@@ -73,7 +73,7 @@ function LoadingOverlay({ ready }) {
   }, [ready])
   if (hidden) return null
   return (
-    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#ffe3f0] via-[#f1e6ff] to-[#dff3ff]">
+    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#e8faf9] via-[#f1e6ff] to-[#dff3ff]">
       <div className="h-12 w-12 animate-spin rounded-full border-4 border-candy-pink/50 border-t-candy-pink-deep" />
       <p className="text-sm font-extrabold text-ink-soft">Şehir yükleniyor… %{Math.round(progress)}</p>
     </div>
@@ -287,7 +287,7 @@ function WorldScene({ avatar }) {
           }
         }
         const d = from && venueDoor(from)
-        focusRef.current.teleport = d ? d.exit : [SPAWN.x, SPAWN.z, Math.PI]
+        focusRef.current.teleport = d ? d.exit : from === START_VENUE ? [BEACH_START.x, BEACH_START.z, BEACH_START.ry] : [SPAWN.x, SPAWN.z, Math.PI] // havalimanından çıkış: kumsal
       } else {
         venueRef.current = target
         setHome(null)
@@ -485,6 +485,7 @@ function WorldScene({ avatar }) {
   }, [interactId, net.roster])
   const feat = useFeatures({
     net,
+    name,
     say,
     touch,
     roster: net.roster,
@@ -503,7 +504,7 @@ function WorldScene({ avatar }) {
   const venueTh = useMemo(() => (venue ? venueTheme(venue) : null), [venue])
   const venueDim = venueTh?.dim ?? 0
   const sceneBase = useMemo(
-    () => (venueTh ? { bg: venueTh.bg, fog: [venueTh.bg, 30, 60] } : home ? { bg: '#f9e3f1', fog: ['#f9e3f1', 30, 60] } : { bg: '#cfeaff', fog: ['#e8f6ff', 50, 140] }),
+    () => (venueTh ? { bg: venueTh.bg, fog: [venueTh.bg, 30, 60] } : home ? { bg: '#e7f5f3', fog: ['#e7f5f3', 30, 60] } : { bg: '#cfeaff', fog: ['#e8f6ff', 50, 140] }),
     [venueTh, home],
   )
   const venueCollide = useMemo(() => (venue ? (x, z) => resolveVenueRoom(x, z, venueLayout(venue).colliders) : null), [venue])
@@ -861,7 +862,7 @@ function WorldScene({ avatar }) {
       {showTips && !help && <StartGuide touch={touch} ready={sceneReady} inCity={!home && !venue} inAirport={venue === START_VENUE} onDone={closeTips} />}
       <div
         aria-hidden
-        className={`pointer-events-none absolute inset-0 z-30 bg-gradient-to-br from-[#ffe3f0] via-[#f1e6ff] to-[#dff3ff] transition-opacity duration-200 ${fade ? 'opacity-100' : 'opacity-0'}`}
+        className={`pointer-events-none absolute inset-0 z-30 bg-gradient-to-br from-[#e8faf9] via-[#f1e6ff] to-[#dff3ff] transition-opacity duration-200 ${fade ? 'opacity-100' : 'opacity-0'}`}
       />
       <LoadingOverlay ready={sceneReady} />
     </div>

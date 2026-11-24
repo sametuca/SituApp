@@ -29,13 +29,14 @@ import { useEconomy } from './economy'
 import { useDj } from './dj'
 import { useHousing } from './housing'
 import { useBike } from './bike'
+import { useFeedback } from './feedback'
 
 function SettingsPanel({ sections, onClose }) {
   return (
     <Modal onClose={onClose} label="Ayarlar">
       <h2 className="text-2xl font-black text-[#4a3b5c]">Ayarlar ⚙️</h2>
       <div className="mt-4 flex flex-col gap-5">{sections}</div>
-      <button onClick={onClose} className="mt-5 w-full rounded-2xl border-b-4 border-[#e85a98] bg-[#ff7eb3] py-3 text-base font-extrabold text-white active:translate-y-[3px] active:border-b-[1px]">
+      <button onClick={onClose} className="mt-5 w-full rounded-2xl border-b-4 border-[#53c1bf] bg-[#71dedd] py-3 text-base font-extrabold text-white active:translate-y-[3px] active:border-b-[1px]">
         Tamam
       </button>
     </Modal>
@@ -43,7 +44,7 @@ function SettingsPanel({ sections, onClose }) {
 }
 
 export function useFeatures(ctx) {
-  const parts = [useModeration(ctx), useGames(ctx), useFriends(ctx), useProfile(ctx), useProgress(ctx), useMedia(ctx), useTogether(ctx), useCosmetics(ctx), useNpcs(ctx), useAudio(ctx), useSky(ctx), useVenues(ctx), useCollect(ctx), useEconomy(ctx), useDj(ctx), useHousing(ctx), useBike(ctx)]
+  const parts = [useModeration(ctx), useGames(ctx), useFriends(ctx), useProfile(ctx), useProgress(ctx), useMedia(ctx), useTogether(ctx), useCosmetics(ctx), useNpcs(ctx), useAudio(ctx), useSky(ctx), useVenues(ctx), useCollect(ctx), useEconomy(ctx), useDj(ctx), useHousing(ctx), useBike(ctx), useFeedback(ctx)]
 
   const peerActions = (peer) => parts.flatMap((p) => p.peerActions?.(peer) ?? [])
   const peerHeader = (peer) => parts.map((p, i) => (p.peerHeader ? <div key={i}>{p.peerHeader(peer)}</div> : null))

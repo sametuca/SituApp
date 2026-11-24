@@ -26,7 +26,7 @@ const safeStore = {
 
 function Chip({ tag, on, common, onClick, small }) {
   const cls = `inline-flex items-center gap-1 rounded-full border-2 font-extrabold transition ${small ? 'px-2 py-0.5 text-[11px]' : 'px-3 py-1.5 text-sm'} ${
-    on ? 'border-[#ff7eb3] bg-[#ffd0e6] text-[#b0306a]' : common ? 'border-[#ffb703] bg-[#fff3c4] text-[#8a5a00]' : 'border-white bg-[#f6f0ff] text-[#5b4a70]'
+    on ? 'border-[#71dedd] bg-[#d9f6f5] text-[#3a7977]' : common ? 'border-[#ffb703] bg-[#fff3c4] text-[#8a5a00]' : 'border-white bg-[#f6f0ff] text-[#5b4a70]'
   }`
   const body = (
     <>
@@ -146,11 +146,11 @@ function ProfileEditor({ initial, catalog, onSave, onClose, net, photoEnabled, p
         <button
           type="submit"
           disabled={ageBad}
-          className="w-full rounded-2xl border-b-4 border-[#e85a98] bg-[#ff7eb3] py-3 text-base font-extrabold text-white active:translate-y-[3px] active:border-b-[1px] disabled:opacity-50"
+          className="w-full rounded-2xl border-b-4 border-[#53c1bf] bg-[#71dedd] py-3 text-base font-extrabold text-white active:translate-y-[3px] active:border-b-[1px] disabled:opacity-50"
         >
           Kaydet
         </button>
-        <button type="button" onClick={onClose} className="w-full rounded-2xl py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#ffd6e8]/60">
+        <button type="button" onClick={onClose} className="w-full rounded-2xl py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#def7f7]/60">
           Vazgeç
         </button>
       </form>
@@ -221,7 +221,7 @@ export function useProfile({ net, say, panel, setPanel, home }) {
       <p className="mt-0.5 text-xs font-semibold text-[#8a7a9c]">
         {isEmpty(mine) ? 'Henüz doldurmadın. Hakkında, yaşın, şehrin ve ilgi alanların diğer oyunculara görünür.' : `${mine.age ? `${mine.age} yaş · ` : ''}${mine.city || 'şehir yok'} · ${mine.tags?.length ?? 0} ilgi alanı`}
       </p>
-      <button onClick={() => setPanel('profile')} className="mt-2 rounded-2xl bg-[#ffe3f0] px-4 py-2 text-sm font-extrabold text-[#b0306a] active:scale-95">
+      <button onClick={() => setPanel('profile')} className="mt-2 rounded-2xl bg-[#e8faf9] px-4 py-2 text-sm font-extrabold text-[#3a7977] active:scale-95">
         ✏️ Profilimi düzenle
       </button>
     </section>,
@@ -255,11 +255,11 @@ export function useProfile({ net, say, panel, setPanel, home }) {
                 setNudge(false)
                 setPanel('profile')
               }}
-              className="flex-1 rounded-2xl border-b-4 border-[#e85a98] bg-[#ff7eb3] py-2.5 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2"
+              className="flex-1 rounded-2xl border-b-4 border-[#53c1bf] bg-[#71dedd] py-2.5 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2"
             >
               Hadi dolduralım
             </button>
-            <button onClick={() => setNudge(false)} className="rounded-2xl px-4 py-2.5 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#ffd6e8]/60">
+            <button onClick={() => setNudge(false)} className="rounded-2xl px-4 py-2.5 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#def7f7]/60">
               Sonra
             </button>
           </div>
@@ -293,7 +293,7 @@ export function useProfile({ net, say, panel, setPanel, home }) {
           {answers.map((a) => (
             <div key={a.k} className={`animate-pop rounded-3xl p-3 pl-4 ${glass}`} role="status">
               <p className="text-sm font-extrabold text-[#4a3b5c]">
-                🧊 {a.name} şunu seçti: <span className="text-[#ff5fa0]">{a.choice}</span>
+                🧊 {a.name} şunu seçti: <span className="text-[#58d8d8]">{a.choice}</span>
               </p>
               <p className="text-[11px] font-semibold text-[#8a7a9c]">
                 {a.a} · {a.b}

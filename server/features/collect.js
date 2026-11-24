@@ -5,6 +5,7 @@
 //   { t: 'collect', id }      bir toplanabilirı topla
 //   { t: 'collect_get' }      koleksiyon durumunu iste (panel açılınca)
 // Sunucu → istemci
+//   { t: 'collect_xp', xp, bonus, kind, hidden }   toplamadan sonra toplam ⭐ (istemci seviye atlamayı buradan anlar)
 //   { t: 'collected', id, kind, stars, ttl, chest? }   toplandı (ttl = yeniden doğmaya kalan ms)
 //   { t: 'collect_state', c: { id: ttl }, s: { total, kinds, chests: [id], left: { tür: n }, series: [..] } }   welcome'da `collect` alanı olarak da gelir
 //   Reddedilirse { t: 'info', text } (yarış/uzak/bekleme) – sessizce yok sayılan durumlar: bilinmeyen id, hız sınırı.
@@ -54,6 +55,7 @@ export default function collect(ctx) {
       c,
       s: {
         total: s.collected ?? 0,
+        xp: s.stars ?? 0,
         kinds: Object.fromEntries(KIND_ORDER.map((k) => [k, kinds[k] ?? 0])),
         chests: Object.keys(s.chests ?? {}).filter((id) => COLLECTIBLE_BY_ID[id]),
         left,
@@ -106,6 +108,7 @@ export default function collect(ctx) {
         const kindCount = s.collectKinds?.[col.kind] ?? 0
         if (kindCount >= k.series.goal) award(col.kind, k.series.bonus, k.series.name)
         if (col.hidden && HIDDEN_CHESTS.every((h) => s.chests?.[h.id])) award('hidden_all', HIDDEN_ALL_BONUS, 'Tüm gizli hazineler')
+        send(me.ws, { t: 'collect_xp', xp: s.stars ?? 0, bonus, kind: col.kind, hidden: Boolean(col.hidden) }) // seviye/kutlama için toplam ⭐
         save()
         if (bonus) ctx.pushProgress?.(me.key) // bonus ⭐ progress durumuna da yansısın
       },

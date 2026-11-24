@@ -29,7 +29,7 @@ function NpcSheet({ npc, text, onOption, onClose, touch }) {
   return (
     <div className={`pointer-events-auto absolute inset-x-0 bottom-0 z-30 mx-auto w-[min(100vw,max(30rem,38vw))] animate-pop rounded-t-[2rem] p-4 pb-5 text-[clamp(1rem,0.3vw+0.75rem,1.3rem)] ${glass}`} role="dialog" aria-label={npc.name}>
       <div className="flex items-start gap-3">
-        <img src={`/avatars/${npc.avatar}.png`} alt="" width="64" height="64" className="h-[4em] w-[4em] shrink-0 rounded-2xl border-2 border-white bg-[#fff0f6] object-cover object-top shadow" />
+        <img src={`/avatars/${npc.avatar}.png`} alt="" width="64" height="64" className="h-[4em] w-[4em] shrink-0 rounded-2xl border-2 border-white bg-[#f3fcfc] object-cover object-top shadow" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-[0.9em] font-black text-[#ff7a3d]">{displayName(npc)}</p>
           <div className="mt-1 rounded-2xl rounded-tl-md bg-[#fff6ee] px-3 py-2">
@@ -45,7 +45,7 @@ function NpcSheet({ npc, text, onOption, onClose, touch }) {
           <button
             key={o.label}
             onClick={() => onOption(o)}
-            className="min-h-11 flex-1 rounded-2xl border-b-4 border-[#e9a9c9] bg-[#ffd9ea] px-3 py-2 text-[0.9em] font-extrabold text-[#a63d78] active:translate-y-[3px] active:border-b-[1px]"
+            className="min-h-11 flex-1 rounded-2xl border-b-4 border-[#96cecc] bg-[#e0f8f7] px-3 py-2 text-[0.9em] font-extrabold text-[#417571] active:translate-y-[3px] active:border-b-[1px]"
           >
             {o.label}
           </button>
@@ -125,7 +125,10 @@ export function useNpcs(ctx) {
   useEffect(() => {
     const onOpen = (e) => {
       const n = NPC_BY_ID[e.detail]
-      if (n && n.where === where) start(n, true)
+      if (!n || n.where !== where) return
+      const p = posAt(n)
+      const f = focusRef.current
+      if (Math.hypot(f.x - p.x, f.z - p.z) <= CLICK_RADIUS) start(n, true) // uzaksa (örn. hesap yeni değilse) sessizce geç
     }
     window.addEventListener('situapp:npc-open', onOpen)
     return () => window.removeEventListener('situapp:npc-open', onOpen)
