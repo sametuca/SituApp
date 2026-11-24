@@ -1,8 +1,8 @@
-// Kiralama (Havalimanı çıkış salonu): bisiklet kiralanır, araba ASLA kiralanamaz (bakiye ne olursa olsun, hile yapılsa bile).
+// Kiralama: bisiklet her yerden kiralanır (🚲 düğmesi; Havalimanı salonunda da kart var), araba ASLA kiralanamaz (bakiye ne olursa olsun, hile yapılsa bile).
 //   istemci → sunucu: { t: 'rent', kind: 'bike' | 'car' }
-//   sunucu → istemci: { t: 'rental', kind: 'bike', until, n }  (kiralama başarılı)   welcome.bikeUntil
-// Sunucu otoriter: yalnızca havalimanı odasında kiralanır; bisikletsiz oyuncunun anim='ride' hareketi game.js'te idle'a çevrilir (me.bikeUntil).
-// Yeni oyuncuya bir kez başlangıç altını verilir (bisiklet için yeter, araba için yetmez).
+//   sunucu → istemci: { t: 'rental', kind: 'bike', until }  (kiralama başarılı)   welcome.bikeUntil, welcome.first (hesap yeni)
+// Sunucu otoriter: bisikletsiz oyuncunun anim='ride' hareketi game.js'te idle'a çevrilir (me.bikeUntil).
+// Yeni hesaba bir kez başlangıç altını verilir (bisiklet için yeter, araba için yetmez).
 import { user, save } from '../store.js'
 
 export const RENT = {
@@ -10,7 +10,6 @@ export const RENT = {
   car: { price: 12000, name: 'Araba', available: false }, // available:false → hiçbir koşulda verilmez
 }
 export const STARTER_COINS = 100
-const AIRPORT_ROOM = 'venue:havalimani'
 
 export default function rental(ctx) {
   const { send } = ctx
@@ -18,19 +17,19 @@ export default function rental(ctx) {
     onJoin(me) {
       const u = user(me.key)
       me.bikeUntil = u.stats.bikeUntil ?? 0
+      me.first = !u.stats.starter // hesap yeni mi: Havalimanı çıkış salonu yalnızca bir kez gösterilir
       if (!u.stats.starter) {
         u.stats.starter = 1
         save()
         ctx.addCoins?.(me, STARTER_COINS, 'hosgeldin')
       }
     },
-    welcome: (me) => ({ bikeUntil: me.bikeUntil ?? 0 }),
+    welcome: (me) => ({ bikeUntil: me.bikeUntil ?? 0, first: Boolean(me.first) }),
     handlers: {
       rent(me, msg) {
         const now = Date.now()
         if (now - (me.lastRent ?? 0) < 800) return
         me.lastRent = now
-        if (me.room !== AIRPORT_ROOM) return send(me.ws, { t: 'info', text: '🔑 Kiralama tezgâhı Havalimanı’nda. /havalimanı yazarak gidebilirsin.' })
         const kind = msg.kind
         if (kind === 'car' || !RENT[kind]?.price || RENT[kind].available === false) {
           return send(me.ws, { t: 'info', text: '🚗 Araba kiralamak için yeterli bakiyen yok. Önce bisikletle şehri gez 😄' })

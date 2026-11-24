@@ -350,62 +350,49 @@ export function HelpModal({ onClose }) {
 
 // ---------- ilk girişte tek, küçük yönlendirme kartı ----------
 /**
- * Ekranı kalabalıklaştırmamak için tek kutu, sırayla 3 adım (her biri kendiliğinden geçer):
- *  1) havalimanında: bisiklet kirala  2) çıkış kapısından şehre çık  3) şehirde: B ile bin + kamerayı çevirme (mobil/masaüstü ayrı).
- * Bittiğinde (ya da ✕ ile) onDone çağrılır; tekrar gösterilmez.
+ * Ekranı kalabalıklaştırmamak için tek kutu, şehirde sırayla 2 adım: kamerayı çevirme (mobil/masaüstü ayrı) → bisiklet.
+ * Evde/mekânda görünmez (orada kendi istemleri var). Bittiğinde (ya da ✕ ile) onDone çağrılır; tekrar gösterilmez.
  */
-export function StartGuide({ touch, ready = true, inAirport, riding, onDone }) {
-  const [stage, setStage] = useState('rent') // rent | exit | camera
+export function StartGuide({ touch, ready = true, inCity, onDone }) {
+  const [stage, setStage] = useState('camera') // camera | bike
   const [shown, setShown] = useState(false)
 
   useEffect(() => {
-    if (!ready) return
+    if (!ready || !inCity) return
     const t = setTimeout(() => setShown(true), 1500)
     return () => clearTimeout(t)
-  }, [ready])
+  }, [ready, inCity])
 
   useEffect(() => {
-    if (!ready || !shown) return
-    if (!inAirport && stage !== 'camera') {
-      setStage('camera')
-      return
+    if (!shown || !inCity) return
+    const next = () => (stage === 'camera' ? setStage('bike') : onDone())
+    const t = setTimeout(next, stage === 'camera' ? 12000 : 9000)
+    let moved = 0
+    const onMove = (e) => {
+      if (stage !== 'camera' || (e.pointerType === 'mouse' && e.buttons === 0)) return
+      if (++moved > 12) next()
     }
-    if (stage === 'rent') {
-      const t = setTimeout(() => setStage('exit'), 12000)
-      const onRent = () => setStage('exit')
-      window.addEventListener('situapp:rented', onRent)
-      return () => {
-        clearTimeout(t)
-        window.removeEventListener('situapp:rented', onRent)
-      }
+    window.addEventListener('pointermove', onMove)
+    return () => {
+      clearTimeout(t)
+      window.removeEventListener('pointermove', onMove)
     }
-    if (stage === 'camera') {
-      const t = setTimeout(onDone, 16000)
-      let moved = 0
-      const onMove = (e) => {
-        if (e.pointerType === 'mouse' && e.buttons === 0) return
-        if (++moved > 12) onDone()
-      }
-      window.addEventListener('pointermove', onMove)
-      return () => {
-        clearTimeout(t)
-        window.removeEventListener('pointermove', onMove)
-      }
-    }
-  }, [ready, shown, stage, inAirport, onDone])
+  }, [shown, inCity, stage, onDone])
 
-  if (!shown) return null
+  if (!shown || !inCity) return null
   const text =
-    stage === 'rent' ? (
-      <>Sağdaki kartta <b className="text-[#ff7eb3]">bisiklet kirala</b> (20 🪙). Arabalar şimdilik göz doldurmalık 😄</>
-    ) : stage === 'exit' ? (
-      <>Karşıdaki kapının önüne gelip <b className="text-[#ff7eb3]">{touch ? '“Çık”' : 'E'}</b> ile şehre çık. Şehirde {touch ? 'soldaki 🚲 düğmesiyle' : <><b className="text-[#ff7eb3]">B</b> ile</>} bisiklete binersin.</>
+    stage === 'camera' ? (
+      touch ? (
+        <>Kamerayı çevirmek için ekranda parmağını <b className="text-[#ff7eb3]">sağa-sola kaydır</b>. İki parmakla yakınlaştır.</>
+      ) : (
+        <>Kamerayı çevirmek için sol tuşa basıp <b className="text-[#ff7eb3]">sağa-sola sürükle</b>. Tekerlekle yakınlaştır.</>
+      )
     ) : touch ? (
-      <>Kamerayı çevirmek için ekranda parmağını <b className="text-[#ff7eb3]">sağa-sola kaydır</b>. İki parmakla yakınlaştır.</>
+      <>Soldaki <b className="text-[#ff7eb3]">🚲 düğmesi</b> bisiklet kiralar (20 🪙) ve hızlıca gezdirir.</>
     ) : (
-      <>Kamerayı çevirmek için sol tuşa basıp <b className="text-[#ff7eb3]">sağa-sola sürükle</b>. Tekerlekle yakınlaştır.</>
+      <><b className="text-[#ff7eb3]">B</b> tuşu (ya da soldaki 🚲) bisiklet kiralar (20 🪙) ve hızlıca gezdirir.</>
     )
-  const icon = stage === 'rent' ? '🔑' : stage === 'exit' ? '🚪' : touch ? '👆' : '🎥'
+  const icon = stage === 'camera' ? (touch ? '👆' : '🎥') : '🚲'
   return (
     <div className={`pointer-events-auto absolute left-1/2 top-[5.6rem] z-10 flex w-[min(20rem,calc(100vw-1.5rem))] -translate-x-1/2 animate-pop items-center gap-3 rounded-2xl py-2 pl-3 pr-8 ${glass}`} role="status" key={stage}>
       <span className="text-2xl">{icon}</span>

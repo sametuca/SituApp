@@ -190,14 +190,23 @@ function WorldScene({ avatar }) {
       return 0
     }
   })
-  // Herkes Havalimanı çıkış salonunda doğar (bir mekân odası); buradan şehre çıkar. Ev ise ayrı bir oda (lobideki Evim kapısı).
-  const [start] = useState(() => ({ x: VENUE_ROOM.spawn[0], z: VENUE_ROOM.spawn[1] }))
-  const [zone, setZone] = useState({ id: `venue:${START_VENUE}`, name: VENUE_BY_ID[START_VENUE].name, emoji: VENUE_BY_ID[START_VENUE].emoji, desc: VENUE_BY_ID[START_VENUE].desc })
+  // Havalimanı çıkış salonu YALNIZCA hesap yeni açıldığında bir kez görülür (geri dönüş yok). Sunucu welcome.first ile doğrular;
+  // istemci hızlı başlamak için yerel işarete bakar. Diğer herkes doğrudan parkta başlar. Ev ise ayrı bir oda (lobideki Evim kapısı).
+  const seenKey = `situapp_airport_seen_${user?.id ?? name}`
+  const [startAirport] = useState(() => {
+    try {
+      return !localStorage.getItem(seenKey)
+    } catch {
+      return false
+    }
+  })
+  const [start] = useState(() => (startAirport ? { x: VENUE_ROOM.spawn[0], z: VENUE_ROOM.spawn[1] } : { x: SPAWN.x + (Math.random() - 0.5) * 4, z: SPAWN.z + Math.random() * 2 }))
+  const [zone, setZone] = useState(() => (startAirport ? { id: `venue:${START_VENUE}`, name: VENUE_BY_ID[START_VENUE].name, emoji: VENUE_BY_ID[START_VENUE].emoji, desc: VENUE_BY_ID[START_VENUE].desc } : zoneAt(SPAWN.x, SPAWN.z)))
   const [home, setHome] = useState(null) // null = şehir/mekân; { owner, ownerName } = bir evin içindeyiz
   const [nearDoor, setNearDoor] = useState(false)
-  const [venue, setVenue] = useState(START_VENUE) // null = şehir/ev; mekân kimliği = o mekânın içindeyiz (venues.js); başlangıç: havalimanı
+  const [venue, setVenue] = useState(startAirport ? START_VENUE : null) // null = şehir/ev; mekân kimliği = o mekânın içindeyiz (venues.js); yeni hesapta başlangıç: havalimanı
   const [nearVenue, setNearVenue] = useState(null) // şehirde kapısına yaklaştığımız mekân
-  const venueRef = useRef(START_VENUE)
+  const venueRef = useRef(startAirport ? START_VENUE : null)
   const [fade, setFade] = useState(false)
   const [sceneReady, setSceneReady] = useState(false) // ilk yükleme bitti mi (yükleme ekranı için)
   const onSceneReady = useCallback(() => setSceneReady(true), [])
@@ -264,6 +273,13 @@ function WorldScene({ avatar }) {
       if (target === 'city') {
         venueRef.current = null
         setVenue(null)
+        if (from === START_VENUE) {
+          try {
+            localStorage.setItem(seenKey, '1')
+          } catch {
+            /* önemli değil */
+          }
+        }
         const d = from && venueDoor(from)
         focusRef.current.teleport = d ? d.exit : [SPAWN.x, SPAWN.z, Math.PI]
       } else {
@@ -282,7 +298,7 @@ function WorldScene({ avatar }) {
       }
       setTimeout(() => setFade(false), 160)
     }, 220)
-  }, [])
+  }, [seenKey])
 
   // Başkasının evine girerken sahne, sunucu izin verince ('room' mesajı) değişir; reddedilirse olduğun yerde kalırsın.
   const visitPending = useRef(false)
@@ -317,7 +333,7 @@ function WorldScene({ avatar }) {
     },
     [say],
   )
-  const net = useMultiplayer({ name, avatar: slug, onChat: addFeed, onDenied, onInfo: say, onInvited: setInvite, onRoom, onGesture, onMatch, startRoom: { to: 'venue', id: START_VENUE } })
+  const net = useMultiplayer({ name, avatar: slug, onChat: addFeed, onDenied, onInfo: say, onInvited: setInvite, onRoom, onGesture, onMatch, startRoom: startAirport ? { to: 'venue', id: START_VENUE } : null })
 
   const goTo = useCallback(
     (target) => {
@@ -349,6 +365,18 @@ function WorldScene({ avatar }) {
     swapVenue('city')
     net.enterRoom('city')
   }, [net, swapVenue])
+  // sunucu hesabın yeni olup olmadığını söyler (welcome.first): havalimanı yalnızca yeni hesapta
+  const airportChecked = useRef(false)
+  useEffect(
+    () =>
+      net.on('welcome', (m) => {
+        if (airportChecked.current) return
+        airportChecked.current = true
+        if (m.first && !venueRef.current) enterVenue(START_VENUE)
+        else if (!m.first && venueRef.current === START_VENUE) leaveVenue()
+      }),
+    [net, enterVenue, leaveVenue],
+  )
   const ownHome = useCallback(() => ({ owner: net.homeKey ?? undefined, ownerName: name }), [net.homeKey, name])
   const doorGo = useCallback(() => (venue ? leaveVenue() : goTo(home ? 'city' : ownHome())), [goTo, home, ownHome, venue, leaveVenue])
 
@@ -557,13 +585,6 @@ function WorldScene({ avatar }) {
         .sort((a, b) => a.d - b.d)
       say(near.length ? `Yakınındakiler: ${near.map((r) => `${r.name} (${Math.round(r.d)} m)`).join(', ')}` : 'Yakınında kimse yok. Kafe veya Kulüp’e uğrayabilirsin!')
       return
-    }
-    if (['havalimani', 'havaalani', 'airport'].includes(cmd)) {
-      if (home) return say('Önce evden çık: /dışarı')
-      if (venue === START_VENUE) return say('Zaten havalimanındasın ✈️')
-      if (venue) return say('Önce dışarı çık: /dışarı')
-      enterVenue(START_VENUE)
-      return say('✈️ Havalimanı çıkış salonuna geldin.')
     }
     if (['ev', 'eve'].includes(cmd)) {
       if (home) return say('Zaten evdesin 🏠')
@@ -831,7 +852,7 @@ function WorldScene({ avatar }) {
       )}
       {feat.overlays}
       {help && <HelpModal onClose={() => setHelp(false)} />}
-      {showTips && !help && <StartGuide touch={touch} ready={sceneReady} inAirport={venue === START_VENUE} riding={riding} onDone={closeTips} />}
+      {showTips && !help && <StartGuide touch={touch} ready={sceneReady} inCity={!home && !venue} onDone={closeTips} />}
       <div
         aria-hidden
         className={`pointer-events-none absolute inset-0 z-30 bg-gradient-to-br from-[#ffe3f0] via-[#f1e6ff] to-[#dff3ff] transition-opacity duration-200 ${fade ? 'opacity-100' : 'opacity-0'}`}
