@@ -4,6 +4,7 @@
 // Sunucu otoriter: bisikletsiz oyuncunun anim='ride' hareketi game.js'te idle'a çevrilir (me.bikeUntil).
 // Yeni hesaba bir kez başlangıç altını verilir (bisiklet için yeter, araba için yetmez).
 import { user, save } from '../store.js'
+import { claimStarter } from '../guard.js'
 
 export const RENT = {
   bike: { price: 20, ms: 45 * 60 * 1000, name: 'Bisiklet' },
@@ -21,7 +22,7 @@ export default function rental(ctx) {
       if (!u.stats.starter) {
         u.stats.starter = 1
         save()
-        ctx.addCoins?.(me, STARTER_COINS, 'hosgeldin')
+        if (claimStarter(me.ip)) ctx.addCoins?.(me, STARTER_COINS, 'hosgeldin')
       }
     },
     welcome: (me) => ({ bikeUntil: me.bikeUntil ?? 0, first: Boolean(me.first) }),

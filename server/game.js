@@ -240,6 +240,7 @@ export function attachGameServer(httpServer) {
       photoHidden: ident?.photoHidden ?? false,
     }
     me.homeKey = ident ? ident.uid : legacyKey(guestName)
+    me.ip = msg.__ip ?? null
     me.key = me.homeKey // kalıcı kimlik anahtarı (Supabase modunda auth uid; demo/misafirde addan türer)
     if (guardLib.isBanned(me.key, null)) {
       send(me.ws, { t: 'banned' })
@@ -252,6 +253,7 @@ export function attachGameServer(httpServer) {
       ...Object.assign({}, ...features.map((f) => f.welcome?.(me) ?? {})),
       t: 'welcome',
       id: me.id,
+      gp: guardLib.proof(me.id), // koruma kanıtı: istemci görmezse oyunu yüklemez
       name: me.name,
       home: me.homeKey,
       homeItems: getHome(me.homeKey)?.items ?? null,
@@ -266,6 +268,7 @@ export function attachGameServer(httpServer) {
     return me
   }
 
+  guardLib.assertSealed() // koruma yoksa oyun sunucusu açılmaz
   const CORE = new Set(['join', 'move', 'room', 'home_save', 'home_open', 'invite', 'react', 'whisper', 'gesture', 'typing', 'chat', 'tp'])
   wss.on('connection', (ws, req) => {
     let me = null
@@ -273,6 +276,7 @@ export function attachGameServer(httpServer) {
     ws.isAlive = true
     ws.on('pong', () => (ws.isAlive = true))
     const ip = guardLib.ipOf(req)
+    if (!guardLib.active()) return ws.close(1013, 'guard') // koruma bozulduysa hiçbir bağlantı kabul edilmez
     if (guardLib.isBanned(null, ip)) {
       send(ws, { t: 'banned' })
       return ws.close(4403, 'banned')
@@ -327,7 +331,7 @@ export function attachGameServer(httpServer) {
               send(ws, { t: 'banned' })
               return ws.close(4403, 'banned')
             }
-            me = createPlayer({ ...msg, __ws: ws }, ident)
+            me = createPlayer({ ...msg, __ws: ws, __ip: ip }, ident)
             if (!me) return
             me.ip = ip
             me.guard = guard

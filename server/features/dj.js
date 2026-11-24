@@ -106,7 +106,7 @@ export default function dj(ctx) {
         if (now !== cur || !cur.track) return
         const dj = players.get(cur.id)
         if (!dj) return
-        const listeners = inRoom().filter((o) => o.id !== dj.id && !mod().blockedPair(o, dj)).length
+        const listeners = new Set(inRoom().filter((o) => o.id !== dj.id && o.ip !== dj.ip && !mod().blockedPair(o, dj)).map((o) => o.ip ?? o.id)).size // aynı IP'deki hesaplar tek dinleyici
         if (!listeners) return
         const c = Math.min(LISTENER_COIN_CAP, Math.ceil(listeners / 2))
         cur.earned += c

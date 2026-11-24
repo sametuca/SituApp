@@ -12,6 +12,8 @@ import { initStore } from './store.js'
 import { initHomes } from './homes.js'
 import { initNames } from './auth.js'
 import * as supa from './supa.js'
+import { assertSealed } from './guard.js'
+assertSealed() // hile koruması çalışmıyorsa sunucu hiç açılmaz
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 dotenv.config({ path: path.join(__dirname, '.env') })
@@ -163,6 +165,7 @@ app.get('/api/health', (_req, res) => {
     ok: true,
     meshyConfigured: Boolean(MESHY_API_KEY) && MESHY_API_KEY !== 'your_meshy_api_key',
     online: game?.online() ?? 0,
+    guard: true,
   })
 })
 

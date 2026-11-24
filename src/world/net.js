@@ -118,6 +118,13 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
             for (const f of m.list ?? []) photoStore.set(f.key, f.photo ?? null)
             break
           case 'welcome':
+            // hile koruması kanıtı yoksa (guard'sız/yamalı sunucu) oyun yüklenmez
+            if (typeof m.gp !== 'string' || !/^[0-9a-f]{64}$/.test(m.gp)) {
+              stopped = true
+              setStatus('noguard')
+              ws.close()
+              break
+            }
             photoStore.reset(m.photos)
             for (const f of m.friendsInit?.list ?? []) photoStore.set(f.key, f.photo ?? null)
             retry = 0

@@ -88,8 +88,10 @@ export default function beach(ctx) {
     clearTimeout(m.timer)
     const loser = winner === m.a ? m.b : m.a
     m.over = { winner: winner.id }
-    ctx.addCoins?.(winner, 15, 'voley')
-    ctx.addCoins?.(loser, 3, 'voley')
+    if (ctx.pairReward?.(winner, loser, 'voley')) {
+      ctx.addCoins?.(winner, 15, 'voley')
+      ctx.addCoins?.(loser, 3, 'voley')
+    }
     ctx.emitEvent?.(winner, 'beach_win', 1, loser)
     vbSend(m)
     matches.delete(m.a.id)

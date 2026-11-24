@@ -750,6 +750,16 @@ function WorldScene({ avatar }) {
         />
       </Canvas>
 
+      {(net.status === 'noguard') && (
+        <div className="fixed inset-0 z-[90] grid place-items-center bg-white px-5" role="alertdialog">
+          <div className="w-full max-w-sm rounded-[2rem] border-2 border-white bg-white p-6 text-center shadow-toy">
+            <div className="text-5xl">🛡️</div>
+            <h2 className="mt-2 text-xl font-black text-ink">Güvenlik doğrulanamadı</h2>
+            <p className="mt-1 text-sm font-semibold text-ink-soft">Sunucunun hile koruması doğrulanamadığı için oyun yüklenmedi. Biraz sonra tekrar dene.</p>
+          </div>
+        </div>
+      )}
+
       {(net.status === 'kicked' || net.status === 'auth' || net.status === 'banned') && (
         <div className="fixed inset-0 z-[80] grid place-items-center bg-white/70 px-5 backdrop-blur-sm" role="alertdialog">
           <div className="w-full max-w-sm rounded-[2rem] border-2 border-white bg-white p-6 text-center shadow-toy">

@@ -3,6 +3,7 @@
 // hareket doğrulaması (hız/ışınlanma/sınır), tuzak mesajlar (honeypot) ve IP başına bağlantı sınırı.
 //   Ban: hesap anahtarı (uid / ad) + IP; sunucu kapanıp açılsa da sürer (server/data/bans.json). Yönetici panelinden kaldırılır.
 //   TRUST_PROXY=1 ise IP, x-forwarded-for'un ilk adresinden alınır (bir ters vekil arkasındaysan); aksi hâlde başlık sahtelenebileceği için yok sayılır.
+import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -110,3 +111,38 @@ export function createGuard({ ip, onBan }) {
 
 // Tuzak mesajlar: gerçek istemci bunları ASLA göndermez; yazan, protokolü kurcalıyor demektir.
 export const HONEYPOT = new Set(['admin', 'give_coins', 'set_coins', 'add_coins', 'coins_set', 'debug', 'cheat', 'teleport', 'set_pos', 'god', 'give_item', 'set_xp', 'rent_car_force', 'ban', 'unban', 'eval'])
+
+// ---------- mühür: guard devre dışı bırakılamaz ----------
+// Sunucu açılırken `assertSealed()` çağrılır: koruma işlevleri eksik/bozuksa süreç BAŞLAMAZ. Her bağlantıda `active()` yeniden denetler.
+// Her 'welcome', oyuncuya özel bir kanıt (`proof`) taşır; istemci kanıt görmezse oyunu yüklemez (guard'sız/yamalı sunucuya karşı).
+const BOOT_SECRET = crypto.randomBytes(32)
+export const proof = (id) => crypto.createHmac('sha256', BOOT_SECRET).update(String(id)).digest('hex')
+export function selfTest() {
+  try {
+    const g = createGuard({ ip: '0.0.0.0', onBan: () => {} })
+    if (!g.rate({})) return false
+    for (let i = 0; i < 60; i++) g.rate({}) // taşma tetiklenmeli
+    if (g.win.length <= 45) return false
+    const t = createGuard({ ip: '0.0.0.0', onBan: () => {} })
+    return typeof t.strike === 'function' && HONEYPOT.has('give_coins') && HONEYPOT.size >= 8 && BAN_AT > 0 && BAN_AT <= 50
+  } catch {
+    return false
+  }
+}
+export const active = () => selfTest()
+export function assertSealed() {
+  if (!selfTest()) {
+    console.error('\n⛔ Hile koruması (guard.js) çalışmıyor ya da değiştirilmiş. Oyun sunucusu BAŞLATILMADI.\n')
+    process.exit(1)
+  }
+}
+
+// ---------- başlangıç altını suistimali: IP başına en çok 3 hesap hoş geldin altını alır ----------
+export function claimStarter(ip) {
+  if (!ip || ip === '127.0.0.1' || ip === '::1') return true
+  db.starters = db.starters ?? {}
+  if ((db.starters[ip] ?? 0) >= 3) return false
+  db.starters[ip] = (db.starters[ip] ?? 0) + 1
+  persist()
+  return true
+}
