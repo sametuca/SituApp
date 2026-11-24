@@ -111,6 +111,7 @@ const M = {
   chair: '/models/cafe/cafe-chair.glb',
   plant: '/models/cafe/cafe-plant.glb',
   bench: '/models/park/park-bench.glb',
+  fountain: '/models/lobby/fountain.glb',
   tree: '/models/park/park-tree.glb',
   lamp: '/models/park/park-lamp.glb',
   ball: '/models/club/club-ball.glb',
@@ -131,8 +132,9 @@ for (const t of [-40, -30, -20, 20, 30, 40]) {
 // lobi: çeşmenin çevresinde banklar ve ağaçlar
 for (let i = 0; i < 6; i++) {
   const a = (i / 6) * Math.PI * 2 + Math.PI / 6
-  PROPS.push(p('bench', Math.cos(a) * 7.2, Math.sin(a) * 7.2, 1.7, 0, -a + Math.PI / 2))
+  PROPS.push(p('bench', Math.cos(a) * 7.2, Math.sin(a) * 7.2, 1.7, 0, -a - Math.PI / 2))
 }
+PROPS.push(p('fountain', 0, 0, 5.4))
 PROPS.push(p('tree', 9, 9, 3.4, 0.7), p('tree', 9, -9, 3.4, 0.7), p('tree', -9, -9, 3.4, 0.7))
 // kafe sokağı: dışarıda masalar ve bitkiler
 for (const [x, z] of [[-6.2, -20], [-6.2, -24], [6.2, -20], [6.2, -24], [-6.2, -31], [6.2, -31]]) {

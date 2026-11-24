@@ -8,11 +8,19 @@ const glass = 'border-2 border-white bg-white/75 shadow-soft backdrop-blur-md'
 // ---------- üst çubuk ----------
 // extraButtons: özellik modüllerinin düğmeleri [{ key, emoji, label, onClick, badge? }] (sol sütunda, geri düğmesinin altında)
 // extraNodes: hazır JSX düğmeler (sağ grupta, ⚙️'nin solunda)
-export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings, extraButtons = [], extraNodes = null }) {
+export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings, extraButtons = [], extraNodes = null, menuNodes = null, menuBadge = 0 }) {
+  const [menu, setMenu] = useState(false)
+  const menuRef = useRef(null)
+  useEffect(() => {
+    if (!menu) return
+    const off = (e) => { if (!menuRef.current?.contains(e.target)) setMenu(false) }
+    window.addEventListener('pointerdown', off)
+    return () => window.removeEventListener('pointerdown', off)
+  }, [menu])
   const dot = status === 'online' ? 'bg-emerald-400' : status === 'connecting' ? 'bg-amber-400' : 'bg-rose-400'
   const label = status === 'online' ? `${online} çevrimiçi` : status === 'connecting' ? 'Bağlanıyor…' : 'Çevrimdışı (tek başına)'
   return (
-    <div className="pointer-events-none absolute left-0 right-0 top-0 z-10 flex items-start justify-between gap-2 px-3 py-3">
+    <div className="pointer-events-none absolute left-0 right-0 top-0 z-20 flex items-start justify-between gap-2 px-3 py-3">
       <div className="pointer-events-auto flex flex-col gap-2">
         <button
           onClick={onExit}
@@ -39,20 +47,32 @@ export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings, 
           {dnd && <span title="Rahatsız etme açık"> · 🌙</span>}
         </div>
       </div>
-      <div className="pointer-events-auto flex gap-2">
+      <div className="pointer-events-auto relative flex gap-2" ref={menuRef}>
         {extraNodes}
-        {onSettings && (
-          <button onClick={onSettings} aria-label="Ayarlar" className={`grid h-10 w-10 place-items-center rounded-full text-lg transition hover:bg-white ${glass}`}>
-            ⚙️
-          </button>
-        )}
         <button
-          onClick={onHelp}
-          aria-label="Yardım"
-          className={`grid h-10 w-10 place-items-center rounded-full text-lg font-black text-[#ff7eb3] transition hover:bg-white ${glass}`}
+          onClick={() => setMenu((m) => !m)}
+          aria-label="Menü"
+          aria-expanded={menu}
+          className={`relative grid h-10 w-10 place-items-center rounded-full text-lg transition hover:bg-white ${glass}`}
         >
-          ?
+          ⚙️
+          {menuBadge > 0 && <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full border-2 border-white bg-[#ff7eb3] px-1 text-[9px] font-black text-white">{menuBadge}</span>}
         </button>
+        {menu && (
+          <div className="absolute right-0 top-12 z-20 flex w-64 flex-col gap-1 rounded-3xl border-2 border-white bg-white/95 p-2 shadow-soft backdrop-blur-md" onClick={() => setMenu(false)}>
+            {menuNodes}
+            {onSettings && (
+              <button onClick={onSettings} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#fff0f6]">
+                <span className="text-lg">⚙️</span>
+                <span className="flex-1">Ayarlar</span>
+              </button>
+            )}
+            <button onClick={onHelp} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#fff0f6]">
+              <span className="text-lg">❓</span>
+              <span className="flex-1">Yardım</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

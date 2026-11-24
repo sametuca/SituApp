@@ -4,6 +4,7 @@
 import { memo, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
+import { Em } from '../components/emoji'
 import { MathUtils } from 'three'
 import AvatarRig, { AVATAR_HEIGHT } from './AvatarRig'
 import { CLICK_RADIUS, GREET_RADIUS, TALK_RADIUS, displayName, npcsFor, posAt } from './npcs'
@@ -146,13 +147,21 @@ function Companion({ npc }) {
 }
 
 function NpcTag({ name, bubble }) {
+  const m = /^(\p{Extended_Pictographic}\uFE0F?)\s*(.*)$/u.exec(name)
+  const icon = m ? m[1] : '💬'
+  const label = m ? m[2] : name
   return (
     <Html position={[0, AVATAR_HEIGHT + 0.45, 0]} center distanceFactor={9} zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}>
       <div className="relative flex flex-col items-center gap-1">
         {bubble && (
           <div className="max-w-[220px] break-words rounded-2xl rounded-bl-md border-2 border-white bg-white px-3 py-1.5 text-center text-sm font-bold text-[#4a3b5c] shadow-lg">{bubble}</div>
         )}
-        <div className="whitespace-nowrap rounded-full border-2 border-white bg-[#ff9f6b] px-2.5 py-0.5 text-xs font-extrabold text-white shadow">{name}</div>
+        <div className="flex items-center gap-1.5 whitespace-nowrap rounded-full bg-white/95 py-[3px] pl-[3px] pr-3 shadow-[0_4px_10px_rgba(60,40,80,0.28)] ring-2 ring-[#ffb48c]">
+          <span className="grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full bg-[#fff0e4]">
+            <Em e={icon} size={15} />
+          </span>
+          <span className="text-[13px] font-extrabold leading-none tracking-wide text-[#4a3b5c]">{label}</span>
+        </div>
       </div>
     </Html>
   )

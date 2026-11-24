@@ -136,33 +136,6 @@ function Building({ b, focusRef }) {
   )
 }
 
-function Fountain() {
-  const water = useRef()
-  useFrame(({ clock }) => {
-    if (water.current) water.current.position.y = 0.62 + Math.sin(clock.elapsedTime * 1.6) * 0.03
-  })
-  return (
-    <group>
-      <mesh position={[0, 0.3, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[2.4, 2.6, 0.6, 48]} />
-        <meshStandardMaterial color="#ffb6d3" roughness={0.4} />
-      </mesh>
-      <mesh ref={water} position={[0, 0.62, 0]}>
-        <cylinderGeometry args={[2.1, 2.1, 0.12, 48]} />
-        <primitive object={SKY_MATS.water} attach="material" />
-      </mesh>
-      <mesh position={[0, 1.2, 0]} castShadow>
-        <cylinderGeometry args={[0.35, 0.5, 1.2, 24]} />
-        <meshStandardMaterial color="#ffd6e8" roughness={0.4} />
-      </mesh>
-      <mesh position={[0, 2.0, 0]} castShadow>
-        <sphereGeometry args={[0.6, 24, 24]} />
-        <primitive object={SKY_MATS.fountainTop} attach="material" />
-      </mesh>
-    </group>
-  )
-}
-
 function Gazebo() {
   const posts = Array.from({ length: 6 }, (_, i) => (i / 6) * Math.PI * 2)
   return (
@@ -260,7 +233,6 @@ export default function City({ focusRef }) {
       <Ring r0={6.6} r1={7.1} y={Y.mark} color="#ffd3e6" />
       <Ring r0={9.6} r1={10.2} y={Y.mark} color="#cfeaff" />
       <Flat round={3.4} y={Y.mark} color="#ffd3e6" />
-      <Fountain />
       <Gazebo />
 
       {BUILDINGS.filter((b) => !b.gazebo).map((b, i) => (

@@ -141,18 +141,21 @@ export function useSky({ net, touch, home, focusRef }) {
   ]
 
   const wEmoji = WEATHER_EMOJI[weather]
-  const extraNodes = (
-    <div
-      title={`${now.phase === 'night' ? 'Gece' : now.phase === 'dusk' ? 'Gün batımı' : now.phase === 'dawn' ? 'Şafak' : 'Gündüz'} · ${WEATHER_NAME[weather]}`}
-      className="flex h-10 items-center gap-1 rounded-full border-2 border-white bg-white/75 px-3 text-xs font-extrabold text-[#4a3b5c] shadow-soft backdrop-blur-md"
-    >
-      <span className="text-base">{PHASE_EMOJI[now.phase]}</span>
-      <span className="tabular-nums">{fmtHour(now.hour)}</span>
-      {wEmoji && <span className="text-base">· {wEmoji}</span>}
+  const menuNodes = (
+    <div className="flex items-center gap-3 rounded-2xl bg-[#f3f0fa] px-3 py-2 text-sm font-extrabold text-[#4a3b5c]">
+      <span className="text-lg">{PHASE_EMOJI[now.phase]}</span>
+      <span className="flex-1">
+        <span className="tabular-nums">{fmtHour(now.hour)}</span>
+        <span className="ml-1 text-xs font-bold text-[#8a7a9c]">
+          · {now.phase === 'night' ? 'Gece' : now.phase === 'dusk' ? 'Gün batımı' : now.phase === 'dawn' ? 'Şafak' : 'Gündüz'}
+          {wEmoji ? ` · ${WEATHER_NAME[weather]}` : ''}
+        </span>
+      </span>
+      {wEmoji && <span className="text-lg">{wEmoji}</span>}
     </div>
   )
 
   const reduced = eventOn && read(EVENT_FX_KEY, '1') !== '0'
   const worldEffects = fxOn && !home ? <WeatherFx focusRef={focusRef} touch={touch} reduced={reduced} /> : null
-  return { settingsSections, extraNodes, worldEffects }
+  return { settingsSections, menuNodes, worldEffects }
 }

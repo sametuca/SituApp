@@ -692,7 +692,7 @@ function WorldScene({ avatar }) {
           </div>
         </div>
       )}
-      <TopBar zone={zone} online={net.online} status={net.status} dnd={net.dnd} onSettings={() => setPanel('settings')} extraButtons={feat.extraButtons} extraNodes={feat.extraNodes} onExit={() => navigate('/avatar')} onHelp={() => setHelp(true)} />
+      <TopBar zone={zone} online={net.online} status={net.status} dnd={net.dnd} onSettings={() => setPanel('settings')} extraButtons={feat.extraButtons} extraNodes={feat.extraNodes} menuNodes={feat.menuNodes} menuBadge={feat.menuBadge} onExit={() => navigate('/avatar')} onHelp={() => setHelp(true)} />
       <ZoneToast zone={zone} />
       {!home && !venue && <Minimap focusRef={focusRef} remotes={net.remotes} compact={touch} />}
       {touch ? (

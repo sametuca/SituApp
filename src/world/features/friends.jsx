@@ -579,20 +579,22 @@ export function useFriends({ net, say, focusRef, home, venue, panel, setPanel, o
   ]
 
   const badge = data.requests.length + data.unread
-  const extraNodes = (
+  const menuNodes = (
     <button
       onClick={() => {
         setStartTab(null)
         setPanel('friends')
       }}
-      aria-label="Arkadaşlar" className={`relative grid h-10 w-10 place-items-center rounded-full text-lg transition hover:bg-white ${glass}`}
+      className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#fff0f6]"
     >
-      💗
+      <span className="text-lg">💗</span>
+      <span className="flex-1">Arkadaşlar</span>
       {badge > 0 && !net.dnd && (
-        <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full border-2 border-white bg-[#ff7eb3] px-1 text-[10px] font-black text-white">{badge}</span>
+        <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[#ff7eb3] px-1 text-[10px] font-black text-white">{badge}</span>
       )}
     </button>
   )
+  const menuBadge = net.dnd ? 0 : badge
 
   const overlays = (
     <>
@@ -613,5 +615,5 @@ export function useFriends({ net, say, focusRef, home, venue, panel, setPanel, o
     </>
   )
 
-  return { peerActions, settingsSections, overlays, extraNodes, readAt }
+  return { peerActions, settingsSections, overlays, menuNodes, menuBadge, readAt }
 }

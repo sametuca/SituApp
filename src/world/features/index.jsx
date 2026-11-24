@@ -57,11 +57,14 @@ export function useFeatures(ctx) {
   )
   // hazır JSX üst çubuk düğmeleri ve DM'de karşı tarafın okuma zamanları (id → ts)
   const extraNodes = parts.map((p, i) => (p.extraNodes ? <span key={i} className="contents">{p.extraNodes}</span> : null))
+  // ⚙️ açılır menüsü: satır JSX'leri + rozet toplamı
+  const menuNodes = parts.map((p, i) => (p.menuNodes ? <div key={i}>{p.menuNodes}</div> : null))
+  const menuBadge = parts.reduce((n, p) => n + (p.menuBadge || 0), 0)
   const readAt = Object.assign({}, ...parts.map((p) => p.readAt))
   // kişiselleştirme: ev dekoru, döşeme sekmeleri, evcil hayvan katmanı
   const homeDecor = parts.find((p) => p.homeDecor)?.homeDecor
   const editorTabs = parts.flatMap((p) => p.editorTabs ?? [])
   // her katman kendi Suspense'inde: bir modelin yüklenmesi şehrin çizilmesini engellemesin
   const sceneNodes = parts.map((p, i) => (p.sceneNodes ? <Suspense key={i} fallback={null}><group>{p.sceneNodes}</group></Suspense> : null))
-  return { peerActions, peerHeader, overlays, extraButtons, extraNodes, readAt, worldEffects, homeDecor, editorTabs, sceneNodes }
+  return { peerActions, peerHeader, overlays, extraButtons, extraNodes, menuNodes, menuBadge, readAt, worldEffects, homeDecor, editorTabs, sceneNodes }
 }
