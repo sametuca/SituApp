@@ -11,7 +11,7 @@ export const RIM = 3.5 // kıyı kum şeridi genişliği
 export const PLAY_BOUNDS = { x0: ISLAND.x0 - RIM + 1, x1: ISLAND.x1 + RIM - 1, z0: ISLAND.z0 - RIM + 1, z1: ISLAND.z1 + RIM - 1 }
 export const PLAY_LIMIT = 102 // (eski ad) kabaca en uzak kenar
 export const ROAD_HALF = 4.3 // yolların yarı genişliği (8,6 m asfalt + her yanda 1,4 m kaldırım)
-export const ROAD_END = { north: -96, south: 48, east: 96 } // ana yolların uçları (batı: park patikası)
+export const ROAD_END = { north: -96, south: 28, east: 96 } // ana yolların uçları (batı: park patikası)
 
 export const PALETTE = {
   pink: '#fed095',
@@ -29,7 +29,7 @@ export const ZONES = [
   { id: 'cafe', name: 'Kafe Sokağı', emoji: '☕', desc: 'Sakin, samimi sohbetler için.', shape: 'rect', x0: -14, x1: 14, z0: -48, z1: -12, spawn: [0, -22] },
   { id: 'club', name: 'Gece Kulübü', emoji: '🪩', desc: 'Müzik, dans ve enerji.', shape: 'rect', x0: 12, x1: 48, z0: -14, z1: 14, spawn: [24, 0] },
   { id: 'park', name: 'Park', emoji: '🌳', desc: 'Açık havada yürüyüş ve sohbet.', shape: 'rect', x0: -48, x1: -12, z0: -14, z1: 14, spawn: [-24, 0] },
-  { id: 'beach', name: 'Plaj', emoji: '🏖️', desc: 'Gün batımı, deniz ve rahat sohbetler.', shape: 'rect', x0: -14, x1: 14, z0: 12, z1: 48, spawn: [0, 36] },
+  { id: 'beach', name: 'Plaj', emoji: '🏖️', desc: 'Gün batımı, deniz ve rahat sohbetler.', shape: 'rect', x0: -20, x1: 20, z0: 29, z1: 54, spawn: [0, 36] },
   // dış mahalleler (ada büyüdü): ana yolların uzantısı + geniş yeşil alanlar
   { id: 'north', name: 'Kuzey Caddesi', emoji: '🏙️', desc: 'Kafe Sokağı’nın devamı: sakin, geniş bir cadde.', shape: 'rect', x0: -14, x1: 14, z0: -100, z1: -48, spawn: [0, -72] },
   { id: 'eastend', name: 'Doğu Bulvarı', emoji: '🌆', desc: 'Kulüp caddesinin uzantısı.', shape: 'rect', x0: 48, x1: 100, z0: -14, z1: 14, spawn: [72, 0] },
@@ -60,7 +60,8 @@ export const TELEPORTS = {
 }
 
 export const SPAWN = { x: -22, z: 0 } // eski hesaplar parkta başlar
-export const BEACH_START = { x: 0, z: 43, ry: Math.PI } // yeni hesap havalimanından çıkınca kumsalda doğar, kuzeye (şehre) bakar
+export const BEACH = { x: 0, z: 37, r: 17 } // yuvarlak, sıcak plaj meydanı (adanın güneyinde; yol buraya açılır)
+export const BEACH_START = { x: 0, z: 37, ry: Math.PI } // yeni hesap havalimanından çıkınca plajın tam ortasında doğar, kuzeye (şehre) bakar // yeni hesap havalimanından çıkınca kumsalda doğar, kuzeye (şehre) bakar
 
 // ---------- binalar ----------
 // facing: kapının baktığı yön ('n' = -z, 's' = +z, 'e' = +x, 'w' = -x)
@@ -166,7 +167,7 @@ const LAMP = ROAD_HALF + 0.75
 for (let t = 20; t <= 90; t += 10) {
   PROPS.push(p('lamp', LAMP, -t, 3, 0.35), p('lamp', -LAMP, -t, 3, 0.35)) // kuzey uzantısı
   PROPS.push(p('lamp', t, LAMP, 3, 0.35), p('lamp', t, -LAMP, 3, 0.35)) // doğu uzantısı
-  if (t <= 40) PROPS.push(p('lamp', LAMP, t, 3, 0.35), p('lamp', -LAMP, t, 3, 0.35)) // güney (plaja kadar)
+  if (t <= 20) PROPS.push(p('lamp', LAMP, t, 3, 0.35), p('lamp', -LAMP, t, 3, 0.35)) // güney (plaja kadar)
 }
 // lobi: çeşmenin çevresinde banklar ve ağaçlar
 for (let i = 0; i < 6; i++) {
@@ -185,23 +186,30 @@ for (const [x, z] of [[-18, -9], [-24, -10], [-36, -10], [-44, -8], [-20, 9], [-
 PROPS.push(p('bench', -22, -5, 1.7, 0, 0), p('bench', -22, 5, 1.7, 0, Math.PI), p('bench', -36, -5, 1.7, 0, 0), p('bench', -36, 5, 1.7, 0, Math.PI))
 // park patikası (x -12…-26, z ±1,6): lambalar patikanın iki yanında, aynı hizada
 for (const x of [-16, -22]) PROPS.push(p('lamp', x, 2.6, 3, 0.35), p('lamp', x, -2.6, 3, 0.35))
-// plaj: şemsiyeler ve şezlonglar DENİZ KENARINDA (yoldan uzak, kıyıya bakar); iki şezlong yan yana = sohbet kısayolu grubu
-for (const side of [-1, 1]) {
-  for (const [dx, z] of [[9.5, 41.5], [12.5, 45]]) {
-    const x = side * dx
-    PROPS.push(p('umbrella', x, z, 2.6, 0.3))
-    PROPS.push(p('lounger', x - 0.75, z + 1.7, 1.7, 0, 0), p('lounger', x + 0.75, z + 1.7, 1.7, 0, 0)) // yan yana, denize (güneye) bakıyor
+// plaj meydanı (yuvarlak): şemsiyeli şezlong çiftleri halka hâlinde merkeze bakar; ortada serbest meydan, kıyıda palmiyeler
+{
+  const R = 11.5
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2 + Math.PI / 8
+    const px = BEACH.x + Math.cos(a) * R
+    const pz = BEACH.z + Math.sin(a) * R
+    if (pz < 30.5 && Math.abs(px) < 6) continue // yol girişi açık kalsın
+    const ry = Math.atan2(BEACH.x - px, BEACH.z - pz) // merkeze bak
+    const nx = Math.cos(ry)
+    const nz = -Math.sin(ry) // yan yana duran iki şezlong için yan eksen
+    PROPS.push(p('umbrella', px + Math.sin(ry) * -1.6, pz + Math.cos(ry) * -1.6, 2.6, 0.3))
+    PROPS.push(p('lounger', px + nx * 0.8, pz + nz * 0.8, 1.7, 0, ry), p('lounger', px - nx * 0.8, pz - nz * 0.8, 1.7, 0, ry))
   }
+  for (const a of [-2.75, -0.4, 0.5, 2.0, 2.65]) PROPS.push(p('palm', BEACH.x + Math.cos(a) * 15.2, BEACH.z + Math.sin(a) * 12.5, 4.6, 0.5))
 }
-for (const [x, z] of [[-12, 31], [12, 31], [-11, 48], [11, 48]]) PROPS.push(p('palm', x, z, 4.6, 0.5))
 // plaj ortamı (yeni oyuncuların doğduğu yer): cankurtaran kulesi, voleybol, kum kaleleri, havalimanı terminali + park etmiş uçak
-PROPS.push(p('lifeguard', -15.5, 41, 3.4, 1.0), p('volleyball', 19, 45, 4.6, 0, Math.PI / 2), p('sandcastle', -5.5, 47.6, 1.5, 0.5), p('sandcastle', 6.5, 48.2, 1.2, 0.4, 0.8))
+PROPS.push(p('lifeguard', -15.2, 44, 3.4, 1.0, 0.5), p('volleyball', 14.5, 42, 4.6, 0, Math.PI / 2), p('sandcastle', -3.5, 46, 1.5, 0.5), p('sandcastle', 4.5, 46.8, 1.2, 0.4, 0.8))
 BUILDINGS.push(b(-23, 44, 10, 7, 6, 'blue', 's', '🛬 Terminal'))
 PROPS.push(p('plane', -23, 48.6, 4.4, 1.4, 0.3))
 // plaj havluları (yere serili küçük renkli dikdörtgenler; City.jsx çizer)
 export const TOWELS = [
-  { x: -10.2, z: 44.6, ry: 0.2, c: '#ffd35e' }, { x: 8.2, z: 44.2, ry: -0.3, c: '#7fcdf3' }, { x: 11, z: 46.6, ry: 0.1, c: '#b79cff' },
-  { x: -12.4, z: 47.2, ry: 0.4, c: '#8fdcb4' }, { x: 14.5, z: 42.5, ry: -0.5, c: '#ffb48c' },
+  { x: -3.2, z: 35.4, ry: 0.2, c: '#ffd35e' }, { x: 3.4, z: 36.2, ry: -0.3, c: '#7fcdf3' }, { x: -1, z: 40.6, ry: 0.1, c: '#b79cff' },
+  { x: 5.6, z: 40, ry: 0.4, c: '#8fdcb4' }, { x: -6, z: 39.5, ry: -0.5, c: '#ffb48c' },
 ]
 // mahalle köşelerinde ağaçlar
 for (const [x, z] of [[17, -33], [17, 33], [47 - 2, 14]]) PROPS.push(p('tree', x, z, 3.6, 0.7))

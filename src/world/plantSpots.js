@@ -1,6 +1,6 @@
 // Süs bitkisi yerleri (saf JS, deterministik): çalı ve çim öbekleri yalnızca ÇİMLİ boş alanlara serpiştirilir —
 // yol/kaldırım/meydan/kum/binalar/süs nesneleri/çardak/battaniyeler hariç (layout.js ile aynı geometriye bakar).
-import { BLANKETS, BUILDINGS, GAZEBO, ISLAND, PROPS, ROAD_HALF } from './layout.js'
+import { BEACH, BLANKETS, BUILDINGS, GAZEBO, ISLAND, PROPS, ROAD_HALF } from './layout.js'
 
 let seed = 20240607
 const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296)
@@ -16,7 +16,7 @@ function grassFree(x, z, pad) {
   if (x <= -12 && x >= -27 && Math.abs(z) < 2.4 + pad) return false // park patikası
   if (x > -14.5 && x < 14.5 && z < -11) return false // kafe sokağı kaldırım taşı zemini
   if (x > 11.5 && x < 48.5 && Math.abs(z) < 14.5) return false // kulüp bölgesi zemini
-  if (x > -14.5 && x < 14.5 && z > 29) return false // plaj kumu
+  if (Math.hypot(x - BEACH.x, z - BEACH.z) < BEACH.r + 5) return false // yuvarlak plaj
   if (Math.hypot(x - GAZEBO.x, z - GAZEBO.z) < GAZEBO.r + 2 + pad) return false
   if (Math.hypot(x + 33, z + 6) < 4.6) return false // park gölcüğü
   for (const b of BUILDINGS) {

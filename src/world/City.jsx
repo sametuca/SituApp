@@ -3,7 +3,7 @@ import { screenK } from './screenK'
 import { useFrame, useLoader } from '@react-three/fiber'
 import { CanvasTexture, Color, DataTexture, ExtrudeGeometry, Shape, LinearFilter, RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
 import { Html, RoundedBox } from '@react-three/drei'
-import { BLANKETS, BUILDINGS, GAZEBO, ISLAND, PROPS, RIM, ROAD_END, ROAD_HALF, TOWELS } from './layout'
+import { BEACH, BLANKETS, BUILDINGS, GAZEBO, ISLAND, PROPS, RIM, ROAD_END, ROAD_HALF, TOWELS } from './layout'
 import { useCull } from './cull'
 import Facade from './Facade'
 import { facadeOf } from './facadeData'
@@ -624,8 +624,10 @@ export default function City({ focusRef }) {
       <Pond x={-30} z={30} r={7} />
       <Flat x={0} z={-30} w={28} d={36} y={Y.floor} tex="cobble" color="#fff3ea" feather={3} /> {/* kafe: sıcak kaldırım taşı */}
       <Flat x={30} z={0} w={36} d={28} y={Y.floor} tex="cobble" color="#e3d6ff" feather={3} /> {/* kulüp */}
-      <Flat x={0} z={39} w={34} d={22} y={Y.floor} tex="sand" feather={4} />
-      <Flat x={0} z={47} w={90} d={8} y={Y.floor} tex="sand" feather={3} /> {/* plaj kumu */}
+      <Flat x={BEACH.x} z={BEACH.z} round={BEACH.r + 4} y={Y.floor} tex="sand" feather={6} /> {/* yuvarlak plaj: yumuşak kenarlı */}
+      <Flat x={BEACH.x} z={BEACH.z} round={BEACH.r - 2} y={Y.floor + 0.004} tex="sand" color="#fff6dc" feather={5} />
+      <Flat x={BEACH.x} z={BEACH.z + 0.5} round={3.4} y={Y.mark} color="#ffe4a8" feather={1.4} /> {/* ortada güneş motifi */}
+      <Flat x={BEACH.x} z={BEACH.z + 0.5} round={1.9} y={Y.mark + 0.004} color="#ffc66b" feather={0.8} />
       
       <mesh position={[-33, 0.04, -6]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[3.6, 40]} />

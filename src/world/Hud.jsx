@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ToyButton } from '../components/ui'
 import { emojiSrc } from '../components/emoji'
 import { Ico } from '../components/Icon'
-import { BUILDINGS, GUIDE, ISLAND, RIM, ROAD_END, ROAD_HALF, ZONES } from './layout'
+import { BEACH, BUILDINGS, GUIDE, ISLAND, RIM, ROAD_END, ROAD_HALF, ZONES } from './layout'
 
 const glass = 'border-2 border-white bg-white/75 shadow-soft backdrop-blur-md'
 
@@ -144,7 +144,9 @@ function drawMap(ctx, S, big, f, remotes) {
   ctx.fillStyle = '#c8ecd0' // çimen
   ctx.fillRect(X(ISLAND.x0), Z(ISLAND.z0), len(ISLAND.x1 - ISLAND.x0), len(ISLAND.z1 - ISLAND.z0))
   ctx.fillStyle = '#ffe9b8' // plaj kumu
-  ctx.fillRect(X(-14), Z(30), len(28), len(20))
+  ctx.beginPath()
+  ctx.arc(X(BEACH.x), Z(BEACH.z), len(BEACH.r + 3), 0, Math.PI * 2)
+  ctx.fill()
   ctx.fillStyle = '#bfeaf5' // gölet
   ctx.beginPath()
   ctx.arc(X(-30), Z(30), len(7), 0, Math.PI * 2)
