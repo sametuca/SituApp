@@ -152,30 +152,41 @@ function findEyes(slug, mesh) {
 const GLSL = /* glsl */ `
 uniform vec3 uHairRef[${HAIR_N}];
 uniform vec3 uOutRef[${OUT_N}];
+uniform vec3 uSkinRef[3];
 uniform vec3 uHairTo; uniform vec3 uOutTo; uniform vec3 uEyeTo;
 uniform float uUseHair; uniform float uUseOut; uniform float uUseEye;
 uniform vec3 uEyeC0; uniform vec3 uEyeC1; uniform float uEyeR;
-varying float vHead; varying vec3 vBind;
+varying float vHead; varying float vHand; varying vec3 vBind;
 float lookLum(vec3 c){ return dot(c, vec3(0.299,0.587,0.114)); }
 vec3 lookRecolor(vec3 col, vec3 ref, vec3 to, float w){
-  float k = clamp(lookLum(col)/max(lookLum(ref),0.04), 0.0, 1.6);
+  float k = clamp(mix(1.0, lookLum(col)/max(lookLum(ref),0.04), 0.4), 0.72, 1.18); // gölgeyi koru, kontrastı yumuşat (pastel kalsın)
   vec3 t = clamp(to*k, 0.0, 1.0);
   return mix(col, t, w);
 }
 vec3 lookApply(vec3 col){
   vec3 res = col;
-  float tol = 0.12;
-  if (uUseHair > 0.5) {
-    float best = 9.0; vec3 bref = uHairRef[0];
-    for (int i=0;i<${HAIR_N};i++){ float d = distance(pow(col, vec3(0.4545)), uHairRef[i]); if (d<best){best=d;bref=uHairRef[i];} }
-    float w = (1.0 - smoothstep(tol*0.6, tol, best));
-    res = lookRecolor(res, pow(bref, vec3(2.2)), uHairTo, w);
+  float tol = 0.15;
+  vec3 sc = pow(col, vec3(0.4545));
+  float hairW = 0.0; vec3 hairRef = uHairRef[0];
+  {
+    float best = 9.0;
+    for (int i=0;i<${HAIR_N};i++){ float d = distance(sc, uHairRef[i]); if (d<best){best=d;hairRef=uHairRef[i];} }
+    float skinH = 9.0;
+    for (int i=0;i<3;i++) skinH = min(skinH, distance(sc, uSkinRef[i]));
+    hairW = (1.0 - smoothstep(tol*0.7, tol*1.25, best)) * smoothstep(-0.07, -0.03, skinH - best); // ten saça yakınsa saç sayılmaz (yüz boyanmasın)
   }
-  if (uUseOut > 0.5 && vHead < 0.8) {
-    float best = 9.0; vec3 bref = uOutRef[0];
-    for (int i=0;i<${OUT_N};i++){ float d = distance(pow(col, vec3(0.4545)), uOutRef[i]); if (d<best){best=d;bref=uOutRef[i];} }
-    float w = (1.0 - smoothstep(tol*0.6, tol, best)) * (1.0 - smoothstep(0.4, 0.8, vHead));
-    res = lookRecolor(res, pow(bref, vec3(2.2)), uOutTo, w);
+  if (uUseHair > 0.5 && hairW > 0.0) res = lookRecolor(res, pow(hairRef, vec3(2.2)), uHairTo, hairW);
+  if (uUseOut > 0.5 && vHead < 0.8 && vHand < 0.4) {
+    // gövdede ten ve siyah çizgiler dışındaki HER yama kıyafettir (baskı/desen parçaları dahil); saç renkleri hariç
+    float skinD = 9.0;
+    for (int i=0;i<3;i++) skinD = min(skinD, distance(sc, uSkinRef[i]));
+    float nonSkin = smoothstep(0.07, 0.13, skinD);
+    float notDark = smoothstep(0.05, 0.13, lookLum(sc));
+    float w = nonSkin * notDark * (1.0 - hairW);
+    vec3 ref = vec3(0.0); float bd = 9.0;
+    for (int i=0;i<${OUT_N};i++){ float d = distance(sc, uOutRef[i]); if (d<bd){bd=d;ref=uOutRef[i];} }
+    if (bd > 0.3) ref = sc; // bilinmeyen yama: kendi parlaklığına göre
+    res = lookRecolor(res, pow(ref, vec3(2.2)), uOutTo, w);
   }
   if (uUseEye > 0.5 && vHead > 0.9) {
     float d = min(distance(vBind, uEyeC0), distance(vBind, uEyeC1));
@@ -204,9 +215,10 @@ export function applyLook(model, slug, look) {
     const toVec = (arr, n) => Array.from({ length: n }, (_, i) => new Vector3(...(arr[Math.min(i, arr.length - 1)] ?? [-9, -9, -9]).map((v) => v / 255)))
     const mat = o.material.clone() // paylaşılan GLB malzemesini bozma
     o.material = mat
-    const lin = (hex) => new Color(hex).convertSRGBToLinear()
+    const lin = (hex) => new Color(hex) // ColorManagement zaten sRGB→doğrusal çevirir
     const u = {
       uHairRef: { value: toVec(refs.hair, HAIR_N) },
+      uSkinRef: { value: toVec(refs.skin, 3) },
       uOutRef: { value: toVec(refs.outfit, OUT_N) },
       uHairTo: { value: useH ? lin(HAIR_COLORS[look.h]) : new Color() },
       uOutTo: { value: useO ? lin(OUTFIT_COLORS[look.o]) : new Color() },
@@ -222,7 +234,7 @@ export function applyLook(model, slug, look) {
     mat.onBeforeCompile = (shader, renderer) => {
       prev?.call(mat, shader, renderer)
       Object.assign(shader.uniforms, u)
-      shader.vertexShader = 'attribute float aHead; varying float vHead; varying vec3 vBind;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vHead = aHead; vBind = position;')
+      shader.vertexShader = 'attribute float aHead; attribute float aHand; varying float vHead; varying float vHand; varying vec3 vBind;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vHead = aHead; vHand = aHand; vBind = position;')
       shader.fragmentShader = GLSL + shader.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n  diffuseColor.rgb = lookApply(diffuseColor.rgb);')
     }
     mat.customProgramCacheKey = () => 'look'
