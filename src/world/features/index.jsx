@@ -25,9 +25,11 @@ import { useAudio } from './audio'
 import { useSky } from './sky'
 import { useVenues } from './venues'
 import { useCollect } from './collect'
-import { useNeighborhood } from './neighborhood'
 import { useEconomy } from './economy'
 import { useDj } from './dj'
+import { useHousing } from './housing'
+import { useBike } from './bike'
+import { useRental } from './rental'
 
 function SettingsPanel({ sections, onClose }) {
   return (
@@ -42,7 +44,7 @@ function SettingsPanel({ sections, onClose }) {
 }
 
 export function useFeatures(ctx) {
-  const parts = [useModeration(ctx), useGames(ctx), useFriends(ctx), useProfile(ctx), useProgress(ctx), useMedia(ctx), useTogether(ctx), useCosmetics(ctx), useNpcs(ctx), useAudio(ctx), useSky(ctx), useVenues(ctx), useCollect(ctx), useNeighborhood(ctx), useEconomy(ctx), useDj(ctx)]
+  const parts = [useModeration(ctx), useGames(ctx), useFriends(ctx), useProfile(ctx), useProgress(ctx), useMedia(ctx), useTogether(ctx), useCosmetics(ctx), useNpcs(ctx), useAudio(ctx), useSky(ctx), useVenues(ctx), useCollect(ctx), useEconomy(ctx), useDj(ctx), useHousing(ctx), useBike(ctx), useRental(ctx)]
 
   const peerActions = (peer) => parts.flatMap((p) => p.peerActions?.(peer) ?? [])
   const peerHeader = (peer) => parts.map((p, i) => (p.peerHeader ? <div key={i}>{p.peerHeader(peer)}</div> : null))

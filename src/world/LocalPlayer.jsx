@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { MathUtils, Vector3 } from 'three'
 import AvatarRig from './AvatarRig'
 import { resolveCollisions } from './layout'
 import { together } from './features/togetherStore'
+import { BIKE_POSE, BIKE_SPEED, bike, useRiding } from './bikeStore'
+import BikeModel from './Bike'
 
 const WALK_SPEED = 3.2 // m/sn
 const RUN_SPEED = 6.5
@@ -23,7 +25,7 @@ const isTyping = (e) => e.target instanceof HTMLElement && (e.target.tagName ===
  * focusRef.current = { x, z, ry, anim, teleport } paylaşılan durumdur (HUD, güneş ışığı, minimap okur).
  * focusRef.current.teleport = [x, z, ry?] atanırsa bir sonraki karede oyuncu oraya ışınlanır.
  */
-export default function LocalPlayer({ slug, start, focusRef, controlsRef, joystickRef, onMove, collide = resolveCollisions, children }) {
+export default function LocalPlayer({ slug, start, focusRef, controlsRef, joystickRef, onMove, collide = resolveCollisions, camOffset = [4.2, 8], children }) {
   const camera = useThree((s) => s.camera)
   const group = useRef()
   const keys = useRef({})
@@ -31,6 +33,9 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
   const animRef = useRef('idle')
   const v = useMemo(() => ({ fwd: new Vector3(), right: new Vector3(), dir: new Vector3(), up: new Vector3(0, 1, 0) }), [])
   const placed = useRef(false)
+  const riding = useRiding()
+  // duruş: oturma/dans (together) ya da bisiklet; AvatarRig her karede .current okur
+  const pose = useMemo(() => ({ get current() { return bike.on ? BIKE_POSE : together.self.current } }), [])
 
   useEffect(() => {
     const down = (e) => {
@@ -73,7 +78,7 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
     if (!placed.current) {
       placed.current = true
       g.position.set(start.x, 0, start.z)
-      camera.position.set(start.x, 4.2, start.z + 8)
+      camera.position.set(start.x, camOffset[0], start.z + camOffset[1])
       controlsRef.current?.target.set(start.x, 0.8, start.z)
     }
     if (f.teleport) {
@@ -100,6 +105,7 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
 
     // oturuyor / dans ediyor: hareket girdisi duruşu bitirir (sunucuya haber verilir), aksi halde konum kilitli
     if (together.self.current && moving) together.onBreak?.(true)
+    if (bike.on && together.self.current) bike.set(false) // oturunca/dans edince bisikletten in
     const posed = together.self.current
     if (posed) {
       moving = false
@@ -115,7 +121,7 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
       right.crossVectors(fwd, up)
       dir.copy(fwd).multiplyScalar(fwdIn).addScaledVector(right, rightIn).normalize()
 
-      const speed = (running ? RUN_SPEED : WALK_SPEED) * analog * Math.min(dt, 0.1)
+      const speed = (bike.on ? BIKE_SPEED : running ? RUN_SPEED : WALK_SPEED) * (bike.on ? Math.max(0.6, analog) : analog) * Math.min(dt, 0.1)
       const [nx, nz] = collide(g.position.x + dir.x * speed, g.position.z + dir.z * speed)
       const dx = nx - g.position.x
       const dz = nz - g.position.z
@@ -131,10 +137,10 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
       g.rotation.y += diff * Math.min(1, dt * 12)
     }
 
-    const next = moving ? (running ? 'run' : 'walk') : 'idle'
+    const next = bike.on ? 'ride' : moving ? (running ? 'run' : 'walk') : 'idle'
     if (next !== animRef.current) {
       animRef.current = next
-      setAnim(next)
+      setAnim(next === 'ride' ? 'idle' : next) // bisiklette klip idle, duruş procedural
     }
     f.x = g.position.x
     f.z = g.position.z
@@ -145,7 +151,12 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
 
   return (
     <group ref={group}>
-      <AvatarRig slug={slug} anim={anim} pose={together.self} cosId="self" />
+      <AvatarRig slug={slug} anim={anim} pose={pose} cosId="self" />
+      {riding && (
+        <Suspense fallback={null}>
+          <BikeModel />
+        </Suspense>
+      )}
       {children}
     </group>
   )

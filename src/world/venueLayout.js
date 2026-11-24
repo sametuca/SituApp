@@ -32,6 +32,7 @@ const TYPE_THEME = {
   studio: { floor: ['#f1ecf8', '#e6def2'] },
   shop: { floor: ['#fdf0cf', '#f8e2a8'] },
   guide: { floor: ['#e7f1ff', '#d6e6fb'] },
+  airport: { floor: ['#eef2f8', '#dfe6f1'] },
 }
 
 /** Mekânın renk teması (bina renklerinden türer). */
@@ -427,6 +428,33 @@ function build(v) {
       plant(-5.3, -4.2)
       plant(5.3, -4.2)
       windows([0.4])
+      break
+    }
+    // ================= havalimanı çıkış salonu (başlangıç odası) =================
+    case 'airport': {
+      sign()
+      // bagaj bandı (batı): bant + valizler (küçük, fark edilmeyen parçalar)
+      add({ t: 'box', x: -3.6, y: 0.22, z: -3.2, w: 3.6, h: 0.44, d: 1.0, c: '#b8c4d8' }, { x: -3.6, z: -3.2, hw: 1.8, hd: 0.5, ry: 0 })
+      add({ t: 'box', x: -3.6, y: 0.47, z: -3.2, w: 3.4, h: 0.06, d: 0.8, c: '#6f7d96', shadow: false })
+      ;[[-4.7, '#ff9fc6'], [-3.7, '#7fcdf3'], [-2.6, '#ffd35e']].forEach(([x, c]) => add({ t: 'box', x, y: 0.78, z: -3.2, w: 0.55, h: 0.55, d: 0.34, c }))
+      add({ t: 'board', x: -3.6, y: 2.4, z: -hd + 0.04, ry: 0, w: 2.6, h: 0.5, lines: ['🧳 Bagaj Teslim'], bg: '#fffaf2', fg: '#4a3b5c', frame: th.accent })
+      // varış panosu (orta)
+      add({ t: 'board', x: -0.2, y: 2.05, z: -hd + 0.04, ry: 0, w: 2.6, h: 1.6, lines: ['✈️ Varışlar', 'İstanbul · İndi', 'Ankara · İndi', 'İzmir · Bekleniyor'], bg: '#1f2a44', fg: '#ffe58a', frame: th.accent })
+      // kiralama (doğu): tezgâh, tabela, bisikletler, arabalar (kiralanamaz)
+      counter(3.3, 3.2)
+      add({ t: 'board', x: 3.9, y: 2.5, z: -hd + 0.04, ry: 0, w: 2.2, h: 0.5, lines: ['🔑 Kiralama'], bg: '#fffaf2', fg: '#4a3b5c', frame: th.accent })
+      ;[-4.2, -3.4, -2.6].forEach((z) => add({ t: 'glb', m: 'bike', x: 1.3, z, s: 1.5, ry: Math.PI / 2 }, { x: 1.3, z, hw: 0.28, hd: 0.7, ry: 0 }))
+      add({ t: 'glb', m: 'car', x: 4.7, z: 0.5, s: 2.0, ry: -Math.PI / 2 }, { x: 4.7, z: 0.5, hw: 0.8, hd: 1.0, ry: 0 })
+      add({ t: 'glb', m: 'car', x: 4.7, z: 3.0, s: 2.0, ry: -Math.PI / 2 }, { x: 4.7, z: 3.0, hw: 0.8, hd: 1.0, ry: 0 })
+      add({ t: 'board', x: 5.92, y: 1.6, z: 1.8, ry: -Math.PI / 2, w: 1.6, h: 0.9, lines: ['🚗 Araba', '12.000 🪙'], bg: '#fffaf2', fg: '#4a3b5c', frame: th.accent })
+      // bekleme koltukları ve bitkiler
+      sofaAt('sofaA', -3.9, 1.0, 0, 2.2, '#7fcdf3')
+      sofaAt('sofaB', -3.9, 3.0, 0, 2.2, th.accent)
+      add({ t: 'rug', x: -0.3, z: 1.8, w: 3.0, d: 3.0, c: mix(th.accent, '#ffffff', 0.6), round: true })
+      plant(-5.3, -4.2)
+      plant(-1.9, 4.1)
+      plant(5.3, 4.2)
+      windows([-0.6, 2.4])
       break
     }
     default:

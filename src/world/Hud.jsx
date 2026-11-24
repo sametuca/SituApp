@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ToyButton } from '../components/ui'
 import { BUILDINGS, GUIDE, ROAD_HALF, ZONES } from './layout'
-import { PLOTS, PLOT_D, PLOT_W, STREET_X, STREET_HALF, occupiedPlots } from './neighborhood'
 
 const glass = 'border-2 border-white bg-white/75 shadow-soft backdrop-blur-md'
 
@@ -127,16 +126,6 @@ export function Minimap({ focusRef, remotes, compact }) {
         if (b.gazebo) continue
         ctx.fillStyle = b.roof
         ctx.fillRect(toMap(b.x - b.w / 2), toMap(b.z - b.d / 2), (b.w / (RANGE * 2)) * MAP, (b.d / (RANGE * 2)) * MAP)
-      }
-      // Konut Mahallesi: sokak + parseller (sahipli = pembe çatı, boş = gri)
-      ctx.fillStyle = '#f7f0fb'
-      for (const [z0, z1] of [[-47, -14], [14, 47]]) ctx.fillRect(toMap(STREET_X - STREET_HALF), toMap(z0), toMap(STREET_X + STREET_HALF) - toMap(STREET_X - STREET_HALF), toMap(z1) - toMap(z0))
-      for (const pl of PLOTS) {
-        const side = pl.facing === 'e' || pl.facing === 'w'
-        const w = side ? PLOT_D : PLOT_W
-        const d = side ? PLOT_W : PLOT_D
-        ctx.fillStyle = occupiedPlots.has(pl.id) ? '#ffb6d3' : '#dcd6e6'
-        ctx.fillRect(toMap(pl.x - w / 2 + 0.4), toMap(pl.z - d / 2 + 0.4), ((w - 0.8) / (RANGE * 2)) * MAP, ((d - 0.8) / (RANGE * 2)) * MAP)
       }
       ctx.fillStyle = '#ff7eb3'
       ctx.beginPath()
@@ -359,37 +348,68 @@ export function HelpModal({ onClose }) {
   )
 }
 
-// ---------- ilk girişte tek, küçük kamera ipucu ----------
-/** Ekranı kalabalıklaştırmamak için tek kutu: kamerayı çevirmeyi gösterir (mobil/masaüstü ayrı), ilk sürüklemede ya da ✕ ile kapanır. */
-export function CameraHint({ touch, ready = true, onDone }) {
+// ---------- ilk girişte tek, küçük yönlendirme kartı ----------
+/**
+ * Ekranı kalabalıklaştırmamak için tek kutu, sırayla 3 adım (her biri kendiliğinden geçer):
+ *  1) havalimanında: bisiklet kirala  2) çıkış kapısından şehre çık  3) şehirde: B ile bin + kamerayı çevirme (mobil/masaüstü ayrı).
+ * Bittiğinde (ya da ✕ ile) onDone çağrılır; tekrar gösterilmez.
+ */
+export function StartGuide({ touch, ready = true, inAirport, riding, onDone }) {
+  const [stage, setStage] = useState('rent') // rent | exit | camera
   const [shown, setShown] = useState(false)
+
   useEffect(() => {
     if (!ready) return
-    const t1 = setTimeout(() => setShown(true), 1500)
-    const t2 = setTimeout(onDone, 14000)
-    let moved = 0
-    const onMove = (e) => {
-      if (e.pointerType === 'mouse' ? e.buttons === 0 : false) return
-      if (++moved > 12) onDone()
+    const t = setTimeout(() => setShown(true), 1500)
+    return () => clearTimeout(t)
+  }, [ready])
+
+  useEffect(() => {
+    if (!ready || !shown) return
+    if (!inAirport && stage !== 'camera') {
+      setStage('camera')
+      return
     }
-    window.addEventListener('pointermove', onMove)
-    return () => {
-      clearTimeout(t1)
-      clearTimeout(t2)
-      window.removeEventListener('pointermove', onMove)
+    if (stage === 'rent') {
+      const t = setTimeout(() => setStage('exit'), 12000)
+      const onRent = () => setStage('exit')
+      window.addEventListener('situapp:rented', onRent)
+      return () => {
+        clearTimeout(t)
+        window.removeEventListener('situapp:rented', onRent)
+      }
     }
-  }, [onDone, ready])
+    if (stage === 'camera') {
+      const t = setTimeout(onDone, 16000)
+      let moved = 0
+      const onMove = (e) => {
+        if (e.pointerType === 'mouse' && e.buttons === 0) return
+        if (++moved > 12) onDone()
+      }
+      window.addEventListener('pointermove', onMove)
+      return () => {
+        clearTimeout(t)
+        window.removeEventListener('pointermove', onMove)
+      }
+    }
+  }, [ready, shown, stage, inAirport, onDone])
+
   if (!shown) return null
+  const text =
+    stage === 'rent' ? (
+      <>Sağdaki kartta <b className="text-[#ff7eb3]">bisiklet kirala</b> (20 🪙). Arabalar şimdilik göz doldurmalık 😄</>
+    ) : stage === 'exit' ? (
+      <>Karşıdaki kapının önüne gelip <b className="text-[#ff7eb3]">{touch ? '“Çık”' : 'E'}</b> ile şehre çık. Şehirde {touch ? 'soldaki 🚲 düğmesiyle' : <><b className="text-[#ff7eb3]">B</b> ile</>} bisiklete binersin.</>
+    ) : touch ? (
+      <>Kamerayı çevirmek için ekranda parmağını <b className="text-[#ff7eb3]">sağa-sola kaydır</b>. İki parmakla yakınlaştır.</>
+    ) : (
+      <>Kamerayı çevirmek için sol tuşa basıp <b className="text-[#ff7eb3]">sağa-sola sürükle</b>. Tekerlekle yakınlaştır.</>
+    )
+  const icon = stage === 'rent' ? '🔑' : stage === 'exit' ? '🚪' : touch ? '👆' : '🎥'
   return (
-    <div className={`pointer-events-auto absolute left-1/2 top-[5.6rem] z-10 flex w-[min(20rem,calc(100vw-1.5rem))] -translate-x-1/2 animate-pop items-center gap-3 rounded-2xl py-2 pl-3 pr-8 ${glass}`} role="status">
-      <span className="text-2xl">{touch ? '👆' : '🎥'}</span>
-      <p className="text-xs font-extrabold leading-snug text-[#4a3b5c]">
-        {touch ? (
-          <>Kamerayı çevirmek için ekranda parmağını <b className="text-[#ff7eb3]">sağa-sola kaydır</b>. İki parmakla yakınlaştır.</>
-        ) : (
-          <>Kamerayı çevirmek için sol tuşa basıp <b className="text-[#ff7eb3]">sağa-sola sürükle</b>. Tekerlekle yakınlaştır.</>
-        )}
-      </p>
+    <div className={`pointer-events-auto absolute left-1/2 top-[5.6rem] z-10 flex w-[min(20rem,calc(100vw-1.5rem))] -translate-x-1/2 animate-pop items-center gap-3 rounded-2xl py-2 pl-3 pr-8 ${glass}`} role="status" key={stage}>
+      <span className="text-2xl">{icon}</span>
+      <p className="text-xs font-extrabold leading-snug text-[#4a3b5c]">{text}</p>
       <button onClick={onDone} aria-label="İpucunu kapat" className="absolute right-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full text-[10px] font-black text-[#8a7a9c] hover:bg-[#ffd6e8]/70">
         ✕
       </button>

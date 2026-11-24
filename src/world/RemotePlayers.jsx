@@ -1,10 +1,12 @@
-import { memo, useRef, useState } from 'react'
+import { memo, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import { MathUtils } from 'three'
 import AvatarRig, { AVATAR_HEIGHT } from './AvatarRig'
 import { GUIDE } from './layout'
 import { together } from './features/togetherStore'
+import { BIKE_POSE } from './bikeStore'
+import BikeModel from './Bike'
 
 /** Karakterin üstünde isim etiketi, konuşma balonu, uçan emoji tepkisi ve (fısıldıyorsa) 🤫. */
 function Tag({ name, bubble: rawBubble, accent, reaction, whisper }) {
@@ -63,6 +65,7 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
   const animRef = useRef('idle')
   const bubbleRef = useRef(null)
   const { reaction, whisper } = useLiveFlags(id, reactions, whispering)
+  const pose = useMemo(() => ({ get current() { return together.poses.get(id) ?? (remotes.current.get(id)?.anim === 'ride' ? BIKE_POSE : null) } }), [id, remotes])
 
   useFrame((_, dt) => {
     const r = remotes.current.get(id)
@@ -98,7 +101,12 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
       onPointerOver={() => onPick && (document.body.style.cursor = 'pointer')}
       onPointerOut={() => (document.body.style.cursor = '')}
     >
-      <AvatarRig slug={avatar} anim={anim} pose={together.ref(id)} cosId={id} />
+      <AvatarRig slug={avatar} anim={anim === 'ride' ? 'idle' : anim} pose={pose} cosId={id} />
+      {anim === 'ride' && (
+        <Suspense fallback={null}>
+          <BikeModel />
+        </Suspense>
+      )}
       <Tag name={name} bubble={bubble} reaction={reaction} whisper={whisper} />
     </group>
   )
@@ -114,6 +122,11 @@ export function SelfTag({ name, bubbles, selfId, reactions }) {
   const ref = useRef(null)
   const [reaction, setReaction] = useState(null)
   const reactKey = useRef(null)
+  const [ready, setReady] = useState(false) // drei <Html> ilk çizim turunda bağlanmasın (React 19 root uyarısı)
+  useEffect(() => {
+    const t = setTimeout(() => setReady(true), 800)
+    return () => clearTimeout(t)
+  }, [])
   useFrame(() => {
     const b = selfId.current ? bubbles.current.get(selfId.current) : null
     const liveBubble = b && b.until > Date.now() ? b : null
@@ -128,7 +141,7 @@ export function SelfTag({ name, bubbles, selfId, reactions }) {
       setReaction(live)
     }
   })
-  return <Tag name={name} bubble={bubble} accent="bg-[#5fc0ea]" reaction={reaction} />
+  return ready ? <Tag name={name} bubble={bubble} accent="bg-[#5fc0ea]" reaction={reaction} /> : null
 }
 
 /** Lobideki Rehber (NPC): yakına gelenlere ipucu balonu gösterir. */

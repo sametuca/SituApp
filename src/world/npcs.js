@@ -122,6 +122,7 @@ const CITY = [
 
 // ---- Mekân NPC'leri: venues.js anchor'larından ----
 const TYPE_TIPS = {
+  airport: ['Önce parka uğra, orası çok sakin 🌳', 'Bisikletle şehirde gezmek hem hızlı hem tatlı 🚲', 'Evin lobideki “Evim” binasında, ⚙️ menüsünden büyütebilirsin 🏡'],
   guide: ['Önce Kafe Sokağı’nı gez, sakin sohbetler orada başlıyor ☕', 'Haritayı sağ üstten açıp mekânlara ışınlanabilirsin 🗺️'],
   salon: ['Aksesuarlar gardıropta, kendine yakışanı seç 👗', 'Taç mı fiyonk mu? Bence ikisi de olur 👑'],
   studio: ['İki kişi poz verirse kare daha tatlı çıkar 📸', 'Dışarıdaki işaretli noktada da fotoğraf çekilir 😉'],

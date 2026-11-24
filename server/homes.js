@@ -6,7 +6,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as supa from './supa.js'
 import { FURNITURE_BY_ID } from '../src/world/furniture.js'
-import { HOME_ROOM } from '../src/world/layout.js'
+import { HOME_TIERS, MAX_TIER, clampTier } from '../src/world/homeTiers.js'
 import { GIFT_BY_ID, sanitizeDecor } from '../src/world/cosmeticsData.js'
 
 const DIR = process.env.SITUAPP_DATA_DIR || path.join(path.dirname(fileURLToPath(import.meta.url)), 'data')
@@ -62,9 +62,10 @@ export const setGiftResolver = (fn) => {
 
 export function sanitizeItems(list, key) {
   if (!Array.isArray(list)) return []
+  const room = HOME_TIERS[getTier(key)]
   const seen = new Set()
   const out = []
-  for (const i of list.slice(0, MAX_ITEMS)) {
+  for (const i of list.slice(0, room.max)) {
     if (!i || !(FURNITURE_BY_ID[i.id] || GIFT_BY_ID[i.id])) continue
     const uid = String(i.uid ?? '').replace(/[^a-zA-Z0-9]/g, '').slice(0, 16) || `f${out.length}${Date.now().toString(36)}`
     if (seen.has(uid)) continue
@@ -75,13 +76,21 @@ export function sanitizeItems(list, key) {
     out.push({
       uid,
       id: i.id,
-      x: +num(i.x, HOME_ROOM.hw).toFixed(2),
-      z: +num(i.z, HOME_ROOM.hd).toFixed(2),
+      x: +num(i.x, room.hw).toFixed(2),
+      z: +num(i.z, room.hd).toFixed(2),
       ry: ((quarter % 4) + 4) % 4 * (Math.PI / 2),
       ...(gift ? { from: gift.from } : {}),
     })
   }
   return out
+}
+
+// ---- ev kademesi (garaj → stüdyo → ev → villa); features/housing.js kullanır. Kaydı olmayan yeni ev 0 (garaj), tier'sız eski kayıt 1 ----
+export const getTier = (key) => (homes[key] ? clampTier(homes[key].tier ?? 1) : 0)
+export function setTier(key, ownerName, tier) {
+  homes[key] = { items: [], open: false, ...homes[key], owner: ownerName, tier: Math.min(MAX_TIER, clampTier(tier)) }
+  persist()
+  return homes[key].tier
 }
 
 export const homeExists = (key) => Boolean(homes[key])

@@ -1,0 +1,50 @@
+// Kiralama (Havalimanı çıkış salonu): bisiklet kiralanır, araba ASLA kiralanamaz (bakiye ne olursa olsun, hile yapılsa bile).
+//   istemci → sunucu: { t: 'rent', kind: 'bike' | 'car' }
+//   sunucu → istemci: { t: 'rental', kind: 'bike', until, n }  (kiralama başarılı)   welcome.bikeUntil
+// Sunucu otoriter: yalnızca havalimanı odasında kiralanır; bisikletsiz oyuncunun anim='ride' hareketi game.js'te idle'a çevrilir (me.bikeUntil).
+// Yeni oyuncuya bir kez başlangıç altını verilir (bisiklet için yeter, araba için yetmez).
+import { user, save } from '../store.js'
+
+export const RENT = {
+  bike: { price: 20, ms: 45 * 60 * 1000, name: 'Bisiklet' },
+  car: { price: 12000, name: 'Araba', available: false }, // available:false → hiçbir koşulda verilmez
+}
+export const STARTER_COINS = 100
+const AIRPORT_ROOM = 'venue:havalimani'
+
+export default function rental(ctx) {
+  const { send } = ctx
+  return {
+    onJoin(me) {
+      const u = user(me.key)
+      me.bikeUntil = u.stats.bikeUntil ?? 0
+      if (!u.stats.starter) {
+        u.stats.starter = 1
+        save()
+        ctx.addCoins?.(me, STARTER_COINS, 'hosgeldin')
+      }
+    },
+    welcome: (me) => ({ bikeUntil: me.bikeUntil ?? 0 }),
+    handlers: {
+      rent(me, msg) {
+        const now = Date.now()
+        if (now - (me.lastRent ?? 0) < 800) return
+        me.lastRent = now
+        if (me.room !== AIRPORT_ROOM) return send(me.ws, { t: 'info', text: '🔑 Kiralama tezgâhı Havalimanı’nda. /havalimanı yazarak gidebilirsin.' })
+        const kind = msg.kind
+        if (kind === 'car' || !RENT[kind]?.price || RENT[kind].available === false) {
+          return send(me.ws, { t: 'info', text: '🚗 Araba kiralamak için yeterli bakiyen yok. Önce bisikletle şehri gez 😄' })
+        }
+        const it = RENT[kind]
+        if (!ctx.spendCoins?.(me, it.price, 'kira')) return send(me.ws, { t: 'info', text: `🪙 ${it.name} için ${it.price} altın gerekiyor.` })
+        const base = Math.max(now, me.bikeUntil ?? 0)
+        me.bikeUntil = base + it.ms
+        user(me.key).stats.bikeUntil = me.bikeUntil
+        save()
+        send(me.ws, { t: 'rental', kind, until: me.bikeUntil })
+        send(me.ws, { t: 'info', text: `🚲 Bisiklet kiralandı! ${Math.round(it.ms / 60000)} dakika boyunca B tuşuyla binebilirsin.` })
+        ctx.emitEvent?.(me, 'rent', 1)
+      },
+    },
+  }
+}

@@ -48,7 +48,7 @@ function Toggle({ on, onClick }) {
   )
 }
 
-export function useSky({ net, touch, home, focusRef }) {
+export function useSky({ net, touch, home, venue, focusRef }) {
   const { on } = net
   const q = useMemo(() => params(), [])
   const urlHour = q.get('hour') != null && Number.isFinite(+q.get('hour')) ? ((+q.get('hour') % 24) + 24) % 24 : null
@@ -156,6 +156,6 @@ export function useSky({ net, touch, home, focusRef }) {
   )
 
   const reduced = eventOn && read(EVENT_FX_KEY, '1') !== '0'
-  const worldEffects = fxOn && !home ? <WeatherFx focusRef={focusRef} touch={touch} reduced={reduced} /> : null
+  const worldEffects = fxOn && !home && !venue ? <WeatherFx focusRef={focusRef} touch={touch} reduced={reduced} /> : null
   return { settingsSections, menuNodes, worldEffects }
 }

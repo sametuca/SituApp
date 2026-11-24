@@ -225,7 +225,7 @@ export const OUTDOOR = new Set(['lobby', 'jazz', 'park', 'beach', 'house'])
 /** Mekân türü (venues.js type) → sahne. */
 export const VENUE_SCENE = {
   cafe: 'jazz', bakery: 'jazz', dessert: 'jazz', icecream: 'pop', tea: 'jazz', books: 'lounge',
-  fastfood: 'pop', bar: 'lounge', club: 'house', arcade: 'arcade', salon: 'pop', studio: 'pop', shop: 'pop', guide: 'lobby',
+  fastfood: 'pop', bar: 'lounge', club: 'house', arcade: 'arcade', salon: 'pop', studio: 'pop', shop: 'pop', guide: 'lobby', airport: 'lobby',
 }
 /** Dış bölge kimliği (layout.js zoneAt) → sahne. */
 export const ZONE_SCENE = { lobby: 'lobby', cafe: 'jazz', club: 'house', park: 'park', beach: 'beach', residential: 'park', city: 'lobby' }

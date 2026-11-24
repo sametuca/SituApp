@@ -6,7 +6,6 @@ import { HOME_ROOM } from './layout'
 import { Heart } from './Gifts'
 import { WALL_COLORS } from './cosmeticsData'
 
-const { hw, hd } = HOME_ROOM
 
 // ---------- doku yardımcıları (canvas, önbellekli) ----------
 const baseCache = new Map()
@@ -71,6 +70,7 @@ export const wallHex = (id) => WALL_COLORS.find((c) => c.id === id)?.hex ?? WALL
 
 /** Odanın zemini: ahşap (tahta) / halı / fayans. floor tanımsızsa eski düz zemin. Dairesel halı yalnızca ahşap/eski zeminde. */
 export function DecorFloor({ floor }) {
+  const { hw, hd } = HOME_ROOM
   const tex = useMemo(() => {
     if (floor === 'wood') {
       const base = canvasTexture('wood', 256, 256, (g, W, H) => {
@@ -215,6 +215,7 @@ function LightString({ from, to, sag = 0.32, count = 14, ornament }) {
 
 /** "💗 Romantik ışık modu": sıcak loş ışıklar, ışık zinciri, kalp ve yıldız süsleri. */
 export function RomanticLights() {
+  const { hw, hd } = HOME_ROOM
   const y = 3.15
   return (
     <group>

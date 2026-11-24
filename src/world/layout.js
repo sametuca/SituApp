@@ -3,7 +3,6 @@
 // Sunucudaki WORLD_HALF (server/game.js) ile aynı olmalı.
 
 import { VENUE_BY_LABEL } from './venues.js'
-import { PLOT_COLLIDERS, RESIDENTIAL_RECTS, occupiedPlots } from './neighborhood.js'
 
 export const WORLD_HALF = 60
 export const PLAY_LIMIT = 46 // oyuncunun yürüyebildiği sınır
@@ -26,7 +25,6 @@ export const ZONES = [
   { id: 'club', name: 'Gece Kulübü', emoji: '🪩', desc: 'Müzik, dans ve enerji.', shape: 'rect', x0: 12, x1: 48, z0: -14, z1: 14, spawn: [24, 0] },
   { id: 'park', name: 'Park', emoji: '🌳', desc: 'Açık havada yürüyüş ve sohbet.', shape: 'rect', x0: -48, x1: -12, z0: -14, z1: 14, spawn: [-24, 0] },
   { id: 'beach', name: 'Plaj', emoji: '🏖️', desc: 'Gün batımı, deniz ve rahat sohbetler.', shape: 'rect', x0: -14, x1: 14, z0: 12, z1: 48, spawn: [0, 36] },
-  { id: 'residential', name: 'Konut Mahallesi', emoji: '🏘️', desc: 'Herkesin evi burada: kapıyı çal, bahçede sohbet et.', shape: 'rects', rects: RESIDENTIAL_RECTS, spawn: [-31, -17] },
 ]
 const FALLBACK_ZONE = { id: 'city', name: 'Şehir', emoji: '🏙️', desc: 'Sokaklarda dolaşıyorsun.' }
 
@@ -44,7 +42,6 @@ export const TELEPORTS = {
   kulup: 'club', 'kulüp': 'club', club: 'club',
   park: 'park',
   plaj: 'beach', beach: 'beach',
-  konut: 'residential', mahalle: 'residential', residential: 'residential',
 }
 
 export const SPAWN = { x: -22, z: 0 } // herkes parkta başlar
@@ -89,7 +86,7 @@ export const BUILDINGS = [
   b(41, -26, 8, 10, 9, 'blue', 's'),
   b(28, -41, 10, 8, 8, 'mint', 'w'),
   b(41, -41, 8, 8, 12, 'lilac', 'w'),
-  // Kuzeybatı ve güneybatı bloklar Konut Mahallesi'dir (neighborhood.js; Neighborhood.jsx çizer)
+  // Kuzeybatı/güneybatı bloklar boş: evler şehirde değil, herkesin kendi bağımsız odasında (homeTiers.js). Konut Mahallesi modülü kapalı.
   // Güneydoğu mahallesi
   b(28, 26, 10, 10, 8, 'lilac', 'n'),
   b(41, 26, 8, 10, 10, 'mint', 'n'),
@@ -209,7 +206,6 @@ export const COLLIDERS = [
     return { type: 'box', x: bd.x, z: bd.z, hw: (side ? bd.d : bd.w) / 2 + 0.15, hd: (side ? bd.w : bd.d) / 2 + 0.15 }
   }),
   ...PROPS.filter((pr) => pr.r > 0).map((pr) => ({ type: 'circle', x: pr.x, z: pr.z, r: pr.r })),
-  ...PLOT_COLLIDERS, // Konut Mahallesi: yalnızca sahipli parsellerde (occupiedPlots)
 ]
 
 export const PLAYER_RADIUS = 0.4
@@ -219,7 +215,6 @@ export function resolveCollisions(x, z) {
   x = Math.max(-PLAY_LIMIT, Math.min(PLAY_LIMIT, x))
   z = Math.max(-PLAY_LIMIT, Math.min(PLAY_LIMIT, z))
   for (const c of COLLIDERS) {
-    if (c.plot && !occupiedPlots.has(c.plot)) continue
     if (c.type === 'circle') {
       const dx = x - c.x
       const dz = z - c.z
@@ -275,7 +270,7 @@ export const HOME_ROOM = {
   spawn: [0, 3.0], // girince doğduğun nokta
   exit: { x: 0, z: 3.7, radius: 1.6 }, // kapının önü: "Dışarı çık"
 }
-export const HOME_ZONE = { id: 'home', name: 'Ev', emoji: '🏠', desc: 'Kendi küçük dünyan.' }
+export const HOME_ZONE = { id: 'home', name: 'Evim', emoji: '🏠', desc: 'Kendi küçük dünyan.' }
 
 /** Odada duvarlardan ve mobilyalardan (dönmüş kutular: { x, z, hw, hd, ry }) çıkar. */
 export function resolveRoom(x, z, colliders = []) {

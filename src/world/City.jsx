@@ -3,7 +3,6 @@ import { useFrame } from '@react-three/fiber'
 import { Html, RoundedBox } from '@react-three/drei'
 import { BLANKETS, BUILDINGS, GAZEBO, PROPS, ROAD_HALF } from './layout'
 import Prop from './Prop'
-import Neighborhood from './Neighborhood.jsx'
 import { Em } from '../components/emoji'
 import { SKY_MATS, skyLive } from './Sky'
 
@@ -246,7 +245,6 @@ export default function City({ focusRef }) {
       {BLANKETS.map((b, i) => (
         <Blanket key={i} b={b} />
       ))}
-      <Neighborhood focusRef={focusRef} />
     </group>
   )
 }

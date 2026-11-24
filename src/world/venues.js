@@ -4,11 +4,14 @@
 //
 // İç mekân koordinatları: orijin = oda merkezi, giriş kapısı güney duvarında (+z), kuzey (-z) arka duvar, avatar +z'ye bakar.
 // Oda boyutu hepsinde aynı: VENUE_ROOM. `npc`: mekânın sabit karakteri (konum x,z ve bakış ry; ry=0 → güneye/girişe bakar).
-// `type`: iç mekân şablonu → cafe | bakery | dessert | icecream | tea | books | fastfood | bar | club | arcade | salon | studio | shop | guide
+// `type`: iç mekân şablonu → airport | cafe | bakery | dessert | icecream | tea | books | fastfood | bar | club | arcade | salon | studio | shop | guide
 
 export const VENUE_ROOM = { hw: 6, hd: 5, wallH: 3.6, spawn: [0, 3.4], exit: { x: 0, z: 4.1, radius: 1.7 } }
 
 export const VENUES = [
+  // Başlangıç odası: herkes havalimanı çıkış salonunda doğar (şehirde kapısı yok; /havalimanı ile dönülür). Bisiklet kiralanır, araba kiralanamaz.
+  { id: 'havalimani', label: '✈️ Havalimanı', name: 'Havalimanı · Çıkış Salonu', emoji: '✈️', type: 'airport', desc: 'Hoş geldin! Bisiklet kirala, şehre çık.',
+    npc: { name: 'Kiralama Memuru Selin', avatar: 'zeynep', x: 3.3, z: -3.7, ry: 0, lines: ['Şehre hoş geldin! 🛬', 'Bisiklet 20 altın, şehri gezmenin en keyifli yolu 🚲', 'Arabalar çok değerli… şimdilik göz doldurabilirsin 😄', 'Çıkış kapısı karşıda, iyi eğlenceler ✈️'] } },
   { id: 'rehber', label: '🧭 Rehber Merkezi', name: 'Rehber Merkezi', emoji: '🧭', type: 'guide', desc: 'Yeni gelenlere yol gösterir.',
     npc: { name: 'Rehber Mira', avatar: 'mira', x: 0, z: -3.3, ry: 0, lines: ['Hoş geldin! Haritayı sağ üstte bulursun 🗺️', 'Kafe Sokağı sakin sohbetler, Kulüp enerji için ☕🪩', 'Birine yaklaşıp 💗’e basarsan jest gönderebilirsin.'] } },
   { id: 'kuafor', label: '💇 Kuaför & Stil', name: 'Kuaför & Stil', emoji: '💇', type: 'salon', desc: 'Yeni bir görünüm zamanı.',

@@ -12,7 +12,7 @@ const NAMES = {
 }
 
 // Oturan avatar ayakta olduğu yüksekliğin bu kadar altına iner (m). Koltuk yüksekliğine göre ayarlı.
-export const SIT_DROP = { bench: 0.2, chair: 0.2, lounger: 0.3, floor: 0.42 }
+export const SIT_DROP = { bench: 0.2, chair: 0.2, lounger: 0.3, floor: 0.42, bike: 0.2 }
 
 const q1 = new Quaternion()
 const q2 = new Quaternion()
@@ -73,6 +73,15 @@ export function applyPose(rig, pose, dt) {
       // şezlong: arkaya yaslan, bacaklar ileri uzanır
       turn(rig, bones.hips, AX, -1.0 * b)
       turn(rig, bones.head, AX, 0.7 * b)
+    } else if (rig.style === 'bike') {
+      // bisiklet: hafif öne eğik, bacaklar pedala doğru yarı bükük, kollar gidonda
+      turn(rig, bones.lUp, AX, -0.75 * b)
+      turn(rig, bones.rUp, AX, -0.75 * b)
+      turn(rig, bones.lLeg, AX, 0.85 * b)
+      turn(rig, bones.rLeg, AX, 0.85 * b)
+      turn(rig, bones.spine, AX, 0.18 * b)
+      turn(rig, bones.lArm, AX, -0.9 * b)
+      turn(rig, bones.rArm, AX, -0.9 * b)
     } else {
       turn(rig, bones.lUp, AX, -1.45 * b)
       turn(rig, bones.rUp, AX, -1.45 * b)

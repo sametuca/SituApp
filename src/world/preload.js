@@ -15,8 +15,6 @@ const VENUE_ITEMS = [
 const COLLECT = ['star', 'heartstone', 'flower', 'balloon', 'shell', 'chest'].map((n) => `/models/collectibles/${n}.glb`)
 const PETS = ['cat', 'bunny', 'chick'].map((n) => `/models/pets/pet-${n}.glb`)
 const GIFTS = ['bear', 'heartbox', 'roses', 'choco'].map((n) => `/models/gifts/gift-${n}.glb`)
-const HOMES = ['cottage', 'tower', 'bungalow', 'heart'].map((n) => `/models/neighborhood/house-${n}.glb`)
-const GARDEN = ['flowerbed', 'lantern', 'mailbox'].map((n) => `/models/neighborhood/garden-${n}.glb`)
 
 const done = new Set()
 const load = (urls) =>
@@ -35,7 +33,7 @@ export function preloadCritical(slug) {
 }
 
 export function preloadLater() {
-  const run = () => load([...COLLECT, ...AVATARS.map((a) => `/models/avatars/${a}.glb`), ...PETS, ...VENUE_ITEMS, ...GIFTS, ...GARDEN, ...HOMES, ...FURNITURE.map((f) => furnitureUrl(f.id))])
+  const run = () => load([...COLLECT, ...AVATARS.map((a) => `/models/avatars/${a}.glb`), ...PETS, ...VENUE_ITEMS, ...GIFTS, ...FURNITURE.map((f) => furnitureUrl(f.id))])
   if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 4000 })
   else setTimeout(run, 1500)
 }

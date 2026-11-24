@@ -22,6 +22,15 @@ export default function economy(ctx) {
     return u.stats.coins
   }
 
+  /** Altın harcar; yetmezse false döner (bakiye değişmez). */
+  ctx.spendCoins = (who, amount, why = '') => {
+    const n = Math.trunc(amount)
+    if (!who?.key || !Number.isFinite(n) || n < 0) return false
+    if (coinsOf(who.key) < n) return false
+    if (n > 0) ctx.addCoins(who, -n, why)
+    return true
+  }
+
   return {
     welcome: (me) => ({ coins: coinsOf(me.key) }),
     handlers: {

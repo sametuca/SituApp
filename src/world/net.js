@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { authService } from '../lib/auth'
 import { photoStore } from './photoStore'
 
-const ANIMS = ['idle', 'walk', 'run']
+const ANIMS = ['idle', 'walk', 'run', 'ride'] // ride: bisiklette (sunucudaki ANIMS ile aynı sıra)
 const SEND_INTERVAL_MS = 100
 const BUBBLE_MS = 6000
 const REACT_MS = 2600
@@ -20,7 +20,7 @@ const wsUrl = () =>
  *   bubbles: Map<id, { text, until }>   (konuşma balonları)
  * roster (id listesi) yalnızca biri girip çıkınca değişir.
  */
-export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvited, onRoom, onGesture, onMatch }) {
+export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvited, onRoom, onGesture, onMatch, startRoom = null }) {
   const [status, setStatus] = useState('connecting') // connecting | online | offline | kicked (aynı hesap başka yerde açıldı) | auth (oturum geçersiz)
   const [online, setOnline] = useState(1)
   const [roster, setRoster] = useState([])
@@ -31,10 +31,11 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
   const [dnd, setDndState] = useState(false) // rahatsız etme modum
   const blockedKeys = useRef(new Set())
   const listeners = useRef(new Map()) // özellik modülleri için: mesaj tipi → Set<fn>
-  const [visit, setVisit] = useState(null) // başkasının evindeyken: { owner, ownerName, items }
+  const [visit, setVisit] = useState(null) // başkasının evindeyken: { owner, ownerName, items, tier }
+  const [homeTier, setHomeTier] = useState(null) // kendi evimin kademesi (homeTiers.js); sunucu welcome/home_tier ile verir
   const [homeSync, setHomeSync] = useState(null) // bağlanınca sunucudaki kendi evim: { items | null, open, n }
   const roomRef = useRef('city')
-  const wantRoom = useRef(null) // yeniden bağlanınca dönülecek oda isteği
+  const wantRoom = useRef(startRoom) // yeniden bağlanınca (ve ilk bağlantıda: havalimanında başla) gidilecek oda isteği, örn. { to: 'venue', id }
   const remotes = useRef(new Map())
   const bubbles = useRef(new Map())
   const reactions = useRef(new Map()) // id → { e, key, until }: kafanın üstünde uçan emoji
@@ -123,6 +124,7 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
             remotes.current.clear()
             m.players.forEach(addRemote)
             setHomeKey(m.home)
+            setHomeTier(m.homeTier ?? 1)
             homeKeyRef.current = m.home
             setHomeSync((h) => ({ items: m.homeItems, open: m.homeOpen, n: (h?.n ?? 0) + 1 }))
             setSpawn({ x: m.x, z: m.z })
@@ -137,7 +139,7 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
           case 'room':
             roomRef.current = m.room
             setRoom(m.room)
-            setVisit(m.owner && m.owner !== homeKeyRef.current ? { owner: m.owner, ownerName: m.ownerName, items: m.items ?? [] } : null)
+            setVisit(m.owner && m.owner !== homeKeyRef.current ? { owner: m.owner, ownerName: m.ownerName, items: m.items ?? [], tier: m.tier ?? 1 } : null)
             remotes.current.clear()
             bubbles.current.clear()
             reactions.current.clear()
@@ -150,6 +152,10 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
           case 'home_items':
             // bulunduğum evin sahibi düzeni değiştirdi
             setVisit((v) => (v && v.owner === m.owner ? { ...v, items: m.items } : v))
+            break
+          case 'home_tier':
+            if (m.owner === homeKeyRef.current) setHomeTier(m.tier)
+            setVisit((v) => (v && v.owner === m.owner ? { ...v, tier: m.tier } : v))
             break
           case 'invited':
             onInvitedRef.current?.(m)
@@ -313,5 +319,5 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
   /** Bir oyuncuyu evine davet et: { to: id } ya da { name }. */
   const invite = useCallback((who) => send({ t: 'invite', ...who }), [send])
 
-  return { on, send, blocked, dnd, block, unblock, report, setDnd, status, online, roster, spawn, room, homeKey, visit, homeSync, saveHome, setHomeOpen, invite, sendReact, sendWhisper, sendGesture, sendTyping, remotes, bubbles, reactions, whispering, typing, selfId, sendMove, sendChat, enterRoom, feedMax: FEED_MAX }
+  return { on, send, blocked, dnd, block, unblock, report, setDnd, status, online, roster, spawn, room, homeKey, homeTier, visit, homeSync, saveHome, setHomeOpen, invite, sendReact, sendWhisper, sendGesture, sendTyping, remotes, bubbles, reactions, whispering, typing, selfId, sendMove, sendChat, enterRoom, feedMax: FEED_MAX }
 }

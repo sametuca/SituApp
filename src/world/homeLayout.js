@@ -5,12 +5,12 @@ import { FURNITURE_BY_ID } from './furniture'
 import { GIFT_BY_ID } from './cosmeticsData'
 import { HOME_ROOM } from './layout'
 
-export const MAX_ITEMS = 40
+export const MAX_ITEMS = 40 // en büyük kademe; asıl sınır homeTiers.js max
 export const GRID = 0.25
 const SHRINK = 0.92 // yürünebilir ayak izi, modelin kutusundan biraz küçük (yuvarlak köşeler)
 const WALL_GAP = 0.1
 // Kapının önü her zaman boş kalır (içeri girince mobilyaya sıkışma olmasın)
-const DOOR_KEEP = { x: 0, z: HOME_ROOM.hd - 0.9, hw: 1.5, hd: 1.0 }
+const doorKeep = () => ({ x: 0, z: HOME_ROOM.hd - 0.9, hw: 1.5, hd: 1.0 })
 
 /** Mobilyanın dönmemiş ayak izi (genişlik x derinlik, metre). */
 export function footprint(id) {
@@ -59,7 +59,8 @@ export function isValid(items, uid) {
   const ez = b.hw * s + b.hd * c
   if (b.x - ex < -HOME_ROOM.hw + WALL_GAP || b.x + ex > HOME_ROOM.hw - WALL_GAP) return false
   if (b.z - ez < -HOME_ROOM.hd + WALL_GAP || b.z + ez > HOME_ROOM.hd - WALL_GAP) return false
-  if (overlap(b, { ...R(DOOR_KEEP.hw, DOOR_KEEP.hd, 0), x: DOOR_KEEP.x, z: DOOR_KEEP.z })) return false
+  const dk = doorKeep()
+  if (overlap(b, { ...R(dk.hw, dk.hd, 0), x: dk.x, z: dk.z })) return false
   return !items.some((o) => o.uid !== uid && overlap(b, boxOf(o)))
 }
 

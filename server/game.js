@@ -18,6 +18,8 @@
 //     { t: 'block', id } / { t: 'unblock', key }   engelle / engeli kaldır
 //     { t: 'report', id, reason }                  şikâyet (taciz | spam | uygunsuz | sahte | foto | diger)
 //     { t: 'dj_get' | 'dj_join' | 'dj_leave' | 'dj_play', url | 'dj_stop' | 'dj_fire' }   Gece Kulübü DJ vardiyası (features/dj.js; ayrıntı orada)
+//     { t: 'home_upgrade' }                        evi bir üst kademeye yükselt (features/housing.js; sunucu → { t:'home_tier', owner, tier }, welcome.homeTier, room.tier)
+//     { t: 'rent', kind }                          Havalimanı'nda bisiklet kirala (araba hiçbir koşulda kiralanamaz; features/rental.js; sunucu → { t:'rental', kind, until }, welcome.bikeUntil)
 //     { t: 'coins_get' }                           altın bakiyesi (features/economy.js; sunucu → { t: 'coins', n, d, why }, welcome.coins)
 //     { t: 'dnd', on }                             rahatsız etme modu
 //     { t: 'sit', seat, slot } / { t: 'pose_end' } / { t: 'poses' }      oturma (features/together.js; ayrıntı orada)
@@ -66,7 +68,7 @@
 // Aynı hesap ikinci kez bağlanınca eskisine { t:'kicked' } gider. Ortam yoksa isim istemciden gelir (demo, doğrulanmaz).
 import { WebSocketServer } from 'ws'
 import crypto from 'node:crypto'
-import { getHome, homeExists, saveItems, setOpen } from './homes.js'
+import { getHome, getTier, homeExists, saveItems, setOpen } from './homes.js'
 import { moderate } from './profanity.js'
 import { FEATURE_FACTORIES } from './features/index.js'
 import * as supa from './supa.js'
@@ -91,7 +93,7 @@ const GESTURE_RANGE = 8
 const MATCH_WINDOW_MS = 10 * 60 * 1000 // karşılıklı kalp için süre
 
 const AVATARS = new Set(['zeynep', 'deniz', 'elif', 'kaan', 'mira', 'ege'])
-const ANIMS = ['idle', 'walk', 'run']
+const ANIMS = ['idle', 'walk', 'run', 'ride'] // ride: bisiklette
 
 // kontrol karakterlerini ve HTML'e yarayacak < > işaretlerini at, kırp
 const clean = (s, max) =>
@@ -182,6 +184,7 @@ export function attachGameServer(httpServer) {
       room,
       venue: venueIdOf(room),
       owner: key,
+      tier: key ? getTier(key) : null,
       ownerName: key ? ownerNameOf(key) : null,
       items: key ? (getHome(key)?.items ?? []) : [],
       players: inRoom(room, p.id).map(publicInfo),
@@ -305,6 +308,7 @@ export function attachGameServer(httpServer) {
         me.z = mz
         me.ry = num(msg.ry, 10)
         me.anim = ANIMS.includes(msg.anim) ? msg.anim : 'idle'
+        if (me.anim === 'ride' && !((me.bikeUntil ?? 0) > Date.now())) me.anim = 'idle' // bisiklet kiralamayan binemez (kiralama: features/rental.js)
         me.dirty = true
         emit('onMove', me)
       } else if (msg.t === 'room') {

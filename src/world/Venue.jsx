@@ -12,7 +12,7 @@ import { venueStore } from './features/venueStore'
 const { hw, hd, wallH } = VENUE_ROOM
 const CHAIR_FLIP = 0 // cafe-chair GLB'nin önü ters çıkarsa Math.PI yap
 const V = (n) => `/models/venues/${n}.glb`
-const OLD = { table: '/models/cafe/cafe-table.glb', plant: '/models/cafe/cafe-plant.glb', palm: '/models/beach/beach-palm.glb', speaker: '/models/club/club-speaker.glb', ball: '/models/club/club-ball.glb' }
+const OLD = { table: '/models/cafe/cafe-table.glb', plant: '/models/cafe/cafe-plant.glb', palm: '/models/beach/beach-palm.glb', speaker: '/models/club/club-speaker.glb', ball: '/models/club/club-ball.glb', bike: '/models/bike/bike.glb', car: '/models/airport/car.glb' }
 
 // ---------- GLB (en-boy-yükseklik hedefiyle ölçeklenir) ----------
 /** h/w/d verilirse kutuya sığacak biçimde (hepsi → esnetir), yalnızca biri → orantılı. Taban y=0'a oturur. */
