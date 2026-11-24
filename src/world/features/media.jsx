@@ -85,12 +85,20 @@ export function VoiceBubble({ voice, self }) {
     if (!audio.current) {
       const a = new Audio(voice.url)
       a.ontimeupdate = () => setPos(a.duration ? a.currentTime / a.duration : 0)
+      const duckMusic = (on) => window.dispatchEvent(new CustomEvent('situapp:duck', { detail: on }))
       a.onended = () => {
+        duckMusic(false)
         setPlaying(false)
         setPos(0)
       }
-      a.onpause = () => setPlaying(false)
-      a.onplay = () => setPlaying(true)
+      a.onpause = () => {
+        duckMusic(false)
+        setPlaying(false)
+      }
+      a.onplay = () => {
+        duckMusic(true)
+        setPlaying(true)
+      }
       audio.current = a
     }
     const a = audio.current

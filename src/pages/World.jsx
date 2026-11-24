@@ -342,6 +342,7 @@ function WorldScene({ avatar }) {
   const sendGesture = (kind) => {
     if (!interactPeer) return
     if (!net.sendGesture(interactPeer.id, kind)) say('Şu an çevrimdışısın.')
+    else window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: kind }))
   }
   const sendWhisper = (text) => {
     if (!interactPeer) return
