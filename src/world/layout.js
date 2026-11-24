@@ -47,7 +47,7 @@ export const TELEPORTS = {
   konut: 'residential', mahalle: 'residential', residential: 'residential',
 }
 
-export const SPAWN = { x: 0, z: 7 }
+export const SPAWN = { x: -22, z: 0 } // herkes parkta başlar
 
 // ---------- binalar ----------
 // facing: kapının baktığı yön ('n' = -z, 's' = +z, 'e' = +x, 'w' = -x)

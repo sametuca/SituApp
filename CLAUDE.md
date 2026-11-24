@@ -20,7 +20,7 @@ npm run lint           # oxlint (World/LocalPlayer'daki react-hooks "immutabilit
 
 ## Akış ve mimari
 
-`/` giriş/kayıt → `/avatar` karakter seç → `/world` şehir. Herkes lobi meydanında başlar (mekan seçme adımı kaldırıldı).
+`/` giriş/kayıt → `/avatar` karakter seç → `/world` şehir. Herkes parkta başlar (`SPAWN`, layout.js) (mekan seçme adımı kaldırıldı).
 
 - `src/lib/auth.js`, `AuthContext.jsx`: demo/Supabase auth soyutlaması, `RequireAuth`. Supabase: kayıtta `username_available` RPC, e-posta doğrulama ekranı + yeniden gönder, şifre sıfırlama (`PASSWORD_RECOVERY` → `recovery` durumu → AuthPage "yeni şifre" formu), `getToken()` (WS join). Kullanıcı adı kuralı `USERNAME_RE` = DB check'iyle aynı (nokta yok).
 - **Gerçek kimlik (sunucu)**: `server/supa.js` (fetch REST istemcisi + `createMirror` write-behind + JWT doğrulama: ES256/RS256 token'lar JWKS ile yerel doğrulanır, HS256 için `/auth/v1/user`), `server/auth.js` (`names` küçük harf ad→uid haritası, `loadProfile`). `join {token}` → `me.uid`, `me.key = me.homeKey = uid`, ad `profiles.username`'den (istemci adı yok sayılır); geçersiz → `auth_required`; aynı hesap ikinci bağlanırsa eskisine `kicked`. `game.js homeKey(v)`: UUID → kendisi, ad → `names`, yoksa eski türetme (ctx.homeKey de budur). `store.js`/`homes.js`: açılışta `await initStore()/initHomes()` (index.js `listen`den önce) ile tüm tablo belleğe, senkron arayüz aynı; değişenler 800 ms write-behind (JSON farkıyla, üstel geri çekilme, SIGINT/SIGTERM'de boşaltma); `addReport` doğrudan `reports`'a. Yalnızca UUID anahtarlar yazılır. Not: token doğrulaması süresi dolana (1 sa) kadar iptal edilmiş oturumu fark etmez; silinen hesap profil yokluğundan reddedilir.

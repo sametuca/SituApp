@@ -22,7 +22,7 @@ import { MAX_ITEMS, findFreeSpot, furnitureColliders, isValid, loadHome, newUid,
 import LocalPlayer from '../world/LocalPlayer'
 import RemotePlayers, { GuideNpc, SelfTag } from '../world/RemotePlayers'
 import { useMultiplayer } from '../world/net'
-import { ChatPanel, HelpModal, HintBar, Minimap, TipStack, TopBar, ZoneToast } from '../world/Hud'
+import { ChatPanel, HelpModal, HintBar, Minimap, CameraHint, TopBar, ZoneToast } from '../world/Hud'
 import { ChatFab, ChatSheet, DoorPrompt, GestureChip, IncomingChip, InteractSheet, InviteChip, Joystick, MatchOverlay, NearbyCard, ReactionBar } from '../world/Social'
 import { GESTURE_BY_KIND, REACTIONS, WHISPER_RANGE } from '../world/interact'
 import { useIsTouch } from '../world/useIsTouch'
@@ -208,7 +208,7 @@ function WorldScene({ avatar }) {
   const tipsKey = `situapp_tips_seen_${user?.id ?? 'guest'}`
   const [showTips, setShowTips] = useState(() => !localStorage.getItem(tipsKey))
   const [feed, setFeed] = useState(() => [
-    { kind: 'system', ts: 0, text: `Hoş geldin ${name}! Yardım için /yardım yaz ya da sağ üstteki ? düğmesine bas.` },
+    { kind: 'system', ts: 0, text: `Hoş geldin ${name}! 🌳` },
   ])
 
   const addFeed = useCallback((m) => {
@@ -795,7 +795,7 @@ function WorldScene({ avatar }) {
       )}
       {feat.overlays}
       {help && <HelpModal onClose={() => setHelp(false)} />}
-      {showTips && !help && <TipStack onDone={closeTips} />}
+      {showTips && !help && <CameraHint touch={touch} ready={sceneReady} onDone={closeTips} />}
       <div
         aria-hidden
         className={`pointer-events-none absolute inset-0 z-30 bg-gradient-to-br from-[#ffe3f0] via-[#f1e6ff] to-[#dff3ff] transition-opacity duration-200 ${fade ? 'opacity-100' : 'opacity-0'}`}

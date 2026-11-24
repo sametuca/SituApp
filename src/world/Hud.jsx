@@ -267,7 +267,7 @@ export function ChatPanel({ feed, onSend, status }) {
 export function HintBar() {
   return (
     <p className="pointer-events-none absolute bottom-3 right-3 z-10 hidden rounded-full px-4 py-1.5 text-xs font-extrabold text-[#8a7a9c] sm:block">
-      <span className={`rounded-full px-3 py-1.5 ${glass}`}>WASD yürü · Shift koş · Enter sohbet · H yardım</span>
+      <span className={`rounded-full px-3 py-1.5 ${glass}`}>WASD yürü · Sürükle: kamera · H yardım</span>
     </p>
   )
 }
@@ -359,50 +359,39 @@ export function HelpModal({ onClose }) {
   )
 }
 
-// ---------- ilk girişte köşede beliren küçük ipuçları ----------
-const TIPS = [
-  { emoji: '🚶', title: 'Yürümek için', text: 'W A S D ya da ok tuşları. Shift ile koşarsın.' },
-  { emoji: '💬', title: 'Sohbet', text: 'Enter’a bas, yaz, tekrar Enter. /yardım ile komutlar.' },
-  { emoji: '💗', title: 'Etkileşim', text: 'Birine tıkla: kalp, çiçek ya da fısıltı 🤫. 1-9 tuşları emoji uçurur.' },
-  { emoji: '🗺️', title: 'Harita', text: 'Sağ üstteki haritadan yolunu bul. Rehber lobide, çeşmenin yanında.' },
-]
-const TIP_START_MS = 1500
-const TIP_GAP_MS = 6000
-const TIP_LIFETIME_MS = 9000
-
-/** Tek tek, sırayla beliren küçük pastel kutucuklar. Kendiliğinden kaybolur, ✕ ile kapatılır. */
-export function TipStack({ onDone }) {
-  const [visible, setVisible] = useState([])
+// ---------- ilk girişte tek, küçük kamera ipucu ----------
+/** Ekranı kalabalıklaştırmamak için tek kutu: kamerayı çevirmeyi gösterir (mobil/masaüstü ayrı), ilk sürüklemede ya da ✕ ile kapanır. */
+export function CameraHint({ touch, ready = true, onDone }) {
+  const [shown, setShown] = useState(false)
   useEffect(() => {
-    const timers = []
-    TIPS.forEach((_, i) => {
-      timers.push(setTimeout(() => setVisible((v) => [...v, i]), TIP_START_MS + i * TIP_GAP_MS))
-      timers.push(setTimeout(() => setVisible((v) => v.filter((x) => x !== i)), TIP_START_MS + i * TIP_GAP_MS + TIP_LIFETIME_MS))
-    })
-    timers.push(setTimeout(onDone, TIP_START_MS + (TIPS.length - 1) * TIP_GAP_MS + TIP_LIFETIME_MS))
-    return () => timers.forEach(clearTimeout)
-  }, [onDone])
-
-  if (!visible.length) return null
+    if (!ready) return
+    const t1 = setTimeout(() => setShown(true), 1500)
+    const t2 = setTimeout(onDone, 14000)
+    let moved = 0
+    const onMove = (e) => {
+      if (e.pointerType === 'mouse' ? e.buttons === 0 : false) return
+      if (++moved > 12) onDone()
+    }
+    window.addEventListener('pointermove', onMove)
+    return () => {
+      clearTimeout(t1)
+      clearTimeout(t2)
+      window.removeEventListener('pointermove', onMove)
+    }
+  }, [onDone, ready])
+  if (!shown) return null
   return (
-    <div className="absolute right-3 top-[14.5rem] z-10 flex w-52 flex-col gap-2" aria-live="polite">
-      {visible.map((i) => (
-        <div key={i} className={`relative animate-pop rounded-2xl py-2 pl-3 pr-7 ${glass}`}>
-          <p className="text-xs font-extrabold text-[#4a3b5c]">
-            {TIPS[i].emoji} {TIPS[i].title}
-          </p>
-          <p className="text-xs font-semibold leading-snug text-[#8a7a9c]">{TIPS[i].text}</p>
-          <button
-            onClick={() => setVisible((v) => v.filter((x) => x !== i))}
-            aria-label="İpucunu kapat"
-            className="absolute right-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full text-[10px] font-black text-[#8a7a9c] hover:bg-[#ffd6e8]/70"
-          >
-            ✕
-          </button>
-        </div>
-      ))}
-      <button onClick={onDone} className="self-end rounded-full px-2 text-[11px] font-bold text-[#8a7a9c]/80 hover:text-[#8a7a9c]">
-        ipuçlarını kapat
+    <div className={`pointer-events-auto absolute left-1/2 top-[5.6rem] z-10 flex w-[min(20rem,calc(100vw-1.5rem))] -translate-x-1/2 animate-pop items-center gap-3 rounded-2xl py-2 pl-3 pr-8 ${glass}`} role="status">
+      <span className="text-2xl">{touch ? '👆' : '🎥'}</span>
+      <p className="text-xs font-extrabold leading-snug text-[#4a3b5c]">
+        {touch ? (
+          <>Kamerayı çevirmek için ekranda parmağını <b className="text-[#ff7eb3]">sağa-sola kaydır</b>. İki parmakla yakınlaştır.</>
+        ) : (
+          <>Kamerayı çevirmek için sol tuşa basıp <b className="text-[#ff7eb3]">sağa-sola sürükle</b>. Tekerlekle yakınlaştır.</>
+        )}
+      </p>
+      <button onClick={onDone} aria-label="İpucunu kapat" className="absolute right-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full text-[10px] font-black text-[#8a7a9c] hover:bg-[#ffd6e8]/70">
+        ✕
       </button>
     </div>
   )
