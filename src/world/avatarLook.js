@@ -1,7 +1,7 @@
 // Avatar renklendirme: GLB dokuları düz renkli yamalardan oluşur. Saç ve kıyafet = (kemik bölgesi: baş / gövde) + (dokudaki orijinal renge yakınlık),
 // göz = beyaz göz akı köşelerinden bulunan göz merkezleri çevresindeki koyu yamalar. Renk, orijinal gölge/ışık değişimini koruyarak değişir.
 // Kullanım: applyLook(modelClone, slug, look) — look { h, e, o } (lookData.js). Yalnızca klonlanmış malzemeye dokunur.
-import { Color, Float32BufferAttribute, Vector3 } from 'three'
+import { Color, Float32BufferAttribute, Vector2, Vector3 } from 'three'
 import { HAIR_COLORS, EYE_COLORS, OUTFIT_COLORS } from './lookData'
 
 const HAIR_N = 5
@@ -145,7 +145,7 @@ function findEyes(slug, mesh) {
     return arr.filter((p) => p[1] >= cut)
   }
   res.eyes = [mean(top(L)), mean(top(R))]
-  res.r = Math.max(0.012, Math.abs(res.eyes[0][0] - res.eyes[1][0]) * 0.22)
+  res.r = Math.max(0.012, Math.abs(res.eyes[0][0] - res.eyes[1][0]) * 0.16)
   return res
 }
 
@@ -156,7 +156,8 @@ uniform vec3 uSkinRef[3];
 uniform vec3 uHairTo; uniform vec3 uOutTo; uniform vec3 uEyeTo;
 uniform float uUseHair; uniform float uUseOut; uniform float uUseEye;
 uniform vec3 uEyeC0; uniform vec3 uEyeC1; uniform float uEyeR;
-varying float vHead; varying float vHand; varying vec3 vBind;
+varying float vHead; varying float vHand; varying float vFoot; varying vec3 vBind;
+uniform vec3 uBrow; uniform vec2 uBrowX; // uBrowX: yüz orta x, yarı genişlik // x: yüz bandı alt y, y: üst y, z: yüzün ön z eşiği
 float lookLum(vec3 c){ return dot(c, vec3(0.299,0.587,0.114)); }
 vec3 lookRecolor(vec3 col, vec3 ref, vec3 to, float w){
   float k = clamp(mix(1.0, lookLum(col)/max(lookLum(ref),0.04), 0.4), 0.72, 1.18); // gölgeyi koru, kontrastı yumuşat (pastel kalsın)
@@ -175,6 +176,9 @@ vec3 lookApply(vec3 col){
     for (int i=0;i<3;i++) skinH = min(skinH, distance(sc, uSkinRef[i]));
     hairW = (1.0 - smoothstep(tol*0.7, tol*1.25, best)) * smoothstep(-0.07, -0.03, skinH - best); // ten saça yakınsa saç sayılmaz (yüz boyanmasın)
   }
+  // kaş / göz kapağı bandı saç sayılmaz (kaşlar ve kirpikler boyanmasın); sakal ve saç bu bandın dışında kalır
+  float inBrow = step(uBrow.x, vBind.y) * step(vBind.y, uBrow.y) * step(uBrow.z, vBind.z) * step(abs(vBind.x - uBrowX.x), uBrowX.y) * step(0.9, vHead);
+  hairW *= (1.0 - inBrow);
   if (uUseHair > 0.5 && hairW > 0.0) res = lookRecolor(res, pow(hairRef, vec3(2.2)), uHairTo, hairW);
   if (uUseOut > 0.5 && vHead < 0.8 && vHand < 0.4) {
     // gövdede ten ve siyah çizgiler dışındaki HER yama kıyafettir (baskı/desen parçaları dahil); saç renkleri hariç
@@ -182,7 +186,8 @@ vec3 lookApply(vec3 col){
     for (int i=0;i<3;i++) skinD = min(skinD, distance(sc, uSkinRef[i]));
     float nonSkin = smoothstep(0.07, 0.13, skinD);
     float notDark = smoothstep(0.05, 0.13, lookLum(sc));
-    float w = nonSkin * notDark * (1.0 - hairW);
+    float whiteSole = step(0.5, vFoot) * smoothstep(0.7, 0.85, lookLum(sc)) * (1.0 - smoothstep(0.08, 0.16, max(sc.r,max(sc.g,sc.b)) - min(sc.r,min(sc.g,sc.b))));
+    float w = nonSkin * notDark * (1.0 - hairW) * (1.0 - whiteSole); // ayak altı beyaz taban/platform olduğu gibi kalır
     vec3 ref = vec3(0.0); float bd = 9.0;
     for (int i=0;i<${OUT_N};i++){ float d = distance(sc, uOutRef[i]); if (d<bd){bd=d;ref=uOutRef[i];} }
     if (bd > 0.3) ref = sc; // bilinmeyen yama: kendi parlaklığına göre
@@ -207,7 +212,7 @@ export function applyLook(model, slug, look) {
   model.traverse((o) => {
     if (!o.isSkinnedMesh || !o.material) return
     ensureHead(o)
-    const eyes = useE ? findEyes(slug, o) : null
+    const eyes = useE || useH ? findEyes(slug, o) : null
     const img = o.material.map?.image
     if (!img) return
     const { px, w, h } = readPixels(img)
@@ -228,13 +233,15 @@ export function applyLook(model, slug, look) {
       uUseEye: { value: useE && eyes?.eyes.length === 2 ? 1 : 0 },
       uEyeC0: { value: new Vector3(...(eyes?.eyes[0] ?? [0, 0, 0])) },
       uEyeC1: { value: new Vector3(...(eyes?.eyes[1] ?? [0, 0, 0])) },
+      uBrow: { value: eyes?.eyes.length === 2 ? new Vector3(eyes.eyes[0][1] - 0.035, eyes.eyes[0][1] + 0.075, Math.min(eyes.eyes[0][2], eyes.eyes[1][2]) - 0.07) : new Vector3(9, -9, 9) },
+      uBrowX: { value: eyes?.eyes.length === 2 ? new Vector2((eyes.eyes[0][0] + eyes.eyes[1][0]) / 2, Math.abs(eyes.eyes[0][0] - eyes.eyes[1][0]) / 2 + 0.03) : new Vector2(0, 0) },
       uEyeR: { value: eyes?.r ?? 0.02 },
     }
     const prev = mat.onBeforeCompile
     mat.onBeforeCompile = (shader, renderer) => {
       prev?.call(mat, shader, renderer)
       Object.assign(shader.uniforms, u)
-      shader.vertexShader = 'attribute float aHead; attribute float aHand; varying float vHead; varying float vHand; varying vec3 vBind;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vHead = aHead; vHand = aHand; vBind = position;')
+      shader.vertexShader = 'attribute float aHead; attribute float aHand; attribute float aFoot; varying float vHead; varying float vHand; varying float vFoot; varying vec3 vBind;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vHead = aHead; vHand = aHand; vFoot = aFoot; vBind = position;')
       shader.fragmentShader = GLSL + shader.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n  diffuseColor.rgb = lookApply(diffuseColor.rgb);')
     }
     mat.customProgramCacheKey = () => 'look'
