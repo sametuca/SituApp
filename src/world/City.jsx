@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Html, RoundedBox } from '@react-three/drei'
-import { BUILDINGS, GAZEBO, PROPS, ROAD_HALF } from './layout'
+import { BLANKETS, BUILDINGS, GAZEBO, PROPS, ROAD_HALF } from './layout'
 import Prop from './Prop'
 
 const FACING = { s: 0, n: Math.PI, e: Math.PI / 2, w: -Math.PI / 2 }
@@ -158,6 +158,11 @@ function Gazebo() {
   )
 }
 
+/** Park piknik battaniyeleri: Meshy GLB (sepetli, pastel kareli), 2 kişilik (oturma noktaları layout.js SEATS'te). */
+function Blanket({ b }) {
+  return <Prop model="/models/venues/picnic-blanket.glb" x={b.x} z={b.z} scale={2.7} ry={b.ry} />
+}
+
 /** Gölge kamerası oyuncuyu takip eden güneş. */
 function Sun({ focusRef }) {
   const light = useRef()
@@ -233,6 +238,9 @@ export default function City({ focusRef }) {
       ))}
       {PROPS.map((p, i) => (
         <Prop key={i} {...p} />
+      ))}
+      {BLANKETS.map((b, i) => (
+        <Blanket key={i} b={b} />
       ))}
     </group>
   )

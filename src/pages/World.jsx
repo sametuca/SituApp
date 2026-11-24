@@ -5,6 +5,11 @@ import { OrbitControls, useProgress } from '@react-three/drei'
 import { useAuth } from '../lib/AuthContext'
 import City from '../world/City'
 import HomeRoom from '../world/HomeRoom'
+import Venue from '../world/Venue'
+import { VENUE_BY_ID, VENUE_ROOM } from '../world/venues'
+import { ENTERABLE, venueDoor } from '../world/venueDoors'
+import { resolveVenueRoom, venueLayout, venueTheme } from '../world/venueLayout'
+import { together } from '../world/features/togetherStore'
 import { EditToggle, FurnitureLayer, FurnitureSheet } from '../world/HomeEditor'
 import { FURNITURE_BY_ID } from '../world/furniture'
 import { useFeatures } from '../world/features'
@@ -89,6 +94,29 @@ function DoorWatcher({ focusRef, door, onChange }) {
   return null
 }
 
+/** Şehirde bir mekânın kapısına yaklaşınca (kapı önü) o mekânın kimliğini bildirir; uzaklaşınca null. */
+function VenueDoorWatcher({ focusRef, onChange }) {
+  const last = useRef(null)
+  useFrame(() => {
+    const f = focusRef.current
+    let best = null
+    let bestD = Infinity
+    for (const v of ENTERABLE) {
+      const d = venueDoor(v.id)
+      const dist = Math.hypot(f.x - d.x, f.z - d.z)
+      if (dist < d.radius && dist < bestD) {
+        best = v.id
+        bestD = dist
+      }
+    }
+    if (best !== last.current) {
+      last.current = best
+      onChange(best)
+    }
+  })
+  return null
+}
+
 /** Yakındaki en yakın oyuncuyu izler (4 kez/sn); değişince bildirir. */
 function ProximityWatcher({ focusRef, remotes, onChange }) {
   const last = useRef(null)
@@ -143,6 +171,9 @@ function WorldScene({ avatar }) {
   const [zone, setZone] = useState(zoneAt(SPAWN.x, SPAWN.z))
   const [home, setHome] = useState(null) // null = şehir; { owner, ownerName } = bir evin içindeyiz
   const [nearDoor, setNearDoor] = useState(false)
+  const [venue, setVenue] = useState(null) // null = şehir/ev; mekân kimliği = o mekânın içindeyiz (venues.js)
+  const [nearVenue, setNearVenue] = useState(null) // şehirde kapısına yaklaştığımız mekân
+  const venueRef = useRef(null)
   const [fade, setFade] = useState(false)
   // ev düzeni: kendi evin sunucuda kalıcıdır, tarayıcıdaki kopya yalnızca önbellektir
   const homeOwner = user?.id ?? `guest-${name}`
@@ -176,6 +207,8 @@ function WorldScene({ avatar }) {
     setSelected(null)
     setTimeout(() => {
       setNearDoor(false)
+      setVenue(null)
+      venueRef.current = null
       if (target === 'city') {
         setHome(null)
         focusRef.current.teleport = [HOME_DOOR.x, HOME_DOOR.z, Math.PI / 2]
@@ -184,6 +217,38 @@ function WorldScene({ avatar }) {
         focusRef.current.teleport = [HOME_ROOM.spawn[0], HOME_ROOM.spawn[1], Math.PI]
       }
       setTimeout(() => setFade(false), 120)
+    }, 220)
+  }, [])
+
+  // Şehir ↔ mekân geçişi (ev geçişinin paralelidir). Girerken kamera güneye sıfırlanır (oyuncak evi kesiti).
+  const swapVenue = useCallback((target) => {
+    const from = venueRef.current
+    setFade(true)
+    setEditing(false)
+    setSelected(null)
+    setTimeout(() => {
+      setNearDoor(false)
+      setNearVenue(null)
+      if (target === 'city') {
+        venueRef.current = null
+        setVenue(null)
+        const d = from && venueDoor(from)
+        focusRef.current.teleport = d ? d.exit : [SPAWN.x, SPAWN.z, Math.PI]
+      } else {
+        venueRef.current = target
+        setHome(null)
+        setVenue(target)
+        const [sx, sz] = VENUE_ROOM.spawn
+        focusRef.current.teleport = [sx, sz, Math.PI]
+        setTimeout(() => {
+          const c = controlsRef.current
+          if (!c) return
+          c.object.position.set(sx, 6.4, sz + 9.4)
+          c.target.set(sx, 0.8, sz)
+          c.update()
+        }, 60)
+      }
+      setTimeout(() => setFade(false), 160)
     }, 220)
   }, [])
 
@@ -240,8 +305,20 @@ function WorldScene({ avatar }) {
     },
     [net, say],
   )
+  const enterVenue = useCallback(
+    (id) => {
+      if (!VENUE_BY_ID[id]) return
+      swapVenue(id)
+      net.enterRoom({ venue: id })
+    },
+    [net, swapVenue],
+  )
+  const leaveVenue = useCallback(() => {
+    swapVenue('city')
+    net.enterRoom('city')
+  }, [net, swapVenue])
   const ownHome = useCallback(() => ({ owner: net.homeKey ?? undefined, ownerName: name }), [net.homeKey, name])
-  const doorGo = useCallback(() => goTo(home ? 'city' : ownHome()), [goTo, home, ownHome])
+  const doorGo = useCallback(() => (venue ? leaveVenue() : goTo(home ? 'city' : ownHome())), [goTo, home, ownHome, venue, leaveVenue])
 
   const isOwnHome = Boolean(home) && (!home.owner || home.owner === net.homeKey)
   const shownItems = !home ? NO_ITEMS : isOwnHome ? furn : (net.visit?.items ?? NO_ITEMS)
@@ -331,6 +408,7 @@ function WorldScene({ avatar }) {
     roster: net.roster,
     focusRef,
     home,
+    venue,
     panel,
     setPanel,
     chatTarget,
@@ -339,6 +417,14 @@ function WorldScene({ avatar }) {
     slug,
     pushFeed: addFeed,
   })
+  const venueTh = useMemo(() => (venue ? venueTheme(venue) : null), [venue])
+  const venueDim = venueTh?.dim ?? 0
+  const sceneBase = useMemo(
+    () => (venueTh ? { bg: venueTh.bg, fog: [venueTh.bg, 30, 60] } : home ? { bg: '#f9e3f1', fog: ['#f9e3f1', 30, 60] } : { bg: '#cfeaff', fog: ['#e8f6ff', 50, 140] }),
+    [venueTh, home],
+  )
+  const venueCollide = useMemo(() => (venue ? (x, z) => resolveVenueRoom(x, z, venueLayout(venue).colliders) : null), [venue])
+  const venueZone = useMemo(() => (venue ? { id: `venue:${venue}`, name: VENUE_BY_ID[venue].name, emoji: VENUE_BY_ID[venue].emoji, desc: VENUE_BY_ID[venue].desc } : undefined), [venue])
   const sendGesture = (kind) => {
     if (!interactPeer) return
     if (!net.sendGesture(interactPeer.id, kind)) say('Şu an çevrimdışısın.')
@@ -371,10 +457,14 @@ function WorldScene({ avatar }) {
   })
   const nearDoorRef = useRef(false)
   const doorGoRef = useRef(() => {})
+  const nearVenueRef = useRef(null)
+  const enterVenueRef = useRef(() => {})
   useEffect(() => {
     nearDoorRef.current = nearDoor && !fade
     doorGoRef.current = doorGo
-  }, [nearDoor, fade, doorGo])
+    nearVenueRef.current = !fade && !home && !venue && !nearDoor ? nearVenue : null
+    enterVenueRef.current = enterVenue
+  }, [nearDoor, fade, doorGo, nearVenue, home, venue, enterVenue])
 
   // H tuşu: yardım (E: kapı)
   useEffect(() => {
@@ -382,6 +472,7 @@ function WorldScene({ avatar }) {
       const typing = e.target instanceof HTMLElement && ['INPUT', 'TEXTAREA'].includes(e.target.tagName)
       if (e.code === 'KeyH' && !typing) setHelp((h) => !h)
       if (e.code === 'KeyE' && !typing && nearDoorRef.current) doorGoRef.current()
+      else if (e.code === 'KeyE' && !typing && nearVenueRef.current && !together.self.current) enterVenueRef.current(nearVenueRef.current)
       if (!typing && /^Digit[0-9]$/.test(e.code) && !e.ctrlKey && !e.metaKey && !e.altKey) {
         const n = Number(e.code.slice(5))
         const emoji = REACTIONS[(n + 9) % 10]
@@ -419,10 +510,15 @@ function WorldScene({ avatar }) {
     }
     if (['ev', 'eve'].includes(cmd)) {
       if (home) return say('Zaten evdesin 🏠')
+      if (venue) return say('Önce dışarı çık: /dışarı')
       goTo(ownHome())
       return say('🏠 Evine girdin.')
     }
     if (['disari', 'cik', 'sehir'].includes(cmd)) {
+      if (venue) {
+        leaveVenue()
+        return say('Şehre döndün.')
+      }
       if (!home) return say('Zaten dışarıdasın 🌳')
       goTo('city')
       return say('Şehre döndün.')
@@ -467,7 +563,7 @@ function WorldScene({ avatar }) {
       return
     }
     if (['isinlan', 'tp', 'git'].includes(cmd)) {
-      if (home) return say('Işınlanmak için önce evden çık: /dışarı')
+      if (home || venue) return say('Işınlanmak için önce dışarı çık: /dışarı')
       const id = TELEPORTS[normalize(args[0] ?? '')] ?? TELEPORTS[(args[0] ?? '').toLowerCase()]
       const z = ZONES.find((zn) => zn.id === id)
       if (!z) return say('Nereye? Örnek: /ışınlan kafe — lobi, kafe, kulüp, park, plaj')
@@ -490,14 +586,16 @@ function WorldScene({ avatar }) {
   return (
     <div className="fixed inset-0 overflow-hidden bg-[#cfeaff]">
       <Canvas shadows camera={{ fov: 55, near: 0.3, far: 300, position: [start.x, 4.2, start.z + 8] }}>
-        <color attach="background" args={[home ? '#f9e3f1' : '#cfeaff']} />
-        <fog attach="fog" args={home ? ['#f9e3f1', 30, 60] : ['#e8f6ff', 50, 140]} />
-        <ambientLight intensity={0.7} />
-        <hemisphereLight args={['#ffffff', '#ffd6ea', 1.1]} />
+        <color attach="background" args={[sceneBase.bg]} />
+        <fog attach="fog" args={sceneBase.fog} />
+        <ambientLight intensity={0.7 * (1 - venueDim * 0.75)} />
+        <hemisphereLight args={['#ffffff', '#ffd6ea', 1.1 * (1 - venueDim * 0.75)]} />
 
-        <TogetherScene focusRef={focusRef} home={Boolean(home)} base={home ? { bg: '#f9e3f1', fog: ['#f9e3f1', 30, 60] } : { bg: '#cfeaff', fog: ['#e8f6ff', 50, 140] }} />
+        <TogetherScene focusRef={focusRef} home={Boolean(home || venue)} base={sceneBase} />
         <Suspense fallback={null}>
-          {home ? (
+          {venue ? (
+            <Venue id={venue} />
+          ) : home ? (
             <HomeRoom ownerName={home.ownerName} decor={feat.homeDecor}>
               <FurnitureLayer items={shownItems} setItems={setFurn} editing={editing && isOwnHome} selected={selected} setSelected={setSelected} controlsRef={controlsRef} />
             </HomeRoom>
@@ -511,18 +609,19 @@ function WorldScene({ avatar }) {
             controlsRef={controlsRef}
             joystickRef={joystickRef}
             onMove={net.sendMove}
-            collide={home ? (x, z) => resolveRoom(x, z, furnColliders) : resolveCollisions}
+            collide={venue ? venueCollide : home ? (x, z) => resolveRoom(x, z, furnColliders) : resolveCollisions}
           >
             <SelfTag name={name} bubbles={net.bubbles} selfId={net.selfId} reactions={net.reactions} />
           </LocalPlayer>
           <RemotePlayers roster={net.roster} remotes={net.remotes} bubbles={net.bubbles} reactions={net.reactions} whispering={net.whispering} onPick={(id) => { setChatTarget(null); chatTargetRef.current = null; setInteractId(id) }} />
-          {!home && <GuideNpc focusRef={focusRef} tips={GUIDE_TIPS} />}
+          {!home && !venue && <GuideNpc focusRef={focusRef} tips={GUIDE_TIPS} />}
           {feat.sceneNodes}
           {feat.worldEffects}
         </Suspense>
 
-        <ZoneWatcher key={home ? 'home' : 'city'} focusRef={focusRef} onChange={setZone} fixed={home ? HOME_ZONE : undefined} />
-        <DoorWatcher key={`door-${home ? 'home' : 'city'}`} focusRef={focusRef} door={home ? HOME_ROOM.exit : HOME_DOOR} onChange={setNearDoor} />
+        <ZoneWatcher key={home ? 'home' : venue ? `v-${venue}` : 'city'} focusRef={focusRef} onChange={setZone} fixed={home ? HOME_ZONE : venueZone} />
+        <DoorWatcher key={`door-${home ? 'home' : venue ? 'venue' : 'city'}`} focusRef={focusRef} door={home ? HOME_ROOM.exit : venue ? VENUE_ROOM.exit : HOME_DOOR} onChange={setNearDoor} />
+        {!home && !venue && <VenueDoorWatcher focusRef={focusRef} onChange={setNearVenue} />}
         <ProximityWatcher
           focusRef={focusRef}
           remotes={net.remotes}
@@ -537,7 +636,7 @@ function WorldScene({ avatar }) {
           enablePan={false}
           target={[start.x, 0.8, start.z]}
           minDistance={3.5}
-          maxDistance={home ? 10 : 16}
+          maxDistance={home ? 10 : venue ? 12 : 16}
           minPolarAngle={0.35}
           maxPolarAngle={Math.PI / 2.15}
         />
@@ -545,7 +644,7 @@ function WorldScene({ avatar }) {
 
       <TopBar zone={zone} online={net.online} status={net.status} dnd={net.dnd} onSettings={() => setPanel('settings')} extraButtons={feat.extraButtons} extraNodes={feat.extraNodes} onExit={() => navigate('/avatar')} onHelp={() => setHelp(true)} />
       <ZoneToast zone={zone} />
-      {!home && <Minimap focusRef={focusRef} remotes={net.remotes} compact={touch} />}
+      {!home && !venue && <Minimap focusRef={focusRef} remotes={net.remotes} compact={touch} />}
       {touch ? (
         <>
           <Joystick inputRef={joystickRef} />
@@ -610,7 +709,10 @@ function WorldScene({ avatar }) {
         />
       )}
       {nearDoor && !chatTarget && !fade && !editing && (
-        <DoorPrompt emoji={home ? '🚪' : '🏠'} label={home ? 'Dışarı çık' : 'Evine gir'} action={home ? 'Çık' : 'Gir'} touch={touch} raised={Boolean(nearPeer)} onGo={doorGo} />
+        <DoorPrompt emoji={home || venue ? '🚪' : '🏠'} label={home || venue ? 'Dışarı çık' : 'Evine gir'} action={home || venue ? 'Çık' : 'Gir'} touch={touch} raised={Boolean(nearPeer)} onGo={doorGo} />
+      )}
+      {!home && !venue && !nearDoor && nearVenue && !chatTarget && !fade && !editing && (
+        <DoorPrompt emoji={VENUE_BY_ID[nearVenue].emoji} label={VENUE_BY_ID[nearVenue].name} action="Gir" touch={touch} raised={Boolean(nearPeer)} onGo={() => enterVenue(nearVenue)} />
       )}
       {invite && !chatTarget && !editing && <InviteChip from={invite} onGo={() => visit(invite.owner)} onClose={() => setInvite(null)} />}
       {incoming && !chatTarget && !interactPeer && !gestureIn && peerOf(incoming.id) && (

@@ -13,6 +13,8 @@ export const together = {
   capture: null,
   /** Oyuncu duruşundayken hareket girdisi verirse LocalPlayer çağırır: kalk / dansı bırak */
   onBreak: null,
+  /** Mekân içindeyken çarpışma çözücü (features/venues.jsx kaydeder); null = şehir. Koltuktan kalkınca çıkış noktası için */
+  collide: null,
   _refs: new Map(),
   /** AvatarRig'e verilecek { current } nesnesi (id başına tek örnek) */
   ref(id) {

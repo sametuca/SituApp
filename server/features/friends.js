@@ -24,6 +24,7 @@
 import crypto from 'node:crypto'
 import { hasUser, save, user } from '../store.js'
 import { ZONES } from '../../src/world/layout.js'
+import { VENUE_BY_ID, isVenueRoom, venueIdOf } from '../../src/world/venues.js'
 
 const MAX_FRIENDS = 100
 const INBOX_MAX = 50
@@ -37,6 +38,7 @@ const ONLINE_NOTE_GAP_MS = 60 * 1000 // aynı kişi için "çevrimiçi oldu" bil
 const inZone = (zn, x, z) => (zn.shape === 'circle' ? Math.hypot(x - zn.x, z - zn.z) <= zn.r : x >= zn.x0 && x <= zn.x1 && z >= zn.z0 && z <= zn.z1)
 // layout.js'teki zoneAt ile aynı mantık (sunucu istemci düzenini paylaşıyor)
 const whereIs = (p) => {
+  if (isVenueRoom(p.room)) return VENUE_BY_ID[venueIdOf(p.room)]?.name ?? 'Mekânda'
   if (p.room !== 'city') return 'Evde'
   return ZONES.find((zn) => inZone(zn, p.x, p.z))?.name ?? 'Şehirde'
 }
@@ -244,7 +246,8 @@ export default function friends(ctx) {
         const target = onlineOf(key)
         if (!target || mod().blockedPair(me, target)) return send(me.ws, { t: 'info', text: 'Arkadaşın şu an çevrimdışı.' })
         if (target.dnd) return send(me.ws, { t: 'info', text: `🌙 ${target.name} şu an rahatsız edilmek istemiyor.` })
-        if (me.room !== 'city') return send(me.ws, { t: 'info', text: 'Önce evden çık, sonra arkadaşının yanına gidebilirsin.' })
+        if (me.room !== 'city') return send(me.ws, { t: 'info', text: 'Önce dışarı çık, sonra arkadaşının yanına gidebilirsin.' })
+        if (isVenueRoom(target.room)) return send(me.ws, { t: 'info', text: `${VENUE_BY_ID[venueIdOf(target.room)]?.emoji ?? '📍'} ${target.name} şu an ${whereIs(target)} içinde. Kapıdan girip yanına gidebilirsin.` })
         if (target.room !== 'city') return send(me.ws, { t: 'info', text: `🏠 ${target.name} evde. Davet isteyebilirsin.` })
         send(me.ws, { t: 'goto', x: target.x + 1.2, z: target.z + 1.2, name: target.name })
       },

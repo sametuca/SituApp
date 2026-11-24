@@ -12,7 +12,7 @@ const NAMES = {
 }
 
 // Oturan avatar ayakta olduğu yüksekliğin bu kadar altına iner (m). Koltuk yüksekliğine göre ayarlı.
-export const SIT_DROP = { bench: 0.2, chair: 0.2, lounger: 0.3 }
+export const SIT_DROP = { bench: 0.2, chair: 0.2, lounger: 0.3, floor: 0.42 }
 
 const q1 = new Quaternion()
 const q2 = new Quaternion()
