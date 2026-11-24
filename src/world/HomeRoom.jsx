@@ -1,5 +1,8 @@
+import { useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
 import { Html, RoundedBox } from '@react-three/drei'
 import { HOME_ROOM } from './layout'
+import { skyLive } from './Sky'
 import Prop from './Prop'
 import { DecorFloor, RomanticLights, wallHex, wallTexture } from './HomeDecor'
 
@@ -49,16 +52,29 @@ function ExitDoor() {
   )
 }
 
+/** Pencere camı: dışarıdaki gökyüzü rengini (gün-gece, hava) yansıtır. */
+function WindowPane() {
+  const mat = useRef()
+  useFrame(() => {
+    if (!mat.current) return
+    mat.current.color.copy(skyLive.window)
+    mat.current.emissive.copy(skyLive.window)
+  })
+  return (
+    <mesh position={[0, 0, 0.08]}>
+      <planeGeometry args={[1.8, 1.3]} />
+      <meshStandardMaterial ref={mat} color="#cfeaff" emissive="#bfe3ff" emissiveIntensity={0.7} />
+    </mesh>
+  )
+}
+
 function Window({ x }) {
   return (
     <group position={[x, 1.9, -hd + 0.02]}>
       <RoundedBox args={[2.1, 1.6, 0.14]} radius={0.06} castShadow>
         <meshStandardMaterial color="#fffaf2" roughness={0.5} />
       </RoundedBox>
-      <mesh position={[0, 0, 0.08]}>
-        <planeGeometry args={[1.8, 1.3]} />
-        <meshStandardMaterial color="#cfeaff" emissive="#bfe3ff" emissiveIntensity={0.7} />
-      </mesh>
+      <WindowPane />
       <mesh position={[0, 0, 0.09]}>
         <boxGeometry args={[0.07, 1.3, 0.02]} />
         <meshStandardMaterial color="#fffaf2" />

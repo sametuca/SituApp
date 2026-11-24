@@ -16,3 +16,38 @@ export const publishWorld = (patch) => {
   Object.assign(worldClock, patch)
   subs.forEach((fn) => fn(worldClock))
 }
+
+// ---------------------------------------------------------------- saat hesabı (gün-gece modülü kullanır)
+export const smooth = (a, b, x) => {
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)))
+  return t * t * (3 - 2 * t)
+}
+
+/** 0..1 gece yoğunluğu: 05-07 arası şafakla azalır, 19-21 arası artar. */
+export const nightAt = (h) => 1 - smooth(5, 7, h) + smooth(19, 21, h)
+/** 0..1 gün batımı yoğunluğu (17:00 başlar, 18:45-19:20 en yoğun, 21:00'de biter). */
+export const sunsetAt = (h) => smooth(17, 18.7, h) * (1 - smooth(19.3, 21, h))
+export const phaseOf = (h) => {
+  if (nightAt(h) >= 0.6) return 'night'
+  if (h < 12) return h < 8 ? 'dawn' : 'day'
+  return h >= 17.3 ? 'dusk' : 'day'
+}
+
+const TR = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Istanbul', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' })
+/** Gerçek yerel saat (Europe/Istanbul), kesirli. */
+export function realHour(now = Date.now()) {
+  const p = Object.fromEntries(TR.formatToParts(now).map((x) => [x.type, x.value]))
+  return +p.hour + +p.minute / 60 + +p.second / 3600
+}
+
+// Dünya saatinin kaynağı: null = gerçek saat. Hızlandırılmış "oyun saati" için setHourSource(() => saat) verilebilir.
+let hourSource = null
+export const setHourSource = (fn) => {
+  hourSource = typeof fn === 'function' ? fn : null
+}
+export const currentHour = () => (hourSource ? ((hourSource() % 24) + 24) % 24 : realHour())
+
+export const fmtHour = (h) => {
+  const m = Math.floor((((h % 24) + 24) % 24) * 60)
+  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
+}
