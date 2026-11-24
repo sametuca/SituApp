@@ -15,5 +15,6 @@ import together from './together.js'
 import npcs from './npcs.js'
 import weather from './weather.js'
 import venues from './venues.js'
+import neighborhood from './neighborhood.js'
 
-export const FEATURE_FACTORIES = [moderation, games, friends, profile, progress, media, together, cosmetics, npcs, weather, venues]
+export const FEATURE_FACTORIES = [moderation, games, friends, profile, progress, media, together, cosmetics, npcs, weather, venues, neighborhood]

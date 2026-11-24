@@ -3,6 +3,7 @@
 // Sunucudaki WORLD_HALF (server/game.js) ile aynı olmalı.
 
 import { VENUE_BY_LABEL } from './venues.js'
+import { PLOT_COLLIDERS, RESIDENTIAL_RECTS, occupiedPlots } from './neighborhood.js'
 
 export const WORLD_HALF = 60
 export const PLAY_LIMIT = 46 // oyuncunun yürüyebildiği sınır
@@ -25,12 +26,13 @@ export const ZONES = [
   { id: 'club', name: 'Gece Kulübü', emoji: '🪩', desc: 'Müzik, dans ve enerji.', shape: 'rect', x0: 12, x1: 48, z0: -14, z1: 14, spawn: [24, 0] },
   { id: 'park', name: 'Park', emoji: '🌳', desc: 'Açık havada yürüyüş ve sohbet.', shape: 'rect', x0: -48, x1: -12, z0: -14, z1: 14, spawn: [-24, 0] },
   { id: 'beach', name: 'Plaj', emoji: '🏖️', desc: 'Gün batımı, deniz ve rahat sohbetler.', shape: 'rect', x0: -14, x1: 14, z0: 12, z1: 48, spawn: [0, 36] },
+  { id: 'residential', name: 'Konut Mahallesi', emoji: '🏘️', desc: 'Herkesin evi burada: kapıyı çal, bahçede sohbet et.', shape: 'rects', rects: RESIDENTIAL_RECTS, spawn: [-31, -17] },
 ]
 const FALLBACK_ZONE = { id: 'city', name: 'Şehir', emoji: '🏙️', desc: 'Sokaklarda dolaşıyorsun.' }
 
 export function zoneAt(x, z) {
   for (const zn of ZONES) {
-    if (zn.shape === 'circle' ? Math.hypot(x - zn.x, z - zn.z) <= zn.r : x >= zn.x0 && x <= zn.x1 && z >= zn.z0 && z <= zn.z1) return zn
+    if (zn.shape === 'circle' ? Math.hypot(x - zn.x, z - zn.z) <= zn.r : zn.shape === 'rects' ? zn.rects.some((r) => x >= r.x0 && x <= r.x1 && z >= r.z0 && z <= r.z1) : x >= zn.x0 && x <= zn.x1 && z >= zn.z0 && z <= zn.z1) return zn
   }
   return FALLBACK_ZONE
 }
@@ -42,6 +44,7 @@ export const TELEPORTS = {
   kulup: 'club', 'kulüp': 'club', club: 'club',
   park: 'park',
   plaj: 'beach', beach: 'beach',
+  konut: 'residential', mahalle: 'residential', residential: 'residential',
 }
 
 export const SPAWN = { x: 0, z: 7 }
@@ -86,21 +89,12 @@ export const BUILDINGS = [
   b(41, -26, 8, 10, 9, 'blue', 's'),
   b(28, -41, 10, 8, 8, 'mint', 'w'),
   b(41, -41, 8, 8, 12, 'lilac', 'w'),
-  // Kuzeybatı mahallesi
-  b(-28, -26, 10, 10, 9, 'yellow', 'e'),
-  b(-41, -26, 8, 10, 11, 'peach', 'e'),
-  b(-28, -41, 10, 8, 12, 'blue', 's'),
-  b(-41, -41, 8, 8, 8, 'pink', 's'),
+  // Kuzeybatı ve güneybatı bloklar Konut Mahallesi'dir (neighborhood.js; Neighborhood.jsx çizer)
   // Güneydoğu mahallesi
   b(28, 26, 10, 10, 8, 'lilac', 'n'),
   b(41, 26, 8, 10, 10, 'mint', 'n'),
   b(28, 41, 10, 8, 11, 'peach', 'n'),
   b(41, 41, 8, 8, 9, 'yellow', 'n'),
-  // Güneybatı mahallesi
-  b(-28, 26, 10, 10, 10, 'mint', 'n'),
-  b(-41, 26, 8, 10, 8, 'blue', 'n'),
-  b(-28, 41, 10, 8, 9, 'pink', 'n'),
-  b(-41, 41, 8, 8, 12, 'lilac', 'n'),
 
   // Herkesin kendi evine girdiği kapı (lobi meydanının güneybatısı)
   b(-9, 10, 5, 5, 4.6, 'mint', 'e', '🏠 Evim', { homeDoor: true }),
@@ -159,7 +153,7 @@ for (const [x, z] of [[-8, 33], [-1, 36], [7, 34], [-6, 41], [5, 42]]) {
 for (const [x, z] of [[-8, 33], [7, 34], [-6, 41]]) PROPS.push(p('lounger', x + 2.55, z + 0.75, 1.7, 0, 0.6))
 for (const [x, z] of [[-12, 31], [12, 31], [-11, 44], [11, 44]]) PROPS.push(p('palm', x, z, 4.6, 0.5))
 // mahalle köşelerinde ağaçlar
-for (const [x, z] of [[17, -33], [-17, -33], [17, 33], [-17, 33], [47 - 2, 14], [-47 + 2, -16]]) PROPS.push(p('tree', x, z, 3.6, 0.7))
+for (const [x, z] of [[17, -33], [17, 33], [47 - 2, 14]]) PROPS.push(p('tree', x, z, 3.6, 0.7))
 
 // ---------- oturma noktaları (birlikte yapılan şeyler: server/features/together.js de okur) ----------
 // Banklar 2, şezlonglar ve sandalyeler 1 kişilik. face: oturanın bakışı = prop.ry + face (modelin önü).
@@ -213,6 +207,7 @@ export const COLLIDERS = [
     return { type: 'box', x: bd.x, z: bd.z, hw: (side ? bd.d : bd.w) / 2 + 0.15, hd: (side ? bd.w : bd.d) / 2 + 0.15 }
   }),
   ...PROPS.filter((pr) => pr.r > 0).map((pr) => ({ type: 'circle', x: pr.x, z: pr.z, r: pr.r })),
+  ...PLOT_COLLIDERS, // Konut Mahallesi: yalnızca sahipli parsellerde (occupiedPlots)
 ]
 
 export const PLAYER_RADIUS = 0.4
@@ -222,6 +217,7 @@ export function resolveCollisions(x, z) {
   x = Math.max(-PLAY_LIMIT, Math.min(PLAY_LIMIT, x))
   z = Math.max(-PLAY_LIMIT, Math.min(PLAY_LIMIT, z))
   for (const c of COLLIDERS) {
+    if (c.plot && !occupiedPlots.has(c.plot)) continue
     if (c.type === 'circle') {
       const dx = x - c.x
       const dz = z - c.z

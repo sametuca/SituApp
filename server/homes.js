@@ -93,3 +93,25 @@ export function setDecor(key, ownerName, decor) {
   persist()
   return homes[key].decor
 }
+
+// ---- konut mahallesi (features/neighborhood.js): parsel ve evin dış görünümü; yalnızca yeni alanlar ----
+export const getPlot = (key) => homes[key]?.plot ?? null
+export const getExterior = (key) => homes[key]?.exterior ?? null
+
+export function setPlot(key, ownerName, plot) {
+  homes[key] = { items: [], open: false, ...homes[key], owner: ownerName, plot }
+  persist()
+  return plot
+}
+
+export function setExterior(key, ownerName, exterior) {
+  homes[key] = { items: [], open: false, ...homes[key], owner: ownerName, exterior }
+  persist()
+  return exterior
+}
+
+/** Parseli olan evler: [{ key, owner, open, plot, exterior }] */
+export const listPlotted = () =>
+  Object.entries(homes)
+    .filter(([, h]) => h.plot)
+    .map(([key, h]) => ({ key, owner: h.owner, open: Boolean(h.open), plot: h.plot, exterior: h.exterior ?? null }))

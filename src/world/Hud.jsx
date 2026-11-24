@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ToyButton } from '../components/ui'
 import { BUILDINGS, GUIDE, ROAD_HALF, ZONES } from './layout'
+import { PLOTS, PLOT_D, PLOT_W, STREET_X, STREET_HALF, occupiedPlots } from './neighborhood'
 
 const glass = 'border-2 border-white bg-white/75 shadow-soft backdrop-blur-md'
 
@@ -106,6 +107,16 @@ export function Minimap({ focusRef, remotes, compact }) {
         if (b.gazebo) continue
         ctx.fillStyle = b.roof
         ctx.fillRect(toMap(b.x - b.w / 2), toMap(b.z - b.d / 2), (b.w / (RANGE * 2)) * MAP, (b.d / (RANGE * 2)) * MAP)
+      }
+      // Konut Mahallesi: sokak + parseller (sahipli = pembe çatı, boş = gri)
+      ctx.fillStyle = '#f7f0fb'
+      for (const [z0, z1] of [[-47, -14], [14, 47]]) ctx.fillRect(toMap(STREET_X - STREET_HALF), toMap(z0), toMap(STREET_X + STREET_HALF) - toMap(STREET_X - STREET_HALF), toMap(z1) - toMap(z0))
+      for (const pl of PLOTS) {
+        const side = pl.facing === 'e' || pl.facing === 'w'
+        const w = side ? PLOT_D : PLOT_W
+        const d = side ? PLOT_W : PLOT_D
+        ctx.fillStyle = occupiedPlots.has(pl.id) ? '#ffb6d3' : '#dcd6e6'
+        ctx.fillRect(toMap(pl.x - w / 2 + 0.4), toMap(pl.z - d / 2 + 0.4), ((w - 0.8) / (RANGE * 2)) * MAP, ((d - 0.8) / (RANGE * 2)) * MAP)
       }
       ctx.fillStyle = '#ff7eb3'
       ctx.beginPath()
