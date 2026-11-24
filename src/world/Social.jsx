@@ -71,7 +71,7 @@ export function Joystick({ inputRef }) {
       onPointerCancel={release}
     >
       <div
-        className={`absolute rounded-full border-2 border-white shadow-md ${running ? 'bg-[#5fc0ea]' : 'bg-[#71dedd]'}`}
+        className={`absolute rounded-full border-2 border-white shadow-md ${running ? 'bg-[#5fc0ea]' : 'bg-[#fdb252]'}`}
         style={{
           width: KNOB,
           height: KNOB,
@@ -102,7 +102,7 @@ export function NearbyCard({ peer, touch, onChat, onInteract, onDismiss }) {
           <p className="text-xs font-bold text-[#8a7a9c]">yakınında 👋</p>
         </div>
         <div className="flex shrink-0 gap-1.5">
-          <button onClick={onInteract} aria-label="Etkileşim menüsü" title="Kalp, çiçek, fısıltı…" className="grid h-10 w-10 place-items-center rounded-xl border-b-4 border-[#53c1bf] bg-[#9fe8e8] text-lg shadow-soft active:translate-y-[2px] active:border-b-2">
+          <button onClick={onInteract} aria-label="Etkileşim menüsü" title="Kalp, çiçek, fısıltı…" className="grid h-10 w-10 place-items-center rounded-xl border-b-4 border-[#e8952c] bg-[#fecb89] text-lg shadow-soft active:translate-y-[2px] active:border-b-2">
             💗
           </button>
           <div className="w-28">
@@ -111,7 +111,7 @@ export function NearbyCard({ peer, touch, onChat, onInteract, onDismiss }) {
             </ToyButton>
           </div>
         </div>
-        <button onClick={onDismiss} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black text-[#8a7a9c] hover:bg-[#def7f7]/70">
+        <button onClick={onDismiss} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
           ✕
         </button>
       </div>
@@ -159,7 +159,7 @@ export function ReactionBar({ onReact, touch }) {
                 onReact(e)
                 setOpen(false)
               }}
-              className="relative grid h-11 w-11 place-items-center rounded-2xl text-2xl transition hover:bg-[#def7f7]/70 active:scale-90"
+              className="relative grid h-11 w-11 place-items-center rounded-2xl text-2xl transition hover:bg-[#ffedd6]/70 active:scale-90"
             >
               {e}
               {!touch && i < 10 && <span className="absolute bottom-0 right-1 text-[9px] font-black text-[#8a7a9c]">{(i + 1) % 10}</span>}
@@ -218,7 +218,7 @@ export function InteractSheet({ peer, near, canInvite, touch, extras = [], heade
             {peer.dnd ? '🌙 rahatsız etme açık · şimdilik ulaşılamaz' : near ? 'yakınında · jestler açık' : 'biraz uzakta · jest için yaklaş'}
           </p>
         </div>
-        <button onClick={onClose} aria-label="Kapat" className="grid h-9 w-9 place-items-center rounded-full text-sm font-black text-[#8a7a9c] hover:bg-[#def7f7]/70">
+        <button onClick={onClose} aria-label="Kapat" className="grid h-9 w-9 place-items-center rounded-full text-sm font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
           ✕
         </button>
       </div>
@@ -231,7 +231,7 @@ export function InteractSheet({ peer, near, canInvite, touch, extras = [], heade
             key={g.kind}
             onClick={() => onGesture(g.kind)}
             disabled={!near}
-            className="flex flex-col items-center gap-0.5 rounded-2xl border-2 border-white bg-[#e8faf9]/80 py-2 text-[#4a3b5c] transition active:scale-95 enabled:hover:bg-[#d9f6f5] disabled:opacity-45"
+            className="flex flex-col items-center gap-0.5 rounded-2xl border-2 border-white bg-[#fff2e3]/80 py-2 text-[#4a3b5c] transition active:scale-95 enabled:hover:bg-[#ffead0] disabled:opacity-45"
           >
             <span className="text-2xl">{g.emoji}</span>
             <span className="text-[11px] font-extrabold">{g.label}</span>
@@ -240,7 +240,7 @@ export function InteractSheet({ peer, near, canInvite, touch, extras = [], heade
       </div>
 
       <div className="flex gap-2">
-        <button onClick={onChat} className="flex-1 rounded-2xl border-b-4 border-[#53c1bf] bg-[#71dedd] py-2 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2">
+        <button onClick={onChat} className="flex-1 rounded-2xl border-b-4 border-[#e8952c] bg-[#fdb252] py-2 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2">
           💬 Sohbet
         </button>
         <button
@@ -308,14 +308,14 @@ export function GestureChip({ from, onBack, onChat, onClose }) {
           {from.emoji}
         </span>
         <p className="min-w-0 flex-1 text-sm font-black text-[#4a3b5c]">
-          <span className="text-[#71dedd]">{from.name}</span> {g?.text ?? 'sana bir jest yaptı'}
+          <span className="text-[#fdb252]">{from.name}</span> {g?.text ?? 'sana bir jest yaptı'}
         </p>
-        <button onClick={onClose} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black text-[#8a7a9c] hover:bg-[#def7f7]/70">
+        <button onClick={onClose} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
           ✕
         </button>
       </div>
       <div className="mt-2 flex gap-2">
-        <button onClick={onBack} className="flex-1 rounded-xl border-b-4 border-[#53c1bf] bg-[#71dedd] py-1.5 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2">
+        <button onClick={onBack} className="flex-1 rounded-xl border-b-4 border-[#e8952c] bg-[#fdb252] py-1.5 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2">
           {from.emoji} Karşılık ver
         </button>
         <button onClick={onChat} className="flex-1 rounded-xl border-b-4 border-[#c9b6f5] bg-[#e9ddff] py-1.5 text-sm font-extrabold text-[#5b3fa8] active:translate-y-[2px] active:border-b-2">
@@ -348,7 +348,7 @@ export function MatchOverlay({ peer, onChat, onClose }) {
     }
   }, [onClose])
   return (
-    <div className="absolute inset-0 z-40 grid place-items-center overflow-hidden bg-gradient-to-br from-[#d9f6f5]/85 via-[#e9ddff]/85 to-[#cfeaff]/85 p-4 backdrop-blur-[3px]" role="dialog" aria-label="Eşleşme">
+    <div className="absolute inset-0 z-40 grid place-items-center overflow-hidden bg-gradient-to-br from-[#ffead0]/85 via-[#e9ddff]/85 to-[#cfeaff]/85 p-4 backdrop-blur-[3px]" role="dialog" aria-label="Eşleşme">
       {spec.map((h, i) => (
         <span
           key={i}
@@ -360,13 +360,13 @@ export function MatchOverlay({ peer, onChat, onClose }) {
         </span>
       ))}
       <div className="relative flex w-full max-w-sm animate-pop flex-col items-center gap-3 rounded-[2rem] border-2 border-white bg-white/90 p-6 text-center shadow-toy">
-        <p className="text-sm font-extrabold uppercase tracking-widest text-[#71dedd]">Eşleşme</p>
+        <p className="text-sm font-extrabold uppercase tracking-widest text-[#fdb252]">Eşleşme</p>
         <Portrait peer={peer} size={112} className="h-28 w-28 !border-4 shadow-soft [animation:match-pulse_1.6s_ease-in-out_infinite]" />
         <h2 className="text-3xl font-black text-[#4a3b5c]">💞 {peer.name}</h2>
         <p className="text-sm font-semibold text-[#6f5f82]">Birbirinize kalp gönderdiniz. Belki de ilk adımı atma zamanı… 🌙</p>
         <div className="mt-1 flex w-full flex-col gap-2">
           <ToyButton onClick={onChat}>💬 Sohbet et</ToyButton>
-          <button onClick={onClose} className="rounded-2xl py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#def7f7]/60">
+          <button onClick={onClose} className="rounded-2xl py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#ffedd6]/60">
             Daha sonra
           </button>
         </div>
@@ -394,7 +394,7 @@ export function InviteChip({ from, onGo, onClose }) {
           Git
         </ToyButton>
       </div>
-      <button onClick={onClose} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black text-[#8a7a9c] hover:bg-[#def7f7]/70">
+      <button onClick={onClose} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
         ✕
       </button>
     </div>
@@ -412,7 +412,7 @@ export function IncomingChip({ from, onOpen, onClose }) {
       onClick={onOpen}
       className={`absolute left-1/2 top-24 z-20 w-[min(92vw,20rem)] -translate-x-1/2 animate-pop rounded-3xl px-4 py-2.5 text-left ${glass}`}
     >
-      <p className="text-xs font-extrabold text-[#71dedd]">{from.whisper ? `🤫 ${from.name} sana fısıldadı` : `💌 ${from.name} sana yazdı`}</p>
+      <p className="text-xs font-extrabold text-[#fdb252]">{from.whisper ? `🤫 ${from.name} sana fısıldadı` : `💌 ${from.name} sana yazdı`}</p>
       <p className="truncate text-sm font-semibold text-[#4a3b5c]">{from.text}</p>
     </button>
   )
@@ -467,7 +467,7 @@ export function ChatSheet({ peer, feed, onSend, onClose, touch, typing, onTyping
           <p className="truncate text-base font-black text-[#4a3b5c]">{peer ? peer.name : 'Herkese açık sohbet'}</p>
           <p className="text-xs font-bold text-[#8a7a9c]">{peer ? 'Özel sohbet · sadece ikiniz görürsünüz' : 'Yakındaki herkes duyar'}</p>
         </div>
-        <button onClick={onClose} aria-label="Sohbeti kapat" className="grid h-9 w-9 place-items-center rounded-full text-sm font-black text-[#8a7a9c] hover:bg-[#def7f7]/70">
+        <button onClick={onClose} aria-label="Sohbeti kapat" className="grid h-9 w-9 place-items-center rounded-full text-sm font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
           ✕
         </button>
       </div>
@@ -494,7 +494,7 @@ export function ChatSheet({ peer, feed, onSend, onClose, touch, typing, onTyping
             key={`${m.ts}-${i}`}
             className={`max-w-[85%] break-words rounded-2xl px-3 py-1.5 text-sm font-semibold ${
               m.kind === 'system'
-                ? 'w-fit bg-[#71dedd]/90 text-white'
+                ? 'w-fit bg-[#fdb252]/90 text-white'
                 : m.whisper
                   ? `italic border-2 border-dashed border-[#c9b6f5] bg-[#f4edff] text-[#5b3fa8] ${m.self ? 'self-end' : 'self-start'}`
                   : m.self
@@ -514,7 +514,7 @@ export function ChatSheet({ peer, feed, onSend, onClose, touch, typing, onTyping
             <button
               key={q}
               onClick={() => onSend(q)}
-              className="shrink-0 rounded-full border-2 border-white bg-[#def7f7]/70 px-3 py-1.5 text-xs font-extrabold text-[#4a3b5c] active:scale-95"
+              className="shrink-0 rounded-full border-2 border-white bg-[#ffedd6]/70 px-3 py-1.5 text-xs font-extrabold text-[#4a3b5c] active:scale-95"
             >
               {q}
             </button>
@@ -552,7 +552,7 @@ export function ChatSheet({ peer, feed, onSend, onClose, touch, typing, onTyping
                 setText((t) => (t + e).slice(0, 140))
                 input.current?.focus()
               }}
-              className="grid h-9 place-items-center rounded-xl text-xl active:scale-90 hover:bg-[#def7f7]/60"
+              className="grid h-9 place-items-center rounded-xl text-xl active:scale-90 hover:bg-[#ffedd6]/60"
             >
               {e}
             </button>
@@ -578,7 +578,7 @@ export function ChatSheet({ peer, feed, onSend, onClose, touch, typing, onTyping
           placeholder="Mesaj yaz…"
           className="min-w-0 flex-1 rounded-2xl border-2 border-[#d6c7ff]/70 bg-white px-4 py-2.5 text-base font-semibold text-[#4a3b5c] outline-none placeholder:text-[#8a7a9c]/60 focus:ring-4 focus:ring-[#d6c7ff]/60"
         />
-        <button type="submit" aria-label="Gönder" className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border-b-4 border-[#53c1bf] bg-[#71dedd] text-lg text-white active:translate-y-0.5 active:border-b-2">
+        <button type="submit" aria-label="Gönder" className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border-b-4 border-[#e8952c] bg-[#fdb252] text-lg text-white active:translate-y-0.5 active:border-b-2">
           ➤
         </button>
         {onVoice && !text.trim() && <MicButton onSend={onVoice} />}

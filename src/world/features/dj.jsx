@@ -191,7 +191,7 @@ function DjCard({ d, selfId, fire, result, muted, setMuted, onJoin, onLeave, onP
                 {track.p === 'yt' ? <YtPlayer track={track} getOffset={getOffset} onError={() => setPlayerErr(true)} /> : <SpPlayer track={track} onError={() => setPlayerErr(true)} />}
               </div>
             )}
-            {track && playerErr && <p className="rounded-2xl bg-[#e8faf9] px-3 py-2 text-xs font-bold text-[#4a8e8c]">Bu parça gömülü çalmaya kapalı ya da yüklenemedi.</p>}
+            {track && playerErr && <p className="rounded-2xl bg-[#fff2e3] px-3 py-2 text-xs font-bold text-[#aa732e]">Bu parça gömülü çalmaya kapalı ya da yüklenemedi.</p>}
             {track && (
               <p className="text-center text-[11px] font-extrabold text-[#8a7a9c]">
                 {trackLabel(track)}
@@ -212,7 +212,7 @@ function DjCard({ d, selfId, fire, result, muted, setMuted, onJoin, onLeave, onP
                 />
                 {err && <p className="text-[11px] font-bold text-rose-400">{err}</p>}
                 <div className="flex gap-1.5">
-                  <button type="submit" className={`${btn} flex-1 border-[#53c1bf] bg-[#71dedd] text-white`}>
+                  <button type="submit" className={`${btn} flex-1 border-[#e8952c] bg-[#fdb252] text-white`}>
                     ▶ Çal
                   </button>
                   {track && (
@@ -256,7 +256,7 @@ function DjCard({ d, selfId, fire, result, muted, setMuted, onJoin, onLeave, onP
                     Sıradan çık ({place + 1}.)
                   </button>
                 ) : (
-                  <button onClick={onJoin} className={`${btn} border-[#53c1bf] bg-[#71dedd] text-white`}>
+                  <button onClick={onJoin} className={`${btn} border-[#e8952c] bg-[#fdb252] text-white`}>
                     🎧 DJ ol
                   </button>
                 )}

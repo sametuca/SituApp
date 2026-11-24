@@ -1,10 +1,12 @@
 import { useMemo, useRef, useState } from 'react'
 import { screenK } from './screenK'
 import { useFrame, useLoader } from '@react-three/fiber'
-import { CanvasTexture, Color, DataTexture, LinearFilter, RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
+import { CanvasTexture, Color, DataTexture, ExtrudeGeometry, Shape, LinearFilter, RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
 import { Html, RoundedBox } from '@react-three/drei'
 import { BLANKETS, BUILDINGS, GAZEBO, ISLAND, PROPS, RIM, ROAD_END, ROAD_HALF } from './layout'
 import { useCull } from './cull'
+import Facade from './Facade'
+import { facadeOf } from './facadeData'
 import Prop from './Prop'
 import Plants from './Plants'
 import { Em } from '../components/emoji'
@@ -15,6 +17,24 @@ const FACING = { s: 0, n: Math.PI, e: Math.PI / 2, w: -Math.PI / 2 }
 
 // katman yükseklikleri (z-fighting olmasın)
 const Y = { floor: 0.02, sidewalk: 0.04, road: 0.06, plaza: 0.08, mark: 0.1 }
+
+// Doku önbelleği: aynı (doku, tekrar, kaydırma) için tek Texture nesnesi (her bina/parça için ayrı klon GPU'ya ayrı yüklenir; 70 bina × 4 yüz = yüzlerce yükleme).
+const texCache = new Map()
+function sharedTexture(base, key, setup) {
+  const k = `${base.uuid}|${key}`
+  let t = texCache.get(k)
+  if (!t) {
+    t = base.clone()
+    t.wrapS = t.wrapT = RepeatWrapping
+    t.colorSpace = SRGBColorSpace
+    t.anisotropy = 8
+    setup(t)
+    t.needsUpdate = true
+    texCache.set(k, t)
+  }
+  return t
+}
+const q = (v, s = 0.25) => Math.max(s, Math.round(v / s) * s) // tekrar sayısını yuvarla (önbellek isabeti)
 
 // Yer dokuları (Meshy ile üretilen üstten bakış desenler, scripts/make-tileable.py ile döşenebilir yapıldı): public/textures/<ad>.webp
 export const GROUND_TEX = { grass: 4.5, asphalt: 5, cobble: 3.2, sand: 4 } // doku adı → bir kiremitin kapladığı metre
@@ -54,15 +74,15 @@ function Flat({ x = 0, z = 0, w, d, y, color = '#ffffff', round, tex, feather = 
   const base = useLoader(TextureLoader, `/textures/${tex ?? 'grass'}.webp`)
   const map = useMemo(() => {
     if (!tex) return null
-    const t = base.clone()
-    t.wrapS = t.wrapT = RepeatWrapping
-    t.colorSpace = SRGBColorSpace
-    t.anisotropy = 8
     const m = GROUND_TEX[tex]
-    t.repeat.set((round ? round * 2 : w) / m, (round ? round * 2 : d) / m)
-    t.offset.set((x / m) % 1, (-z / m) % 1) // komşu parçalarda desen aynı hizadan devam etsin
-    t.needsUpdate = true
-    return t
+    const rx = Math.round(((round ? round * 2 : w) / m) * 20) / 20
+    const ry = Math.round(((round ? round * 2 : d) / m) * 20) / 20
+    const ox = Math.round((((x / m) % 1) + 1) * 20) / 20 % 1
+    const oy = Math.round((((-z / m) % 1) + 1) * 20) / 20 % 1
+    return sharedTexture(base, `f${rx}|${ry}|${ox}|${oy}`, (t) => {
+      t.repeat.set(rx, ry)
+      t.offset.set(ox, oy) // komşu parçalarda desen aynı hizadan devam etsin
+    })
   }, [base, tex, w, d, round, x, z])
   const alpha = useMemo(() => (feather > 0 ? featherTexture(round ? round * 2 : w, round ? round * 2 : d, feather, round ? round * 2 : 0) : null), [feather, w, d, round])
   return (
@@ -92,7 +112,7 @@ function splitLabel(text) {
 }
 
 // Modern harita pini: renkli halkalı yuvarlak rozet + 3D ikon + sivri uç; yakında ad etiketi açılır.
-function Label({ text, y, x, z, zOff = 0, focusRef, accent = '#7fe0e1' }) {
+function Label({ text, y, x, z, zOff = 0, focusRef, accent = '#fdbb63' }) {
   const [mode, setMode] = useState(2) // 0 gizli, 1 yalnız rozet, 2 rozet + ad
   const clock = useRef(0)
   useFrame(({ camera }, dt) => {
@@ -134,12 +154,12 @@ function Label({ text, y, x, z, zOff = 0, focusRef, accent = '#7fe0e1' }) {
 // Her bina, sırasına göre bir stil alır (komşu binalar farklı olur): cephe dokusu (Meshy), çatı biçimi, pencere türü ve süsler.
 const WALL_TEX = { brick: 2.4, siding: 2.0, mosaic: 2.6, plaster: 4, shingle: 2.0 } // doku adı → bir kiremitin metre boyu
 const STYLES = [
-  { wall: 'brick', roofType: 'gable', win: 'arch', shutters: true, chimney: true, door: '#5fa2a2' },
-  { wall: 'siding', roofType: 'flat', win: 'round', flowerbox: true, door: '#3aa6a0' },
+  { wall: 'brick', roofType: 'gable', win: 'arch', shutters: true, chimney: true, door: '#bf8942' },
+  { wall: 'siding', roofType: 'flat', win: 'round', flowerbox: true, door: '#cc7914' },
   { wall: 'mosaic', roofType: 'hip', win: 'wide', door: '#e8873a' },
   { wall: 'plaster', roofType: 'flat', win: 'rect', balcony: true, door: '#8a6bd1' },
   { wall: 'brick', roofType: 'hip', win: 'rect', shutters: true, chimney: true, door: '#5b86d6' },
-  { wall: 'siding', roofType: 'gable', win: 'wide', flowerbox: true, door: '#50aab0' },
+  { wall: 'siding', roofType: 'gable', win: 'wide', flowerbox: true, door: '#d58f2b' },
 ]
 const lighten = (hex, t) => `#${new Color(hex).lerp(new Color('#ffffff'), t).getHexString()}`
 
@@ -147,14 +167,10 @@ const lighten = (hex, t) => `#${new Color(hex).lerp(new Color('#ffffff'), t).get
 function Panel({ tex, w, h, color, position, rotation, repeat }) {
   const base = useLoader(TextureLoader, `/textures/${tex}.webp`)
   const map = useMemo(() => {
-    const t = base.clone()
-    t.wrapS = t.wrapT = RepeatWrapping
-    t.colorSpace = SRGBColorSpace
-    t.anisotropy = 8
     const m = WALL_TEX[tex] ?? 2.4
-    t.repeat.set(repeat?.[0] ?? w / m, repeat?.[1] ?? h / m)
-    t.needsUpdate = true
-    return t
+    const rx = q(repeat?.[0] ?? w / m)
+    const ry = q(repeat?.[1] ?? h / m)
+    return sharedTexture(base, `${rx}|${ry}`, (t) => t.repeat.set(rx, ry))
   }, [base, tex, w, h, repeat])
   return (
     <mesh position={position} rotation={rotation} receiveShadow>
@@ -164,30 +180,38 @@ function Panel({ tex, w, h, color, position, rotation, repeat }) {
   )
 }
 
+/** Beşik çatı: üçgen kesit (taban duvar üstünde), sırtı bina genişliği boyunca. */
+function GableRoof({ w, d, h, mat }) {
+  const geo = useMemo(() => {
+    const dd = d + 0.9
+    const sh = new Shape()
+    sh.moveTo(-dd / 2, 0)
+    sh.lineTo(dd / 2, 0)
+    sh.lineTo(0, Math.min(2.6, dd * 0.36))
+    sh.closePath()
+    const g = new ExtrudeGeometry(sh, { depth: w + 0.9, bevelEnabled: false })
+    g.translate(0, 0, -(w + 0.9) / 2)
+    return g
+  }, [w, d])
+  return (
+    <mesh geometry={geo} position={[0, h - 0.05, 0]} rotation={[0, Math.PI / 2, 0]} castShadow>
+      {mat}
+    </mesh>
+  )
+}
+
 function Roof({ w, d, h, color, type }) {
   const tint = lighten(color, 0.35)
   const shingle = useLoader(TextureLoader, '/textures/shingle.webp')
-  const map = useMemo(() => {
-    const t = shingle.clone()
-    t.wrapS = t.wrapT = RepeatWrapping
-    t.colorSpace = SRGBColorSpace
-    t.repeat.set(3, 2)
-    t.needsUpdate = true
-    return t
-  }, [shingle])
+  const map = useMemo(() => sharedTexture(shingle, 'roof', (t) => t.repeat.set(3, 2)), [shingle])
   const mat = <meshStandardMaterial color={color} map={map} roughness={0.55} />
   if (type === 'gable') {
-    const R = (d + 0.8) / 1.732
-    return (
-      <mesh position={[0, h + 0.5 + R * 0.2, 0]} rotation={[0, 0, Math.PI / 2]} scale={[0.4, 1, 1]} castShadow>
-        <cylinderGeometry args={[R, R, w + 0.8, 3, 1, false, Math.PI / 2]} />
-        {mat}
-      </mesh>
-    )
+    return <GableRoof w={w} d={d} h={h} mat={mat} />
   }
   if (type === 'hip') {
+    // koni tabanı duvar üstünde (h - 0,05): çatı havada durmaz
     return (
-      <mesh position={[0, h + 0.5 + 1.1, 0]} rotation={[0, Math.PI / 4, 0]} scale={[(w + 0.8) / 1.414, 1, (d + 0.8) / 1.414]} castShadow>
+      <mesh position={[0, h - 0.05 + 1.1, 0]} rotation={[0, Math.PI / 4, 0]} scale={[(w + 0.9) / 1.414, 1, (d + 0.9) / 1.414]} castShadow>
         <coneGeometry args={[1, 2.2, 4]} />
         {mat}
       </mesh>
@@ -258,7 +282,7 @@ function Window({ kind, x, y, z, w, accent, shutters, flowerbox }) {
           {[-0.4, 0, 0.4].map((fx) => (
             <mesh key={fx} position={[fx * (w / 1.6), 0.24, 0]}>
               <sphereGeometry args={[0.17, 10, 8]} />
-              <meshStandardMaterial color={fx === 0 ? '#ffd35e' : '#71dedd'} roughness={0.6} />
+              <meshStandardMaterial color={fx === 0 ? '#ffd35e' : '#fdb252'} roughness={0.6} />
             </mesh>
           ))}
         </group>
@@ -277,6 +301,8 @@ function Building({ b, i, focusRef }) {
   const winY = Math.min(3.4, h - 0.9)
   const rows = h > 8 ? [winY, winY + 2.6, winY + 5.2].filter((y) => y < h - 0.8) : [winY]
   const wallColor = lighten(color, st.wall === 'brick' ? 0.62 : 0.45)
+  const fac = facadeOf(b)
+  const doorShift = ((i * 7) % 3 - 1) * 0.12 * w // sıradan binalarda kapı biraz kayık (hepsi aynı görünmesin)
   const ww = Math.min(1.5, w / count - 0.8)
   return (
     <group ref={grp} position={[b.x, 0, b.z]} rotation={[0, FACING[facing], 0]}>
@@ -295,24 +321,35 @@ function Building({ b, i, focusRef }) {
         </RoundedBox>
       )}
 
-      {/* kapı */}
-      <RoundedBox args={[1.9, 2.5, 0.2]} radius={0.08} position={[0, 1.25, d / 2 + 0.05]}>
-        <meshStandardMaterial color="#fffaf2" roughness={0.5} />
-      </RoundedBox>
-      <mesh position={[0, 1.2, d / 2 + 0.17]}>
-        <boxGeometry args={[1.5, 2.1, 0.05]} />
-        <meshStandardMaterial color={st.door} roughness={0.4} />
-      </mesh>
-      <mesh position={[0.5, 1.15, d / 2 + 0.21]}>
-        <circleGeometry args={[0.07, 12]} />
-        <meshStandardMaterial color="#ffd35e" roughness={0.3} />
-      </mesh>
-
-      {/* pencereler */}
-      {rows.map((y, ri) =>
-        Array.from({ length: count }, (_, ci) => (
-          <Window key={`${y}-${ci}`} kind={st.win} x={(ci - (count - 1) / 2) * (w / count)} y={y} z={d / 2 + 0.06} w={st.win === 'wide' ? Math.min(2.0, w / count - 0.6) : ww} accent={roof} shutters={st.shutters && ri === 0} flowerbox={st.flowerbox && ri === 0} />
-        )),
+      {fac ? (
+        <>
+          <Facade F={fac} w={w} h={h} roof={roof} z={d / 2} />
+          {!fac.noUpper && h >= 5.5 &&
+            Array.from({ length: Math.max(1, Math.floor(w / 3.2)) }, (_, ci) => (
+              <Window key={ci} kind={st.win === 'round' ? 'rect' : st.win} x={(ci - (Math.max(1, Math.floor(w / 3.2)) - 1) / 2) * (w / Math.max(1, Math.floor(w / 3.2)))} y={Math.min(h - 1.2, 4.2)} z={d / 2 + 0.06} w={ww} accent={roof} />
+            ))}
+        </>
+      ) : (
+        <>
+          {/* kapı: normal boy (1,2 × 2,2 m), cephede ortada ya da kayık */}
+          <RoundedBox args={[1.45, 2.35, 0.16]} radius={0.06} position={[doorShift, 1.17, d / 2 + 0.04]}>
+            <meshStandardMaterial color="#fffaf2" roughness={0.5} />
+          </RoundedBox>
+          <mesh position={[doorShift, 1.12, d / 2 + 0.13]}>
+            <boxGeometry args={[1.2, 2.15, 0.05]} />
+            <meshStandardMaterial color={st.door} roughness={0.4} />
+          </mesh>
+          <mesh position={[doorShift + 0.4, 1.1, d / 2 + 0.17]}>
+            <circleGeometry args={[0.06, 12]} />
+            <meshStandardMaterial color="#ffd35e" roughness={0.3} />
+          </mesh>
+          {/* pencereler */}
+          {rows.map((y, ri) =>
+            Array.from({ length: count }, (_, ci) => (
+              <Window key={`${y}-${ci}`} kind={st.win} x={(ci - (count - 1) / 2) * (w / count)} y={y} z={d / 2 + 0.06} w={st.win === 'wide' ? Math.min(2.0, w / count - 0.6) : ww} accent={roof} shutters={st.shutters && ri === 0} flowerbox={st.flowerbox && ri === 0} />
+            )),
+          )}
+        </>
       )}
 
       {/* balkon (yalnızca bazı stillerde, ikinci katın altında) */}
@@ -336,7 +373,7 @@ function Building({ b, i, focusRef }) {
       )}
 
       {/* dükkan tentesi */}
-      {shop && (
+      {shop && !fac && (
         <mesh position={[0, 2.95, d / 2 + 0.75]} rotation={[0.3, 0, 0]} castShadow>
           <boxGeometry args={[Math.min(w - 0.6, 4.4), 0.18, 1.6]} />
           <meshStandardMaterial color={roof} roughness={0.6} />
@@ -359,13 +396,27 @@ function Building({ b, i, focusRef }) {
   )
 }
 
+/** Cephe önü: bina girişinin önünde taş döşeme (çimen değil). Kaldırımın altında kalır, yola taşan kısım gizlenir. */
+function Apron({ b }) {
+  const side = b.facing === 'e' || b.facing === 'w'
+  const A = 3.4
+  const sgn = b.facing === 's' || b.facing === 'e' ? 1 : -1
+  const half = (side ? b.w : b.d) / 2 // cepheye dik yarı boyut: e/w'de x ekseni = d
+  const depthHalf = side ? b.d / 2 : b.d / 2
+  const wide = (side ? b.w : b.w) + 1.4
+  const cx = side ? b.x + sgn * (depthHalf + A / 2 - 0.1) : b.x
+  const cz = side ? b.z : b.z + sgn * (depthHalf + A / 2 - 0.1)
+  void half
+  return <Flat x={cx} z={cz} w={side ? A : wide} d={side ? wide : A} y={0.038} tex="cobble" color="#f6efe6" />
+}
+
 function Gazebo() {
   const posts = Array.from({ length: 6 }, (_, i) => (i / 6) * Math.PI * 2)
   return (
     <group position={[GAZEBO.x, 0, GAZEBO.z]}>
       <mesh position={[0, 0.15, 0]} receiveShadow>
         <cylinderGeometry args={[3.2, 3.3, 0.3, 32]} />
-        <meshStandardMaterial color="#e8faf9" roughness={0.6} />
+        <meshStandardMaterial color="#fff2e3" roughness={0.6} />
       </mesh>
       {posts.map((a, i) => (
         <mesh key={i} position={[Math.cos(a) * 2.7, 1.8, Math.sin(a) * 2.7]} castShadow>
@@ -418,7 +469,7 @@ function Sun({ focusRef }) {
 }
 
 // ---------- deniz: adanın dört yanı (Meshy dokulu, animasyonlu) ----------
-const WATER_COLOR = new Color('#a6e6f5')
+const WATER_COLOR = new Color('#feda9d')
 const WATER_NIGHT = new Color('#3f5a9c')
 
 function Sea() {
@@ -584,7 +635,7 @@ export default function City({ focusRef }) {
       {/* kaldırım + yollar */}
       <Flat x={0} z={nsCz} w={swW} d={nsLen} y={Y.sidewalk} tex="cobble" color="#fdf6ff" />
       <Flat x={ewCx} z={0} w={ewLen} d={swW} y={Y.sidewalk} tex="cobble" color="#fdf6ff" />
-      <Flat x={-19} z={0} w={14} d={3.4} y={Y.sidewalk} tex="cobble" color="#f3fcfc" /> {/* park patikası: lobiden çardağa */}
+      <Flat x={-19} z={0} w={14} d={3.4} y={Y.sidewalk} tex="cobble" color="#fff8f0" /> {/* park patikası: lobiden çardağa */}
       <Flat x={0} z={nsCz} w={road} d={nsLen} y={Y.road} tex="asphalt" />
       <Flat x={ewCx} z={0} w={ewLen} d={road} y={Y.road} tex="asphalt" />
       {DASHES.map((t) => (
@@ -595,12 +646,15 @@ export default function City({ focusRef }) {
       ))}
 
       {/* lobi meydanı */}
-      <Flat round={12} y={Y.plaza} tex="cobble" color="#f1fcfb" />
-      <Ring r0={6.6} r1={7.1} y={Y.mark} color="#dbf7f6" />
+      <Flat round={12} y={Y.plaza} tex="cobble" color="#fff7ee" />
+      <Ring r0={6.6} r1={7.1} y={Y.mark} color="#ffebd3" />
       <Ring r0={9.6} r1={10.2} y={Y.mark} color="#cfeaff" />
-      <Flat round={3.4} y={Y.mark} color="#dbf7f6" />
+      <Flat round={3.4} y={Y.mark} color="#ffebd3" />
       <Gazebo />
 
+      {BUILDINGS.filter((b) => !b.gazebo).map((b, i) => (
+        <Apron key={`ap${i}`} b={b} />
+      ))}
       {BUILDINGS.filter((b) => !b.gazebo).map((b, i) => (
         <Building key={i} b={b} i={i} focusRef={focusRef} />
       ))}

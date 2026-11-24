@@ -68,7 +68,7 @@ export const GARDEN_ITEMS = [
   { id: 'tree', name: 'Ağaç', emoji: '🌳' },
 ]
 export const DOOR_COLORS = [
-  { id: 'pink', name: 'Pembe', hex: '#8ce4e4' },
+  { id: 'pink', name: 'Pembe', hex: '#fec172' },
   { id: 'blue', name: 'Mavi', hex: '#7fcdf3' },
   { id: 'mint', name: 'Nane', hex: '#8fdcb4' },
   { id: 'yellow', name: 'Sarı', hex: '#ffd35e' },

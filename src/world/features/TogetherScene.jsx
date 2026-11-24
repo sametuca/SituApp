@@ -106,11 +106,11 @@ function PhotoSpotMark() {
     <group position={[PHOTO_SPOT.x, 0, PHOTO_SPOT.z]}>
       <mesh ref={ring} position={[0, 0.12, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[1.05, 1.35, 40]} />
-        <meshStandardMaterial color="#8ce4e4" roughness={0.8} />
+        <meshStandardMaterial color="#fec172" roughness={0.8} />
       </mesh>
       <mesh position={[0, 0.115, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[1.05, 40]} />
-        <meshStandardMaterial color="#f5fdfd" roughness={0.9} />
+        <meshStandardMaterial color="#fff8f0" roughness={0.9} />
       </mesh>
       {label && (
         <Html position={[0, 1.7, 0]} center distanceFactor={14} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>

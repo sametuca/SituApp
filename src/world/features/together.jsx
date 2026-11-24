@@ -42,7 +42,7 @@ function DanceOfferCard({ offer, onAnswer }) {
         </p>
       </div>
       <div className="mt-2.5 flex gap-2">
-        <button onClick={() => onAnswer(true)} className="flex-1 rounded-2xl border-b-4 border-[#53c1bf] bg-[#71dedd] py-2.5 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2">
+        <button onClick={() => onAnswer(true)} className="flex-1 rounded-2xl border-b-4 border-[#e8952c] bg-[#fdb252] py-2.5 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2">
           💃 Dans edelim
         </button>
         <button onClick={() => onAnswer(false)} className="flex-1 rounded-2xl border-b-4 border-[#c9b6f5] bg-[#e9ddff] py-2.5 text-sm font-extrabold text-[#5b3fa8] active:translate-y-[2px] active:border-b-2">
@@ -66,11 +66,11 @@ function SunsetCard({ moment }) {
     return () => cancelAnimationFrame(raf)
   }, [moment.until])
   return (
-    <div className="pointer-events-auto w-[min(94vw,21rem)] animate-pop overflow-hidden rounded-3xl border-2 border-white bg-gradient-to-r from-[#ffd1b8]/95 via-[#a8e9eb]/95 to-[#f3c9ff]/95 p-3 shadow-soft" role="status">
-      <p className="text-sm font-black text-[#355251]">🌅 Gün batımı anı</p>
+    <div className="pointer-events-auto w-[min(94vw,21rem)] animate-pop overflow-hidden rounded-3xl border-2 border-white bg-gradient-to-r from-[#ffd1b8]/95 via-[#fed195]/95 to-[#f3c9ff]/95 p-3 shadow-soft" role="status">
+      <p className="text-sm font-black text-[#604727]">🌅 Gün batımı anı</p>
       <p className="text-xs font-bold text-[#4f6766]">{moment.name} ile yan yanasınız. Tadını çıkarın 💗</p>
       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/60">
-        <div ref={ref} className="h-full origin-left rounded-full bg-[#71dedd]" />
+        <div ref={ref} className="h-full origin-left rounded-full bg-[#fdb252]" />
       </div>
     </div>
   )
@@ -449,7 +449,7 @@ export function useTogether(ctx) {
                 openChat(pair.id)
                 setPair(null)
               }}
-              className="shrink-0 rounded-xl border-b-4 border-[#53c1bf] bg-[#71dedd] px-3 py-1.5 text-xs font-extrabold text-white active:translate-y-[2px] active:border-b-2"
+              className="shrink-0 rounded-xl border-b-4 border-[#e8952c] bg-[#fdb252] px-3 py-1.5 text-xs font-extrabold text-white active:translate-y-[2px] active:border-b-2"
             >
               Sohbet et
             </button>

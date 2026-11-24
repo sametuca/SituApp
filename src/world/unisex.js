@@ -1,4 +1,4 @@
-// Unisex palet: 3D sahnedeki pembe/magenta tonları (GLB dokuları dahil) turkuaz-nane tonuna çevirilir. Tüm MeshStandard/Basic malzemeler
+// Unisex palet: 3D sahnedeki pembe/magenta tonları (GLB dokuları dahil) sıcak turuncu-amber tonuna çevirilir. Tüm MeshStandard/Basic malzemeler
 // ortak shader yaması alır (map_fragment/color_fragment sonrası). Ten rengi (turuncu tonlar) ve diğer renkler etkilenmez.
 // Kapatmak için materyal.userData.keepHue = true. Arayüz renkleri için: scripts/unisex-colors.py.
 import { Material } from 'three'
@@ -20,8 +20,8 @@ vec3 unisexRemap(vec3 col){
   vec3 h=unisexRgb2hsv(col);
   float hp=h.x>0.8?h.x-1.0:h.x;                       // pembe/magenta bölgesi: -0.2 … 0
   float w=smoothstep(-0.26,-0.20,hp)*(1.0-smoothstep(-0.035,0.0,hp))*smoothstep(0.10,0.22,h.y);
-  float nh=0.50+(hp+0.07)*0.45;                        // 336° → 180° (turkuaz)
-  vec3 out_=unisexHsv2rgb(vec3(nh,h.y*0.7,h.z*0.96));
+  float nh=0.085+(hp+0.07)*0.25;                       // 336° → ~31° (sıcak turuncu-amber)
+  vec3 out_=unisexHsv2rgb(vec3(nh,min(1.0,h.y*0.92),min(1.0,h.z*1.02)));
   return mix(col,out_,w);
 }
 `

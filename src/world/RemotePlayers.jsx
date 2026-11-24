@@ -13,9 +13,12 @@ const NEAR_DRAW = 42 // m: bu mesafeden uzaktaki oyuncular çizilmez
 import BikeModel from './Bike'
 
 /** Karakterin üstünde isim etiketi, konuşma balonu, uçan emoji tepkisi ve (fısıldıyorsa) 🤫. */
-function Tag({ name, bubble: rawBubble, accent, reaction, whisper }) {
+function Tag({ name, bubble: rawBubble, accent, reaction, whisper, showName = false }) {
   // bubble: metin ya da { text, big } (çıkartmalar büyük gösterilir)
   const bubble = typeof rawBubble === 'string' ? { text: rawBubble } : rawBubble
+  // oyuncuların kullanıcı adı ekranda yazmaz (kalabalık/okunaksız); isim, karaktere tıklayınca açılan profil penceresinde görünür.
+  // Etiket yalnızca konuşma balonu, emoji tepkisi ya da fısıltı varken çizilir. İsim göstermek gerekirse (Rehber NPC) `showName`.
+  if (!showName && !bubble && !reaction && !whisper) return null
   return (
     <Html position={[0, AVATAR_HEIGHT + 0.45, 0]} center distanceFactor={9 * screenK()} zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}>
       <div className="relative flex flex-col items-center gap-1">
@@ -32,9 +35,11 @@ function Tag({ name, bubble: rawBubble, accent, reaction, whisper }) {
         {whisper && !bubble && (
           <div className="animate-pop rounded-full border-2 border-white bg-[#e9ddff] px-2.5 py-0.5 text-xs font-extrabold text-[#6b4fc0] shadow">🤫 fısıldıyor…</div>
         )}
-        <div className={`whitespace-nowrap rounded-full border-2 border-white px-2.5 py-0.5 text-xs font-extrabold text-white shadow ${accent ?? 'bg-[#a88bff]'}`}>
-          {name}
-        </div>
+        {showName && (
+          <div className={`whitespace-nowrap rounded-full border-2 border-white px-2.5 py-0.5 text-xs font-extrabold text-white shadow ${accent ?? 'bg-[#a88bff]'}`}>
+            {name}
+          </div>
+        )}
       </div>
     </Html>
   )
@@ -187,7 +192,7 @@ export function GuideNpc({ focusRef, tips }) {
   return (
     <group position={[GUIDE.x, 0, GUIDE.z]} rotation={[0, GUIDE.ry, 0]}>
       <AvatarRig slug={GUIDE.avatar} anim="idle" />
-      <Tag name="🧭 Rehber" bubble={bubble} accent="bg-[#71dedd]" />
+      <Tag name="🧭 Rehber" bubble={bubble} accent="bg-[#ffa94d]" showName />
     </group>
   )
 }

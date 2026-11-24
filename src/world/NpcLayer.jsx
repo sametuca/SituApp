@@ -19,7 +19,7 @@ const TAG_DIST = 18 // m: etiket (Html) bu kadar yakındaysa
 const M = ({ color }) => <meshStandardMaterial color={color} roughness={0.85} />
 
 function Balloons() {
-  const cols = ['#8ce4e4', '#7fcdf3', '#ffd35e', '#b79cff']
+  const cols = ['#fec172', '#7fcdf3', '#ffd35e', '#b79cff']
   return (
     <group position={[0.42, 1.0, 0.12]}>
       {cols.map((c, i) => (
@@ -48,7 +48,7 @@ function Stool() {
 }
 
 function Flowers() {
-  const cols = ['#8ce4e4', '#ffd35e', '#ffffff', '#b79cff', '#71dedd']
+  const cols = ['#fec172', '#ffd35e', '#ffffff', '#b79cff', '#fdb252']
   return (
     <group position={[0.65, 0, 0.25]}>
       <mesh position={[0, 0.2, 0]} castShadow>
@@ -70,7 +70,7 @@ function IceCart() {
     <group position={[0.95, 0, 0.1]}>
       <mesh position={[0, 0.4, 0]} castShadow>
         <boxGeometry args={[0.7, 0.55, 1.0]} />
-        <M color="#a8ebea" />
+        <M color="#fed095" />
       </mesh>
       <mesh position={[0, 0.7, 0]}>
         <boxGeometry args={[0.74, 0.06, 1.04]} />
@@ -78,7 +78,7 @@ function IceCart() {
       </mesh>
       <mesh position={[0, 1.45, 0]} castShadow>
         <coneGeometry args={[0.85, 0.35, 8]} />
-        <M color="#8ce4e4" />
+        <M color="#fec172" />
       </mesh>
       <mesh position={[0, 1.07, 0]}>
         <cylinderGeometry args={[0.025, 0.025, 0.75, 6]} />
@@ -302,17 +302,23 @@ const AfkView = memo(function AfkView({ bot, focusRef }) {
   })
   if (!active) return null
   return (
-    <group position={[bot.x, 0, bot.z]} rotation={[0, bot.ry, 0]}>
+    <group
+      position={[bot.x, 0, bot.z]}
+      rotation={[0, bot.ry, 0]}
+      onClick={(e) => {
+        e.stopPropagation()
+        window.dispatchEvent(new CustomEvent('situapp:bot-click', { detail: bot }))
+      }}
+      onPointerOver={() => (document.body.style.cursor = 'pointer')}
+      onPointerOut={() => (document.body.style.cursor = '')}
+    >
       <Suspense fallback={null}>
         <AvatarRig slug={bot.avatar} anim="idle" />
       </Suspense>
-      {ready && (
-        <Html position={[0, AVATAR_HEIGHT + 0.45, 0]} center distanceFactor={9 * screenK()} zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}>
-          <div className="whitespace-nowrap rounded-full border-2 border-white bg-[#6ec3f0] px-2.5 py-0.5 text-xs font-extrabold text-white shadow">
-            {bot.name} <span className="opacity-90">💤</span>
-          </div>
-        </Html>
-      )}
+      <mesh position={[0, 0.9, 0]}>
+        <cylinderGeometry args={[0.55, 0.55, 1.8, 8]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
     </group>
   )
 })

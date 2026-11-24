@@ -3,7 +3,7 @@
 
 /** 6 pastel renk (aksesuar rengi). */
 export const PASTELS = [
-  { id: 'pink', name: 'Turkuaz', hex: '#8be4e3' },
+  { id: 'pink', name: 'Turkuaz', hex: '#fec071' },
   { id: 'lilac', name: 'Mor', hex: '#bba0ff' },
   { id: 'blue', name: 'Mavi', hex: '#8fd0ff' },
   { id: 'mint', name: 'Nane', hex: '#8fe3c0' },
@@ -48,7 +48,7 @@ export function sanitizeCos(c) {
 
 // ---------- ev dekoru ----------
 export const WALL_COLORS = [
-  { id: 'pink', name: 'Turkuaz', hex: '#e0f8f7' },
+  { id: 'pink', name: 'Turkuaz', hex: '#ffeed9' },
   { id: 'lilac', name: 'Mor', hex: '#e6dcff' },
   { id: 'blue', name: 'Mavi', hex: '#d4ebff' },
   { id: 'mint', name: 'Nane', hex: '#d3f5e4' },

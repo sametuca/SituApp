@@ -73,7 +73,7 @@ function FeedbackModal({ who, onClose, onSent }) {
           <p className="mt-1 text-sm font-semibold text-ink-soft">SituApp pre-alpha aşamasında. Ne düşündüğünü, neyi sevdiğini ya da neyin bozuk olduğunu yaz, doğrudan geliştiriciye ulaşır.</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {KINDS.map(([id, label]) => (
-              <button key={id} onClick={() => setKind(id)} aria-pressed={kind === id} className={`rounded-full border-2 px-3 py-1 text-sm font-extrabold transition active:scale-95 ${kind === id ? 'border-white bg-[#71dedd] text-white shadow' : 'border-white bg-white/70 text-[#4a3b5c]'}`}>
+              <button key={id} onClick={() => setKind(id)} aria-pressed={kind === id} className={`rounded-full border-2 px-3 py-1 text-sm font-extrabold transition active:scale-95 ${kind === id ? 'border-white bg-[#fdb252] text-white shadow' : 'border-white bg-white/70 text-[#4a3b5c]'}`}>
                 {label}
               </button>
             ))}
@@ -84,14 +84,14 @@ function FeedbackModal({ who, onClose, onSent }) {
             maxLength={1500}
             rows={5}
             placeholder="Mesajın…"
-            className="mt-3 w-full resize-none rounded-2xl border-2 border-white bg-white/80 p-3 text-sm font-semibold text-[#4a3b5c] shadow-inner outline-none focus:border-[#71dedd]"
+            className="mt-3 w-full resize-none rounded-2xl border-2 border-white bg-white/80 p-3 text-sm font-semibold text-[#4a3b5c] shadow-inner outline-none focus:border-[#fdb252]"
           />
           <input
             value={contact}
             onChange={(e) => setContact(e.target.value)}
             maxLength={120}
             placeholder="E-posta (isteğe bağlı, yanıt istersen)"
-            className="mt-2 w-full rounded-2xl border-2 border-white bg-white/80 px-3 py-2 text-sm font-semibold text-[#4a3b5c] outline-none focus:border-[#71dedd]"
+            className="mt-2 w-full rounded-2xl border-2 border-white bg-white/80 px-3 py-2 text-sm font-semibold text-[#4a3b5c] outline-none focus:border-[#fdb252]"
           />
           {err && <p className="mt-2 text-xs font-bold text-rose-400">{err}</p>}
           <div className="mt-3 flex items-center justify-between gap-3">
@@ -135,7 +135,7 @@ export function useFeedback({ panel, setPanel, venue, home, name: who }) {
   }
 
   const menuNodes = (
-    <button onClick={() => setPanel('feedback')} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#e8fbfa]">
+    <button onClick={() => setPanel('feedback')} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#fff3e4]">
       <Ico name="feedback" size={22} />
       <span className="flex-1">Geri bildirim</span>
     </button>
@@ -150,7 +150,7 @@ export function useFeedback({ panel, setPanel, venue, home, name: who }) {
             <p className="text-sm font-black text-[#4a3b5c]">Oyunu nasıl buluyorsun?</p>
             <p className="text-xs font-semibold text-[#8a7a9c]">SituApp pre-alpha. Kısa bir geri bildirim bize çok yardımcı olur.</p>
             <div className="mt-2 flex gap-2">
-              <button onClick={open} className="rounded-full bg-[#71dedd] px-3 py-1 text-xs font-black text-white shadow active:scale-95">
+              <button onClick={open} className="rounded-full bg-[#fdb252] px-3 py-1 text-xs font-black text-white shadow active:scale-95">
                 Yaz
               </button>
               <button onClick={dismiss} className="rounded-full bg-white px-3 py-1 text-xs font-extrabold text-[#8a7a9c] shadow active:scale-95">

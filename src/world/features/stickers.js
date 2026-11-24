@@ -5,7 +5,7 @@ export const STICKER_SETS = [
     id: 'ask',
     emoji: '💗',
     name: 'Aşk',
-    bg: '#e6f9f9',
+    bg: '#fff2e0',
     items: [
       { art: '💗🧸', label: 'Kalbim sende 💗' },
       { art: '🥺💞', label: 'Seni özledim 🥺' },

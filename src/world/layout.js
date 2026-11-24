@@ -14,14 +14,14 @@ export const ROAD_HALF = 4.3 // yolların yarı genişliği (8,6 m asfalt + her 
 export const ROAD_END = { north: -96, south: 48, east: 96 } // ana yolların uçları (batı: park patikası)
 
 export const PALETTE = {
-  pink: '#a8ebea',
+  pink: '#fed095',
   blue: '#b9e3ff',
   yellow: '#ffe9a8',
   mint: '#c4f0d8',
   lilac: '#dccfff',
   peach: '#ffd5bf',
 }
-const ROOF = { pink: '#8ce4e4', blue: '#7fcdf3', yellow: '#ffd35e', mint: '#8fdcb4', lilac: '#b79cff', peach: '#ffb48c' }
+const ROOF = { pink: '#fec172', blue: '#7fcdf3', yellow: '#ffd35e', mint: '#8fdcb4', lilac: '#b79cff', peach: '#ffb48c' }
 
 // ---------- mahalleler ----------
 export const ZONES = [
@@ -39,7 +39,7 @@ export const ZONES = [
   { id: 'hills', name: 'Kuzeydoğu Mahallesi', emoji: '🏘️', desc: 'Sessiz sokaklar ve renkli evler.', shape: 'rect', x0: 14, x1: 100, z0: -100, z1: -14, spawn: [60, -56] },
   { id: 'harbor', name: 'Liman', emoji: '⚓', desc: 'Deniz kenarında yürüyüş yolu ve dükkânlar.', shape: 'rect', x0: 14, x1: 100, z0: 14, z1: 50, spawn: [60, 36] },
 ]
-const FALLBACK_ZONE = { id: 'city', name: 'Şehir', emoji: '🏙️', desc: 'Sokaklarda dolaşıyorsun.' }
+const FALLBACK_ZONE = { id: 'city', name: 'Şehir', emoji: '🏙️', desc: '' }
 
 export function zoneAt(x, z) {
   for (const zn of ZONES) {
@@ -69,32 +69,32 @@ const b = (x, z, w, d, h, color, facing, label, extra = {}) => ({ x, z, w, d, h,
 
 export const BUILDINGS = [
   // lobi meydanındaki dört önemli yapı
-  b(17, -17, 8, 8, 6, 'blue', 's', '🧭 Rehber Merkezi'),
-  b(-17, -17, 8, 8, 6, 'pink', 's', '💇 Kuaför & Stil'),
-  b(17, 17, 8, 8, 6, 'lilac', 's', '📸 Fotoğraf Stüdyosu'),
-  b(-17, 17, 8, 8, 6, 'peach', 'n', '🍰 Tatlı Dükkanı'),
+  b(17, -17, 8, 8, 6, 'blue', 's', '🧭 Tripadvisör'),
+  b(-17, -17, 8, 8, 6, 'pink', 's', '💇 Toni & Güy'),
+  b(17, 17, 8, 8, 6, 'lilac', 's', '📸 Kodakk Foto'),
+  b(-17, 17, 8, 8, 6, 'peach', 'n', '🍰 Hafız Mustafam'),
 
   // Kafe Sokağı (kuzey)
-  b(-9.7, -18, 6, 7, 5, 'yellow', 'e', '☕ Kafe', { shop: true }),
-  b(9.7, -18, 6, 7, 5, 'mint', 'w', '📚 Kitap Kafe', { shop: true }),
-  b(-9.7, -27, 6, 8, 6, 'pink', 'e', '🥐 Fırın', { shop: true }),
-  b(9.7, -27, 6, 8, 5, 'blue', 'w', '🍵 Çay Evi', { shop: true }),
+  b(-9.7, -18, 6, 7, 5, 'yellow', 'e', '☕ Starbucket', { shop: true }),
+  b(9.7, -18, 6, 7, 5, 'mint', 'w', '📚 D&Rüya', { shop: true }),
+  b(-9.7, -27, 6, 8, 6, 'pink', 'e', '🥐 Simit Sarayım', { shop: true }),
+  b(9.7, -27, 6, 8, 5, 'blue', 'w', '🍵 Çaykurt', { shop: true }),
   b(-9.7, -36, 6, 8, 7, 'lilac', 'e'),
   b(9.7, -36, 6, 8, 6, 'peach', 'w'),
   b(-9.7, -44, 6, 7, 5, 'mint', 'e'),
   b(9.7, -44, 6, 7, 7, 'yellow', 'w'),
 
   // Gece Kulübü (doğu)
-  b(26, -9.7, 14, 8, 7, 'lilac', 's', '🪩 Gece Kulübü', { neon: true }),
-  b(41.5, -9.7, 7, 8, 6, 'pink', 's', '🍹 Bar', { shop: true }),
-  b(19, 9.7, 7, 6, 5, 'blue', 'n', '🎮 Oyun Salonu', { shop: true }),
-  b(30, 9.7, 8, 6, 6, 'yellow', 'n', '🍔 Fast Food', { shop: true }),
+  b(26, -9.7, 14, 8, 7, 'lilac', 's', '🪩 Kulüp Babil', { neon: true }),
+  b(41.5, -9.7, 7, 8, 6, 'pink', 's', '🍹 Hard Rök', { shop: true }),
+  b(19, 9.7, 7, 6, 5, 'blue', 'n', '🎮 Playstasyon', { shop: true }),
+  b(30, 9.7, 8, 6, 6, 'yellow', 'n', '🍔 Burger Kral', { shop: true }),
   b(41, 9.7, 7, 6, 5, 'mint', 'n'),
 
   // Plaj Yolu (güney)
-  b(-9.7, 19, 6, 7, 5, 'blue', 'e', '🍦 Dondurmacı', { shop: true }),
-  b(9.7, 19, 6, 7, 5, 'pink', 'w', '🏄 Sörf Dükkanı', { shop: true }),
-  b(-9.7, 27, 6, 7, 4, 'yellow', 'e', '🥤 Bar'),
+  b(-9.7, 19, 6, 7, 5, 'blue', 'e', '🍦 Baskın Robin', { shop: true }),
+  b(9.7, 19, 6, 7, 5, 'pink', 'w', '🏄 Quicksörf', { shop: true }),
+  b(-9.7, 27, 6, 7, 4, 'yellow', 'e', '🥤 Kokabana'),
   b(9.7, 27, 6, 7, 4, 'mint', 'w'),
 
   // Kuzeydoğu mahallesi
@@ -228,8 +228,8 @@ const SEAT_DEFS = {
 }
 // Park piknik battaniyeleri (procedural, City.jsx çizer): 2 kişilik, yere oturulur (style 'floor').
 export const BLANKETS = [
-  { x: -21, z: -7.5, ry: 0.2, c: '#8ce4e4', c2: '#f5fdfd' },
-  { x: -40, z: -4.5, ry: -0.5, c: '#7fcdf3', c2: '#f5fdfd' },
+  { x: -21, z: -7.5, ry: 0.2, c: '#fec172', c2: '#fff8f0' },
+  { x: -40, z: -4.5, ry: -0.5, c: '#7fcdf3', c2: '#fff8f0' },
   { x: -33, z: 7.6, ry: 0.4, c: '#ffd35e', c2: '#fff7dc' },
   { x: -28, z: -7.6, ry: -0.2, c: '#8fdcb4', c2: '#f3fff8' },
 ]

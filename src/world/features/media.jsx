@@ -112,12 +112,12 @@ export function VoiceBubble({ voice, self }) {
         type="button"
         onClick={toggle}
         aria-label={playing ? 'Sesi durdur' : 'Sesli mesajı oynat'}
-        className="grid h-9 w-9 shrink-0 place-items-center rounded-full border-b-2 border-[#53c1bf] bg-[#71dedd] text-sm text-white active:translate-y-px"
+        className="grid h-9 w-9 shrink-0 place-items-center rounded-full border-b-2 border-[#e8952c] bg-[#fdb252] text-sm text-white active:translate-y-px"
       >
         {playing ? '❚❚' : '▶'}
       </button>
       <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-white/70">
-        <div className="h-full rounded-full bg-[#71dedd] transition-[width]" style={{ width: `${Math.round(pos * 100)}%` }} />
+        <div className="h-full rounded-full bg-[#fdb252] transition-[width]" style={{ width: `${Math.round(pos * 100)}%` }} />
       </div>
       <span className="shrink-0 text-xs font-extrabold tabular-nums">0:{String(secs).padStart(2, '0')}</span>
     </div>
@@ -138,7 +138,7 @@ export function StickerPanel({ onPick }) {
             aria-selected={s.id === setId}
             type="button"
             onClick={() => setSetId(s.id)}
-            className={`flex-1 rounded-xl px-1 py-1.5 text-xs font-extrabold transition active:scale-95 ${s.id === setId ? 'bg-[#71dedd] text-white' : 'bg-white text-[#4a3b5c]'}`}
+            className={`flex-1 rounded-xl px-1 py-1.5 text-xs font-extrabold transition active:scale-95 ${s.id === setId ? 'bg-[#fdb252] text-white' : 'bg-white text-[#4a3b5c]'}`}
           >
             {s.emoji} {s.name}
           </button>
@@ -280,8 +280,8 @@ export function MicButton({ onSend }) {
         </p>
       )}
       {recording && (
-        <div className={`absolute bottom-full right-0 z-10 mb-2 flex w-56 animate-pop items-center gap-2 rounded-2xl px-3 py-2 text-xs font-extrabold shadow-toy ${cancel ? 'bg-[#ffe3e3] text-[#c0392b]' : 'bg-[#e6f9f9] text-[#3d8786]'}`}>
-          <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-[#4ac7d4]" />
+        <div className={`absolute bottom-full right-0 z-10 mb-2 flex w-56 animate-pop items-center gap-2 rounded-2xl px-3 py-2 text-xs font-extrabold shadow-toy ${cancel ? 'bg-[#ffe3e3] text-[#c0392b]' : 'bg-[#fff2e0] text-[#a36a21]'}`}>
+          <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-[#fda521]" />
           <span className="tabular-nums">0:{String(Math.floor(secs)).padStart(2, '0')}</span>
           <span className="min-w-0 flex-1 truncate text-right">{cancel ? 'Bırak: iptal' : '← kaydır: iptal'}</span>
         </div>
@@ -296,7 +296,7 @@ export function MicButton({ onSend }) {
         aria-label="Sesli mesaj: basılı tut ve konuş"
         title="Basılı tut, konuş, bırakınca gönder"
         style={{ touchAction: 'none' }}
-        className={`grid h-11 w-11 shrink-0 select-none place-items-center rounded-2xl border-2 text-xl transition active:scale-95 ${recording ? (cancel ? 'border-[#ff9a9a] bg-[#ffe3e3]' : 'scale-110 border-[#71dedd] bg-[#e6f9f9]') : 'border-[#d6c7ff]/70 bg-white'}`}
+        className={`grid h-11 w-11 shrink-0 select-none place-items-center rounded-2xl border-2 text-xl transition active:scale-95 ${recording ? (cancel ? 'border-[#ff9a9a] bg-[#ffe3e3]' : 'scale-110 border-[#fdb252] bg-[#fff2e0]') : 'border-[#d6c7ff]/70 bg-white'}`}
       >
         🎤
       </button>

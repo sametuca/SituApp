@@ -11,7 +11,7 @@ import { CollectBurst, LevelUp } from './collectCelebration'
 const isTyping = (e) => e.target instanceof HTMLElement && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)
 const sfx = (name) => window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: name }))
 
-function Bar({ value, max, tone = '#71dedd' }) {
+function Bar({ value, max, tone = '#fdb252' }) {
   return (
     <div className="h-2.5 w-full overflow-hidden rounded-full bg-[#f1e6ff]">
       <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${Math.round((Math.min(value, max) / (max || 1)) * 100)}%`, background: tone }} />
@@ -39,7 +39,7 @@ function CollectionPanel({ data, onClose }) {
             role="tab"
             aria-selected={tab === id}
             onClick={() => setTab(id)}
-            className={`flex-1 rounded-2xl px-2 py-2.5 text-sm font-extrabold transition active:scale-95 ${tab === id ? 'bg-[#71dedd] text-white shadow-soft' : 'bg-[#f6f0ff] text-[#4a3b5c]'}`}
+            className={`flex-1 rounded-2xl px-2 py-2.5 text-sm font-extrabold transition active:scale-95 ${tab === id ? 'bg-[#fdb252] text-white shadow-soft' : 'bg-[#f6f0ff] text-[#4a3b5c]'}`}
           >
             {label}
           </button>
@@ -69,7 +69,7 @@ function CollectionPanel({ data, onClose }) {
                     {done && <span className="text-lg">🏆</span>}
                   </div>
                   <div className="mt-2 flex items-center gap-2">
-                    <Bar value={n} max={k.series.goal} tone={done ? '#ffc94d' : '#71dedd'} />
+                    <Bar value={n} max={k.series.goal} tone={done ? '#ffc94d' : '#fdb252'} />
                     <span className="shrink-0 text-xs font-extrabold tabular-nums text-[#8a7a9c]">
                       {Math.min(n, k.series.goal)}/{k.series.goal}
                     </span>

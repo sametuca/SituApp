@@ -18,8 +18,8 @@ export const HALF_DAY_MS = 12 * 3600 * 1000
 // model: public/models/collectibles/<id>.glb (en büyük boyut `size` metreye ölçeklenir), y: yerden yükseklik (süzülme ortası); ground: tabanı yere oturur, süzülmez
 export const KINDS = {
   star: { id: 'star', emoji: '⭐', name: 'Yıldız parçası', plural: 'Yıldız parçaları', model: '/models/collectibles/star.glb', size: 0.62, y: 0.85, stars: 1, respawn: 'half', glow: '#ffe48f', series: { goal: 25, bonus: 5, name: 'Yıldız Avcısı' } },
-  heart: { id: 'heart', emoji: '💗', name: 'Kalp taşı', plural: 'Kalp taşları', model: '/models/collectibles/heartstone.glb', size: 0.6, y: 0.8, stars: 2, respawn: 'day', glow: '#8ce4e4', series: { goal: 10, bonus: 6, name: 'Kalp Koleksiyoncusu' } },
-  flower: { id: 'flower', emoji: '🌸', name: 'Çiçek', plural: 'Çiçekler', model: '/models/collectibles/flower.glb', size: 0.7, y: 0, ground: true, stars: 1, respawn: 'half', glow: '#a8ebea', series: { goal: 30, bonus: 6, name: 'Çiçek Bahçıvanı' } },
+  heart: { id: 'heart', emoji: '💗', name: 'Kalp taşı', plural: 'Kalp taşları', model: '/models/collectibles/heartstone.glb', size: 0.6, y: 0.8, stars: 2, respawn: 'day', glow: '#fec172', series: { goal: 10, bonus: 6, name: 'Kalp Koleksiyoncusu' } },
+  flower: { id: 'flower', emoji: '🌸', name: 'Çiçek', plural: 'Çiçekler', model: '/models/collectibles/flower.glb', size: 0.7, y: 0, ground: true, stars: 1, respawn: 'half', glow: '#fed095', series: { goal: 30, bonus: 6, name: 'Çiçek Bahçıvanı' } },
   balloon: { id: 'balloon', emoji: '🎈', name: 'Balon', plural: 'Balonlar', model: '/models/collectibles/balloon.glb', size: 0.95, y: 1.45, stars: 1, respawn: 'half', glow: '#a9ddf5', series: { goal: 10, bonus: 5, name: 'Balon Ustası' } },
   shell: { id: 'shell', emoji: '🐚', name: 'Deniz kabuğu', plural: 'Deniz kabukları', model: '/models/collectibles/shell.glb', size: 0.5, y: 0.5, stars: 1, respawn: 'half', glow: '#ffd5bf', series: { goal: 10, bonus: 5, name: 'Kabuk Toplayıcı' } },
   chest: { id: 'chest', emoji: '🧰', name: 'Hazine sandığı', plural: 'Hazine sandıkları', model: '/models/collectibles/chest.glb', size: 0.9, y: 0, ground: true, stars: 5, respawn: 'day', glow: '#ffe48f', series: { goal: 5, bonus: 10, name: 'Hazine Avcısı' } },
@@ -43,8 +43,8 @@ const HIDDEN = [
   { x: -30, z: -4.7, area: 'Park', name: 'Çardağın arkası', hint: 'Parktaki çardağın çevresinde saklanmış bir hazine var 🌸' },
   { x: -13, z: 45.2, area: 'Plaj', name: 'Sahilin ucu', hint: 'Plajın en uç köşesinde, dalgaların yanında parlıyor 🌊' },
   { x: 22.3, z: 19.2, area: 'Lobi arkası', name: 'Stüdyonun yan sokağı', hint: 'Fotoğraf Stüdyosu’nun yan sokağına bak 📸' },
-  { x: 26, z: -16.5, area: 'Gece Kulübü', name: 'Kulübün arka kapısı', hint: 'Gece Kulübü’nün arkasında bir ışıltı seçiliyor 🪩' },
-  { x: -22.5, z: -16, area: 'Lobi arkası', name: 'Kuaför’ün yan duvarı', hint: 'Kuaför & Stil’in yanındaki daracık geçitte parlıyor 💇' },
+  { x: 26, z: -16.5, area: 'Gece Kulübü', name: 'Kulübün arka kapısı', hint: 'Kulüp Babil’in arkasında bir ışıltı seçiliyor 🪩' },
+  { x: -22.5, z: -16, area: 'Lobi arkası', name: 'Kuaför’ün yan duvarı', hint: 'Toni & Güy’ün yanındaki daracık geçitte parlıyor 💇' },
   { x: -34, z: 34, area: 'Güneybatı', name: 'Güneybatı mahallesi aralığı', hint: 'Güneybatı mahallesinin iki binası arasında bir yerde parlıyor 🏘️' },
   { x: 45, z: -45, area: 'Kuzeydoğu', name: 'Şehrin köşesi', hint: 'Kuzeydoğu köşesinde, haritanın en ucunda bir sandık gizleniyor 🗺️' },
   { x: 14.5, z: 44.5, area: 'Plaj', name: 'Palmiyenin dibi', hint: 'Plajın doğu köşesinde palmiyelerin arasında parıldıyor 🌴' },

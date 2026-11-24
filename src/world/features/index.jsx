@@ -36,7 +36,7 @@ function SettingsPanel({ sections, onClose }) {
     <Modal onClose={onClose} label="Ayarlar">
       <h2 className="text-2xl font-black text-[#4a3b5c]">Ayarlar ⚙️</h2>
       <div className="mt-4 flex flex-col gap-5">{sections}</div>
-      <button onClick={onClose} className="mt-5 w-full rounded-2xl border-b-4 border-[#53c1bf] bg-[#71dedd] py-3 text-base font-extrabold text-white active:translate-y-[3px] active:border-b-[1px]">
+      <button onClick={onClose} className="mt-5 w-full rounded-2xl border-b-4 border-[#e8952c] bg-[#fdb252] py-3 text-base font-extrabold text-white active:translate-y-[3px] active:border-b-[1px]">
         Tamam
       </button>
     </Modal>

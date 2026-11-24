@@ -34,7 +34,7 @@ function Lyrics({ song, left, dur }) {
   return (
     <div className="mt-2 rounded-2xl bg-[#2b1f4d] px-3 py-2 text-center">
       <p className="truncate text-[11px] font-bold text-[#9d8ac7]">{lines[idx - 1] ?? '♪'}</p>
-      <p key={idx} className="animate-pop text-base font-black leading-snug text-[#9ce8da]">
+      <p key={idx} className="animate-pop text-base font-black leading-snug text-[#fec286]">
         {lines[idx]}
       </p>
       <p className="truncate text-[11px] font-bold text-[#9d8ac7]">{lines[idx + 1] ?? '♪'}</p>
@@ -68,7 +68,7 @@ function KaraokeCard({ k, selfId, claps, result, onJoin, onLeave, onClap }) {
           <span className="min-w-0 flex-1 truncate text-sm font-black text-[#4a3b5c]">
             {now ? `${now.name} söylüyor${song ? ` · ${song.title}` : ''}` : 'Karaoke · sahne boş'}
           </span>
-          {now && <span className="rounded-full bg-[#e8faf9] px-2 py-0.5 text-xs font-black text-[#4a8e8c]">👏 {claps}</span>}
+          {now && <span className="rounded-full bg-[#fff2e3] px-2 py-0.5 text-xs font-black text-[#aa732e]">👏 {claps}</span>}
           <span className="text-xs font-black text-[#8a7a9c]">{show ? '▾' : '▸'}</span>
         </button>
         {show && (
@@ -76,18 +76,18 @@ function KaraokeCard({ k, selfId, claps, result, onJoin, onLeave, onClap }) {
             {now && (
               <>
                 <div className="h-1.5 overflow-hidden rounded-full bg-[#f1e8ff]">
-                  <div className="h-full rounded-full bg-[#71dedd] transition-[width] duration-300" style={{ width: `${(left / now.dur) * 100}%` }} />
+                  <div className="h-full rounded-full bg-[#fdb252] transition-[width] duration-300" style={{ width: `${(left / now.dur) * 100}%` }} />
                 </div>
                 <Lyrics song={now.song} left={left} dur={now.dur} />
                 {mine ? (
                   <div className="mt-2 flex items-center gap-2">
-                    <p className="min-w-0 flex-1 text-xs font-extrabold text-[#4a8e8c]">Sahne senin! Alkış: {claps} 👏</p>
+                    <p className="min-w-0 flex-1 text-xs font-extrabold text-[#aa732e]">Sahne senin! Alkış: {claps} 👏</p>
                     <button onClick={onLeave} className="rounded-xl border-b-4 border-[#c9b6f5] bg-[#e9ddff] px-3 py-1.5 text-xs font-extrabold text-[#5b3fa8] active:translate-y-[2px] active:border-b-2">
                       İn
                     </button>
                   </div>
                 ) : (
-                  <button onClick={onClap} className="mt-2 w-full rounded-2xl border-b-4 border-[#53c1bf] bg-[#71dedd] py-2.5 text-base font-extrabold text-white active:translate-y-[2px] active:border-b-2">
+                  <button onClick={onClap} className="mt-2 w-full rounded-2xl border-b-4 border-[#e8952c] bg-[#fdb252] py-2.5 text-base font-extrabold text-white active:translate-y-[2px] active:border-b-2">
                     👏 Alkışla
                   </button>
                 )}
@@ -121,7 +121,7 @@ function KaraokeCard({ k, selfId, claps, result, onJoin, onLeave, onClap }) {
                   </button>
                 </div>
               ) : (
-                <button onClick={() => setPicking(true)} className="w-full rounded-2xl border-b-4 border-[#53c1bf] bg-[#71dedd] py-2.5 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2">
+                <button onClick={() => setPicking(true)} className="w-full rounded-2xl border-b-4 border-[#e8952c] bg-[#fdb252] py-2.5 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2">
                   🎤 Karaoke sırasına gir
                 </button>
               )}

@@ -114,12 +114,12 @@ const BUBBLES = [
 // 'pink' varsayılan (pembe-lavanta-mavi karışımı); 'blue' erkek avatar teması. İkisi arasında yumuşak geçiş yapar.
 export function PastelBackground({ children, tone }) {
   return (
-    <div className="relative min-h-svh w-full overflow-hidden bg-gradient-to-br from-[#e8faf9] via-[#f1e6ff] to-[#dff3ff]">
+    <div className="relative min-h-svh w-full overflow-hidden bg-gradient-to-br from-[#fff2e3] via-[#f1e6ff] to-[#dff3ff]">
       {tone && (
         <>
           <div
             aria-hidden
-            className={`absolute inset-0 bg-gradient-to-br from-[#e0f8f7] via-[#f3fcfc] to-[#f1e6ff] transition-opacity duration-700 ${tone === 'pink' ? 'opacity-100' : 'opacity-0'}`}
+            className={`absolute inset-0 bg-gradient-to-br from-[#ffeed9] via-[#fff8f0] to-[#f1e6ff] transition-opacity duration-700 ${tone === 'pink' ? 'opacity-100' : 'opacity-0'}`}
           />
           <div
             aria-hidden

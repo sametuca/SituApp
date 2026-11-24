@@ -24,7 +24,7 @@ const OFFER_END_TEXT = {
   invalid: 'Oyun artık başlatılamıyor.',
 }
 
-const btnPink = 'rounded-2xl border-b-4 border-[#53c1bf] bg-[#71dedd] px-4 py-3 text-base font-extrabold text-white active:translate-y-[3px] active:border-b-[1px] disabled:opacity-50'
+const btnPink = 'rounded-2xl border-b-4 border-[#e8952c] bg-[#fdb252] px-4 py-3 text-base font-extrabold text-white active:translate-y-[3px] active:border-b-[1px] disabled:opacity-50'
 const btnSoft = 'rounded-2xl border-2 border-white bg-[#f6f0ff] px-4 py-3 text-sm font-extrabold text-[#7a5fd0] active:scale-[0.97] disabled:opacity-50'
 
 /** Süre çubuğu: ttl ms içinde dolar. */
@@ -37,7 +37,7 @@ function Countdown({ ttl }) {
   }, [ttl])
   return (
     <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#f1e6ff]">
-      <div className="h-full rounded-full bg-[#71dedd] transition-[width] duration-200" style={{ width: `${left * 100}%` }} />
+      <div className="h-full rounded-full bg-[#fdb252] transition-[width] duration-200" style={{ width: `${left * 100}%` }} />
     </div>
   )
 }
@@ -49,7 +49,7 @@ function Picker({ peer, onPick, onClose }) {
       <h2 className="text-xl font-black text-[#4a3b5c]">🎮 {peer.name} ile ne oynayalım?</h2>
       <div className="mt-4 flex flex-col gap-2.5">
         {Object.entries(GAME_INFO).map(([k, g]) => (
-          <button key={k} onClick={() => onPick(k)} className="flex items-center gap-3 rounded-2xl border-2 border-white bg-[#e8faf9]/80 px-4 py-3.5 text-left active:scale-[0.98] hover:bg-[#d9f6f5]">
+          <button key={k} onClick={() => onPick(k)} className="flex items-center gap-3 rounded-2xl border-2 border-white bg-[#fff2e3]/80 px-4 py-3.5 text-left active:scale-[0.98] hover:bg-[#ffead0]">
             <span className="text-3xl">{g.emoji}</span>
             <span className="min-w-0">
               <span className="block text-base font-black text-[#4a3b5c]">{g.name}</span>
@@ -59,7 +59,7 @@ function Picker({ peer, onPick, onClose }) {
         ))}
       </div>
       <p className="mt-3 text-xs font-semibold text-[#8a7a9c]">Teklif 30 saniye geçerli. Karşı taraf kabul ederse oyun başlar.</p>
-      <button onClick={onClose} className="mt-2 w-full rounded-2xl py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#def7f7]/60">
+      <button onClick={onClose} className="mt-2 w-full rounded-2xl py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#ffedd6]/60">
         Vazgeç
       </button>
     </Modal>
@@ -72,9 +72,9 @@ function OfferCard({ offer, onReply }) {
   return (
     <div className="pointer-events-auto absolute inset-x-0 top-16 z-40 mx-auto w-[min(92vw,22rem)] animate-pop rounded-[1.6rem] border-2 border-white bg-white/95 p-4 shadow-toy" role="alertdialog" aria-label="Oyun teklifi">
       <div className="flex items-center gap-3">
-        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#e8faf9] text-2xl">{g.emoji}</span>
+        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#fff2e3] text-2xl">{g.emoji}</span>
         <p className="min-w-0 flex-1 text-sm font-extrabold text-[#4a3b5c]">
-          <span className="text-[#58d8d7]">{offer.name}</span> seninle <span className="text-[#7a5fd0]">{g.name}</span> oynamak istiyor!
+          <span className="text-[#fda533]">{offer.name}</span> seninle <span className="text-[#7a5fd0]">{g.name}</span> oynamak istiyor!
         </p>
       </div>
       <div className="mt-3">
@@ -130,7 +130,7 @@ function Xox({ g, act }) {
               aria-label={`Kare ${i + 1}`}
               className={`grid aspect-square place-items-center rounded-2xl border-2 text-3xl transition active:scale-95 ${
                 win ? 'scale-105 animate-[match-pulse_0.9s_ease-in-out_infinite] border-[#ffd24d] bg-[#fff3c4]' : 'border-white bg-[#f6f0ff]'
-              } ${!done && mine && c === null ? 'hover:bg-[#e8faf9]' : ''}`}
+              } ${!done && mine && c === null ? 'hover:bg-[#fff2e3]' : ''}`}
             >
               {c !== null && <span className="animate-pop">{MARKS[c]}</span>}
             </button>
@@ -183,7 +183,7 @@ function Tod({ g, act }) {
       )}
       {phase === 'answer' && (
         <>
-          <div className={`rounded-2xl border-2 border-white p-4 text-center ${kind === 'truth' ? 'bg-[#e8f3ff]' : 'bg-[#e8faf9]'}`}>
+          <div className={`rounded-2xl border-2 border-white p-4 text-center ${kind === 'truth' ? 'bg-[#e8f3ff]' : 'bg-[#fff2e3]'}`}>
             <p className="text-xs font-extrabold text-[#8a7a9c]">
               {kind === 'truth' ? '💬 Doğruluk' : '🔥 Cesaret'} · {who.name}
             </p>
@@ -238,7 +238,7 @@ function LoveResult({ g }) {
         {g.players[0].name} 💘 {g.players[1].name}
       </p>
       <div className="relative h-8 w-full overflow-hidden rounded-full border-2 border-white bg-[#f1e6ff]">
-        <div className="h-full rounded-full bg-gradient-to-r from-[#9ce8e7] to-[#58d8d7]" style={{ width: `${shown}%` }} />
+        <div className="h-full rounded-full bg-gradient-to-r from-[#fec986] to-[#fda533]" style={{ width: `${shown}%` }} />
         <span className="absolute inset-0 grid place-items-center text-sm font-black text-[#4a3b5c]">%{shown}</span>
       </div>
       <p className="animate-pop text-xl font-black text-[#4a3b5c]">{r.title}</p>
@@ -293,7 +293,7 @@ function Love({ g, act }) {
       <p className="text-center text-lg font-black text-[#4a3b5c]">{q.q}</p>
       <div className="flex flex-col gap-2">
         {q.o.map((label, o) => (
-          <button key={o} onClick={() => act({ a: 'answer', q: mine.length, o })} className="rounded-2xl border-2 border-white bg-[#e8faf9]/80 px-4 py-3.5 text-left text-base font-extrabold text-[#4a3b5c] active:scale-[0.98] hover:bg-[#d9f6f5]">
+          <button key={o} onClick={() => act({ a: 'answer', q: mine.length, o })} className="rounded-2xl border-2 border-white bg-[#fff2e3]/80 px-4 py-3.5 text-left text-base font-extrabold text-[#4a3b5c] active:scale-[0.98] hover:bg-[#ffead0]">
             {label}
           </button>
         ))}
@@ -314,7 +314,7 @@ function GamePanel({ g, act, onLeave }) {
           <p className="truncate text-base font-black text-[#4a3b5c]">{info.name}</p>
           <p className="truncate text-xs font-bold text-[#8a7a9c]">{other.name} ile</p>
         </div>
-        <button onClick={onLeave} className="rounded-xl bg-[#e8faf9] px-3 py-2 text-xs font-extrabold text-[#45b1b2] active:scale-95">
+        <button onClick={onLeave} className="rounded-xl bg-[#fff2e3] px-3 py-2 text-xs font-extrabold text-[#da881d] active:scale-95">
           Bitir
         </button>
       </div>

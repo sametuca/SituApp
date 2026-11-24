@@ -39,7 +39,7 @@ const CITY = [
     id: 'muzisyen', avatar: 'deniz', name: 'Sokak Müzisyeni Deniz', role: '🎸', x: 4.4, z: -16.5, ry: 0.5, pose: SIT, prop: 'stool',
     lines: ['Bu şarkıyı sana çalıyorum 🎶', 'Kafe Sokağı’nın sesi benim 🎸', 'Müzik, sohbetin en tatlı başlangıcı 😉', 'Dinleyene bir kahve ısmarlarım… yarın 😄'],
     options: [
-      { label: '📍 Öneri iste', reply: ['Müzik dinleyerek kahve içmek için Kafe’nin pencere kenarı ideal ☕', 'Dans etmek istersen Gece Kulübü’ne uğra, pist hiç boş kalmıyor 🪩'] },
+      { label: '📍 Öneri iste', reply: ['Müzik dinleyerek kahve içmek için Starbucket’in pencere kenarı ideal ☕', 'Dans etmek istersen Gece Kulübü’ne uğra, pist hiç boş kalmıyor 🪩'] },
       { label: '📖 Hikâye anlat', reply: ['Bir akşam çaldığım şarkıya biri eşlik etti, ses ses derken ikisi de sustu, sadece gülümsediler 🎶', 'İlk şarkımı bir banka oturup yazdım. Yanıma oturan kişi nakaratı buldu 💫'] },
     ],
   },
@@ -47,7 +47,7 @@ const CITY = [
     id: 'cicekci', avatar: 'zeynep', name: 'Çiçekçi Zeynep', role: '🌷', x: -4.9, z: -25.5, ry: -0.9, prop: 'flowers',
     lines: ['Taze laleler geldi! 🌷', 'Çiçek, “seni düşündüm”ün en kibar hali 💐', 'Kalp mi papatya mı? Ben papatyaya bayılıyorum 🌼', 'Birine çiçek jesti göndermeyi dene 😉'],
     options: [
-      { label: '📍 Öneri iste', reply: ['Çiçek göndermek için en iyi yer Park, hem bahar kokusu hem sakinlik 🌳', 'Tatlı Dükkanı’ndan bir şey alıp çiçekle birlikte sürpriz yap 🍰'] },
+      { label: '📍 Öneri iste', reply: ['Çiçek göndermek için en iyi yer Park, hem bahar kokusu hem sakinlik 🌳', 'Hafız Mustafam’dan bir şey alıp çiçekle birlikte sürpriz yap 🍰'] },
       { label: '📖 Hikâye anlat', reply: ['Her sabah aynı kişi bir papatya alırdı. Bir gün sebebini sordum: “Birine ‘sevmiyor’ dedirtmemek için” dedi 🌼', 'Bir gün iki kişi aynı buketi almak istedi, buketi ikiye bölüp birlikte yürüdüler 💐'] },
     ],
   },
@@ -73,7 +73,7 @@ const CITY = [
     id: 'cankurtaran', avatar: 'ege', name: 'Cankurtaran Ege', role: '🛟', x: 3.8, z: 31, ry: 0.4,
     lines: ['Bugün deniz sakin, ama yine de dikkatli ol 🌊', 'Gün batımında şezlongda yan yana oturmak bir klasik 🌅', 'Gözüm üstünüzde, rahat edin 🛟', 'Şemsiyenin altı en serin yer, bence 😎'],
     options: [
-      { label: '📍 Öneri iste', reply: ['Gün batımını izlemek için iki şezlong yan yana, tam senlik 🌅', 'Plaj Barı’nda serin bir şey içip sohbet et 🥤'] },
+      { label: '📍 Öneri iste', reply: ['Gün batımını izlemek için iki şezlong yan yana, tam senlik 🌅', 'Kokabana’da serin bir şey içip sohbet et 🥤'] },
       { label: '📖 Hikâye anlat', reply: ['Bir yaz akşamı iki kişi aynı kum kalesini kurmaya çalıştı. Sonunda kale yıkıldı, ama arkadaşlık sağlam kaldı 🏰', 'Bir gün kayıp bir terlik buldum, sahibi de bulundu. Bir teşekkür bir sohbet… gerisi malum 😉'] },
     ],
   },
@@ -82,7 +82,7 @@ const CITY = [
     route: { pts: [[-5.6, 32], [-5.6, 39]], mode: 'pingpong', speed: 0.8, pause: 5 },
     lines: ['Dondurmaaa! Çilekli, vanilyalı, çikolatalı! 🍦', 'İki top alana üçüncüsü benden 😉', 'Arabamın zili çalınca herkes koşuyor 🔔', 'Dondurma paylaşmak flörtün en tatlı yolu 🍓'],
     options: [
-      { label: '📍 Öneri iste', reply: ['Dondurmanı al, kıyıya otur, dalga sesi eşlik etsin 🌊', 'Dondurmacı dükkânına da uğra, külahlar özel 🍦'] },
+      { label: '📍 Öneri iste', reply: ['Dondurmanı al, kıyıya otur, dalga sesi eşlik etsin 🌊', 'Baskın Robin’e da uğra, külahlar özel 🍦'] },
       { label: '📖 Hikâye anlat', reply: ['İki kişi aynı anda son çilekli külahı istedi. Birbirlerine uzatınca külah kırıldı, kahkaha koptu 🍓😄', 'Bir kız “eksik para” çıkardı, arkasındaki çocuk “ben ısmarlayayım” dedi. İkisi de şimdi kuyrukta bekler 🍦'] },
     ],
   },

@@ -148,7 +148,7 @@ export function PhotoSection({ net, enabled, privacy, setPrivacy }) {
     <div className="flex flex-col gap-3 rounded-2xl bg-[#faf6ff] p-3">
       <div className="flex items-center gap-3">
         {draft ? (
-          <img src={draft.url} alt="Seçtiğin fotoğrafın önizlemesi" width="80" height="80" className="h-20 w-20 shrink-0 rounded-full border-4 border-[#9ce8e6] object-cover" />
+          <img src={draft.url} alt="Seçtiğin fotoğrafın önizlemesi" width="80" height="80" className="h-20 w-20 shrink-0 rounded-full border-4 border-[#fec986] object-cover" />
         ) : (
           <Portrait peer={{ key: ownKey, avatar: 'zeynep' }} size={80} className="h-20 w-20 !border-4" alt="Profil fotoğrafın" />
         )}
@@ -161,23 +161,23 @@ export function PhotoSection({ net, enabled, privacy, setPrivacy }) {
       <input ref={camRef} type="file" accept="image/*" capture="user" className="hidden" onChange={pick} />
       {draft ? (
         <div className="flex gap-2">
-          <button type="button" disabled={busy} onClick={upload} className={`${btn} flex-1 bg-[#71dedd] text-white`}>
+          <button type="button" disabled={busy} onClick={upload} className={`${btn} flex-1 bg-[#fdb252] text-white`}>
             {busy ? 'Yükleniyor…' : '✅ Bu fotoğrafı kullan'}
           </button>
-          <button type="button" disabled={busy} onClick={() => setDraft(null)} className={`${btn} text-[#8a7a9c] hover:bg-[#def7f7]/60`}>
+          <button type="button" disabled={busy} onClick={() => setDraft(null)} className={`${btn} text-[#8a7a9c] hover:bg-[#ffedd6]/60`}>
             Vazgeç
           </button>
         </div>
       ) : (
         <div className="flex flex-wrap gap-2">
-          <button type="button" disabled={busy} onClick={() => fileRef.current?.click()} className={`${btn} bg-[#e8faf9] text-[#3a7977]`}>
+          <button type="button" disabled={busy} onClick={() => fileRef.current?.click()} className={`${btn} bg-[#fff2e3] text-[#926021]`}>
             {current ? '🔄 Fotoğrafı değiştir' : '📷 Fotoğraf ekle'}
           </button>
           <button type="button" disabled={busy} onClick={() => camRef.current?.click()} className={`${btn} bg-[#e6f4ff] text-[#1f5d7a] sm:hidden`}>
             🤳 Kamera
           </button>
           {current && (
-            <button type="button" disabled={busy} onClick={remove} className={`${btn} text-[#8a7a9c] hover:bg-[#def7f7]/60`}>
+            <button type="button" disabled={busy} onClick={remove} className={`${btn} text-[#8a7a9c] hover:bg-[#ffedd6]/60`}>
               🗑️ Kaldır
             </button>
           )}
@@ -204,7 +204,7 @@ export function PhotoSection({ net, enabled, privacy, setPrivacy }) {
                 setPrivacy(id)
                 net.send({ t: 'photo_privacy', who: id })
               }}
-              className={`rounded-2xl border-2 px-2 py-2 text-xs font-extrabold ${privacy === id ? 'border-[#71dedd] bg-[#d9f6f5] text-[#3a7977]' : 'border-white bg-white text-[#5b4a70]'}`}
+              className={`rounded-2xl border-2 px-2 py-2 text-xs font-extrabold ${privacy === id ? 'border-[#fdb252] bg-[#ffead0] text-[#926021]' : 'border-white bg-white text-[#5b4a70]'}`}
             >
               {label}
             </button>

@@ -7,7 +7,7 @@ import { CanvasTexture, Color, DynamicDrawUsage, Object3D, SRGBColorSpace } from
 const COUNT = 36
 const SPREAD = 18 // oyuncunun etrafındaki yarıçap (m)
 const HEIGHT = 12
-const CONFETTI = ['#71dedd', '#a9ddf5', '#ffe48f', '#b9ebcf', '#d6c7ff', '#a8ebea']
+const CONFETTI = ['#fdb252', '#a9ddf5', '#ffe48f', '#b9ebcf', '#d6c7ff', '#fed095']
 
 function makeTexture(fx) {
   if (fx === 'confetti') return null

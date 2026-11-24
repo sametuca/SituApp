@@ -73,7 +73,7 @@ function LoadingOverlay({ ready }) {
   }, [ready])
   if (hidden) return null
   return (
-    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#e8faf9] via-[#f1e6ff] to-[#dff3ff]">
+    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#fff2e3] via-[#f1e6ff] to-[#dff3ff]">
       <div className="h-12 w-12 animate-spin rounded-full border-4 border-candy-pink/50 border-t-candy-pink-deep" />
       <p className="text-sm font-extrabold text-ink-soft">Şehir yükleniyor… %{Math.round(progress)}</p>
     </div>
@@ -504,7 +504,7 @@ function WorldScene({ avatar }) {
   const venueTh = useMemo(() => (venue ? venueTheme(venue) : null), [venue])
   const venueDim = venueTh?.dim ?? 0
   const sceneBase = useMemo(
-    () => (venueTh ? { bg: venueTh.bg, fog: [venueTh.bg, 30, 60] } : home ? { bg: '#e7f5f3', fog: ['#e7f5f3', 30, 60] } : { bg: '#cfeaff', fog: ['#e8f6ff', 50, 140] }),
+    () => (venueTh ? { bg: venueTh.bg, fog: [venueTh.bg, 30, 60] } : home ? { bg: '#faeee2', fog: ['#faeee2', 30, 60] } : { bg: '#cfeaff', fog: ['#e8f6ff', 50, 140] }),
     [venueTh, home],
   )
   const venueCollide = useMemo(() => (venue ? (x, z) => resolveVenueRoom(x, z, venueLayout(venue).colliders) : null), [venue])
@@ -862,7 +862,7 @@ function WorldScene({ avatar }) {
       {showTips && !help && <StartGuide touch={touch} ready={sceneReady} inCity={!home && !venue} inAirport={venue === START_VENUE} onDone={closeTips} />}
       <div
         aria-hidden
-        className={`pointer-events-none absolute inset-0 z-30 bg-gradient-to-br from-[#e8faf9] via-[#f1e6ff] to-[#dff3ff] transition-opacity duration-200 ${fade ? 'opacity-100' : 'opacity-0'}`}
+        className={`pointer-events-none absolute inset-0 z-30 bg-gradient-to-br from-[#fff2e3] via-[#f1e6ff] to-[#dff3ff] transition-opacity duration-200 ${fade ? 'opacity-100' : 'opacity-0'}`}
       />
       <LoadingOverlay ready={sceneReady} />
     </div>

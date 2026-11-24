@@ -18,7 +18,7 @@ const avatars = [
 ]
 
 const toneOf = (a) => (a.gender === 'm' ? 'blue' : 'pink')
-const PEDESTAL = { pink: '#9fe8e8', blue: '#a9ddf5' }
+const PEDESTAL = { pink: '#fecb89', blue: '#a9ddf5' }
 const slugOf = (a) => a.name.toLowerCase()
 
 export default function AvatarSelect() {

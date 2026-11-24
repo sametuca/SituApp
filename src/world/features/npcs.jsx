@@ -3,6 +3,8 @@
 // Bulunduğun yer: ctx.home ? null : (ctx.venue ?? 'city')  (venue = mekân kimliği; mekân iç sahnesi bağlanınca World ctx'e eklenir).
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { DoorPrompt } from '../Social'
+import { Modal } from '../Hud'
+import { ToyButton } from '../../components/ui'
 import NpcLayer from '../NpcLayer'
 import { CLICK_RADIUS, NPC_BY_ID, displayName, posAt } from '../npcs'
 
@@ -29,7 +31,7 @@ function NpcSheet({ npc, text, onOption, onClose, touch }) {
   return (
     <div className={`pointer-events-auto absolute inset-x-0 bottom-0 z-30 mx-auto w-[min(100vw,max(30rem,38vw))] animate-pop rounded-t-[2rem] p-4 pb-5 text-[clamp(1rem,0.3vw+0.75rem,1.3rem)] ${glass}`} role="dialog" aria-label={npc.name}>
       <div className="flex items-start gap-3">
-        <img src={`/avatars/${npc.avatar}.png`} alt="" width="64" height="64" className="h-[4em] w-[4em] shrink-0 rounded-2xl border-2 border-white bg-[#f3fcfc] object-cover object-top shadow" />
+        <img src={`/avatars/${npc.avatar}.png`} alt="" width="64" height="64" className="h-[4em] w-[4em] shrink-0 rounded-2xl border-2 border-white bg-[#fff8f0] object-cover object-top shadow" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-[0.9em] font-black text-[#ff7a3d]">{displayName(npc)}</p>
           <div className="mt-1 rounded-2xl rounded-tl-md bg-[#fff6ee] px-3 py-2">
@@ -45,7 +47,7 @@ function NpcSheet({ npc, text, onOption, onClose, touch }) {
           <button
             key={o.label}
             onClick={() => onOption(o)}
-            className="min-h-11 flex-1 rounded-2xl border-b-4 border-[#96cecc] bg-[#e0f8f7] px-3 py-2 text-[0.9em] font-extrabold text-[#417571] active:translate-y-[3px] active:border-b-[1px]"
+            className="min-h-11 flex-1 rounded-2xl border-b-4 border-[#e4b780] bg-[#ffeed9] px-3 py-2 text-[0.9em] font-extrabold text-[#8b5f2b] active:translate-y-[3px] active:border-b-[1px]"
           >
             {o.label}
           </button>
@@ -83,6 +85,12 @@ export function useNpcs(ctx) {
   )
 
   const nearNpc = near && !open ? NPC_BY_ID[near] : null
+  const [bot, setBot] = useState(null) // AFK botuna tıklayınca küçük profil penceresi
+  useEffect(() => {
+    const on = (e) => setBot(e.detail)
+    window.addEventListener('situapp:bot-click', on)
+    return () => window.removeEventListener('situapp:bot-click', on)
+  }, [])
 
   // konuşma balonu NPC'nin başında görünür (NpcLayer 'situapp:npc-say' dinler); çekmece kapanınca silinir
   const sayId = open?.id
@@ -139,6 +147,20 @@ export function useNpcs(ctx) {
     overlays: (
       <>
         {nearNpc && <DoorPrompt emoji={nearNpc.role} label={nearNpc.name} action="Konuş" touch={touch} raised onGo={() => start(nearNpc)} />}
+        {bot && (
+          <Modal onClose={() => setBot(null)} label={bot.name}>
+            <div className="flex items-center gap-4">
+              <img src={`/avatars/${bot.avatar}.png`} alt="" width="72" height="72" className="h-[4.5rem] w-[4.5rem] rounded-2xl border-2 border-white bg-[#fff3e6] object-cover object-top shadow" />
+              <div className="min-w-0">
+                <p className="truncate text-lg font-black text-[#4a3b5c]">{bot.name}</p>
+                <p className="text-sm font-bold text-[#8a7a9c]">💤 Şu an klavyeden uzakta (AFK)</p>
+              </div>
+            </div>
+            <div className="mt-4">
+              <ToyButton onClick={() => setBot(null)}>Tamam</ToyButton>
+            </div>
+          </Modal>
+        )}
         {open && <NpcSheet key={talk.id} npc={open} text={talk.text} touch={touch} onOption={onOption} onClose={() => setTalk(null)} />}
       </>
     ),

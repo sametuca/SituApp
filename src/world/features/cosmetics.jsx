@@ -41,7 +41,7 @@ function PreviewStage({ slug }) {
   return (
     <>
       <ambientLight intensity={0.9} />
-      <hemisphereLight args={['#ffffff', '#def7f6', 1.2]} />
+      <hemisphereLight args={['#ffffff', '#ffedd6', 1.2]} />
       <directionalLight position={[2, 4, 3]} intensity={1.4} />
       <group ref={group} position={[-0.25, 0, 0]}>
         <Suspense fallback={null}>
@@ -122,7 +122,7 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
   return (
     <Modal onClose={onClose} label="Gardırop">
       <h2 className="text-2xl font-black text-[#4a3b5c]">Gardırop 👗</h2>
-      <div className="mt-3 h-48 overflow-hidden rounded-3xl border-2 border-white bg-gradient-to-b from-[#e8faf9] via-[#f1e6ff] to-[#dff3ff] shadow-soft">
+      <div className="mt-3 h-48 overflow-hidden rounded-3xl border-2 border-white bg-gradient-to-b from-[#fff2e3] via-[#f1e6ff] to-[#dff3ff] shadow-soft">
         <Canvas camera={{ position: [0, 1.0, 2.6], fov: 32 }} dpr={[1, 2]} onCreated={({ camera }) => camera.lookAt(0, 0.8, 0)}>
           {import.meta.env.DEV && <DevCam />}
           <PreviewStage slug={slug} />
@@ -178,7 +178,7 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
       )}
 
       <div className="mt-4 flex gap-2">
-        <button onClick={onClose} className="rounded-2xl px-4 py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#def7f7]/60">
+        <button onClick={onClose} className="rounded-2xl px-4 py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#ffedd6]/60">
           Vazgeç
         </button>
         <ToyButton className="!py-3 !text-base" onClick={() => onSave({ acc, pet })}>
@@ -212,7 +212,7 @@ function GiftPicker({ peer, onPick, onClose }) {
       <p className="mt-1 text-xs font-semibold text-[#8a7a9c]">En fazla {GIFT_RANGE} m yakınında olmalısın. {peer.name} kabul ederse hediye onun envanterine düşer ve evine yerleştirebilir.</p>
       <div className="mt-4 grid grid-cols-2 gap-3">
         {GIFTS.map((g) => (
-          <button key={g.id} onClick={() => onPick(g.id)} className="flex flex-col items-center gap-1 rounded-3xl border-2 border-white bg-[#f4fcfc] p-3 shadow-soft transition hover:bg-[#e8faf9] active:scale-95">
+          <button key={g.id} onClick={() => onPick(g.id)} className="flex flex-col items-center gap-1 rounded-3xl border-2 border-white bg-[#fff8f0] p-3 shadow-soft transition hover:bg-[#fff2e3] active:scale-95">
             <span className="text-5xl" aria-hidden>
               {g.emoji}
             </span>
@@ -220,7 +220,7 @@ function GiftPicker({ peer, onPick, onClose }) {
           </button>
         ))}
       </div>
-      <button onClick={onClose} className="mt-3 w-full rounded-2xl py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#def7f7]/60">
+      <button onClick={onClose} className="mt-3 w-full rounded-2xl py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#ffedd6]/60">
         Vazgeç
       </button>
     </Modal>
@@ -297,7 +297,7 @@ function DecorTab({ decor, onChange }) {
         role="switch"
         aria-checked={decor.romantic}
         onClick={() => onChange({ romantic: !decor.romantic })}
-        className={`mt-1 flex items-center justify-center gap-2 rounded-2xl border-2 border-white px-4 py-2.5 text-sm font-extrabold transition active:scale-[0.98] ${decor.romantic ? 'bg-gradient-to-r from-[#8be4e3] to-[#bba0ff] text-white shadow-soft' : 'bg-white/80 text-[#4a3b5c]'}`}
+        className={`mt-1 flex items-center justify-center gap-2 rounded-2xl border-2 border-white px-4 py-2.5 text-sm font-extrabold transition active:scale-[0.98] ${decor.romantic ? 'bg-gradient-to-r from-[#fec071] to-[#bba0ff] text-white shadow-soft' : 'bg-white/80 text-[#4a3b5c]'}`}
       >
         💗 Romantik ışık modu {decor.romantic ? '· açık' : '· kapalı'}
       </button>

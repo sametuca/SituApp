@@ -21,14 +21,14 @@ const TYPE_THEME = {
   cafe: { floor: ['#f7e4cb', '#efd3b0'] },
   tea: { floor: ['#f3dec4', '#e8c9a4'] },
   bakery: { floor: ['#fbead2', '#f4d9b4'] },
-  dessert: { floor: ['#eefbfb', '#e0f8f8'] },
+  dessert: { floor: ['#fff6ea', '#ffeed9'] },
   icecream: { floor: ['#eafaff', '#d4f1fb'] },
   fastfood: { floor: ['#fff1c9', '#ffe29a'] },
   books: { floor: ['#ead7bd', '#dfc5a3'] },
   bar: { floor: ['#6a4a70', '#59405f'], dark: '#2a1c3a', dim: 0.55 },
   club: { floor: ['#2b2146', '#241c3d'], dark: '#1c1433', dim: 0.85 },
   arcade: { floor: ['#3a2d63', '#32265a'], dark: '#241a4a', dim: 0.6 },
-  salon: { floor: ['#eaf9f9', '#daf2f2'] },
+  salon: { floor: ['#fef3e5', '#fbe9d1'] },
   studio: { floor: ['#f1ecf8', '#e6def2'] },
   shop: { floor: ['#fdf0cf', '#f8e2a8'] },
   guide: { floor: ['#e7f1ff', '#d6e6fb'] },
@@ -38,7 +38,7 @@ const TYPE_THEME = {
 /** Mekânın renk teması (bina renklerinden türer). */
 export function venueTheme(id) {
   const v = VENUE_BY_ID[id]
-  const bd = VENUE_DOORS[id]?.building ?? { color: '#e0f8f7', roof: '#8ce4e4' }
+  const bd = VENUE_DOORS[id]?.building ?? { color: '#ffeed9', roof: '#fec172' }
   const t = TYPE_THEME[v?.type] ?? TYPE_THEME.cafe
   const dark = Boolean(t.dark)
   const wall = dark ? mix(bd.color, t.dark, 0.72) : mix(bd.color, '#ffffff', 0.3)
@@ -144,10 +144,10 @@ function build(v) {
     add({ t: 'glb', m: 'plant', x, z, s }, { x, z, hw: 0.3, hd: 0.3, ry: 0 })
   }
   const corners = () => {
-    plant(-5.3, -4.2)
-    plant(5.3, -4.2)
-    plant(-5.3, 4.1)
-    plant(5.3, 4.1)
+    plant(-hw + 0.7, -4.2)
+    plant(hw - 0.7, -4.2)
+    plant(-hw + 0.7, 4.1)
+    plant(hw - 0.7, 4.1)
   }
   const sign = () => add({ t: 'board', x: 0, y: 3.05, z: -hd + 0.04, ry: 0, w: 3.4, h: 0.6, lines: [`${v.emoji} ${v.name}`], bg: th.accent, fg: '#ffffff', big: true })
   const windows = (zs = [-0.6, 2.4]) => zs.forEach((z) => { add({ t: 'window', wall: 'w', z }); add({ t: 'window', wall: 'e', z }) })
@@ -226,8 +226,8 @@ function build(v) {
       sideMenus(['🥐 Fırın', 'Simit', 'Poğaça', 'Açma', 'Börek'], ['☀️ Sabah', 'Kruvasan', 'Ekmek', 'Reçelli tost', 'Süt 🥛'])
       ;[[-3.9, 1.0], [3.9, 1.0], [0, 0.7]].forEach(([x, z], i) => tableSet(i, x, z, i === 2 ? 'z' : 'x'))
       windows()
-      plant(-5.3, 4.1)
-      plant(5.3, 4.1)
+      plant(-hw + 0.7, 4.1)
+      plant((hw - 0.7), 4.1)
       break
     }
     case 'dessert': {
@@ -281,8 +281,8 @@ function build(v) {
       add({ t: 'box', x: 3.6, z: 2.4, w: 1.0, d: 0.7, h: 0.4, c: '#fffaf2' }, true)
       add({ t: 'book', x: 3.6, z: 2.4, y: 0.4 })
       ;[[-3.9, 1.0], [-3.9, 3.2]].forEach(([x, z], i) => tableSet(i, x, z))
-      add({ t: 'glb', m: 'plant', x: -5.3, z: 4.1, s: 1.4 }, { x: -5.3, z: 4.1, hw: 0.3, hd: 0.3, ry: 0 })
-      add({ t: 'glb', m: 'plant', x: 5.3, z: -4.3, s: 1.4 }, { x: 5.3, z: -4.3, hw: 0.3, hd: 0.3, ry: 0 })
+      add({ t: 'glb', m: 'plant', x: -hw + 0.7, z: 4.1, s: 1.4 }, { x: -hw + 0.7, z: 4.1, hw: 0.3, hd: 0.3, ry: 0 })
+      add({ t: 'glb', m: 'plant', x: hw - 0.7, z: -4.3, s: 1.4 }, { x: hw - 0.7, z: -4.3, hw: 0.3, hd: 0.3, ry: 0 })
       windows([-0.2])
       break
     }
@@ -294,13 +294,13 @@ function build(v) {
       const bcx = v.id === 'bar' ? -1.2 : 0
       add({ t: 'bottles', x: bcx - 1.6, z: -hd + 0.25, w: 2.8 })
       add({ t: 'bottles', x: bcx + 1.6, z: -hd + 0.25, w: 2.8 })
-      add({ t: 'neon', x: -4.6, y: 2.4, z: -hd + 0.05, w: 1.5, c: '#7be0d4' })
+      add({ t: 'neon', x: -4.6, y: 2.4, z: -hd + 0.05, w: 1.5, c: '#fdb15e' })
       add({ t: 'neon', x: 4.6, y: 2.4, z: -hd + 0.05, w: 1.5, c: '#8fd8ff' })
       const sx = v.id === 'bar' ? [-3.9, -2.8, -1.7, -0.6, 0.5, 1.6] : [-2.9, -1.8, -0.7, 0.4, 1.5, 2.6]
       sx.forEach((x, i) => stoolAt(`st${i}`, x, -0.7, Math.PI, `p${Math.floor(i / 2)}`))
       ;[[-4.3, 2.0], [4.3, 2.0]].forEach(([x, z], i) => tableSet(i, x, z, 'z'))
-      add({ t: 'glb', m: 'plant', x: 5.3, z: -4.2, s: 1.4 }, { x: 5.3, z: -4.2, hw: 0.3, hd: 0.3, ry: 0 })
-      add({ t: 'glb', m: 'plant', x: -5.3, z: 4.1, s: 1.4 }, { x: -5.3, z: 4.1, hw: 0.3, hd: 0.3, ry: 0 })
+      add({ t: 'glb', m: 'plant', x: hw - 0.7, z: -4.2, s: 1.4 }, { x: hw - 0.7, z: -4.2, hw: 0.3, hd: 0.3, ry: 0 })
+      add({ t: 'glb', m: 'plant', x: -hw + 0.7, z: 4.1, s: 1.4 }, { x: -hw + 0.7, z: 4.1, hw: 0.3, hd: 0.3, ry: 0 })
       add({ t: 'lamp', x: -4.3, z: 2.0, y: 1.2 })
       add({ t: 'lamp', x: 4.3, z: 2.0, y: 1.2 })
       break
@@ -316,17 +316,17 @@ function build(v) {
       const st = { x: 4.4, z: -3.0, w: 2.6, d: 3.0 }
       L.stage = { ...st, spot: { x: 4.4, z: -2.55, ry: 0 } }
       add({ t: 'stage', ...st })
-      add({ t: 'board', x: 4.4, y: 2.25, z: -hd + 0.04, ry: 0, w: 2.6, h: 1.1, lines: ['🎤 KARAOKE', '♪ sırada sen varsın ♪'], bg: '#33205e', fg: '#9ce8da', frame: '#7be0d4', big: true })
+      add({ t: 'board', x: 4.4, y: 2.25, z: -hd + 0.04, ry: 0, w: 2.6, h: 1.1, lines: ['🎤 KARAOKE', '♪ sırada sen varsın ♪'], bg: '#33205e', fg: '#fec286', frame: '#fdb15e', big: true })
       add({ t: 'glb', m: 'speaker', x: 3.45, z: -4.25, s: 1.9 }, { x: 3.45, z: -4.25, hw: 0.4, hd: 0.4, ry: 0 })
-      add({ t: 'glb', m: 'speaker', x: 5.35, z: -4.25, s: 1.9 }, { x: 5.35, z: -4.25, hw: 0.4, hd: 0.4, ry: 0 })
+      add({ t: 'glb', m: 'speaker', x: hw - 0.65, z: -4.25, s: 1.9 }, { x: hw - 0.65, z: -4.25, hw: 0.4, hd: 0.4, ry: 0 })
       add({ t: 'glb', m: 'speaker', x: -2.7, z: -4.3, s: 2.0 }, { x: -2.7, z: -4.3, hw: 0.45, hd: 0.45, ry: 0 })
-      add({ t: 'glb', m: 'speaker', x: -5.3, z: -4.2, s: 2.0 }, { x: -5.3, z: -4.2, hw: 0.45, hd: 0.45, ry: 0 })
+      add({ t: 'glb', m: 'speaker', x: -hw + 0.7, z: -4.2, s: 2.0 }, { x: -hw + 0.7, z: -4.2, hw: 0.45, hd: 0.45, ry: 0 })
       add({ t: 'mic', x: 4.4, z: -2.1 })
       // yan koltuklar (batı duvarı)
-      sofaAt('sofaA', -5.3, -1.3, Math.PI / 2, 2.0, '#b79cff')
-      sofaAt('sofaB', -5.3, 0.9, Math.PI / 2, 2.0, '#7be0d4')
-      sofaAt('sofaC', 5.3, 1.4, -Math.PI / 2, 2.0, '#7fcdf3')
-      add({ t: 'neon', x: -hw + 0.05, y: 2.3, z: 0, w: 4, c: '#7be0d4', ry: Math.PI / 2 })
+      sofaAt('sofaA', -hw + 0.7, -1.3, Math.PI / 2, 2.0, '#b79cff')
+      sofaAt('sofaB', -hw + 0.7, 0.9, Math.PI / 2, 2.0, '#fdb15e')
+      sofaAt('sofaC', hw - 0.7, 1.4, -Math.PI / 2, 2.0, '#7fcdf3')
+      add({ t: 'neon', x: -hw + 0.05, y: 2.3, z: 0, w: 4, c: '#fdb15e', ry: Math.PI / 2 })
       add({ t: 'neon', x: hw - 0.05, y: 2.3, z: 0, w: 4, c: '#8fd8ff', ry: -Math.PI / 2 })
       L.karaoke = { stage: st, spot: L.stage.spot }
       // DJ vardiyası: tezgâhın arkasında, NPC alanının solunda (features/dj.js)
@@ -338,7 +338,7 @@ function build(v) {
       sign()
       counter(npc.x, 3.6, { top: '#4a3f7a' })
       add({ t: 'register', x: npc.x, z: counterZ, y: 1.0 })
-      const cols = [th.accent, '#7fcdf3', '#ffd35e', '#8fdcb4', '#7be0d4', '#b79cff']
+      const cols = [th.accent, '#7fcdf3', '#ffd35e', '#8fdcb4', '#fdb15e', '#b79cff']
       ;[-5.0, -3.8, -2.6, -1.4, -0.2, 1.0].forEach((x, i) => add({ t: 'cabinet', x, z: -hd + 0.6, ry: 0, w: 0.85, d: 0.8, c: cols[i % cols.length] }, true))
       // orta ada: sırt sırta iki kabin sırası
       ;[-4.2, -3.0, -1.8].forEach((x, i) => {
@@ -348,7 +348,7 @@ function build(v) {
       add({ t: 'cabinet', x: 2.6, z: 2.4, ry: Math.PI / 2 }, { x: 2.6, z: 2.4, hw: 0.45, hd: 0.45, ry: 0 })
       add({ t: 'cabinet', x: 3.8, z: 2.4, ry: -Math.PI / 2 }, { x: 3.8, z: 2.4, hw: 0.45, hd: 0.45, ry: 0 })
       add({ t: 'claw', x: 5.2, z: -0.4, ry: -Math.PI / 2 }, { x: 5.2, z: -0.4, hw: 0.45, hd: 0.45, ry: 0 })
-      sofaAt('sofaA', -5.3, 3.2, Math.PI / 2, 2.0, th.accent)
+      sofaAt('sofaA', -hw + 0.7, 3.2, Math.PI / 2, 2.0, th.accent)
       add({ t: 'rug', x: 0, z: 1.2, w: 11, d: 0.5, c: '#5a4aa0', round: false })
       add({ t: 'neon', x: 3.2, y: 2.6, z: -hd + 0.05, w: 2.6, c: '#8fd8ff' })
       break
@@ -366,13 +366,13 @@ function build(v) {
         block(x, -3.4, 0.35, 0.35)
         seat(`ch${i}`, 'chair', 'chair', x, -3.4, Math.PI)
       })
-      add({ t: 'box', x: -5.3, z: 1.0, w: 0.8, d: 1.4, h: 0.9, c: '#fffaf2' }, true) // yıkama lavabosu
-      add({ t: 'cyl', x: -5.3, z: 1.0, r: 0.3, h: 0.1, y: 0.9, c: '#cfeaff' })
-      sofaAt('sofaA', 5.3, 1.6, -Math.PI / 2, 2.0, th.accent)
+      add({ t: 'box', x: -hw + 0.7, z: 1.0, w: 0.8, d: 1.4, h: 0.9, c: '#fffaf2' }, true) // yıkama lavabosu
+      add({ t: 'cyl', x: -hw + 0.7, z: 1.0, r: 0.3, h: 0.1, y: 0.9, c: '#cfeaff' })
+      sofaAt('sofaA', hw - 0.7, 1.6, -Math.PI / 2, 2.0, th.accent)
       add({ t: 'rug', x: 0, z: 1.6, w: 3, d: 3, c: mix(th.accent, '#ffffff', 0.55), round: true })
       add({ t: 'mirror', x: hw - 0.05, z: -0.6, w: 1.3, h: 1.8, ry: -Math.PI / 2 })
-      plant(-5.3, 4.1)
-      plant(5.3, -4.2)
+      plant(-hw + 0.7, 4.1)
+      plant((hw - 0.7), -4.2)
       windows([2.4])
       break
     }
@@ -385,7 +385,7 @@ function build(v) {
       add({ t: 'backdrop', x: bx, z: -hd + 0.03, w: 4.6, h: 3.0, c: mix(th.accent, '#ffffff', 0.45), c2: mix(th.pastel, '#ffffff', 0.5) })
       add({ t: 'softbox', x: bx - 2.7, z: -1.0, ry: 0.5 }, { x: bx - 2.7, z: -1.0, hw: 0.35, hd: 0.35, ry: 0 })
       add({ t: 'softbox', x: bx + 2.5, z: -1.0, ry: -0.5 }, { x: bx + 2.5, z: -1.0, hw: 0.35, hd: 0.35, ry: 0 })
-      sofaAt('sofaA', bx, -3.6, 0, 2.2, '#8ce4e4')
+      sofaAt('sofaA', bx, -3.6, 0, 2.2, '#fec172')
       add({ t: 'box', x: bx + 2.0, z: -3.6, w: 0.7, d: 0.7, h: 0.5, c: '#fffaf2' }, true)
       add({ t: 'ball', x: bx + 2.0, y: 0.8, z: -3.6, r: 0.3, c: th.accent })
       L.photo = { x: bx, z: -1.0, radius: 2.2 }
@@ -393,8 +393,8 @@ function build(v) {
       ;[-5.0, -3.9, -2.8].forEach((x, i) => frame(x, 2.3 - (i % 2) * 0.35, -hd + 0.03, 0, 0.8, 1.0, [th.accent, '#7fcdf3', '#ffd35e'][i]))
       frame(-hw + 0.03, 2.1, 1.4, Math.PI / 2, 1.0, 1.3, '#b79cff')
       frame(-hw + 0.03, 2.0, 3.0, Math.PI / 2, 0.8, 1.0, '#8fdcb4')
-      plant(-5.3, 4.1)
-      plant(5.3, 4.1)
+      plant(-hw + 0.7, 4.1)
+      plant((hw - 0.7), 4.1)
       break
     }
     // ================= sörf dükkanı =================
@@ -402,14 +402,14 @@ function build(v) {
       sign()
       counter(npc.x + 2.4, 3.4)
       add({ t: 'register', x: npc.x + 2.4, z: counterZ, y: 1.0 })
-      const bcols = [['#8ce4e4', '#f5fdfd'], ['#7fcdf3', '#ffffff'], ['#ffd35e', '#fff7dc'], ['#8fdcb4', '#ffffff'], ['#b79cff', '#f5fdfd'], ['#ffb48c', '#ffffff']]
+      const bcols = [['#fec172', '#fff8f0'], ['#7fcdf3', '#ffffff'], ['#ffd35e', '#fff7dc'], ['#8fdcb4', '#ffffff'], ['#b79cff', '#fff8f0'], ['#ffb48c', '#ffffff']]
       ;[4.5, 3.4, 2.3, 1.2].forEach((x, i) => add({ t: 'surf', x, z: -hd + 0.5, ry: 0, c: bcols[i][0], c2: bcols[i][1], len: 2.0 }))
       ;[-0.5, 0.3].forEach((z, i) => add({ t: 'surf', x: hw - 0.45, z: z + 0.5, ry: -Math.PI / 2, c: bcols[4 + i][0], c2: bcols[4 + i][1], len: 2.0 }))
       ;[-1.0, 0.0, 1.0].forEach((z, i) => add({ t: 'surf', x: -hw + 0.45, z: z + 0.5, ry: Math.PI / 2, c: bcols[i][0], c2: bcols[i][1], len: 2.0 }))
       add({ t: 'rack', x: -3.4, z: 2.0 }, { x: -3.4, z: 2.0, hw: 1.0, hd: 0.3, ry: 0 })
       add({ t: 'rack', x: 3.6, z: 2.2 }, { x: 3.6, z: 2.2, hw: 1.0, hd: 0.3, ry: 0 })
       add({ t: 'glb', m: 'palm', x: -5.2, z: -4.1, s: 3.0 }, { x: -5.2, z: -4.1, hw: 0.4, hd: 0.4, ry: 0 })
-      add({ t: 'glb', m: 'palm', x: 5.3, z: 4.0, s: 3.0 }, { x: 5.3, z: 4.0, hw: 0.4, hd: 0.4, ry: 0 })
+      add({ t: 'glb', m: 'palm', x: hw - 0.7, z: 4.0, s: 3.0 }, { x: 5.3, z: 4.0, hw: 0.4, hd: 0.4, ry: 0 })
       add({ t: 'rug', x: 0, z: 0.8, w: 3.2, d: 2.2, c: '#9fd8f5', round: true })
       windows([2.6])
       break
@@ -420,13 +420,13 @@ function build(v) {
       counter(0, 3.4)
       add({ t: 'board', x: -3.8, y: 2.0, z: -hd + 0.04, ry: 0, w: 2.6, h: 1.9, lines: ['map'], bg: '#fffaf2', fg: '#4a3b5c', frame: th.accent, map: true })
       add({ t: 'board', x: 3.8, y: 2.1, z: -hd + 0.04, ry: 0, w: 2.2, h: 1.5, lines: ['🧭 İpuçları', 'E: kapı / otur', '💗: jest & fısıltı', '😊: emoji tepkisi', 'Enter: sohbet'], bg: '#fffaf2', fg: '#4a3b5c', frame: th.accent })
-      plant(-5.0, 0.6)
+      plant(-hw + 1.0, 0.6)
       sofaAt('sofaA', -3.9, 2.8, 0, 2.2, th.accent)
       sofaAt('sofaB', 3.9, 2.8, 0, 2.2, '#7fcdf3')
       add({ t: 'rug', x: 0, z: 1.2, w: 3.4, d: 3.4, c: mix(th.accent, '#ffffff', 0.55), round: true })
       add({ t: 'globe', x: 4.6, z: -0.6 }, { x: 4.6, z: -0.6, hw: 0.45, hd: 0.45, ry: 0 })
-      plant(-5.3, -4.2)
-      plant(5.3, -4.2)
+      plant(-hw + 0.7, -4.2)
+      plant((hw - 0.7), -4.2)
       windows([0.4])
       break
     }
@@ -458,7 +458,7 @@ function build(v) {
       sofaAt('sofaA', -4.0, 1.4, 0, 2.2, '#7fcdf3')
       sofaAt('sofaB', -4.0, 3.0, 0, 2.2, th.accent)
       add({ t: 'rug', x: 0.3, z: 2.4, w: 3.0, d: 3.0, c: mix(th.accent, '#ffffff', 0.6), round: true })
-      plant(-5.3, -4.4)
+      plant(-hw + 0.7, -4.4)
       plant(2.2, 4.3)
       windows([-0.6, 2.4])
       break
@@ -467,6 +467,21 @@ function build(v) {
       sign()
       counter(npc.x, 4)
       corners()
+  }
+  // --- geniş oda: yan duvar boşluklarını doldur (mekânlar büyütüldü: içeride çok oyuncu olabilir) ---
+  const hit = (x, z, rw, rd) => L.colliders.some((c) => Math.abs(c.x - x) < c.hw + rw + 0.1 && Math.abs(c.z - z) < c.hd + rd + 0.1)
+  const inNpc = (x, z) => x > L.npcRect.x0 - 0.6 && x < L.npcRect.x1 + 0.6 && z > L.npcRect.z0 - 0.6 && z < L.npcRect.z1 + 0.6
+  const CAFE_LIKE = ['cafe', 'tea', 'bakery', 'dessert', 'books', 'fastfood', 'icecream']
+  let fi = 0
+  for (const sx of [-1, 1]) {
+    for (const z of [-0.6, 2.4]) {
+      const x = sx * (hw - 1.7)
+      if (CAFE_LIKE.includes(v.type)) {
+        if (!hit(x, z, 1.5, 0.7) && !inNpc(x, z)) tableSet(`fx${fi++}`, x, z, 'x')
+      } else if (v.type !== 'airport') {
+        if (!hit(sx * (hw - 1.0), z, 0.5, 1.1) && !inNpc(x, z)) sofaAt(`fs${fi++}`, sx * (hw - 1.0), z, sx < 0 ? Math.PI / 2 : -Math.PI / 2, 2.0, th.accent)
+      }
+    }
   }
   return L
 }

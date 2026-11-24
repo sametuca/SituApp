@@ -17,7 +17,7 @@ export function useHousing({ net, home, panel, setPanel }) {
   const tier = net.homeTier ?? 0
 
   const menuNodes = own ? (
-    <button onClick={() => setPanel('housing')} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#f3fcfc]">
+    <button onClick={() => setPanel('housing')} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#fff8f0]">
       <Ico name="home" size={22} />
       <span className="flex-1">Evini büyüt</span>
       {tier < MAX_TIER && <span className="rounded-full bg-[#fff3c8] px-2 py-0.5 text-[11px] font-black text-[#8a5a00]">🪙 {HOME_TIERS[tier + 1].price}</span>}
@@ -33,11 +33,11 @@ export function useHousing({ net, home, panel, setPanel }) {
           {HOME_TIERS.map((t, i) => {
             const state = i < tier ? 'done' : i === tier ? 'now' : i === tier + 1 ? 'next' : 'locked'
             return (
-              <li key={t.id} className={`flex items-center gap-3 rounded-2xl border-2 px-3 py-2 ${state === 'now' ? 'border-[#8ce4e4] bg-[#f3fcfc]' : 'border-white bg-white/70'} ${state === 'locked' ? 'opacity-55' : ''}`}>
+              <li key={t.id} className={`flex items-center gap-3 rounded-2xl border-2 px-3 py-2 ${state === 'now' ? 'border-[#fec172] bg-[#fff8f0]' : 'border-white bg-white/70'} ${state === 'locked' ? 'opacity-55' : ''}`}>
                 <span className="text-2xl">{t.emoji}</span>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-black text-[#4a3b5c]">
-                    {t.name} {state === 'now' && <span className="ml-1 rounded-full bg-[#71dedd] px-2 py-0.5 text-[10px] text-white">Evin</span>}
+                    {t.name} {state === 'now' && <span className="ml-1 rounded-full bg-[#fdb252] px-2 py-0.5 text-[10px] text-white">Evin</span>}
                   </p>
                   <p className="text-xs font-semibold text-[#8a7a9c]">
                     {t.desc} · en fazla {t.max} eşya
