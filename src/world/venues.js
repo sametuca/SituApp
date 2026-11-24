@@ -26,7 +26,7 @@ export const VENUES = [
   { id: 'cayevi', label: '🍵 Çay Evi', name: 'Çay Evi', emoji: '🍵', type: 'tea', desc: 'İnce belli bardakta sohbet.',
     npc: { name: 'Çaycı Ege', avatar: 'ege', x: 3.4, z: -3.4, ry: -0.3, lines: ['Demli mi açık mı? 🍵', 'Çay yanında muhabbet bedava.', 'Bir tavla atar mısın? 🎲'] } },
   { id: 'kulup', label: '🪩 Gece Kulübü', name: 'Gece Kulübü', emoji: '🪩', type: 'club', desc: 'Müzik, dans ve enerji.',
-    npc: { name: 'DJ Kaan', avatar: 'kaan', x: 0, z: -3.7, ry: 0, lines: ['Pist senin! 🪩', 'Karşılıklı dans için birine 💃 gönder.', 'İstek şarkı var mı? 🎶'] } },
+    npc: { name: 'DJ Kaan', avatar: 'kaan', x: 0, z: -3.7, ry: 0, lines: ['Pist senin! 🪩', 'Karşılıklı dans için birine 💃 gönder.', 'DJ olmak ister misin? Sağdaki kartta “DJ ol” de, sevdiğin bir YouTube ya da Spotify bağlantısını çal 🎧'] } },
   { id: 'bar', label: '🍹 Bar', name: 'Bar', emoji: '🍹', type: 'bar', desc: 'Kokteyller ve loş ışık.',
     npc: { name: 'Barmen Deniz', avatar: 'deniz', x: -2, z: -3.4, ry: 0.2, lines: ['Alkolsüz kokteyl önerim: Gün Batımı 🌅', 'Bar tezgâhında sohbet kolay açılır 😉', 'Ne içersin?'] } },
   { id: 'oyun', label: '🎮 Oyun Salonu', name: 'Oyun Salonu', emoji: '🎮', type: 'arcade', desc: 'İki kişilik eğlence.',

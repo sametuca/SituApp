@@ -65,6 +65,7 @@ export function resolveVenueRoom(x, z, colliders = []) {
   x = Math.max(-hw + m, Math.min(hw - m, x))
   z = Math.max(-hd + m, Math.min(hd - 0.35, z))
   for (const c of colliders) {
+    if (!Number.isFinite(c.hw) || !Number.isFinite(c.hd)) continue // bozuk kutu oyuncunun konumunu NaN yapmasın
     const ry = c.ry ?? 0
     const cos = Math.cos(ry)
     const sin = Math.sin(ry)
@@ -103,7 +104,7 @@ const cache = new Map()
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v))
 
 /**
- * Mekânın yerleşimi: { id, type, theme, items[], colliders[], seats[], stage?, photo?, karaoke? }
+ * Mekânın yerleşimi: { id, type, theme, items[], colliders[], seats[], stage?, photo?, karaoke?, dj? }
  * items: Venue.jsx'in çizdiği tanımlar ({ t, ... }); seats: oturma noktaları (layout.js SEATS ile aynı biçim + group/style).
  */
 export function venueLayout(id) {
@@ -243,7 +244,7 @@ function build(v) {
     }
     case 'icecream': {
       sign()
-      add({ t: 'freezer', x: nx, z: counterZ, w: 4.6 }, true)
+      add({ t: 'freezer', x: nx, z: counterZ, w: 4.6, d: 0.9 }, true)
       shelfRow('cones', [-4.2, -2.4, 2.4, 4.2])
       sideMenus(['🍦 Dondurma', 'Çilek', 'Vanilya', 'Çikolata', 'Fıstık'], ['🍨 Boyut', 'Tek top', 'Çift top', 'Üç top!', 'Külah / kase'])
       ;[[-3.9, 1.0], [3.9, 1.0], [0, 0.7]].forEach(([x, z], i) => tableSet(i, x, z, i === 2 ? 'z' : 'x'))
@@ -306,7 +307,7 @@ function build(v) {
     // ================= kulüp =================
     case 'club': {
       add({ t: 'board', x: -2.8, y: 3.0, z: -hd + 0.04, ry: 0, w: 3.4, h: 0.6, lines: [`${v.emoji} ${v.name}`], bg: '#7a3fd1', fg: '#ffffff', big: true })
-      add({ t: 'djgear', x: 0, z: counterZ, w: 3.4 }, true)
+      add({ t: 'djgear', x: 0, z: counterZ, w: 3.4, d: 0.9 }, true)
       add({ t: 'dancefloor', x: -1.2, z: 1.3, cols: 5, rows: 4, size: 0.95 })
       add({ t: 'discoball', x: -1.2, z: 1.3, y: 3.0 })
       add({ t: 'laser', x: -1.2, z: 1.3, y: 3.0 })
@@ -327,6 +328,8 @@ function build(v) {
       add({ t: 'neon', x: -hw + 0.05, y: 2.3, z: 0, w: 4, c: '#ff8ad8', ry: Math.PI / 2 })
       add({ t: 'neon', x: hw - 0.05, y: 2.3, z: 0, w: 4, c: '#8fd8ff', ry: -Math.PI / 2 })
       L.karaoke = { stage: st, spot: L.stage.spot }
+      // DJ vardiyası: tezgâhın arkasında, NPC alanının solunda (features/dj.js)
+      L.dj = { spot: { x: -1.6, z: -3.0, ry: 0 } }
       break
     }
     // ================= oyun salonu =================
@@ -335,11 +338,11 @@ function build(v) {
       counter(npc.x, 3.6, { top: '#4a3f7a' })
       add({ t: 'register', x: npc.x, z: counterZ, y: 1.0 })
       const cols = [th.accent, '#7fcdf3', '#ffd35e', '#8fdcb4', '#ff8ad8', '#b79cff']
-      ;[-5.0, -3.8, -2.6, -1.4, -0.2, 1.0].forEach((x, i) => add({ t: 'cabinet', x, z: -hd + 0.6, ry: 0, c: cols[i % cols.length] }, true))
+      ;[-5.0, -3.8, -2.6, -1.4, -0.2, 1.0].forEach((x, i) => add({ t: 'cabinet', x, z: -hd + 0.6, ry: 0, w: 0.85, d: 0.8, c: cols[i % cols.length] }, true))
       // orta ada: sırt sırta iki kabin sırası
       ;[-4.2, -3.0, -1.8].forEach((x, i) => {
-        add({ t: 'cabinet', x, z: 0.5, ry: 0, c: cols[(i + 2) % cols.length] }, true)
-        add({ t: 'cabinet', x, z: 1.35, ry: Math.PI, c: cols[(i + 4) % cols.length] }, true)
+        add({ t: 'cabinet', x, z: 0.5, ry: 0, w: 0.85, d: 0.8, c: cols[(i + 2) % cols.length] }, true)
+        add({ t: 'cabinet', x, z: 1.35, ry: Math.PI, w: 0.85, d: 0.8, c: cols[(i + 4) % cols.length] }, true)
       })
       add({ t: 'cabinet', x: 2.6, z: 2.4, ry: Math.PI / 2 }, { x: 2.6, z: 2.4, hw: 0.45, hd: 0.45, ry: 0 })
       add({ t: 'cabinet', x: 3.8, z: 2.4, ry: -Math.PI / 2 }, { x: 3.8, z: 2.4, hw: 0.45, hd: 0.45, ry: 0 })

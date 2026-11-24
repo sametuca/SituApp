@@ -17,6 +17,8 @@
 //     { t: 'typing', to }                          özel sohbette "yazıyor…" göstergesi
 //     { t: 'block', id } / { t: 'unblock', key }   engelle / engeli kaldır
 //     { t: 'report', id, reason }                  şikâyet (taciz | spam | uygunsuz | sahte | foto | diger)
+//     { t: 'dj_get' | 'dj_join' | 'dj_leave' | 'dj_play', url | 'dj_stop' | 'dj_fire' }   Gece Kulübü DJ vardiyası (features/dj.js; ayrıntı orada)
+//     { t: 'coins_get' }                           altın bakiyesi (features/economy.js; sunucu → { t: 'coins', n, d, why }, welcome.coins)
 //     { t: 'dnd', on }                             rahatsız etme modu
 //     { t: 'sit', seat, slot } / { t: 'pose_end' } / { t: 'poses' }      oturma (features/together.js; ayrıntı orada)
 //     { t: 'dance_invite', to } / { t: 'dance_reply', id, accept }       çift dans
