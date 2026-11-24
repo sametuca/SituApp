@@ -145,10 +145,11 @@ function drawMap(ctx, S, big, f, remotes) {
   ctx.fillRect(X(-14), Z(30), len(28), len(16))
   ctx.fillStyle = '#e9d3dc' // kaldırımlar (arnavut kaldırımı tonu)
   ctx.fillRect(X(-ROAD_HALF - 1.4), 0, len(ROAD_HALF * 2 + 2.8), S)
-  ctx.fillRect(0, Z(-ROAD_HALF - 1.4), S, len(ROAD_HALF * 2 + 2.8))
+  ctx.fillRect(X(-12), Z(-ROAD_HALF - 1.4), S, len(ROAD_HALF * 2 + 2.8)) // doğu-batı: batıda (park) yol yok
+  ctx.fillRect(X(-26), Z(-1.7), len(14), len(3.4)) // park patikası
   ctx.fillStyle = '#c9c3d6' // yollar
   ctx.fillRect(X(-ROAD_HALF), 0, len(ROAD_HALF * 2), S)
-  ctx.fillRect(0, Z(-ROAD_HALF), S, len(ROAD_HALF * 2))
+  ctx.fillRect(X(-12), Z(-ROAD_HALF), S, len(ROAD_HALF * 2))
   ctx.fillStyle = '#f7d9e6' // lobi meydanı
   ctx.beginPath()
   ctx.arc(X(0), Z(0), len(11), 0, Math.PI * 2)

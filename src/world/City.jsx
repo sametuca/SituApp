@@ -69,12 +69,12 @@ function Label({ text, y, x, z, zOff = 0, focusRef, accent = '#ff8fb8' }) {
     const dist = Math.hypot(f.x - x, f.z - z)
     // kameraya çok yakın pin (distanceFactor yüzünden) dev boyuna çıkmasın
     const camDist = Math.hypot(camera.position.x - x, camera.position.y - y, camera.position.z - z)
-    setMode(dist > LABEL_RANGE || camDist < 12 ? 0 : dist > LABEL_NAME_RANGE ? 1 : 2)
+    setMode(dist > LABEL_RANGE || camDist < 15 ? 0 : dist > LABEL_NAME_RANGE ? 1 : 2)
   })
   if (mode === 0) return null
   const { icon, name } = splitLabel(text)
   return (
-    <Html position={[0, y, zOff]} center distanceFactor={22} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
+    <Html position={[0, y, zOff]} center distanceFactor={18} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
       <div className="venue-pin flex flex-col items-center" style={{ '--pin': accent }}>
         {mode === 2 && (
           <div className="mb-1 whitespace-nowrap rounded-full bg-[#3d2f4f]/85 px-3 py-[3px] text-[13px] font-extrabold tracking-wide text-white shadow-lg backdrop-blur-sm">
@@ -382,6 +382,7 @@ function Sun({ focusRef }) {
 }
 
 const DASHES = Array.from({ length: 23 }, (_, i) => -44 + i * 4).filter((t) => Math.abs(t) > 12.5)
+const PARK_X = -12 // batıya doğru asfalt biter; parkta patika başlar
 
 export default function City({ focusRef }) {
   const road = ROAD_HALF * 2
@@ -405,13 +406,14 @@ export default function City({ focusRef }) {
 
       {/* kaldırım + yollar */}
       <Flat x={0} w={road + 2.8} d={96} y={Y.sidewalk} tex="cobble" color="#fdf6ff" />
-      <Flat z={0} w={96} d={road + 2.8} y={Y.sidewalk} tex="cobble" color="#fdf6ff" />
+      <Flat x={(PARK_X + 48) / 2} z={0} w={48 - PARK_X} d={road + 2.8} y={Y.sidewalk} tex="cobble" color="#fdf6ff" />
+      <Flat x={-19} z={0} w={14} d={3.4} y={Y.sidewalk} tex="cobble" color="#fff0f4" /> {/* park patikası: lobiden çardağa */}
       <Flat x={0} w={road} d={96} y={Y.road} tex="asphalt" />
-      <Flat z={0} w={96} d={road} y={Y.road} tex="asphalt" />
+      <Flat x={(PARK_X + 48) / 2} z={0} w={48 - PARK_X} d={road} y={Y.road} tex="asphalt" />
       {DASHES.map((t) => (
         <group key={t}>
           <Flat x={0} z={t} w={0.28} d={1.8} y={Y.mark} color="#ffffff" />
-          <Flat x={t} z={0} w={1.8} d={0.28} y={Y.mark} color="#ffffff" />
+          {t > PARK_X && <Flat x={t} z={0} w={1.8} d={0.28} y={Y.mark} color="#ffffff" />}
         </group>
       ))}
 

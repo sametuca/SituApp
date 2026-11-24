@@ -124,7 +124,7 @@ export const PROPS = []
 // sokak lambaları: ana yolların iki yanında
 for (const t of [-40, -30, -20, 20, 30, 40]) {
   PROPS.push(p('lamp', 4.2, t, 3, 0.35), p('lamp', -4.2, t, 3, 0.35)) // kuzey-güney yol
-  PROPS.push(p('lamp', t, 4.2, 3, 0.35), p('lamp', t, -4.2, 3, 0.35)) // doğu-batı yol
+  if (t > -12) PROPS.push(p('lamp', t, 4.2, 3, 0.35), p('lamp', t, -4.2, 3, 0.35)) // doğu-batı yol (batıda yol yok: park patikası)
 }
 // lobi: çeşmenin çevresinde banklar ve ağaçlar
 for (let i = 0; i < 6; i++) {
@@ -140,16 +140,17 @@ for (const [x, z] of [[-6.2, -20], [-6.2, -24], [6.2, -20], [6.2, -24], [-6.2, -
 for (const [x, z] of [[-6.5, -15], [6.5, -15], [-6.5, -38], [6.5, -38]]) PROPS.push(p('plant', x, z, 1.4, 0.4))
 // gece kulübü: girişin önünde hoparlörler, DJ standı
 PROPS.push(p('booth', 22.6, -4.6, 2.6, 1.2), p('speaker', 20.5, -4.6, 2, 0.6), p('speaker', 31.5, -4.6, 2, 0.6))
-PROPS.push(p('speaker', 38, 4.6, 1.8, 0.5), p('lamp', 44, 4.6, 3, 0.35))
+PROPS.push(p('speaker', 38, 4.6, 1.8, 0.5))
 // park: ağaçlar, banklar
-for (const [x, z] of [[-18, -9], [-24, -10], [-36, -10], [-44, -8], [-20, 9], [-26, 10], [-37, 9], [-44, 6], [-42, -1], [-18, 1]]) PROPS.push(p('tree', x, z, 3.6, 0.7))
+for (const [x, z] of [[-18, -9], [-24, -10], [-36, -10], [-44, -8], [-20, 9], [-26, 10], [-37, 9], [-44, 6], [-42, -1], [-16, 7]]) PROPS.push(p('tree', x, z, 3.6, 0.7))
 PROPS.push(p('bench', -22, -5, 1.7, 0, 0), p('bench', -22, 5, 1.7, 0, Math.PI), p('bench', -36, -5, 1.7, 0, 0), p('bench', -36, 5, 1.7, 0, Math.PI))
-for (const x of [-16, -26, -34, -44]) PROPS.push(p('lamp', x, 3.8, 3, 0.35))
+// park patikası (x -12…-26, z ±1,6): lambalar patikanın iki yanında, aynı hizada
+for (const x of [-16, -22]) PROPS.push(p('lamp', x, 2.6, 3, 0.35), p('lamp', x, -2.6, 3, 0.35))
 // plaj: şemsiyeler, şezlonglar (üçünün yanında ikinci şezlong: yan yana uzanınca sohbet kısayolu), palmiyeler
-for (const [x, z] of [[-8, 33], [-1, 36], [7, 34], [-6, 41], [5, 42]]) {
+for (const [x, z] of [[-8.5, 33], [9, 37], [7, 34], [-8.5, 41], [8, 42]]) {
   PROPS.push(p('umbrella', x, z, 2.6, 0.3), p('lounger', x + 1.6, z + 1.4, 1.7, 0, 0.6))
 }
-for (const [x, z] of [[-8, 33], [7, 34], [-6, 41]]) PROPS.push(p('lounger', x + 2.55, z + 0.75, 1.7, 0, 0.6))
+for (const [x, z] of [[-8.5, 33], [7, 34], [-8.5, 41]]) PROPS.push(p('lounger', x + 2.55, z + 0.75, 1.7, 0, 0.6))
 for (const [x, z] of [[-12, 31], [12, 31], [-11, 44], [11, 44]]) PROPS.push(p('palm', x, z, 4.6, 0.5))
 // mahalle köşelerinde ağaçlar
 for (const [x, z] of [[17, -33], [17, 33], [47 - 2, 14]]) PROPS.push(p('tree', x, z, 3.6, 0.7))
@@ -164,8 +165,8 @@ const SEAT_DEFS = {
 }
 // Park piknik battaniyeleri (procedural, City.jsx çizer): 2 kişilik, yere oturulur (style 'floor').
 export const BLANKETS = [
-  { x: -22, z: -1.2, ry: 0.2, c: '#ff9fc6', c2: '#fff3f8' },
-  { x: -40, z: -3.4, ry: -0.5, c: '#7fcdf3', c2: '#fff3f8' },
+  { x: -21, z: -7.5, ry: 0.2, c: '#ff9fc6', c2: '#fff3f8' },
+  { x: -40, z: -4.5, ry: -0.5, c: '#7fcdf3', c2: '#fff3f8' },
   { x: -33, z: 7.6, ry: 0.4, c: '#ffd35e', c2: '#fff7dc' },
   { x: -28, z: -7.6, ry: -0.2, c: '#8fdcb4', c2: '#f3fff8' },
 ]
