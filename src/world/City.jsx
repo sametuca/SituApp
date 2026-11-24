@@ -1,9 +1,9 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { screenK } from './screenK'
 import { useFrame, useLoader } from '@react-three/fiber'
-import { CanvasTexture, Color, DataTexture, ExtrudeGeometry, Shape, LinearFilter, RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
+import { CanvasTexture, Color, DataTexture, Object3D, ExtrudeGeometry, Shape, LinearFilter, RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
 import { Html, RoundedBox } from '@react-three/drei'
-import { BEACH, BLANKETS, BUILDINGS, GAZEBO, ISLAND, PROPS, RIM, ROAD_END, ROAD_HALF, TOWELS } from './layout'
+import { BEACH, BLANKETS, BUILDINGS, GAZEBO, ISLAND, PLAY_BOUNDS, PLAZA_R, PROPS, RIM, RING, ROAD_END, ROAD_HALF, ROAD_START, TOWELS } from './layout'
 import { useCull } from './cull'
 import Facade from './Facade'
 import { facadeOf } from './facadeData'
@@ -89,6 +89,22 @@ function Flat({ x = 0, z = 0, w, d, y, color = '#ffffff', round, tex, feather = 
     <mesh position={[x, y, z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow renderOrder={alpha ? 1 : 0}>
       {round ? <circleGeometry args={[round, 64]} /> : <planeGeometry args={[w, d]} />}
       <meshStandardMaterial color={color} map={map} alphaMap={alpha} transparent={Boolean(alpha)} depthWrite={!alpha} roughness={0.95} />
+    </mesh>
+  )
+}
+
+/** Dokulu halka (dönel kavşak asfaltı / kaldırımı): ringGeometry UV'si tüm halkaya tek kez sarılır → tekrar sayısı çapa göre. */
+function TexRing({ r0, r1, y, tex, color = '#ffffff' }) {
+  const base = useLoader(TextureLoader, `/textures/${tex}.webp`)
+  const map = useMemo(() => {
+    const m = GROUND_TEX[tex]
+    const rep = Math.round(((r1 * 2) / m) * 10) / 10
+    return sharedTexture(base, `ring${rep}`, (t) => t.repeat.set(rep, rep))
+  }, [base, tex, r1])
+  return (
+    <mesh position={[0, y, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      <ringGeometry args={[r0, r1, 96]} />
+      <meshStandardMaterial color={color} map={map} roughness={0.95} />
     </mesh>
   )
 }
@@ -472,6 +488,58 @@ function Sun({ focusRef }) {
 const WATER_COLOR = new Color('#feda9d')
 const WATER_NIGHT = new Color('#3f5a9c')
 
+// ---------- dünya sınırı: şamandıra halatı (oyuncu bunun ötesine geçemez; tatlı bir "buraya kadar" çizgisi) ----------
+const BUOY_OFF = 3.2 // oynanabilir sınırın ötesinde (m)
+function Buoys() {
+  const ref = useRef()
+  const pts = useMemo(() => {
+    const b = { x0: PLAY_BOUNDS.x0 - BUOY_OFF, x1: PLAY_BOUNDS.x1 + BUOY_OFF, z0: PLAY_BOUNDS.z0 - BUOY_OFF, z1: PLAY_BOUNDS.z1 + BUOY_OFF }
+    const out = []
+    const step = 7
+    for (let x = b.x0; x <= b.x1; x += step) out.push([x, b.z0], [x, b.z1])
+    for (let z = b.z0 + step; z < b.z1; z += step) out.push([b.x0, z], [b.x1, z])
+    return { list: out, b }
+  }, [])
+  const colors = useMemo(() => pts.list.map((_, i) => (i % 2 ? '#ffffff' : '#ff9f43')), [pts])
+  useEffect(() => {
+    if (!ref.current) return
+    colors.forEach((c, i) => ref.current.setColorAt(i, new Color(c)))
+    ref.current.instanceColor.needsUpdate = true
+  }, [colors])
+  const dummy = useMemo(() => new Object3D(), [])
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime
+    pts.list.forEach(([x, z], i) => {
+      dummy.position.set(x, 0.18 + Math.sin(t * 1.3 + i * 0.9) * 0.08, z)
+      dummy.rotation.set(Math.sin(t * 0.9 + i) * 0.1, 0, Math.cos(t * 1.1 + i) * 0.1)
+      dummy.updateMatrix()
+      ref.current.setMatrixAt(i, dummy.matrix)
+    })
+    ref.current.instanceMatrix.needsUpdate = true
+  })
+  const { b } = pts
+  const W = b.x1 - b.x0
+  const D = b.z1 - b.z0
+  const rope = (cx, cz, w, d, k) => (
+    <mesh key={k} position={[cx, 0.08, cz]}>
+      <boxGeometry args={[w, 0.05, d]} />
+      <meshStandardMaterial color="#fff3e0" roughness={0.9} />
+    </mesh>
+  )
+  return (
+    <group>
+      <instancedMesh ref={ref} args={[undefined, undefined, pts.list.length]} frustumCulled={false} castShadow>
+        <sphereGeometry args={[0.42, 14, 10]} />
+        <meshStandardMaterial roughness={0.5} />
+      </instancedMesh>
+      {rope((b.x0 + b.x1) / 2, b.z0, W, 0.06, 'n')}
+      {rope((b.x0 + b.x1) / 2, b.z1, W, 0.06, 's')}
+      {rope(b.x0, (b.z0 + b.z1) / 2, 0.06, D, 'w')}
+      {rope(b.x1, (b.z0 + b.z1) / 2, 0.06, D, 'e')}
+    </group>
+  )
+}
+
 function Sea() {
   const water = useLoader(TextureLoader, '/textures/water.webp')
   const foam = useLoader(TextureLoader, '/textures/foam.webp')
@@ -485,7 +553,7 @@ function Sea() {
       t.needsUpdate = true
       return t
     }
-    return [mk(water, 14, 700), mk(foam, 9, 700), mk(foam, 7, 120)]
+    return [mk(water, 14, 2200), mk(foam, 9, 2200), mk(foam, 7, 120)]
   }, [water, foam])
   // köpük şeridi kenarları yumuşasın: ortası dolu, iki kenarı saydam bir alfa haritası
   const fade = useMemo(() => {
@@ -548,11 +616,11 @@ function Sea() {
   return (
     <group>
       <mesh ref={plane} position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[700, 700]} />
+        <planeGeometry args={[2200, 2200]} />
         <meshStandardMaterial ref={mat} map={deep} roughness={0.25} metalness={0.05} emissive="#3aa9c9" emissiveIntensity={0.06} />
       </mesh>
       <mesh position={[0, -0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[700, 700]} />
+        <planeGeometry args={[2200, 2200]} />
         <meshBasicMaterial ref={mat2} map={swell} transparent opacity={0.18} depthWrite={false} />
       </mesh>
       {sides.flatMap((sd, si) =>
@@ -570,7 +638,8 @@ function Sea() {
   )
 }
 
-const DASHES = Array.from({ length: 49 }, (_, i) => -96 + i * 4).filter((t) => Math.abs(t) > 12.5 && t <= 96)
+const DASHES = Array.from({ length: 49 }, (_, i) => -96 + i * 4).filter((t) => Math.abs(t) > RING.r1 + 1.5 && t <= 96)
+const RING_DASHES = Array.from({ length: 36 }, (_, i) => (i / 36) * Math.PI * 2 + 0.087).filter((a) => [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2].every((c) => Math.abs(Math.atan2(Math.sin(a - c), Math.cos(a - c))) > 0.3))
 const PARK_X = -12 // batıya doğru asfalt biter; parkta patika başlar
 
 /** Gölet: Meshy su dokusu + kum kıyısı (Gölet bölgesi). */
@@ -605,16 +674,16 @@ export default function City({ focusRef }) {
   const cx = (ISLAND.x0 + ISLAND.x1) / 2
   const cz = (ISLAND.z0 + ISLAND.z1) / 2
   const swW = road + 2.8
-  const nsLen = ROAD_END.south - ROAD_END.north // kuzey-güney yol uzunluğu
-  const nsCz = (ROAD_END.south + ROAD_END.north) / 2
-  const ewLen = ROAD_END.east - PARK_X // doğu-batı yol uzunluğu (batıda park patikası)
-  const ewCx = (ROAD_END.east + PARK_X) / 2
+  const nsN = { len: -ROAD_START - ROAD_END.north, cz: (-ROAD_START + ROAD_END.north) / 2 } // kuzey kolu
+  const nsS = { len: ROAD_END.south - ROAD_START, cz: (ROAD_END.south + ROAD_START) / 2 } // güney kolu (plaja)
+  const ewE = { len: ROAD_END.east - ROAD_START, cx: (ROAD_END.east + ROAD_START) / 2 } // doğu kolu
   return (
     <group>
       <Sun focusRef={focusRef} />
 
       {/* zemin ve mahalle zeminleri */}
       <Sea />
+      <Buoys />
       <Flat x={cx} z={cz} w={W} d={D} y={0} tex="grass" /> {/* ada */}
       {/* kıyı kumu: adanın dört kenarında */}
       <Flat x={cx} z={ISLAND.z0 - RIM / 2} w={W + RIM * 2} d={RIM} y={Y.floor} tex="sand" />
@@ -635,11 +704,22 @@ export default function City({ focusRef }) {
       </mesh>
 
       {/* kaldırım + yollar */}
-      <Flat x={0} z={nsCz} w={swW} d={nsLen} y={Y.sidewalk} tex="cobble" color="#fdf6ff" />
-      <Flat x={ewCx} z={0} w={ewLen} d={swW} y={Y.sidewalk} tex="cobble" color="#fdf6ff" />
+      <Flat x={0} z={nsN.cz} w={swW} d={nsN.len} y={Y.sidewalk} tex="cobble" color="#fdf6ff" />
+      <Flat x={0} z={nsS.cz} w={swW} d={nsS.len} y={Y.sidewalk} tex="cobble" color="#fdf6ff" />
+      <Flat x={ewE.cx} z={0} w={ewE.len} d={swW} y={Y.sidewalk} tex="cobble" color="#fdf6ff" />
+      <TexRing r0={PLAZA_R - 0.8} r1={RING.r0} y={Y.sidewalk + 0.004} tex="cobble" color="#fdf6ff" />
+      <TexRing r0={RING.r1} r1={RING.r1 + RING.side} y={Y.sidewalk + 0.004} tex="cobble" color="#fdf6ff" />
       <Flat x={-19} z={0} w={14} d={3.4} y={Y.sidewalk} tex="cobble" color="#fff8f0" /> {/* park patikası: lobiden çardağa */}
-      <Flat x={0} z={nsCz} w={road} d={nsLen} y={Y.road} tex="asphalt" />
-      <Flat x={ewCx} z={0} w={ewLen} d={road} y={Y.road} tex="asphalt" />
+      <Flat x={0} z={nsN.cz} w={road} d={nsN.len} y={Y.road} tex="asphalt" />
+      <Flat x={0} z={nsS.cz} w={road} d={nsS.len} y={Y.road} tex="asphalt" />
+      <Flat x={ewE.cx} z={0} w={ewE.len} d={road} y={Y.road} tex="asphalt" />
+      <TexRing r0={RING.r0} r1={RING.r1} y={Y.road + 0.006} tex="asphalt" />
+      {RING_DASHES.map((a, i) => (
+        <mesh key={i} position={[Math.cos(a) * ((RING.r0 + RING.r1) / 2), Y.mark, Math.sin(a) * ((RING.r0 + RING.r1) / 2)]} rotation={[-Math.PI / 2, 0, -a - Math.PI / 2]}>
+          <planeGeometry args={[0.28, 1.5]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.9} />
+        </mesh>
+      ))}
       {DASHES.map((t) => (
         <group key={t}>
           {t <= ROAD_END.south && t >= ROAD_END.north && <Flat x={0} z={t} w={0.28} d={1.8} y={Y.mark} color="#ffffff" />}
@@ -648,9 +728,8 @@ export default function City({ focusRef }) {
       ))}
 
       {/* lobi meydanı */}
-      <Flat round={12} y={Y.plaza} tex="cobble" color="#fff7ee" />
+      <Flat round={PLAZA_R} y={Y.plaza} tex="cobble" color="#fff7ee" />
       <Ring r0={6.6} r1={7.1} y={Y.mark} color="#ffebd3" />
-      <Ring r0={9.6} r1={10.2} y={Y.mark} color="#cfeaff" />
       <Flat round={3.4} y={Y.mark} color="#ffebd3" />
       <Gazebo />
 

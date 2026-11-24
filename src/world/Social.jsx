@@ -127,9 +127,11 @@ export function DoorPrompt({ emoji, label, action, touch, raised, onGo }) {
       role="status"
     >
       <div className={`flex items-center gap-3 rounded-3xl p-2.5 pl-4 ${glass}`}>
-        <span className="text-2xl" aria-hidden>
-          {emoji}
-        </span>
+        {emoji && (
+          <span className="text-2xl" aria-hidden>
+            {emoji}
+          </span>
+        )}
         <p className="min-w-0 flex-1 truncate text-sm font-black text-[#4a3b5c]">{label}</p>
         <div className="w-32 shrink-0">
           <ToyButton className="!rounded-xl !py-2 !text-sm" onClick={onGo}>

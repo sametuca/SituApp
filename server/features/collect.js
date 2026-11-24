@@ -81,7 +81,10 @@ export default function collect(ctx) {
         const id = typeof msg.id === 'string' ? msg.id.slice(0, 40) : ''
         const col = COLLECTIBLE_BY_ID[id]
         if (!col || col.room !== me.room) return
-        if (Math.hypot(me.x - col.x, me.z - col.z) > COLLECT_RADIUS) return send(me.ws, { t: 'info', text: 'Biraz daha yaklaş 🚶' })
+        if (Math.hypot(me.x - col.x, me.z - col.z) > COLLECT_RADIUS) {
+          ctx.strike?.(me, 'uzaktan toplama', 0.6)
+          return send(me.ws, { t: 'info', text: 'Biraz daha yaklaş 🚶' })
+        }
         const u = user(me.key)
         const s = u.stats
         const coll = (s.collect = s.collect ?? {})

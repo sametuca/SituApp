@@ -22,8 +22,8 @@ const CITY = [
     id: 'gazeteci', avatar: 'elif', name: 'Gazeteci Elif', role: '📰', x: -4.6, z: -4.4, ry: 0.9,
     lines: ['Günün haberi: lobide herkes birbirine selam veriyor! 📰', 'Şehirde ne var ne yok, ilk ben duyarım 🗞️', 'Selam göndermek için karaktere tıklaman yeter 👋', 'Bugünün manşeti: “Park bankları doldu taştı” 😄'],
     options: [
-      { label: '📍 Öneri iste', reply: ['Bu akşam Kafe Sokağı çok sakin, sohbet için birebir ☕', 'Gün batımında plaja git, manşet fotoğrafı orada çekiliyor 🌅'] },
-      { label: '📖 Hikâye anlat', reply: ['Geçen gün iki yabancı aynı gazeteyi almak için uzandı, elleri değdi… Şimdi her sabah birlikte okuyorlar 💞', 'Bir kadın bana “şu mavi tişörtlü kim?” diye sordu. Dönüp baktım, mavi tişörtlü de aynısını soruyordu 😄'] },
+      { label: 'Öneri iste', reply: ['Bu akşam Kafe Sokağı çok sakin, sohbet için birebir ☕', 'Gün batımında plaja git, manşet fotoğrafı orada çekiliyor 🌅'] },
+      { label: 'Hikâye anlat', reply: ['Geçen gün iki yabancı aynı gazeteyi almak için uzandı, elleri değdi… Şimdi her sabah birlikte okuyorlar 💞', 'Bir kadın bana “şu mavi tişörtlü kim?” diye sordu. Dönüp baktım, mavi tişörtlü de aynısını soruyordu 😄'] },
     ],
   },
   {
@@ -31,24 +31,24 @@ const CITY = [
     route: { pts: [[5, 0], [3.5, 3.5], [0, 5], [-3.5, 3.5], [-5, 0], [-3.5, -3.5], [0, -5], [3.5, -3.5]], mode: 'loop', speed: 0.9, pause: 3 },
     lines: ['Balon, balon! Rengârenk balon! 🎈', 'Kalp şeklinde olanı birine hediye edebilirsin 💗', 'Çeşmenin etrafında tur atıyorum, yorulmuyorum bile 😄', 'Pembe mi mavi mi? İkisi de olur 🎀'],
     options: [
-      { label: '📍 Öneri iste', reply: ['Çeşmenin başında buluşmak klasik ama hep işe yarar ⛲', 'Park çardağı akşamüstü çok romantik oluyor 🌳'] },
-      { label: '📖 Hikâye anlat', reply: ['Bir balon uçup gitti, peşinden koşan çocuk bir de baktı ki yeni arkadaş edinmiş 🎈', 'Bir çift buluştuğunda iki balonun ipini birbirine bağlamıştı. Hâlâ birlikteler 💞'] },
+      { label: 'Öneri iste', reply: ['Çeşmenin başında buluşmak klasik ama hep işe yarar ⛲', 'Park çardağı akşamüstü çok romantik oluyor 🌳'] },
+      { label: 'Hikâye anlat', reply: ['Bir balon uçup gitti, peşinden koşan çocuk bir de baktı ki yeni arkadaş edinmiş 🎈', 'Bir çift buluştuğunda iki balonun ipini birbirine bağlamıştı. Hâlâ birlikteler 💞'] },
     ],
   },
   {
     id: 'muzisyen', avatar: 'deniz', name: 'Sokak Müzisyeni Deniz', role: '🎸', x: 4.4, z: -16.5, ry: 0.5, pose: SIT, prop: 'stool',
     lines: ['Bu şarkıyı sana çalıyorum 🎶', 'Kafe Sokağı’nın sesi benim 🎸', 'Müzik, sohbetin en tatlı başlangıcı 😉', 'Dinleyene bir kahve ısmarlarım… yarın 😄'],
     options: [
-      { label: '📍 Öneri iste', reply: ['Müzik dinleyerek kahve içmek için Starbucket’in pencere kenarı ideal ☕', 'Dans etmek istersen Gece Kulübü’ne uğra, pist hiç boş kalmıyor 🪩'] },
-      { label: '📖 Hikâye anlat', reply: ['Bir akşam çaldığım şarkıya biri eşlik etti, ses ses derken ikisi de sustu, sadece gülümsediler 🎶', 'İlk şarkımı bir banka oturup yazdım. Yanıma oturan kişi nakaratı buldu 💫'] },
+      { label: 'Öneri iste', reply: ['Müzik dinleyerek kahve içmek için Starbucket’in pencere kenarı ideal ☕', 'Dans etmek istersen Gece Kulübü’ne uğra, pist hiç boş kalmıyor 🪩'] },
+      { label: 'Hikâye anlat', reply: ['Bir akşam çaldığım şarkıya biri eşlik etti, ses ses derken ikisi de sustu, sadece gülümsediler 🎶', 'İlk şarkımı bir banka oturup yazdım. Yanıma oturan kişi nakaratı buldu 💫'] },
     ],
   },
   {
     id: 'cicekci', avatar: 'zeynep', name: 'Çiçekçi Zeynep', role: '🌷', x: -4.9, z: -25.5, ry: -0.9, prop: 'flowers',
     lines: ['Taze laleler geldi! 🌷', 'Çiçek, “seni düşündüm”ün en kibar hali 💐', 'Kalp mi papatya mı? Ben papatyaya bayılıyorum 🌼', 'Birine çiçek jesti göndermeyi dene 😉'],
     options: [
-      { label: '📍 Öneri iste', reply: ['Çiçek göndermek için en iyi yer Park, hem bahar kokusu hem sakinlik 🌳', 'Hafız Mustafam’dan bir şey alıp çiçekle birlikte sürpriz yap 🍰'] },
-      { label: '📖 Hikâye anlat', reply: ['Her sabah aynı kişi bir papatya alırdı. Bir gün sebebini sordum: “Birine ‘sevmiyor’ dedirtmemek için” dedi 🌼', 'Bir gün iki kişi aynı buketi almak istedi, buketi ikiye bölüp birlikte yürüdüler 💐'] },
+      { label: 'Öneri iste', reply: ['Çiçek göndermek için en iyi yer Park, hem bahar kokusu hem sakinlik 🌳', 'Hafız Mustafam’dan bir şey alıp çiçekle birlikte sürpriz yap 🍰'] },
+      { label: 'Hikâye anlat', reply: ['Her sabah aynı kişi bir papatya alırdı. Bir gün sebebini sordum: “Birine ‘sevmiyor’ dedirtmemek için” dedi 🌼', 'Bir gün iki kişi aynı buketi almak istedi, buketi ikiye bölüp birlikte yürüdüler 💐'] },
     ],
   },
   {
@@ -56,8 +56,8 @@ const CITY = [
     route: { pts: [[-33, -7.5], [-27, -7.5]], mode: 'pingpong', speed: 0.7, pause: 4 },
     lines: ['Ağaçlar bu yıl çok güzel yeşerdi 🌳', 'Park banklarında iki kişi oturunca sohbet açılır 😉', 'Çardağın altı yaz sıcağında bir cennet 🌿', 'Çiçekleri sularken dünyayı unutuyorum 🌱'],
     options: [
-      { label: '📍 Öneri iste', reply: ['Park banklarından birine otur, biri mutlaka yanına gelir 😉', 'Çardağın önü fotoğraf için güzel, ışığı yumuşak 📸'] },
-      { label: '📖 Hikâye anlat', reply: ['Bir fidanı iki kişi birlikte dikmişti. Şimdi her yıl onun gölgesinde buluşuyorlar 🌳', 'Bu bank var ya, üç evliliğe şahit oldu. Söylemem ama… 🤫'] },
+      { label: 'Öneri iste', reply: ['Park banklarından birine otur, biri mutlaka yanına gelir 😉', 'Çardağın önü fotoğraf için güzel, ışığı yumuşak 📸'] },
+      { label: 'Hikâye anlat', reply: ['Bir fidanı iki kişi birlikte dikmişti. Şimdi her yıl onun gölgesinde buluşuyorlar 🌳', 'Bu bank var ya, üç evliliğe şahit oldu. Söylemem ama… 🤫'] },
     ],
   },
   {
@@ -65,16 +65,16 @@ const CITY = [
     route: { pts: [[-30, 6.3], [-34.5, 4.5], [-36.3, 0], [-34.5, -4.5], [-30, -6.3], [-25.5, -4.5], [-23.7, 0], [-25.5, 4.5]], mode: 'loop', speed: 1.0, pause: 2.5 },
     lines: ['Pofuduk her gün çardağın etrafında dört tur atar 🐕', 'Köpeği olan biriyle sohbet açmak çok kolay, dene 😄', 'Pofuduk senden hoşlandı galiba, kuyruğu sallanıyor 🐾', 'Parkta yürüyüş en iyi buluşma sebebi 🌳'],
     options: [
-      { label: '📍 Öneri iste', reply: ['Parkta yürüyüş yapanlara selam vermeyi dene, çoğu sohbete açık 👋', 'Yürüyüşten sonra Çay Evi’nde çay iyi gider 🍵'] },
-      { label: '📖 Hikâye anlat', reply: ['Pofuduk bir gün tanımadığı birinin ayağına yatıp kalktı. Şimdi o kişi hafta sonlarının sahibi 🐶💞', 'Bir gün iki köpeğin ipi dolandı, sahipleri gülerek çözdü. Sonrası çay 🍵'] },
+      { label: 'Öneri iste', reply: ['Parkta yürüyüş yapanlara selam vermeyi dene, çoğu sohbete açık 👋', 'Yürüyüşten sonra Çay Evi’nde çay iyi gider 🍵'] },
+      { label: 'Hikâye anlat', reply: ['Pofuduk bir gün tanımadığı birinin ayağına yatıp kalktı. Şimdi o kişi hafta sonlarının sahibi 🐶💞', 'Bir gün iki köpeğin ipi dolandı, sahipleri gülerek çözdü. Sonrası çay 🍵'] },
     ],
   },
   {
     id: 'cankurtaran', avatar: 'ege', name: 'Cankurtaran Ege', role: '🛟', x: 3.8, z: 31, ry: 0.4,
     lines: ['Bugün deniz sakin, ama yine de dikkatli ol 🌊', 'Gün batımında şezlongda yan yana oturmak bir klasik 🌅', 'Gözüm üstünüzde, rahat edin 🛟', 'Şemsiyenin altı en serin yer, bence 😎'],
     options: [
-      { label: '📍 Öneri iste', reply: ['Gün batımını izlemek için iki şezlong yan yana, tam senlik 🌅', 'Kokabana’da serin bir şey içip sohbet et 🥤'] },
-      { label: '📖 Hikâye anlat', reply: ['Bir yaz akşamı iki kişi aynı kum kalesini kurmaya çalıştı. Sonunda kale yıkıldı, ama arkadaşlık sağlam kaldı 🏰', 'Bir gün kayıp bir terlik buldum, sahibi de bulundu. Bir teşekkür bir sohbet… gerisi malum 😉'] },
+      { label: 'Öneri iste', reply: ['Gün batımını izlemek için iki şezlong yan yana, tam senlik 🌅', 'Kokabana’da serin bir şey içip sohbet et 🥤'] },
+      { label: 'Hikâye anlat', reply: ['Bir yaz akşamı iki kişi aynı kum kalesini kurmaya çalıştı. Sonunda kale yıkıldı, ama arkadaşlık sağlam kaldı 🏰', 'Bir gün kayıp bir terlik buldum, sahibi de bulundu. Bir teşekkür bir sohbet… gerisi malum 😉'] },
     ],
   },
   {
@@ -82,40 +82,40 @@ const CITY = [
     route: { pts: [[-5.6, 32], [-5.6, 39]], mode: 'pingpong', speed: 0.8, pause: 5 },
     lines: ['Dondurmaaa! Çilekli, vanilyalı, çikolatalı! 🍦', 'İki top alana üçüncüsü benden 😉', 'Arabamın zili çalınca herkes koşuyor 🔔', 'Dondurma paylaşmak flörtün en tatlı yolu 🍓'],
     options: [
-      { label: '📍 Öneri iste', reply: ['Dondurmanı al, kıyıya otur, dalga sesi eşlik etsin 🌊', 'Baskın Robin’e da uğra, külahlar özel 🍦'] },
-      { label: '📖 Hikâye anlat', reply: ['İki kişi aynı anda son çilekli külahı istedi. Birbirlerine uzatınca külah kırıldı, kahkaha koptu 🍓😄', 'Bir kız “eksik para” çıkardı, arkasındaki çocuk “ben ısmarlayayım” dedi. İkisi de şimdi kuyrukta bekler 🍦'] },
+      { label: 'Öneri iste', reply: ['Dondurmanı al, kıyıya otur, dalga sesi eşlik etsin 🌊', 'Baskın Robin’e da uğra, külahlar özel 🍦'] },
+      { label: 'Hikâye anlat', reply: ['İki kişi aynı anda son çilekli külahı istedi. Birbirlerine uzatınca külah kırıldı, kahkaha koptu 🍓😄', 'Bir kız “eksik para” çıkardı, arkasındaki çocuk “ben ısmarlayayım” dedi. İkisi de şimdi kuyrukta bekler 🍦'] },
     ],
   },
   {
     id: 'guvenlik', avatar: 'kaan', name: 'Güvenlik Görevlisi Kaan', role: '🕶️', x: 23, z: -4.1, ry: 0,
     lines: ['Burada herkese yer var, kavga yok! 🕶️', 'Kapıdaki kuyruğa dikkat, sıra sıra 😄', 'Rahatsız eden olursa şikâyet düğmesi var, ben de bakarım 👀', 'Kulüpte iyi eğlenceler, ama nazik ol 🪩'],
     options: [
-      { label: '📍 Öneri iste', reply: ['İçerideki pist akşamları çok canlı, DJ’e istek şarkı söyle 🎶', 'Kalabalık sevmezsen önce Bar’da bir şey iç, sonra piste geç 🍹'] },
-      { label: '📖 Hikâye anlat', reply: ['Bir gece iki kişi pistte aynı anda aynı adımı yaptı. Sonra dans bütün gece sürdü 💃', 'Yıllardır kapıdayım, en güzel manzara içeriden dışarı sızan kahkaha 🪩'] },
+      { label: 'Öneri iste', reply: ['İçerideki pist akşamları çok canlı, DJ’e istek şarkı söyle 🎶', 'Kalabalık sevmezsen önce Bar’da bir şey iç, sonra piste geç 🍹'] },
+      { label: 'Hikâye anlat', reply: ['Bir gece iki kişi pistte aynı anda aynı adımı yaptı. Sonra dans bütün gece sürdü 💃', 'Yıllardır kapıdayım, en güzel manzara içeriden dışarı sızan kahkaha 🪩'] },
     ],
   },
   {
     id: 'hayran', avatar: 'elif', name: 'DJ Hayranı Elif', role: '🎧', x: 29.5, z: -1.8, ry: 3.1, pose: SOLO,
     lines: ['DJ Kaan bu akşam harika çalıyor!! 🎧', 'Ben bu şarkıyı bin kere dinledim ve hâlâ dans ediyorum 💃', 'Dans etmek için birine 💃 gönder, kabul ederse el ele dönersiniz 😍', 'Şarkıyı duyunca duramıyorum 🪩'],
     options: [
-      { label: '📍 Öneri iste', reply: ['Cuma akşamları kulüpte konfeti yağıyor, kaçırma 🎉', 'Piste yalnız çıkmaktan çekinme, biri mutlaka katılır 💃'] },
-      { label: '📖 Hikâye anlat', reply: ['Pistte yanımdaki kişiyle aynı anda “bu şarkıya bayılıyorum” diye bağırdık. İlk cümlemiz buydu 😂', 'Bir kere DJ benim için “kırmızı elbiseli kız için” diye şarkı çaldı. Hâlâ kırmızı giyiyorum ❤️'] },
+      { label: 'Öneri iste', reply: ['Cuma akşamları kulüpte konfeti yağıyor, kaçırma 🎉', 'Piste yalnız çıkmaktan çekinme, biri mutlaka katılır 💃'] },
+      { label: 'Hikâye anlat', reply: ['Pistte yanımdaki kişiyle aynı anda “bu şarkıya bayılıyorum” diye bağırdık. İlk cümlemiz buydu 😂', 'Bir kere DJ benim için “kırmızı elbiseli kız için” diye şarkı çaldı. Hâlâ kırmızı giyiyorum ❤️'] },
     ],
   },
   {
     id: 'kediler', avatar: 'mira', name: 'Kedi Hanım Mira', role: '🐈', x: 5, z: -35, ry: 0.2, companion: 'cat',
     lines: ['Minnoş kimseyi sevmez ama seni sevdi 🐈', 'Kediler iyi insanı hemen tanır, bilirsin 😺', 'Mahalledeki bütün kedilerin adını biliyorum 🐾', 'Sokakta kedi görünce selam ver, o da cevap verir 😸'],
     options: [
-      { label: '📍 Öneri iste', reply: ['Kafe Sokağı kediler için ideal, her kafede bir dost var 🐾', 'Kitap Kafe sessiz ve sıcak, tam kedilik bir yer 📚'] },
-      { label: '📖 Hikâye anlat', reply: ['Bir kedi iki yabancıyı aynı kucakta uyuyarak tanıştırdı. Adı “Cupid” kaldı 💘🐈', 'Minnoş bir gün benim için bir çift çorap getirdi, sahibi de arkasından geldi. Çorabın sahibi şimdi çay arkadaşım 🧦'] },
+      { label: 'Öneri iste', reply: ['Kafe Sokağı kediler için ideal, her kafede bir dost var 🐾', 'Kitap Kafe sessiz ve sıcak, tam kedilik bir yer 📚'] },
+      { label: 'Hikâye anlat', reply: ['Bir kedi iki yabancıyı aynı kucakta uyuyarak tanıştırdı. Adı “Cupid” kaldı 💘🐈', 'Minnoş bir gün benim için bir çift çorap getirdi, sahibi de arkasından geldi. Çorabın sahibi şimdi çay arkadaşım 🧦'] },
     ],
   },
   {
     id: 'turist', avatar: 'deniz', name: 'Gezgin Deniz', role: '📷', x: 5.2, z: 13.2, ry: -0.8,
     lines: ['Fotoğraf noktasını gördün mü? Tam burada 📸', 'Bu şehirde her köşe bir kare 🌆', 'İki kişi poz verince albüm daha tatlı oluyor 💞', 'Fotoğraf makinesi hep yanımda, gülümsemeyi unutma 😄'],
     options: [
-      { label: '📍 Öneri iste', reply: ['Fotoğraf Stüdyosu’nun önündeki işaretli noktada kare çek, ışık harika 📸', 'Gün batımında plajda çekilen kareler en tatlısı 🌅'] },
-      { label: '📖 Hikâye anlat', reply: ['Bir gün kare çekerken arkaya biri girdi. Fotoğrafın en güzel yeri o sürpriz oldu 📷', 'Albümümün en sevdiğim karesi: iki yabancı aynı anda gülüyor ve haberleri yok 😊'] },
+      { label: 'Öneri iste', reply: ['Fotoğraf Stüdyosu’nun önündeki işaretli noktada kare çek, ışık harika 📸', 'Gün batımında plajda çekilen kareler en tatlısı 🌅'] },
+      { label: 'Hikâye anlat', reply: ['Bir gün kare çekerken arkaya biri girdi. Fotoğrafın en güzel yeri o sürpriz oldu 📷', 'Albümümün en sevdiğim karesi: iki yabancı aynı anda gülüyor ve haberleri yok 😊'] },
     ],
   },
 ]
@@ -158,12 +158,12 @@ const venueNpcs = VENUES.filter((v) => v.npc).map((v) => ({
     // Havalimanı memuru: kiralama burada yapılır (action → istemci 'rent' mesajı yollar; sunucu karar verir)
     ...(v.type === 'airport'
       ? [
-          { label: '🚲 Bisiklet · 20 🪙', action: 'rent_bike', reply: ['Bisikletin hazırlanıyor, anahtarı sana veriyorum! Şehirde B tuşuyla binebilirsin 🚲'] },
-          { label: '🚗 Araba', action: 'rent_car', reply: ['Arabalar çok değerli… şimdilik bakiyen buna yetmiyor, camın ardından hayran kalabilirsin 😄'] },
+          { label: 'Bisiklet · 20 🪙', action: 'rent_bike', reply: ['Bisikletin hazırlanıyor, anahtarı sana veriyorum! Şehirde B tuşuyla binebilirsin 🚲'] },
+          { label: 'Araba', action: 'rent_car', reply: ['Arabalar çok değerli… şimdilik bakiyen buna yetmiyor, camın ardından hayran kalabilirsin 😄'] },
         ]
       : []),
-    { label: '📍 Ne önerirsin?', reply: TYPE_TIPS[v.type] ?? TYPE_TIPS.cafe },
-    ...(TYPE_STORY[v.type] ? [{ label: '📖 Hikâye anlat', reply: [TYPE_STORY[v.type]] }] : []),
+    { label: 'Ne önerirsin?', reply: TYPE_TIPS[v.type] ?? TYPE_TIPS.cafe },
+    ...(TYPE_STORY[v.type] ? [{ label: 'Hikâye anlat', reply: [TYPE_STORY[v.type]] }] : []),
   ],
 }))
 
@@ -193,7 +193,7 @@ export const NPC_SCALE = 1.06 // oyuncu avatarlarından biraz büyük
 export const NPCS = [...CITY.map((n) => ({ where: 'city', ...n })), ...venueNpcs]
 export const NPC_BY_ID = Object.fromEntries(NPCS.map((n) => [n.id, n]))
 export const npcsFor = (where) => NPCS.filter((n) => n.where === where)
-export const displayName = (n) => `${n.role} ${n.name}`
+export const displayName = (n) => n.name // ikonsuz: NPC adı sade gösterilir
 
 // ---- paylaşılan saatten deterministik konum ----
 const planCache = new Map()

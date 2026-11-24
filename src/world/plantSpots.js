@@ -9,7 +9,7 @@ const RH = ROAD_HALF + 1.6 // yol + kaldırım payı (dar şerit: bitki kaldır�
 
 function grassFree(x, z, pad) {
   if (x < ISLAND.x0 + 1 || x > ISLAND.x1 - 1 || z < ISLAND.z0 + 1 || z > ISLAND.z1 - 1) return false
-  if (Math.hypot(x, z) < 13) return false // lobi meydanı
+  if (Math.hypot(x, z) < 18 + pad) return false // lobi meydanı + dönel kavşak
   if (Math.abs(x) < RH + pad && z < 49) return false // kuzey-güney yol
   if (x > -12 && Math.abs(z) < RH + pad) return false // doğu-batı yol (batısı park)
   if (Math.hypot(x + 30, z - 30) < 9 + pad) return false // gölet

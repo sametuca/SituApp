@@ -2,7 +2,7 @@
 import { useFrame } from '@react-three/fiber'
 
 export const playerPos = { x: 0, z: 0 }
-export const CULL_R = 105 // m (sis ~140 m'de kapanır)
+export const CULL_R = 118 // m: sis (World.jsx fog 45→120) bunun ötesini zaten tamamen kapatır; nesneler ani kaybolmaz, sisle erir
 
 /** ref: <group>; (x,z) dünya konumu; r: görünürlük yarıçapı. Her ~0,25 sn'de bir değerlendirir. */
 export function useCull(ref, x, z, r = CULL_R) {

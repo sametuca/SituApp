@@ -74,7 +74,7 @@ export default function Admin() {
         </header>
         {err && <p className="mt-2 text-sm font-bold text-rose-500">{err}</p>}
         <nav className="mt-4 flex gap-2">
-          {[['reports', `Şikâyetler (${data.reports.filter((r) => !r.resolved).length})`], ['feedback', `Geri bildirim (${data.feedback.length})`]].map(([id, l]) => (
+          {[['reports', `Şikâyetler (${data.reports.filter((r) => !r.resolved).length})`], ['feedback', `Geri bildirim (${data.feedback.length})`], ['bans', `Yasaklılar (${data.bans.keys.length + data.bans.ips.length})`]].map(([id, l]) => (
             <button key={id} onClick={() => setTab(id)} className={`rounded-full px-4 py-1.5 text-sm font-extrabold ${tab === id ? 'bg-[#fdb252] text-white' : 'bg-white'}`}>{l}</button>
           ))}
           {tab === 'reports' && (
@@ -84,7 +84,19 @@ export default function Admin() {
           )}
         </nav>
 
-        {tab === 'reports' ? (
+        {tab === 'bans' ? (
+          <ul className="mt-3 flex flex-col gap-2">
+            {[...data.bans.keys.map((b) => ({ ...b, kind: 'hesap', id: b.key })), ...data.bans.ips.map((b) => ({ ...b, kind: 'ip', id: b.ip }))].map((b) => (
+              <li key={b.kind + b.id} className="flex flex-wrap items-center gap-2 rounded-2xl bg-white p-3 text-sm shadow">
+                <span className="rounded-full bg-[#ffe3b8] px-2 py-0.5 text-xs font-black">{b.kind}</span>
+                <b className="truncate">{b.name ?? b.id}</b>
+                <span className="text-xs text-[#8a7a9c]">{b.reason} · {fmt(b.at)}</span>
+                <button onClick={() => act(() => api('ban', { unban: true, [b.kind === 'ip' ? 'ip' : 'key']: b.id }))} className="ml-auto rounded-full bg-emerald-500 px-3 py-1 text-xs font-black text-white">Yasağı kaldır</button>
+              </li>
+            ))}
+            {data.bans.keys.length + data.bans.ips.length === 0 && <li className="rounded-2xl bg-white p-4 text-sm font-bold">Yasaklı yok.</li>}
+          </ul>
+        ) : tab === 'reports' ? (
           <ul className="mt-3 flex flex-col gap-3">
             {reports.length === 0 && <li className="rounded-2xl bg-white p-4 text-sm font-bold">Bekleyen şikâyet yok 🎉</li>}
             {reports.map((r) => (
@@ -103,6 +115,7 @@ export default function Admin() {
                 )}
                 <div className="mt-2 flex flex-wrap gap-2">
                   {!r.resolved && <button onClick={() => act(() => api('resolve', { id: r.id }))} className="rounded-full bg-emerald-500 px-3 py-1 text-xs font-black text-white">Çözüldü</button>}
+                  {r.target && <button onClick={() => act(() => api('ban', { key: r.target, name: r.targetName, reason: `şikâyet: ${r.reason}` }))} className="rounded-full bg-[#4a3b5c] px-3 py-1 text-xs font-black text-white">Sınırsız yasakla</button>}
                   {data.mode === 'supabase' && r.target && (
                     <>
                       <button onClick={() => act(() => api('hide-photo', { uid: r.target, hidden: true }))} className="rounded-full bg-rose-500 px-3 py-1 text-xs font-black text-white">Fotoğrafı gizle</button>

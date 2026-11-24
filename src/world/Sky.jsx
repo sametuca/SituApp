@@ -22,7 +22,7 @@ const HOME_BG = '#faeee2'
 const HOME_FOG = [HOME_BG, 30, 60]
 
 /** TogetherScene.SkyTint'e verilen canlı "taban" renkleri (bu modül her karede günceller). */
-export const skyBase = { bg: new Color('#cfeaff'), fog: [new Color('#e8f6ff'), 50, 140] }
+export const skyBase = { bg: new Color('#dcf0ff'), fog: [new Color('#dcf0ff'), 45, 122] }
 
 /** Diğer bileşenlerin okuduğu canlı gökyüzü durumu. */
 export const skyLive = {
@@ -51,7 +51,7 @@ const C = (s) => new Color(s)
 const KEYS = {
   night: { bg: C('#3b3f80'), fog: C('#4d4f93'), sun: C('#b4c0ff'), sunI: 0.55, amb: C('#9aa4ff'), ambI: 0.55, hs: C('#8e9cff'), hg: C('#6b5aa6'), hI: 0.65, fn: 40, ff: 125 },
   dawn: { bg: C('#ffecd0'), fog: C('#fff3e1'), sun: C('#ffc6a0'), sunI: 1.0, amb: C('#fff8f0'), ambI: 0.55, hs: C('#fff2e1'), hg: C('#ffedd6'), hI: 0.85, fn: 45, ff: 130 },
-  day: { bg: C('#cfeaff'), fog: C('#e8f6ff'), sun: C('#ffffff'), sunI: 1.6, amb: C('#ffffff'), ambI: 0.7, hs: C('#ffffff'), hg: C('#ffedd6'), hI: 1.1, fn: 50, ff: 140 },
+  day: { bg: C('#dcf0ff'), fog: C('#dcf0ff'), sun: C('#ffffff'), sunI: 1.6, amb: C('#ffffff'), ambI: 0.7, hs: C('#ffffff'), hg: C('#ffedd6'), hI: 1.1, fn: 45, ff: 122 },
   dusk: { bg: C('#ffb494'), fog: C('#ffcdb9'), sun: C('#ff9f6b'), sunI: 1.1, amb: C('#ffd5c4'), ambI: 0.55, hs: C('#ffc7b0'), hg: C('#d9a7e8'), hI: 0.75, fn: 45, ff: 130 },
   dusk2: { bg: C('#8f6fb8'), fog: C('#a98bc4'), sun: C('#c99aff'), sunI: 0.8, amb: C('#cdb0ff'), ambI: 0.5, hs: C('#b79be8'), hg: C('#8a63b0'), hI: 0.65, fn: 42, ff: 128 },
 }

@@ -32,6 +32,7 @@ export default function rental(ctx) {
         me.lastRent = now
         const kind = msg.kind
         if (kind === 'car' || !RENT[kind]?.price || RENT[kind].available === false) {
+          if (kind !== 'car') ctx.strike?.(me, 'geçersiz kiralama türü', 3) // arayüz yalnızca bike/car gönderir
           return send(me.ws, { t: 'info', text: '🚗 Araba kiralamak için yeterli bakiyen yok. Önce bisikletle şehri gez 😄' })
         }
         const it = RENT[kind]

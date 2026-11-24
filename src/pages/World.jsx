@@ -210,6 +210,12 @@ function WorldScene({ avatar }) {
   const [fade, setFade] = useState(false)
   const [sceneReady, setSceneReady] = useState(false) // ilk yükleme bitti mi (yükleme ekranı için)
   const onSceneReady = useCallback(() => setSceneReady(true), [])
+  // sunucu konumu düzelttiyse (hız/sınır denetimi) oyuncuyu son geçerli konuma geri al
+  useEffect(() => {
+    const on = (e) => (focusRef.current.teleport = [e.detail.x, e.detail.z])
+    window.addEventListener('situapp:snap', on)
+    return () => window.removeEventListener('situapp:snap', on)
+  }, [])
   // havalimanında doğunca Kiralama Memuru konuşmaya başlar
   useEffect(() => {
     if (!sceneReady || venue !== START_VENUE) return
@@ -340,6 +346,12 @@ function WorldScene({ avatar }) {
     [say],
   )
   const net = useMultiplayer({ name, avatar: slug, onChat: addFeed, onDenied, onInfo: say, onInvited: setInvite, onRoom, onGesture, onMatch, startRoom: startAirport ? { to: 'venue', id: START_VENUE } : null })
+
+  useEffect(() => {
+    const on = (e) => net.send({ t: 'tp', zone: e.detail })
+    window.addEventListener('situapp:tp', on)
+    return () => window.removeEventListener('situapp:tp', on)
+  }, [net])
 
   const goTo = useCallback(
     (target) => {
@@ -504,7 +516,7 @@ function WorldScene({ avatar }) {
   const venueTh = useMemo(() => (venue ? venueTheme(venue) : null), [venue])
   const venueDim = venueTh?.dim ?? 0
   const sceneBase = useMemo(
-    () => (venueTh ? { bg: venueTh.bg, fog: [venueTh.bg, 30, 60] } : home ? { bg: '#faeee2', fog: ['#faeee2', 30, 60] } : { bg: '#cfeaff', fog: ['#e8f6ff', 50, 140] }),
+    () => (venueTh ? { bg: venueTh.bg, fog: [venueTh.bg, 30, 60] } : home ? { bg: '#faeee2', fog: ['#faeee2', 30, 60] } : { bg: '#dcf0ff', fog: ['#dcf0ff', 45, 122] }),
     [venueTh, home],
   )
   const venueCollide = useMemo(() => (venue ? (x, z) => resolveVenueRoom(x, z, venueLayout(venue).colliders) : null), [venue])
@@ -532,8 +544,10 @@ function WorldScene({ avatar }) {
   // geliştirme: konsoldan oyuncu konumunu okuyabilmek için
   useEffect(() => {
     if (!import.meta.env.DEV) return
-    window.__focus = focusRef
-    return () => delete window.__focus
+    if (import.meta.env.DEV) window.__focus = focusRef // yalnızca geliştirmede (üretimde konsoldan erişim yok)
+    return () => {
+      if (import.meta.env.DEV) delete window.__focus
+    }
   }, [])
 
   const editKeysRef = useRef({ on: false, rotate: () => {}, remove: () => {} })
@@ -652,6 +666,7 @@ function WorldScene({ avatar }) {
       const id = TELEPORTS[normalize(args[0] ?? '')] ?? TELEPORTS[(args[0] ?? '').toLowerCase()]
       const z = ZONES.find((zn) => zn.id === id)
       if (!z) return say('Nereye? Örnek: /ışınlan kafe — lobi, kafe, kulüp, park, plaj')
+      window.dispatchEvent(new CustomEvent('situapp:tp', { detail: z.id }))
       focusRef.current.teleport = z.spawn
       return say(`${z.emoji} ${z.name}’a ışınlandın.`)
     }
@@ -735,13 +750,13 @@ function WorldScene({ avatar }) {
         />
       </Canvas>
 
-      {(net.status === 'kicked' || net.status === 'auth') && (
+      {(net.status === 'kicked' || net.status === 'auth' || net.status === 'banned') && (
         <div className="fixed inset-0 z-[80] grid place-items-center bg-white/70 px-5 backdrop-blur-sm" role="alertdialog">
           <div className="w-full max-w-sm rounded-[2rem] border-2 border-white bg-white p-6 text-center shadow-toy">
-            <div className="text-5xl">{net.status === 'kicked' ? '🔌' : '🔑'}</div>
-            <h2 className="mt-2 text-xl font-black text-ink">{net.status === 'kicked' ? 'Hesabın başka yerde açıldı' : 'Oturumun geçersiz'}</h2>
+            <div className="text-5xl">{net.status === 'kicked' ? '🔌' : net.status === 'banned' ? '⛔' : '🔑'}</div>
+            <h2 className="mt-2 text-xl font-black text-ink">{net.status === 'kicked' ? 'Hesabın başka yerde açıldı' : net.status === 'banned' ? 'Hesabın yasaklandı' : 'Oturumun geçersiz'}</h2>
             <p className="mt-1 text-sm font-semibold text-ink-soft">
-              {net.status === 'kicked' ? 'Aynı hesapla yalnızca tek yerden oynanabilir. Burada devam etmek için sayfayı yenile.' : 'Devam etmek için yeniden giriş yapmalısın.'}
+              {net.status === 'kicked' ? 'Aynı hesapla yalnızca tek yerden oynanabilir. Burada devam etmek için sayfayı yenile.' : net.status === 'banned' ? 'Oyunun kurallarına aykırı davranış (hile/otomasyon) algılandı. İtirazın için geri bildirim gönderebilirsin.' : 'Devam etmek için yeniden giriş yapmalısın.'}
             </p>
             <div className="mt-4 flex justify-center gap-2">
               {net.status === 'kicked' && (

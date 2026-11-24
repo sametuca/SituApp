@@ -31,6 +31,7 @@ import { useHousing } from './housing'
 import { useBike } from './bike'
 import { useFeedback } from './feedback'
 import { useBeach } from './beach'
+import { useEdge } from './edge'
 
 function SettingsPanel({ sections, onClose }) {
   return (
@@ -45,7 +46,7 @@ function SettingsPanel({ sections, onClose }) {
 }
 
 export function useFeatures(ctx) {
-  const parts = [useModeration(ctx), useGames(ctx), useFriends(ctx), useProfile(ctx), useProgress(ctx), useMedia(ctx), useTogether(ctx), useCosmetics(ctx), useNpcs(ctx), useAudio(ctx), useSky(ctx), useVenues(ctx), useCollect(ctx), useEconomy(ctx), useDj(ctx), useHousing(ctx), useBike(ctx), useFeedback(ctx), useBeach(ctx)]
+  const parts = [useModeration(ctx), useGames(ctx), useFriends(ctx), useProfile(ctx), useProgress(ctx), useMedia(ctx), useTogether(ctx), useCosmetics(ctx), useNpcs(ctx), useAudio(ctx), useSky(ctx), useVenues(ctx), useCollect(ctx), useEconomy(ctx), useDj(ctx), useHousing(ctx), useBike(ctx), useFeedback(ctx), useBeach(ctx), useEdge(ctx)]
 
   const peerActions = (peer) => parts.flatMap((p) => p.peerActions?.(peer) ?? [])
   const peerHeader = (peer) => parts.map((p, i) => (p.peerHeader ? <div key={i}>{p.peerHeader(peer)}</div> : null))

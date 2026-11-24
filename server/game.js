@@ -70,6 +70,8 @@
 // Aynı hesap ikinci kez bağlanınca eskisine { t:'kicked' } gider. Ortam yoksa isim istemciden gelir (demo, doğrulanmaz).
 import { WebSocketServer } from 'ws'
 import crypto from 'node:crypto'
+import * as guardLib from './guard.js'
+import { PLAY_BOUNDS, ZONES } from '../src/world/layout.js'
 import { getHome, getTier, homeExists, saveItems, setOpen } from './homes.js'
 import { moderate } from './profanity.js'
 import { FEATURE_FACTORIES } from './features/index.js'
@@ -80,6 +82,7 @@ import { VENUE_BY_ID, isVenueRoom, venueIdOf, venueRoom } from '../src/world/ven
 const WORLD_HALF = 110 // dünya sınırı (±m); istemci layout.js WORLD_HALF ile aynı
 const MAX_PLAYERS = 600
 const TICK_MS = 100
+const MAX_SPEED = 13 // m/sn (bisiklet 8,4; ağ gecikmesi payı dahil)
 const AOI_R = 55 // m: konum yayını ilgi alanı (500+ oyuncu için)
 const NEAR_R = 24 // m: bu mesafedekiler her tick güncellenir
 const CHAT_RANGE = 70 // m: şehirde herkese açık sohbet/emoji yalnızca bu mesafedekilere gider
@@ -148,7 +151,7 @@ export function attachGameServer(httpServer) {
   const inRoom = (room, exceptId) => [...players.values()].filter((p) => p.room === room && p.id !== exceptId)
 
   // ---- özellik modülleri (server/features) ----
-  const ctx = { players, send, broadcast: (...a) => broadcast(...a), dist, inRoom, clean, homeKey, publicInfo }
+  const ctx = { players, send, broadcast: (...a) => broadcast(...a), dist, inRoom, clean, homeKey, publicInfo, grace: (p, ms = 2500) => { p.graceUntil = Date.now() + ms }, strike: (p, why, w = 1) => p?.guard?.strike(why, w, { key: p.key, name: p.name }) }
   const features = FEATURE_FACTORIES.map((make) => make(ctx))
   ctx.features = features
   const mod = features[0].api // moderation her zaman ilk modül
@@ -180,6 +183,7 @@ export function attachGameServer(httpServer) {
 
   const changeRoom = (p, room) => {
     if (p.room === room) return
+    p.graceUntil = Date.now() + 3500 // oda değişiminde konum atlayışı serbest
     emit('onRoomChange', p) // özellik modülleri (oturma/dans) eski odadaki durumunu temizler
     broadcast({ t: 'leave', id: p.id }, p.id, p.room)
     p.room = room
@@ -237,6 +241,11 @@ export function attachGameServer(httpServer) {
     }
     me.homeKey = ident ? ident.uid : legacyKey(guestName)
     me.key = me.homeKey // kalıcı kimlik anahtarı (Supabase modunda auth uid; demo/misafirde addan türer)
+    if (guardLib.isBanned(me.key, null)) {
+      send(me.ws, { t: 'banned' })
+      setTimeout(() => me.ws.close(4403, 'banned'), 100)
+      return null // yasaklı hesap: dünyaya girmeden reddedilir
+    }
     players.set(me.id, me)
     emit('onJoin', me)
     send(me.ws, {
@@ -257,11 +266,31 @@ export function attachGameServer(httpServer) {
     return me
   }
 
-  wss.on('connection', (ws) => {
+  const CORE = new Set(['join', 'move', 'room', 'home_save', 'home_open', 'invite', 'react', 'whisper', 'gesture', 'typing', 'chat', 'tp'])
+  wss.on('connection', (ws, req) => {
     let me = null
     let joining = false
     ws.isAlive = true
     ws.on('pong', () => (ws.isAlive = true))
+    const ip = guardLib.ipOf(req)
+    if (guardLib.isBanned(null, ip)) {
+      send(ws, { t: 'banned' })
+      return ws.close(4403, 'banned')
+    }
+    if (!guardLib.connOpen(ip)) {
+      send(ws, { t: 'full' })
+      guardLib.connClose(ip)
+      return ws.close(4429, 'too many')
+    }
+    ws.on('close', () => guardLib.connClose(ip))
+    const guard = guardLib.createGuard({
+      ip,
+      onBan: () => {
+        send(ws, { t: 'banned' })
+        setTimeout(() => ws.close(4403, 'banned'), 100)
+      },
+    })
+    const who = () => ({ key: me?.key, name: me?.name })
 
     ws.on('message', (raw) => {
       let msg
@@ -270,8 +299,10 @@ export function attachGameServer(httpServer) {
       } catch {
         return
       }
-      if (!msg || typeof msg.t !== 'string') return
-      if (raw.length > MAX_TEXT_PAYLOAD && !BIG_TYPES.has(msg.t)) return
+      if (!msg || typeof msg.t !== 'string') return guard.strike('geçersiz mesaj', 0.5, who())
+      if (guard.banned || !guard.rate(who())) return
+      if (raw.length > MAX_TEXT_PAYLOAD && !BIG_TYPES.has(msg.t)) return guard.strike('aşırı büyük mesaj', 1, who())
+      if (guardLib.HONEYPOT.has(msg.t)) return guard.strike(`tuzak mesaj: ${msg.t.slice(0, 20)}`, 12, who())
 
       if (msg.t === 'join' && !me && !joining) {
         if (players.size >= MAX_PLAYERS) {
@@ -291,7 +322,22 @@ export function attachGameServer(httpServer) {
               send(o.ws, { t: 'kicked' })
               o.ws.close(4001, 'kicked')
             }
+            const key0 = ident ? ident.uid : null
+            if (key0 && guardLib.isBanned(key0, null)) {
+              send(ws, { t: 'banned' })
+              return ws.close(4403, 'banned')
+            }
             me = createPlayer({ ...msg, __ws: ws }, ident)
+            if (!me) return
+            me.ip = ip
+            me.guard = guard
+            if (guardLib.isBanned(me.key, null)) {
+              send(ws, { t: 'banned' })
+              players.delete(me.id)
+              return ws.close(4403, 'banned')
+            }
+            me.graceUntil = Date.now() + 6000 // ilk konum atlayışı serbest (başlangıç noktası)
+            me.vpos = null // ilk hareket konumu istemcinin başlangıç noktasıdır: serbest kabul edilir
           })
           .catch((e) => {
             console.error('Giriş hatası:', e.message)
@@ -304,12 +350,43 @@ export function attachGameServer(httpServer) {
       if (!me) return
 
       const handler = handlers[msg.t]
+      if (!handler && !CORE.has(msg.t)) return guard.strike(`bilinmeyen mesaj: ${msg.t.slice(0, 20)}`, 1, who())
       if (handler) return handler(me, msg)
+      if (msg.t === 'tp') {
+        // ışınlanma yalnızca bilinen bölge noktalarına (harita düğmesi, /ışınlan); başka koordinat kabul edilmez
+        const z = ZONES.find((zn) => zn.id === msg.zone)
+        const now = Date.now()
+        if (!z || me.room !== 'city' || now - (me.lastTp ?? 0) < 800) return guard.strike('geçersiz ışınlanma', 2, who())
+        me.lastTp = now
+        me.x = z.spawn[0]
+        me.z = z.spawn[1]
+        me.vpos = { x: me.x, z: me.z, t: now }
+        me.graceUntil = now + 1500
+        me.dirty = true
+        return
+      }
 
       if (msg.t === 'move') {
         const mx = num(msg.x, WORLD_HALF)
         const mz = num(msg.z, WORLD_HALF)
         if (features.some((f) => f.moveVeto?.(me, mx, mz))) return // oturuyor/dans ediyor: konum kilitli
+        // hile denetimi: hız + dünya sınırı (şehirde). Oda geçişi/ışınlanma/sunucu kaynaklı atlayış sonrası kısa süre serbest.
+        const nowMs = Date.now()
+        const first = !me.vpos // katılımdan sonraki ilk hareket: başlangıç noktası
+        const vp = me.vpos ?? { x: mx, z: mz, t: nowMs }
+        const jump = Math.hypot(mx - vp.x, mz - vp.z)
+        // mesafe bütçesi (token bucket): zamanla MAX_SPEED m/sn birikir (en çok 7 m); her hareket bütçeden düşer. Ortalama hız sınırı böyle zorlanır
+        me.budget = Math.min(7, (me.budget ?? 7) + (MAX_SPEED * Math.min(3000, nowMs - vp.t)) / 1000)
+        const free = nowMs < (me.graceUntil ?? 0)
+        const outside = me.room === 'city' && (mx < PLAY_BOUNDS.x0 - 2 || mx > PLAY_BOUNDS.x1 + 2 || mz < PLAY_BOUNDS.z0 - 2 || mz > PLAY_BOUNDS.z1 + 2)
+        if (free || first) me.budget = 7
+        else if (jump > me.budget || outside) {
+          guard.strike(outside ? 'sınır dışı konum' : `hız ihlali (${jump.toFixed(1)} m)`, 2, who())
+          me.vpos = { ...vp, t: nowMs }
+          send(ws, { t: 'snap', x: vp.x, z: vp.z }) // son geçerli konuma geri çek
+          return
+        } else me.budget -= jump
+        me.vpos = { x: mx, z: mz, t: nowMs }
         me.x = mx
         me.z = mz
         me.ry = num(msg.ry, 10)

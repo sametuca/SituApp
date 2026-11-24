@@ -84,6 +84,7 @@ export default function venues(ctx) {
       p.dirty = true
       p.karUntil = Date.now() + GRACE_MS
       now = { id, song, start: Date.now(), claps: 0, sent: 0, timer: setTimeout(() => finish('time'), KARAOKE_STAGE_MS) }
+      ctx.grace?.(p, 4000)
       send(p.ws, { t: 'kar_turn', x: spot.x, z: spot.z, ry: spot.ry, song, dur: KARAOKE_STAGE_MS })
       broadcast({ t: 'react', id, e: '🎤' }, undefined, ROOM, p)
       ctx.emitEvent?.(p, 'karaoke', 1)

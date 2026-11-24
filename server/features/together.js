@@ -53,6 +53,7 @@ export default function together(ctx) {
     const pose = p.pose
     if (!pose) return
     p.pose = null
+    ctx.grace?.(p, 3000) // kalkınca konum atlayışı serbest
     clearTimeout(p.poseTimer)
     if (pose.kind === 'sit') taken.delete(`${pose.seat}:${pose.slot}`)
     if (pose.kind === 'dance') {
@@ -85,6 +86,7 @@ export default function together(ctx) {
 
   function startPose(p, pose) {
     p.pose = pose
+    ctx.grace?.(p, 3000)
     p.poseGrace = Date.now() + GRACE_MS
     p.x = pose.x
     p.z = pose.z

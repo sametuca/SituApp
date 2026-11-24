@@ -151,10 +151,11 @@ app.post('/api/assets/import', async (req, res) => {
 
 import { feedbackHandler } from './feedback.js'
 app.post('/api/feedback', feedbackHandler)
-import { adminHidePhoto, adminOverview, adminResolve } from './admin.js'
+import { adminBan, adminHidePhoto, adminOverview, adminResolve } from './admin.js'
 app.get('/api/admin/overview', adminOverview)
 app.post('/api/admin/resolve', adminResolve)
 app.post('/api/admin/hide-photo', adminHidePhoto)
+app.post('/api/admin/ban', adminBan)
 
 let game = null
 app.get('/api/health', (_req, res) => {

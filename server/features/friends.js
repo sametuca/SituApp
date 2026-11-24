@@ -254,6 +254,7 @@ export default function friends(ctx) {
         if (me.room !== 'city') return send(me.ws, { t: 'info', text: 'Önce dışarı çık, sonra arkadaşının yanına gidebilirsin.' })
         if (isVenueRoom(target.room)) return send(me.ws, { t: 'info', text: `${VENUE_BY_ID[venueIdOf(target.room)]?.emoji ?? '📍'} ${target.name} şu an ${whereIs(target)} içinde. Kapıdan girip yanına gidebilirsin.` })
         if (target.room !== 'city') return send(me.ws, { t: 'info', text: `🏠 ${target.name} evde. Davet isteyebilirsin.` })
+        ctx.grace?.(me, 3500)
         send(me.ws, { t: 'goto', x: target.x + 1.2, z: target.z + 1.2, name: target.name })
       },
 

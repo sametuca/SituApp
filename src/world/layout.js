@@ -11,6 +11,10 @@ export const RIM = 3.5 // kıyı kum şeridi genişliği
 export const PLAY_BOUNDS = { x0: ISLAND.x0 - RIM + 1, x1: ISLAND.x1 + RIM - 1, z0: ISLAND.z0 - RIM + 1, z1: ISLAND.z1 + RIM - 1 }
 export const PLAY_LIMIT = 102 // (eski ad) kabaca en uzak kenar
 export const ROAD_HALF = 4.3 // yolların yarı genişliği (8,6 m asfalt + her yanda 1,4 m kaldırım)
+// Meydan çevresinde dönel kavşak: çeşmeli meydan (PLAZA_R) → iç kaldırım → asfalt halka (RING.r0…r1) → dış kaldırım. Ana yollar halkaya bağlanır.
+export const PLAZA_R = 8.4
+export const RING = { r0: 9.2, r1: 15.2, side: 0.9 }
+export const ROAD_START = 12 // ana yolların halkayla birleştiği uzaklık (halka şeridinin ortası)
 export const ROAD_END = { north: -96, south: 28, east: 96 } // ana yolların uçları (batı: park patikası)
 
 export const PALETTE = {
@@ -169,13 +173,15 @@ for (let t = 20; t <= 90; t += 10) {
   PROPS.push(p('lamp', t, LAMP, 3, 0.35), p('lamp', t, -LAMP, 3, 0.35)) // doğu uzantısı
   if (t <= 20) PROPS.push(p('lamp', LAMP, t, 3, 0.35), p('lamp', -LAMP, t, 3, 0.35)) // güney (plaja kadar)
 }
+// dönel kavşak lambaları: halkanın dış kaldırımında, yol bağlantılarından uzakta (45° çaprazlar)
+for (const a of [Math.PI / 4, (3 * Math.PI) / 4, (5 * Math.PI) / 4, (7 * Math.PI) / 4]) PROPS.push(p('lamp', Math.cos(a) * 16.5, Math.sin(a) * 16.5, 3, 0.35))
 // lobi: çeşmenin çevresinde banklar ve ağaçlar
 for (let i = 0; i < 6; i++) {
   const a = (i / 6) * Math.PI * 2 + Math.PI / 6
   PROPS.push(p('bench', Math.cos(a) * 7.2, Math.sin(a) * 7.2, 1.7, 0, -a - Math.PI / 2))
 }
 PROPS.push(p('fountain', 0, 0, 5.4))
-PROPS.push(p('tree', 9, 9, 3.4, 0.7), p('tree', 9, -9, 3.4, 0.7), p('tree', -9, -9, 3.4, 0.7))
+PROPS.push(p('tree', 5.2, 5.2, 3.0, 0.7), p('tree', 5.2, -5.2, 3.0, 0.7), p('tree', -5.2, -5.2, 3.0, 0.7))
 // kafe sokağı: kaldırımda bitkiler (kapılardan ve lambalardan uzak)
 for (const side of [-1, 1]) for (const z of [-14, -23, -31.5, -41.5]) PROPS.push(p('plant', side * 5.2, z, 1.4, 0.4))
 // gece kulübü: girişin önünde hoparlörler, DJ standı
@@ -184,8 +190,8 @@ PROPS.push(p('speaker', 38, 5.3, 1.8, 0.5))
 // park: ağaçlar, banklar
 for (const [x, z] of [[-18, -9], [-24, -10], [-36, -10], [-44, -8], [-20, 9], [-26, 10], [-37, 9], [-44, 6], [-42, -1], [-16, 7]]) PROPS.push(p('tree', x, z, 3.6, 0.7))
 PROPS.push(p('bench', -22, -5, 1.7, 0, 0), p('bench', -22, 5, 1.7, 0, Math.PI), p('bench', -36, -5, 1.7, 0, 0), p('bench', -36, 5, 1.7, 0, Math.PI))
-// park patikası (x -12…-26, z ±1,6): lambalar patikanın iki yanında, aynı hizada
-for (const x of [-16, -22]) PROPS.push(p('lamp', x, 2.6, 3, 0.35), p('lamp', x, -2.6, 3, 0.35))
+// park patikası (x -15…-26, z ±1,6): lambalar patikanın iki yanında, aynı hizada
+for (const x of [-19.5, -24.5]) PROPS.push(p('lamp', x, 2.6, 3, 0.35), p('lamp', x, -2.6, 3, 0.35))
 // plaj meydanı (yuvarlak): şemsiyeli şezlong çiftleri halka hâlinde merkeze bakar; ortada serbest meydan, kıyıda palmiyeler
 {
   const R = 11.5

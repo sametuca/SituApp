@@ -53,7 +53,7 @@ function NpcSheet({ npc, text, onOption, onClose, touch }) {
           </button>
         ))}
         <button onClick={onClose} className="min-h-11 rounded-2xl border-b-4 border-[#c9bde6] bg-[#ece4ff] px-3 py-2 text-[0.9em] font-extrabold text-[#6b4fc0] active:translate-y-[3px] active:border-b-[1px]">
-          Hoşça kal 👋
+          Hoşça kal
         </button>
       </div>
     </div>
@@ -146,7 +146,7 @@ export function useNpcs(ctx) {
     sceneNodes: where ? <NpcLayer where={where} focusRef={focusRef} onTalk={start} onNear={setNear} /> : null,
     overlays: (
       <>
-        {nearNpc && <DoorPrompt emoji={nearNpc.role} label={nearNpc.name} action="Konuş" touch={touch} raised onGo={() => start(nearNpc)} />}
+        {nearNpc && <DoorPrompt label={nearNpc.name} action="Konuş" touch={touch} raised onGo={() => start(nearNpc)} />}
         {bot && (
           <Modal onClose={() => setBot(null)} label={bot.name}>
             <div className="flex items-center gap-4">

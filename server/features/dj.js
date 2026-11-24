@@ -113,6 +113,7 @@ export default function dj(ctx) {
         ctx.addCoins?.(dj, c, 'dj')
       }, TICK_MS)
       now = cur
+      ctx.grace?.(p, 4000)
       send(p.ws, { t: 'dj_turn', x: spot.x, z: spot.z, ry: spot.ry, dur: SHIFT_MS })
       broadcast({ t: 'react', id, e: '🎉' }, undefined, ROOM, p)
       ctx.emitEvent?.(p, 'dj_shift', 1)

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ToyButton } from '../components/ui'
 import { emojiSrc } from '../components/emoji'
 import { Ico } from '../components/Icon'
-import { BEACH, BUILDINGS, GUIDE, ISLAND, RIM, ROAD_END, ROAD_HALF, ZONES } from './layout'
+import { BEACH, BUILDINGS, GUIDE, ISLAND, PLAZA_R, RIM, RING, ROAD_END, ROAD_HALF, ROAD_START, ZONES } from './layout'
 
 const glass = 'border-2 border-white bg-white/75 shadow-soft backdrop-blur-md'
 
@@ -152,18 +152,31 @@ function drawMap(ctx, S, big, f, remotes) {
   ctx.arc(X(-30), Z(30), len(7), 0, Math.PI * 2)
   ctx.fill()
   ctx.fillStyle = '#dfcaaf' // kaldırımlar (arnavut kaldırımı tonu)
-  const nsY0 = Z(ROAD_END.north)
-  const nsH = len(ROAD_END.south - ROAD_END.north)
-  const ewW = len(ROAD_END.east + 12)
-  ctx.fillRect(X(-ROAD_HALF - 1.4), nsY0, len(ROAD_HALF * 2 + 2.8), nsH)
-  ctx.fillRect(X(-12), Z(-ROAD_HALF - 1.4), ewW, len(ROAD_HALF * 2 + 2.8)) // doğu-batı: batıda (park) yol yok
-  ctx.fillRect(X(-26), Z(-1.7), len(14), len(3.4)) // park patikası
-  ctx.fillStyle = '#d8cfe6' // yollar
-  ctx.fillRect(X(-ROAD_HALF), nsY0, len(ROAD_HALF * 2), nsH)
-  ctx.fillRect(X(-12), Z(-ROAD_HALF), ewW, len(ROAD_HALF * 2))
+  const sw = ROAD_HALF * 2 + 2.8
+  const nsHn = len(-ROAD_START - ROAD_END.north)
+  const nsHs = len(ROAD_END.south - ROAD_START)
+  const ewW = len(ROAD_END.east - ROAD_START)
+  ctx.fillRect(X(-sw / 2), Z(ROAD_END.north), len(sw), nsHn)
+  ctx.fillRect(X(-sw / 2), Z(ROAD_START), len(sw), nsHs)
+  ctx.fillRect(X(ROAD_START), Z(-sw / 2), ewW, len(sw))
+  ctx.fillRect(X(-26), Z(-1.7), len(11), len(3.4)) // park patikası
+  ctx.beginPath() // kavşak kaldırımı
+  ctx.arc(X(0), Z(0), len(RING.r1 + RING.side), 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = '#d8cfe6' // yollar + halka
+  ctx.fillRect(X(-ROAD_HALF), Z(ROAD_END.north), len(ROAD_HALF * 2), nsHn)
+  ctx.fillRect(X(-ROAD_HALF), Z(ROAD_START), len(ROAD_HALF * 2), nsHs)
+  ctx.fillRect(X(ROAD_START), Z(-ROAD_HALF), ewW, len(ROAD_HALF * 2))
+  ctx.beginPath()
+  ctx.arc(X(0), Z(0), len(RING.r1), 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = '#dfcaaf'
+  ctx.beginPath()
+  ctx.arc(X(0), Z(0), len(RING.r0), 0, Math.PI * 2)
+  ctx.fill()
   ctx.fillStyle = '#f8ead8' // lobi meydanı
   ctx.beginPath()
-  ctx.arc(X(0), Z(0), len(11), 0, Math.PI * 2)
+  ctx.arc(X(0), Z(0), len(PLAZA_R), 0, Math.PI * 2)
   ctx.fill()
   ctx.strokeStyle = '#ffffff'
   ctx.lineWidth = Math.max(1, len(0.5))
@@ -265,6 +278,7 @@ export function Minimap({ focusRef, remotes, compact }) {
   }, [focusRef, remotes, big, S])
 
   const travel = (z) => {
+    window.dispatchEvent(new CustomEvent('situapp:tp', { detail: z.id })) // sunucuya bildirilir (hile denetimi)
     focusRef.current.teleport = z.spawn
     setBig(false)
   }

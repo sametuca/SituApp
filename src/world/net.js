@@ -101,8 +101,12 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
         switch (m.t) {
           case 'auth_required':
           case 'kicked':
-            stopped = true // yeniden bağlanma: oturum geçersiz ya da hesap başka yerde açık
-            setStatus(m.t === 'kicked' ? 'kicked' : 'auth')
+          case 'banned':
+            stopped = true // yeniden bağlanma: oturum geçersiz, hesap başka yerde açık ya da yasaklı
+            setStatus(m.t === 'kicked' ? 'kicked' : m.t === 'banned' ? 'banned' : 'auth')
+            break
+          case 'snap':
+            window.dispatchEvent(new CustomEvent('situapp:snap', { detail: m })) // sunucu konumu düzeltti
             break
           case 'photo':
             photoStore.set(m.key, m.url)

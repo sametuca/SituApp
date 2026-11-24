@@ -9,6 +9,7 @@ import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import * as supa from './supa.js'
 import { allReports } from './store.js'
+import * as guard from './guard.js'
 
 const DIR = process.env.SITUAPP_DATA_DIR || path.join(path.dirname(fileURLToPath(import.meta.url)), 'data')
 const KEY = process.env.ADMIN_KEY || ''
@@ -49,7 +50,7 @@ export async function adminOverview(req, res) {
   if (!authed(req, res)) return
   try {
     const reports = await allReports()
-    res.json({ ok: true, mode: supa.enabled ? 'supabase' : 'dosya', reports, feedback: readFeedback() })
+    res.json({ ok: true, mode: supa.enabled ? 'supabase' : 'dosya', reports, feedback: readFeedback(), bans: guard.listBans() })
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message })
   }
@@ -77,4 +78,14 @@ export async function adminHidePhoto(req, res) {
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message })
   }
+}
+
+export async function adminBan(req, res) {
+  if (!authed(req, res)) return
+  const key = req.body?.key ? String(req.body.key).slice(0, 80) : null
+  const ip = req.body?.ip ? String(req.body.ip).slice(0, 60) : null
+  if (!key && !ip) return res.status(400).json({ ok: false, error: 'Anahtar ya da IP gerekli.' })
+  if (req.body?.unban) guard.unban({ key, ip })
+  else guard.ban({ key, ip, reason: req.body?.reason || 'yönetici kararı', name: req.body?.name })
+  res.json({ ok: true })
 }
