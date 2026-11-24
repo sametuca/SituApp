@@ -3,6 +3,16 @@ import { useNavigate } from 'react-router-dom'
 import { useGLTF } from '@react-three/drei'
 import { useAuth } from '../lib/AuthContext'
 import { PastelBackground, TONES, ToyButton } from '../components/ui'
+import LookPicker from '../components/LookPicker'
+import { emptyLook } from '../world/lookData'
+
+const readSaved = () => {
+  try {
+    return JSON.parse(localStorage.getItem('situapp_avatar'))
+  } catch {
+    return null
+  }
+}
 
 const AvatarPreview = lazy(() => import('../components/3d/AvatarPreview'))
 
@@ -25,7 +35,13 @@ export default function AvatarSelect() {
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
   const [selected, setSelected] = useState(avatars[0])
+  const [look, setLook] = useState(emptyLook)
   const tone = toneOf(selected)
+
+  // TEK KARAKTER: hesabın karakteri zaten oluşturulduysa seçim ekranı atlanır (yeni karakter = yeni üyelik)
+  useEffect(() => {
+    if (readSaved()?.locked) navigate('/world', { replace: true })
+  }, [navigate])
 
   // seçim anında takılma olmasın diye tüm avatarları arka planda yükle
   // (ilk karakter önce gelsin diye biraz gecikmeli)
@@ -37,7 +53,7 @@ export default function AvatarSelect() {
   }, [])
 
   const handleContinue = () => {
-    localStorage.setItem('situapp_avatar', JSON.stringify({ ...selected, tone }))
+    localStorage.setItem('situapp_avatar', JSON.stringify({ ...selected, tone, look }))
     navigate('/world')
   }
 
@@ -77,7 +93,7 @@ export default function AvatarSelect() {
             </span>
           ))}
           <Suspense fallback={<div className="grid h-full place-items-center text-7xl">🧸</div>}>
-            <AvatarPreview slug={slugOf(selected)} rotatable pedestal={PEDESTAL[tone]} className="absolute inset-0 h-full w-full" />
+            <AvatarPreview slug={slugOf(selected)} look={look} rotatable pedestal={PEDESTAL[tone]} className="absolute inset-0 h-full w-full" />
           </Suspense>
           <p className="pointer-events-none absolute left-1/2 top-3 -translate-x-1/2 rounded-full bg-white/70 px-4 py-1 text-xs font-extrabold text-ink-soft backdrop-blur-sm">
             ↔ sürükleyerek döndür
@@ -124,6 +140,11 @@ export default function AvatarSelect() {
               )
             })}
           </div>
+
+          <div className="rounded-3xl border-2 border-white bg-white/70 p-3 shadow-soft backdrop-blur-sm">
+            <LookPicker value={look} onChange={setLook} />
+          </div>
+          <p className="text-center text-xs font-bold text-ink-soft">⚠️ Her hesap yalnızca 1 karakter oluşturabilir. Seçimin kalıcıdır; yeni karakter için yeni üyelik gerekir.</p>
 
           <ToyButton tone={tone} onClick={handleContinue}>
             Bu Ben! Şehre Gir

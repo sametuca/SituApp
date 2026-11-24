@@ -10,6 +10,14 @@ const WHISPER_MS = 3500
 const TYPING_MS = 3500
 const FEED_MAX = 100
 
+function readLook() {
+  try {
+    return JSON.parse(localStorage.getItem('situapp_avatar'))?.look ?? null
+  } catch {
+    return null
+  }
+}
+
 const wsUrl = () =>
   import.meta.env.VITE_WS_URL ?? `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`
 
@@ -87,7 +95,7 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
         } catch {
           /* oturum yok: sunucu auth_required der */
         }
-        if (ws.readyState === 1) ws.send(JSON.stringify({ t: 'join', name, avatar, ...(token ? { token } : {}) }))
+        if (ws.readyState === 1) ws.send(JSON.stringify({ t: 'join', name, avatar, look: readLook(), ...(token ? { token } : {}) }))
       }
 
       ws.onmessage = (ev) => {
@@ -124,6 +132,21 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
               setStatus('noguard')
               ws.close()
               break
+            }
+            // hesabın TEK karakteri sunucuda kilitli: istemci seçimi buna uyar (başka cihazdan girildiyse yenile)
+            if (m.char) {
+              try {
+                const cur = JSON.parse(localStorage.getItem('situapp_avatar')) ?? {}
+                const differs = String(cur.name ?? '').toLowerCase() !== m.char.avatar
+                localStorage.setItem('situapp_avatar', JSON.stringify({ ...cur, name: m.char.avatar[0].toUpperCase() + m.char.avatar.slice(1), look: m.char.look, locked: true }))
+                if (differs && !sessionStorage.getItem('situapp_char_reload')) {
+                  sessionStorage.setItem('situapp_char_reload', '1')
+                  location.reload()
+                  return
+                }
+              } catch {
+                /* depolama yok */
+              }
             }
             photoStore.reset(m.photos)
             for (const f of m.friendsInit?.list ?? []) photoStore.set(f.key, f.photo ?? null)

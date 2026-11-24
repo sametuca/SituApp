@@ -26,6 +26,7 @@
 //     { t: 'dnd', on }                             rahatsız etme modu
 //     { t: 'sit', seat, slot } / { t: 'pose_end' } / { t: 'poses' }      oturma (features/together.js; ayrıntı orada)
 //     { t: 'dance_invite', to } / { t: 'dance_reply', id, accept }       çift dans
+//     { t: 'look_set', look: {h,e,o} }             saç/göz/kıyafet rengi (palet indeksi, -1 = orijinal; features/cosmetics). join'e `look` ile ilk karakter oluşur
 //     { t: 'cos_set', acc?, pet? }                 aksesuar {id,color}|null / evcil hayvan id|null seç (features/cosmetics)
 //     { t: 'decor_set', decor } / { t: 'decor_get', owner }   ev dekoru (yalnızca sahibi yazar; bulunduğun evi okursun)
 //     { t: 'gift_send', to, kind } / { t: 'gift_reply', offer, accept }   hediye gönder / gelen hediyeye cevap (≤ 8 m)
@@ -34,7 +35,7 @@
 //     { t: 'progress_get' } / { t: 'suggest_get' | 'suggest_hi' | 'suggest_close' }   görev/rozet durumu, günün önerisi (features/progress.js)
 //     { t: 'collect', id } / { t: 'collect_get' }   toplanabilir topla (≤ 1,8 m, aynı oda) / koleksiyon durumu (features/collect.js)
 //   sunucu → istemci
-//     { t: 'welcome', id, home, homeItems, homeOpen, x, z, players: [...], online }   home = kendi evinin anahtarı
+//     { t: 'welcome', id, char: {avatar, look}, home, homeItems, homeOpen, x, z, players: [...], online }   home = kendi evinin anahtarı
 //     { t: 'room', room, owner, ownerName, venue, items, players: [...] }   oda değişti (room: 'city' | 'home:<anahtar>' | 'venue:<id>'; venue = mekân kimliği | null)
 //     { t: 'home_items', owner, items }                bulunduğun evin düzeni değişti
 //     { t: 'invited', owner, ownerName }               biri seni evine davet etti
@@ -76,6 +77,8 @@ import { getHome, getTier, homeExists, saveItems, setOpen } from './homes.js'
 import { moderate } from './profanity.js'
 import { FEATURE_FACTORIES } from './features/index.js'
 import * as supa from './supa.js'
+import { user as storeUser, save as saveStore } from './store.js'
+import { sanitizeLook } from '../src/world/lookData.js'
 import { loadProfile, saveAvatar, setName, uidByName } from './auth.js'
 import { VENUE_BY_ID, isVenueRoom, venueIdOf, venueRoom } from '../src/world/venues.js'
 
@@ -214,7 +217,7 @@ export function attachGameServer(httpServer) {
     setName(prof.username, u.id)
     const wanted = AVATARS.has(msg.avatar) ? msg.avatar : null
     const avatar = wanted ?? (AVATARS.has(prof.avatar) ? prof.avatar : 'zeynep')
-    if (wanted && wanted !== prof.avatar) saveAvatar(u.id, wanted).catch(() => {})
+    if (wanted && wanted !== prof.avatar && !storeUser(u.id).character) saveAvatar(u.id, wanted).catch(() => {}) // karakter kilitliyse profil avatarı değişmez
     return { uid: u.id, username: prof.username, avatar, photo: prof.photo_path ?? null, photoHidden: prof.photo_hidden === true }
   }
 
@@ -247,6 +250,15 @@ export function attachGameServer(httpServer) {
       setTimeout(() => me.ws.close(4403, 'banned'), 100)
       return null // yasaklı hesap: dünyaya girmeden reddedilir
     }
+    // TEK KARAKTER: hesapta karakter yoksa ilk girişteki seçim kalıcı olur; varsa istemcinin avatar/görünüm isteği yok sayılır.
+    {
+      const u = storeUser(me.key)
+      if (!u.character) {
+        u.character = { avatar: me.avatar, look: sanitizeLook(msg.look), at: Date.now() }
+        saveStore()
+      }
+      me.avatar = AVATARS.has(u.character.avatar) ? u.character.avatar : me.avatar
+    }
     players.set(me.id, me)
     emit('onJoin', me)
     send(me.ws, {
@@ -254,6 +266,7 @@ export function attachGameServer(httpServer) {
       t: 'welcome',
       id: me.id,
       gp: guardLib.proof(me.id), // koruma kanıtı: istemci görmezse oyunu yüklemez
+      char: { avatar: me.avatar, look: storeUser(me.key).character?.look ?? sanitizeLook(null) }, // hesabın tek karakteri (sunucu otoriter)
       name: me.name,
       home: me.homeKey,
       homeItems: getHome(me.homeKey)?.items ?? null,

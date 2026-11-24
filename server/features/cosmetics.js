@@ -5,6 +5,7 @@
 import crypto from 'node:crypto'
 import { save, user } from '../store.js'
 import { getDecor, setDecor, setGiftResolver } from '../homes.js'
+import { sanitizeLook } from '../../src/world/lookData.js'
 import { GIFT_BY_ID, GIFT_RANGE, sanitizeCos } from '../../src/world/cosmeticsData.js'
 
 const OFFER_TTL_MS = 90_000
@@ -43,7 +44,7 @@ export default function cosmetics(ctx) {
   return {
     onJoin(me) {
       const c = savedCos(me.key)
-      me.cos = { acc: c.acc ?? null, pet: c.pet ?? null }
+      me.cos = { acc: c.acc ?? null, pet: c.pet ?? null, look: user(me.key).character?.look ?? null }
     },
     onLeave(me) {
       dropOffers((o) => o.from === me.id || o.to === me.id)
@@ -54,6 +55,19 @@ export default function cosmetics(ctx) {
       decor: getDecor(me.homeKey),
     }),
     handlers: {
+      // renk değişimi (saç/göz/kıyafet): avatar kimliği değişmez, yalnızca palet indeksleri
+      look_set(me, msg) {
+        const now = Date.now()
+        if (now - (me.lastLook ?? 0) < 800) return
+        me.lastLook = now
+        const u = user(me.key)
+        if (!u.character) return
+        u.character.look = sanitizeLook(msg.look)
+        me.cos = { ...me.cos, look: u.character.look }
+        save()
+        broadcast({ t: 'cos', id: me.id, cos: me.cos }, undefined, me.room)
+      },
+
       cos_set(me, msg) {
         const now = Date.now()
         if (now - (me.lastCos ?? 0) < 400) return

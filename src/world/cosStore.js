@@ -10,7 +10,7 @@ const emit = () => {
   listeners.forEach((fn) => fn())
 }
 
-const same = (a, b) => (a?.acc?.id ?? null) === (b?.acc?.id ?? null) && (a?.acc?.color ?? null) === (b?.acc?.color ?? null) && (a?.pet ?? null) === (b?.pet ?? null)
+const same = (a, b) => (a?.acc?.id ?? null) === (b?.acc?.id ?? null) && (a?.acc?.color ?? null) === (b?.acc?.color ?? null) && (a?.pet ?? null) === (b?.pet ?? null) && JSON.stringify(a?.look ?? null) === JSON.stringify(b?.look ?? null)
 
 export const cosStore = {
   subscribe(fn) {
@@ -22,12 +22,12 @@ export const cosStore = {
   ids: () => [...map.keys()].filter((k) => k !== 'self' && k !== 'preview'),
   version: () => version,
   set(id, cos) {
-    if (!cos || (!cos.acc && !cos.pet)) {
+    if (!cos || (!cos.acc && !cos.pet && !cos.look)) {
       if (map.delete(id)) emit()
       return
     }
     if (same(map.get(id), cos)) return
-    map.set(id, { acc: cos.acc ?? null, pet: cos.pet ?? null })
+    map.set(id, { acc: cos.acc ?? null, pet: cos.pet ?? null, look: cos.look ?? null })
     emit()
   },
   /** Başkalarının kayıtlarını sil (oda değişince); self ve preview kalır. */

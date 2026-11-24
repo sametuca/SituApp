@@ -2,10 +2,11 @@ import { Suspense, useEffect, useMemo, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, useGLTF, useAnimations } from '@react-three/drei'
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js'
+import { applyLook } from '../../world/avatarLook'
 
 const TARGET_Y = 0.6
 
-function Model({ slug }) {
+function Model({ slug, look }) {
   const { scene, animations } = useGLTF(`/models/avatars/${slug}.glb`)
   const group = useRef()
   const model = useMemo(() => {
@@ -13,8 +14,10 @@ function Model({ slug }) {
     clone.traverse((o) => {
       if (o.isMesh) o.frustumCulled = false // skinned mesh'in sınır kutusu yanıltıcı
     })
+    applyLook(clone, slug, look)
     return clone
-  }, [scene])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scene, look?.h, look?.e, look?.o])
   const { actions } = useAnimations(animations, group)
   useEffect(() => {
     actions.idle?.reset().play()
@@ -47,7 +50,7 @@ function Pedestal({ color }) {
  * rotatable: fareyle/parmakla sürükleyerek yatay döndürme (yakınlaştırma/kaydırma kapalı).
  * pedestal: platform rengi (verilmezse platform çizilmez).
  */
-export default function AvatarPreview({ slug = 'zeynep', className = '', rotatable = false, pedestal }) {
+export default function AvatarPreview({ slug = 'zeynep', className = '', rotatable = false, pedestal, look }) {
   return (
     <div className={className}>
       <Canvas
@@ -59,7 +62,7 @@ export default function AvatarPreview({ slug = 'zeynep', className = '', rotatab
         <hemisphereLight args={['#ffffff', '#ffedd6', 1.6]} />
         <directionalLight position={[2, 3, 3]} intensity={1.6} />
         <Suspense fallback={null}>
-          <Model key={slug} slug={slug} />
+          <Model key={slug} slug={slug} look={look} />
           {pedestal && <Pedestal color={pedestal} />}
         </Suspense>
         {rotatable && (

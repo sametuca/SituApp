@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import { AnimationMixer } from 'three'
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { applyPose, makeRig } from './avatarPose'
 import { HeadAccessory } from './Accessories'
+import { cosStore } from './cosStore'
+import { applyLook } from './avatarLook'
 
 export const AVATAR_HEIGHT = 1.3
 const RIG_HEIGHT = 1.2 // meshy_rig çağrısındaki height_meters
@@ -17,6 +19,8 @@ const RIG_HEIGHT = 1.2 // meshy_rig çağrısındaki height_meters
 export default function AvatarRig({ slug, anim = 'idle', pose, cosId }) {
   const { scene, animations } = useGLTF(`/models/avatars/${slug}.glb`)
   const current = useRef(null)
+  const look = useSyncExternalStore(cosStore.subscribe, () => cosStore.get(cosId)?.look ?? null)
+  const lookKey = look ? `${look.h}.${look.e}.${look.o}` : ''
 
   const model = useMemo(() => {
     const clone = cloneSkinned(scene)
@@ -28,8 +32,10 @@ export default function AvatarRig({ slug, anim = 'idle', pose, cosId }) {
         o.frustumCulled = false
       }
     })
+    if (look) applyLook(clone, slug, look)
     return clone
-  }, [scene])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scene, lookKey])
 
   const mixer = useMemo(() => new AnimationMixer(model), [model])
   const rig = useMemo(() => makeRig(model), [model]) // oturma/dans için procedural duruş katmanı (pose: { current })
