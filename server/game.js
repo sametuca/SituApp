@@ -9,7 +9,8 @@
 //     { t: 'room', to: 'city' | 'home' | 'venue', owner?, id? }   odaya geç; 'home' + owner yoksa kendi evin; 'venue' + id = girilebilir mekân (src/world/venues.js)
 //     { t: 'home_save', items }                    kendi evinin düzenini kaydet (kalıcı) ve içindekilere yay
 //     { t: 'home_open', open }                     evi herkese aç / yalnızca davetlilere kapat
-//     { t: 'invite', to? | name? }                 bir oyuncuyu evine davet et (id ya da ad)
+//     { t: 'exterior_set', ext }                    evin dış görünümü (features/neighborhood.js); sunucu → { t:'plot', p } (welcome: plots, myExt)
+//     { t: 'invite', to? | name? }                bir oyuncuyu evine davet et (id ya da ad)
 //     { t: 'react', e }                            kafanın üstünde emoji tepkisi (odadaki herkes görür)
 //     { t: 'whisper', to, text }                   fısıltı: yalnızca yakındaki (≤ 7 m) hedefe gider, çevre "fısıldıyor" görür
 //     { t: 'gesture', to, kind }                   birine jest: heart | flower | wink | wave | kiss | dance (≤ 8 m)
@@ -322,8 +323,10 @@ export function attachGameServer(httpServer) {
         const items = saveItems(me.homeKey, me.name, msg.items)
         broadcast({ t: 'home_items', owner: me.homeKey, items }, me.id, `home:${me.homeKey}`)
         emitEvent(me, 'furnish', items.length)
+        features.forEach((f) => f.onHomeChange?.(me, 'save')) // Konut Mahallesi: parsel ata/duyur
       } else if (msg.t === 'home_open') {
         setOpen(me.homeKey, me.name, msg.open)
+        features.forEach((f) => f.onHomeChange?.(me, 'open')) // kapı kilidi göstergesi / parsel
         send(ws, { t: 'info', text: msg.open ? '🔓 Evin herkese açık. Arkadaşların /ziyaret ' + me.name + ' yazarak gelebilir.' : '🔒 Evin yalnızca davetlilere açık.' })
       } else if (msg.t === 'invite') {
         const now = Date.now()

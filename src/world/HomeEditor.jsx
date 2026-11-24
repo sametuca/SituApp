@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import Prop from './Prop'
 import { PlacedGift } from './Gifts'
 import { GIFT_BY_ID } from './cosmeticsData'
-import { FURNITURE, FURNITURE_BY_ID, furnitureUrl } from './furniture'
+import { FURNITURE, FURNITURE_BY_ID, FURNITURE_SETS, furnitureUrl } from './furniture'
 import { clampToRoom, footprint, isValid, snap } from './homeLayout'
 import { HOME_ROOM } from './layout'
 
@@ -117,6 +117,7 @@ export function EditToggle({ onClick, touch }) {
  */
 export function FurnitureSheet({ count, max, selected, selectedName, onAdd, onRotate, onRemove, onClose, tabs = [], tabApi }) {
   const [tab, setTab] = useState('items')
+  const [set, setSet] = useState('classic') // eşya teması (Klasik / Romantik / Bahar / Retro)
   const extra = tabs.find((t) => t.key === tab)
   return (
     <div className="absolute inset-x-0 bottom-0 z-20 mx-auto w-full max-w-2xl animate-pop px-2 pb-2" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
@@ -158,8 +159,21 @@ export function FurnitureSheet({ count, max, selected, selectedName, onAdd, onRo
         {extra ? (
           extra.render(tabApi)
         ) : (
+        <>
+        <div className="mb-1.5 flex gap-1.5 overflow-x-auto">
+          {FURNITURE_SETS.map((st) => (
+            <button
+              key={st.id}
+              onClick={() => setSet(st.id)}
+              aria-pressed={set === st.id}
+              className={`shrink-0 rounded-full border-2 border-white px-3 py-1 text-[11px] font-extrabold transition ${set === st.id ? 'bg-[#ff7eb3] text-white' : 'bg-white/70 text-[#4a3b5c] hover:bg-white'}`}
+            >
+              {st.emoji} {st.name}
+            </button>
+          ))}
+        </div>
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {FURNITURE.map((f) => (
+          {FURNITURE.filter((f) => f.set === set).map((f) => (
             <button
               key={f.id}
               onClick={() => onAdd(f.id)}
@@ -170,6 +184,7 @@ export function FurnitureSheet({ count, max, selected, selectedName, onAdd, onRo
             </button>
           ))}
         </div>
+        </>
         )}
       </div>
     </div>

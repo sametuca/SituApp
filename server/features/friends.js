@@ -35,7 +35,7 @@ const STRANGER_MAIL_PER_DAY = 3
 const REJECT_COOLDOWN_MS = 24 * 3600 * 1000
 const ONLINE_NOTE_GAP_MS = 60 * 1000 // aynı kişi için "çevrimiçi oldu" bildirimi en sık dakikada bir
 
-const inZone = (zn, x, z) => (zn.shape === 'circle' ? Math.hypot(x - zn.x, z - zn.z) <= zn.r : x >= zn.x0 && x <= zn.x1 && z >= zn.z0 && z <= zn.z1)
+const inZone = (zn, x, z) => (zn.shape === 'circle' ? Math.hypot(x - zn.x, z - zn.z) <= zn.r : zn.rects ? zn.rects.some((r) => x >= r.x0 && x <= r.x1 && z >= r.z0 && z <= r.z1) : x >= zn.x0 && x <= zn.x1 && z >= zn.z0 && z <= zn.z1)
 // layout.js'teki zoneAt ile aynı mantık (sunucu istemci düzenini paylaşıyor)
 const whereIs = (p) => {
   if (isVenueRoom(p.room)) return VENUE_BY_ID[venueIdOf(p.room)]?.name ?? 'Mekânda'

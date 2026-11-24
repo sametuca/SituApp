@@ -228,7 +228,7 @@ export const VENUE_SCENE = {
   fastfood: 'pop', bar: 'lounge', club: 'house', arcade: 'arcade', salon: 'pop', studio: 'pop', shop: 'pop', guide: 'lobby',
 }
 /** Dış bölge kimliği (layout.js zoneAt) → sahne. */
-export const ZONE_SCENE = { lobby: 'lobby', cafe: 'jazz', club: 'house', park: 'park', beach: 'beach', city: 'lobby' }
+export const ZONE_SCENE = { lobby: 'lobby', cafe: 'jazz', club: 'house', park: 'park', beach: 'beach', residential: 'park', city: 'lobby' }
 
 // ---------------------------------------------------------------- planlayıcı
 

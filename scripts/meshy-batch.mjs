@@ -56,7 +56,7 @@ async function save(url, file) {
 
 async function make(item, anchorUrl) {
   const tag = `[${item.id}]`
-  const img = await meshy('POST', `${API}/image-to-image`, { ai_model: 'nano-banana-2', prompt: `${item.prompt}, ${STYLE}`, reference_image_urls: [anchorUrl] })
+  const img = await meshy('POST', `${API}/image-to-image`, { ai_model: 'nano-banana-2', prompt: `${item.prompt}, ${item.style ?? STYLE}`, reference_image_urls: [anchorUrl] })
   const imgTask = await waitFor(`${API}/image-to-image/${img.result}`, `${tag} görsel`)
   const imageUrl = imgTask.image_urls[0]
   await save(imageUrl, path.join(outDir, `${item.id}.png`))
