@@ -155,6 +155,13 @@ const venueNpcs = VENUES.filter((v) => v.npc).map((v) => ({
   ry: v.npc.ry ?? 0,
   lines: v.npc.lines,
   options: [
+    // Havalimanı memuru: kiralama burada yapılır (action → istemci 'rent' mesajı yollar; sunucu karar verir)
+    ...(v.type === 'airport'
+      ? [
+          { label: '🚲 Bisiklet · 20 🪙', action: 'rent_bike', reply: ['Bisikletin hazırlanıyor, anahtarı sana veriyorum! Şehirde B tuşuyla binebilirsin 🚲'] },
+          { label: '🚗 Araba', action: 'rent_car', reply: ['Arabalar çok değerli… şimdilik bakiyen buna yetmiyor, camın ardından hayran kalabilirsin 😄'] },
+        ]
+      : []),
     { label: '📍 Ne önerirsin?', reply: TYPE_TIPS[v.type] ?? TYPE_TIPS.cafe },
     ...(TYPE_STORY[v.type] ? [{ label: '📖 Hikâye anlat', reply: [TYPE_STORY[v.type]] }] : []),
   ],

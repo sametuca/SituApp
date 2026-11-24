@@ -210,6 +210,12 @@ function WorldScene({ avatar }) {
   const [fade, setFade] = useState(false)
   const [sceneReady, setSceneReady] = useState(false) // ilk yükleme bitti mi (yükleme ekranı için)
   const onSceneReady = useCallback(() => setSceneReady(true), [])
+  // havalimanında doğunca Kiralama Memuru konuşmaya başlar
+  useEffect(() => {
+    if (!sceneReady || venue !== START_VENUE) return
+    const t = setTimeout(() => window.dispatchEvent(new CustomEvent('situapp:npc-open', { detail: 'v:havalimani' })), 1200)
+    return () => clearTimeout(t)
+  }, [sceneReady, venue])
   useMemo(() => preloadCritical(slug), [slug]) // şehir + avatar modellerini sahne çizilmeden paralel indir (şelale yüklemeyi önler)
   useEffect(() => {
     if (sceneReady) preloadLater()
@@ -852,7 +858,7 @@ function WorldScene({ avatar }) {
       )}
       {feat.overlays}
       {help && <HelpModal onClose={() => setHelp(false)} />}
-      {showTips && !help && <StartGuide touch={touch} ready={sceneReady} inCity={!home && !venue} onDone={closeTips} />}
+      {showTips && !help && <StartGuide touch={touch} ready={sceneReady} inCity={!home && !venue} inAirport={venue === START_VENUE} onDone={closeTips} />}
       <div
         aria-hidden
         className={`pointer-events-none absolute inset-0 z-30 bg-gradient-to-br from-[#ffe3f0] via-[#f1e6ff] to-[#dff3ff] transition-opacity duration-200 ${fade ? 'opacity-100' : 'opacity-0'}`}

@@ -468,15 +468,15 @@ export function HelpModal({ onClose }) {
  * Ekranı kalabalıklaştırmamak için tek kutu, şehirde sırayla 2 adım: kamerayı çevirme (mobil/masaüstü ayrı) → bisiklet.
  * Evde/mekânda görünmez (orada kendi istemleri var). Bittiğinde (ya da ✕ ile) onDone çağrılır; tekrar gösterilmez.
  */
-export function StartGuide({ touch, ready = true, inCity, onDone }) {
+export function StartGuide({ touch, ready = true, inCity, inAirport = false, onDone }) {
   const [stage, setStage] = useState('camera') // camera | bike
   const [shown, setShown] = useState(false)
 
   useEffect(() => {
-    if (!ready || !inCity) return
-    const t = setTimeout(() => setShown(true), 1500)
+    if (!ready || !(inCity || inAirport)) return
+    const t = setTimeout(() => setShown(true), inAirport ? 2600 : 1500)
     return () => clearTimeout(t)
-  }, [ready, inCity])
+  }, [ready, inCity, inAirport])
 
   useEffect(() => {
     if (!shown || !inCity) return
@@ -494,6 +494,14 @@ export function StartGuide({ touch, ready = true, inCity, onDone }) {
     }
   }, [shown, inCity, stage, onDone])
 
+  if (shown && inAirport && !inCity) {
+    return (
+      <div className={`pointer-events-auto absolute left-1/2 top-[5.6rem] z-10 flex w-[min(22rem,calc(100vw-1.5rem))] -translate-x-1/2 animate-pop items-center gap-3 rounded-2xl py-2 pl-3 pr-3 ${glass}`} role="status">
+        <span className="text-2xl">🔑</span>
+        <p className="text-xs font-extrabold leading-snug text-[#4a3b5c]">Kiralama memuru Selin’le konuş: <b className="text-[#ff7eb3]">bisiklet kirala</b>, sonra karşıdaki kapıdan şehre çık.</p>
+      </div>
+    )
+  }
   if (!shown || !inCity) return null
   const text =
     stage === 'camera' ? (

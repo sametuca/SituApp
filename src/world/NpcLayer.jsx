@@ -2,6 +2,7 @@
 // Kullanım (Canvas içinde): <NpcLayer where="city" | mekânId focusRef onTalk(npc) onNear(npcId|null) />
 // where = null → hiçbir şey çizmez (ev içi).
 import { memo, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { screenK } from './screenK'
 import { useFrame } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import { Em } from '../components/emoji'
@@ -151,7 +152,7 @@ function NpcTag({ name, bubble }) {
   const icon = m ? m[1] : '💬'
   const label = m ? m[2] : name
   return (
-    <Html position={[0, AVATAR_HEIGHT + 0.45, 0]} center distanceFactor={9} zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}>
+    <Html position={[0, AVATAR_HEIGHT + 0.45, 0]} center distanceFactor={9 * screenK()} zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}>
       <div className="relative flex flex-col items-center gap-1">
         {bubble && (
           <div className="max-w-[220px] break-words rounded-2xl rounded-bl-md border-2 border-white bg-white px-3 py-1.5 text-center text-sm font-bold text-[#4a3b5c] shadow-lg">{bubble}</div>
@@ -290,7 +291,7 @@ const AfkView = memo(function AfkView({ bot, focusRef }) {
         <AvatarRig slug={bot.avatar} anim="idle" />
       </Suspense>
       {ready && (
-        <Html position={[0, AVATAR_HEIGHT + 0.45, 0]} center distanceFactor={9} zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}>
+        <Html position={[0, AVATAR_HEIGHT + 0.45, 0]} center distanceFactor={9 * screenK()} zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}>
           <div className="whitespace-nowrap rounded-full border-2 border-white bg-[#6ec3f0] px-2.5 py-0.5 text-xs font-extrabold text-white shadow">
             {bot.name} <span className="opacity-90">💤</span>
           </div>

@@ -1,4 +1,5 @@
 import { memo, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { screenK } from './screenK'
 import { useFrame } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import { MathUtils } from 'three'
@@ -13,7 +14,7 @@ function Tag({ name, bubble: rawBubble, accent, reaction, whisper }) {
   // bubble: metin ya da { text, big } (çıkartmalar büyük gösterilir)
   const bubble = typeof rawBubble === 'string' ? { text: rawBubble } : rawBubble
   return (
-    <Html position={[0, AVATAR_HEIGHT + 0.45, 0]} center distanceFactor={9} zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}>
+    <Html position={[0, AVATAR_HEIGHT + 0.45, 0]} center distanceFactor={9 * screenK()} zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}>
       <div className="relative flex flex-col items-center gap-1">
         {reaction && (
           <span key={reaction.key} aria-hidden className="pointer-events-none absolute -top-2 left-1/2 text-4xl drop-shadow-md [animation:react-float_2.6s_ease-out_forwards]">

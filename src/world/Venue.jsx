@@ -13,7 +13,7 @@ import { venueStore } from './features/venueStore'
 const { hw, hd, wallH } = VENUE_ROOM
 const CHAIR_FLIP = 0 // cafe-chair GLB'nin önü ters çıkarsa Math.PI yap
 const V = (n) => `/models/venues/${n}.glb`
-const OLD = { table: '/models/cafe/cafe-table.glb', plant: '/models/cafe/cafe-plant.glb', palm: '/models/beach/beach-palm.glb', speaker: '/models/club/club-speaker.glb', ball: '/models/club/club-ball.glb', bike: '/models/bike/bike.glb', car: '/models/airport/car.glb' }
+const OLD = { table: '/models/cafe/cafe-table.glb', plant: '/models/cafe/cafe-plant.glb', palm: '/models/beach/beach-palm.glb', speaker: '/models/club/club-speaker.glb', ball: '/models/club/club-ball.glb', bike: '/models/bike/bike.glb', car: '/models/airport/car.glb', suitcases: '/models/airport/suitcases.glb', cart: '/models/airport/luggage-cart.glb', plane: '/models/airport/toy-plane.glb' }
 
 // ---------- GLB (en-boy-yükseklik hedefiyle ölçeklenir) ----------
 /** h/w/d verilirse kutuya sığacak biçimde (hepsi → esnetir), yalnızca biri → orantılı. Taban y=0'a oturur. */
@@ -336,6 +336,46 @@ function Backdrop({ x, z, w, h, c, c2 }) {
   )
 }
 
+/** Cam vitrin: dört cam yüzey + ince çerçeve (içine girilmez; çarpışma yerleşimde). floor: içi zemin rengi (bahçe gibi). */
+function GlassCase({ x, z, w, d, h = 2.4, floor }) {
+  const pane = <meshStandardMaterial color="#cfeeff" transparent opacity={0.2} roughness={0.1} metalness={0.1} depthWrite={false} side={DoubleSide} />
+  const frame = <meshStandardMaterial color="#fffaf2" roughness={0.5} />
+  return (
+    <group position={[x, 0, z]}>
+      {floor && (
+        <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={[w, d]} />
+          <meshStandardMaterial color={floor} roughness={1} />
+        </mesh>
+      )}
+      {[[0, d / 2, w, 0], [0, -d / 2, w, 0], [w / 2, 0, d, Math.PI / 2], [-w / 2, 0, d, Math.PI / 2]].map(([px, pz, len, ry], i) => (
+        <mesh key={i} position={[px, h / 2, pz]} rotation={[0, ry, 0]}>
+          <planeGeometry args={[len, h]} />
+          {pane}
+        </mesh>
+      ))}
+      {[[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sz], i) => (
+        <mesh key={i} position={[(sx * w) / 2, h / 2, (sz * d) / 2]}>
+          <boxGeometry args={[0.08, h, 0.08]} />
+          {frame}
+        </mesh>
+      ))}
+      {[[0, d / 2, w + 0.08, 0.06], [0, -d / 2, w + 0.08, 0.06], [w / 2, 0, 0.06, d + 0.08], [-w / 2, 0, 0.06, d + 0.08]].map(([rx, rz, rw, rd], i) => (
+        <group key={i}>
+          <mesh position={[rx, h, rz]}>
+            <boxGeometry args={[rw, 0.06, rd]} />
+            {frame}
+          </mesh>
+          <mesh position={[rx, 0.05, rz]}>
+            <boxGeometry args={[rw, 0.1, rd]} />
+            {frame}
+          </mesh>
+        </group>
+      ))}
+    </group>
+  )
+}
+
 // ---------- öğe seçici ----------
 function Item({ it }) {
   switch (it.t) {
@@ -350,6 +390,8 @@ function Item({ it }) {
           <Mat c={it.c} />
         </mesh>
       )
+    case 'glass':
+      return <GlassCase {...it} />
     case 'glb':
       return <Prop model={OLD[it.m]} x={it.x} z={it.z} scale={it.s} ry={it.ry ?? 0} />
     case 'counter':

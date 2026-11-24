@@ -140,3 +140,8 @@ img.em {
   50% { transform: translateY(-5px); }
 }
 .venue-pin { animation: pin-bob 2.6s ease-in-out infinite; }
+
+/* Büyük ekranlarda arayüz (rem tabanlı her şey) orantılı büyür; telefon/dar ekranda 16px kalır */
+html {
+  font-size: clamp(16px, 0.55vw + 10px, 24px);
+}

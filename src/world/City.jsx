@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
+import { screenK } from './screenK'
 import { useFrame, useLoader } from '@react-three/fiber'
 import { CanvasTexture, Color, RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
 import { Html, RoundedBox } from '@react-three/drei'
@@ -76,7 +77,7 @@ function Label({ text, y, x, z, zOff = 0, focusRef, accent = '#ff8fb8' }) {
   if (mode === 0) return null
   const { icon, name } = splitLabel(text)
   return (
-    <Html position={[0, y, zOff]} center distanceFactor={18} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
+    <Html position={[0, y, zOff]} center distanceFactor={18 * screenK()} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
       <div className="venue-pin flex flex-col items-center" style={{ '--pin': accent }}>
         {mode === 2 && (
           <div className="mb-1 whitespace-nowrap rounded-full bg-[#3d2f4f]/85 px-3 py-[3px] text-[13px] font-extrabold tracking-wide text-white shadow-lg backdrop-blur-sm">
