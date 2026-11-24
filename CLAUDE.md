@@ -90,6 +90,8 @@ Notlar:
 
 ## Test ipuçları
 
+- **Yükleme (React 19 şelale sorunu):** Yükleme bekleyen (`useGLTF`) bileşen kardeşlerinin çizilmesini durdurur; modeller tek tek yüklenir ve her adımda sahne yeniden çizilir (yavaş makinede dakikalar). Bu yüzden yeni bir GLB kullanıyorsan `src/world/preload.js` listelerine ekle (`preloadCritical`: şehir + oyuncu avatarı, `preloadLater`: geri kalan). `World.jsx`'te ana sahne (şehir/oda + oyuncu) kendi `Suspense`'inde, uzak oyuncular/NPC/toplanabilirler/hayvan/etkinlik katmanları ayrı `Suspense`'lerde (`features/index.jsx` her `sceneNodes`/`worldEffects`'i sarar); yükleme ekranı `SceneReady` ile ana sahne gerçekten çizilince kapanır.
+
 - Tarayıcı testinde sekme ön planda değilse R3F çizim döngüsü durur.
 - Dev'de `window.__focus.current` oyuncu konumunu verir.
 - İki oyuncuyu simüle etmek için `ws` ile sahte istemci bağlanabilir (protokol `server/game.js` başında).

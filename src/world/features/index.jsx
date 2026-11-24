@@ -10,6 +10,7 @@
 // ctx: { net, say, touch, openChat, closeInteract, roster, focusRef, home, venue (mekân kimliği | null), panel, setPanel, chatTarget, pushFeed, slug }
 // Ek dönüş alanları: homeDecor (HomeRoom'a), editorTabs (Döşe çekmecesine sekme), sceneNodes (Canvas içine R3F düğümleri: evcil hayvan).
 // Yeni özellik: src/world/features/<ad>.jsx yaz, aşağıya bir satır ekle (kuralı bozma: hook sırası sabit olmalı).
+import { Suspense } from 'react'
 import { Modal } from '../Hud'
 import { useModeration } from './moderation'
 import { useGames } from './games'
@@ -45,7 +46,7 @@ export function useFeatures(ctx) {
   const peerHeader = (peer) => parts.map((p, i) => (p.peerHeader ? <div key={i}>{p.peerHeader(peer)}</div> : null))
   const settingsSections = parts.flatMap((p) => p.settingsSections ?? [])
   const extraButtons = parts.flatMap((p) => p.extraButtons ?? []) // üst çubuk düğmeleri [{ key, emoji, label, onClick, badge? }]
-  const worldEffects = parts.map((p, i) => (p.worldEffects ? <group key={i}>{p.worldEffects}</group> : null)) // Canvas içine
+  const worldEffects = parts.map((p, i) => (p.worldEffects ? <Suspense key={i} fallback={null}><group>{p.worldEffects}</group></Suspense> : null)) // Canvas içine
   const overlays = (
     <>
       {ctx.panel === 'settings' && <SettingsPanel sections={settingsSections} onClose={() => ctx.setPanel(null)} />}
@@ -58,6 +59,7 @@ export function useFeatures(ctx) {
   // kişiselleştirme: ev dekoru, döşeme sekmeleri, evcil hayvan katmanı
   const homeDecor = parts.find((p) => p.homeDecor)?.homeDecor
   const editorTabs = parts.flatMap((p) => p.editorTabs ?? [])
-  const sceneNodes = parts.map((p, i) => (p.sceneNodes ? <group key={i}>{p.sceneNodes}</group> : null))
+  // her katman kendi Suspense'inde: bir modelin yüklenmesi şehrin çizilmesini engellemesin
+  const sceneNodes = parts.map((p, i) => (p.sceneNodes ? <Suspense key={i} fallback={null}><group>{p.sceneNodes}</group></Suspense> : null))
   return { peerActions, peerHeader, overlays, extraButtons, extraNodes, readAt, worldEffects, homeDecor, editorTabs, sceneNodes }
 }

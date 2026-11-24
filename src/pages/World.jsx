@@ -14,6 +14,7 @@ import { plotNav } from '../world/features/neighborhoodStore'
 import { EditToggle, FurnitureLayer, FurnitureSheet } from '../world/HomeEditor'
 import { FURNITURE_BY_ID } from '../world/furniture'
 import { useFeatures } from '../world/features'
+import { preloadCritical, preloadLater } from '../world/preload'
 import TogetherScene from '../world/features/TogetherScene'
 import Sky, { skyBase } from '../world/Sky'
 import { GIFT_BY_ID } from '../world/cosmeticsData'
@@ -52,14 +53,22 @@ function readAvatar() {
 // "Işınlan" gibi komutlardaki Türkçe karakterleri sadeleştir
 const normalize = (s) => s.toLowerCase().replaceAll('ı', 'i').replaceAll('ş', 's').replaceAll('ğ', 'g').replaceAll('ü', 'u').replaceAll('ö', 'o').replaceAll('ç', 'c')
 
-function LoadingOverlay() {
+/** Ana sahne (şehir/oda + oyuncu) çizime hazır olunca onReady çağrılır; yalnızca ilk yüklemede kullanılır. */
+function SceneReady({ onReady }) {
+  useEffect(() => {
+    onReady()
+  }, [onReady])
+  return null
+}
+
+function LoadingOverlay({ ready }) {
   const { progress } = useProgress()
   const [hidden, setHidden] = useState(false)
   useEffect(() => {
-    if (progress < 100) return
-    const t = setTimeout(() => setHidden(true), 250)
+    // sahne hazır olunca (ya da 60 sn sonra, takılma olursa) kapat
+    const t = setTimeout(() => setHidden(true), ready ? 250 : 60000)
     return () => clearTimeout(t)
-  }, [progress])
+  }, [ready])
   if (hidden) return null
   return (
     <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#ffe3f0] via-[#f1e6ff] to-[#dff3ff]">
@@ -177,6 +186,12 @@ function WorldScene({ avatar }) {
   const [nearVenue, setNearVenue] = useState(null) // şehirde kapısına yaklaştığımız mekân
   const venueRef = useRef(null)
   const [fade, setFade] = useState(false)
+  const [sceneReady, setSceneReady] = useState(false) // ilk yükleme bitti mi (yükleme ekranı için)
+  const onSceneReady = useCallback(() => setSceneReady(true), [])
+  useMemo(() => preloadCritical(slug), [slug]) // şehir + avatar modellerini sahne çizilmeden paralel indir (şelale yüklemeyi önler)
+  useEffect(() => {
+    if (sceneReady) preloadLater()
+  }, [sceneReady])
   // ev düzeni: kendi evin sunucuda kalıcıdır, tarayıcıdaki kopya yalnızca önbellektir
   const homeOwner = user?.id ?? `guest-${name}`
   const [furn, setFurn] = useState(() => loadHome(homeOwner))
@@ -619,11 +634,19 @@ function WorldScene({ avatar }) {
           >
             <SelfTag name={name} bubbles={net.bubbles} selfId={net.selfId} reactions={net.reactions} />
           </LocalPlayer>
-          <RemotePlayers roster={net.roster} remotes={net.remotes} bubbles={net.bubbles} reactions={net.reactions} whispering={net.whispering} onPick={(id) => { setChatTarget(null); chatTargetRef.current = null; setInteractId(id) }} />
-          {!home && !venue && <GuideNpc focusRef={focusRef} tips={GUIDE_TIPS} />}
-          {feat.sceneNodes}
-          {feat.worldEffects}
+          <SceneReady onReady={onSceneReady} />
         </Suspense>
+        {/* Geri kalan her katman kendi yükleme bölgesinde: model gelmeyi beklerken şehir/oyuncu çizilmeye devam eder */}
+        <Suspense fallback={null}>
+          <RemotePlayers roster={net.roster} remotes={net.remotes} bubbles={net.bubbles} reactions={net.reactions} whispering={net.whispering} onPick={(id) => { setChatTarget(null); chatTargetRef.current = null; setInteractId(id) }} />
+        </Suspense>
+        {!home && !venue && (
+          <Suspense fallback={null}>
+            <GuideNpc focusRef={focusRef} tips={GUIDE_TIPS} />
+          </Suspense>
+        )}
+        {feat.sceneNodes}
+        {feat.worldEffects}
 
         <ZoneWatcher key={home ? 'home' : venue ? `v-${venue}` : 'city'} focusRef={focusRef} onChange={setZone} fixed={home ? HOME_ZONE : venueZone} />
         <DoorWatcher key={`door-${home ? 'home' : venue ? 'venue' : 'city'}`} focusRef={focusRef} door={home ? HOME_ROOM.exit : venue ? VENUE_ROOM.exit : HOME_DOOR} onChange={setNearDoor} />
@@ -777,7 +800,7 @@ function WorldScene({ avatar }) {
         aria-hidden
         className={`pointer-events-none absolute inset-0 z-30 bg-gradient-to-br from-[#ffe3f0] via-[#f1e6ff] to-[#dff3ff] transition-opacity duration-200 ${fade ? 'opacity-100' : 'opacity-0'}`}
       />
-      <LoadingOverlay />
+      <LoadingOverlay ready={sceneReady} />
     </div>
   )
 }
