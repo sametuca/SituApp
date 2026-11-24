@@ -122,3 +122,15 @@ body {
   40% { transform: translateY(-24px) scale(1); }
   100% { opacity: 0; transform: translateY(-74px) scale(1); }
 }
+
+/* Fluent 3D ikonları (emojify) metinle aynı hizada, yazı boyutuyla ölçeklenir */
+img.em {
+  display: inline-block;
+  width: 1.2em;
+  height: 1.2em;
+  margin: 0 0.04em;
+  vertical-align: -0.24em;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
