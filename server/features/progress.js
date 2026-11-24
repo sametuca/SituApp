@@ -5,7 +5,7 @@
 //   me yalnızca { key } de olabilir (çevrimdışı ev sahibi gibi); bildirim çevrimiçiyse iletilir.
 // Bilinen olay tipleri: chat, whisper, gesture, gesture_<kind> (wave, heart…), match, react, zone (karşı = mekan id),
 //   home_visit, guest (evime biri geldi; karşı = ziyaretçi), invite, furnish (n = eşya sayısı), night,
-//   game_played, photo (başka modüller gönderir). Bilinmeyen tipler stats[tip] sayacına eklenir.
+//   game_played, npc_talk (karşı = NPC kimliği), photo (başka modüller gönderir). Bilinmeyen tipler stats[tip] sayacına eklenir.
 // Sayaçlar store.user(key).stats'ta; kişi/mekan kümeleri (peers, zones, guests) { anahtar: 1 } nesneleridir.
 // Günler Europe/Istanbul saatine göre değişir.
 import { save, user } from '../store.js'
@@ -60,6 +60,7 @@ const QUESTS = [
   { id: 'zones2', ev: 'zone', distinct: true, goal: 2, stars: 2, emoji: '🧭', title: '2 farklı mekanı gez' },
   { id: 'visit1', ev: 'home_visit', goal: 1, stars: 2, emoji: '🏠', title: 'Bir eve misafir ol' },
   { id: 'react5', ev: 'react', goal: 5, stars: 1, emoji: '😊', title: '5 emoji tepkisi gönder' },
+  { id: 'npc2', ev: 'npc_talk', distinct: true, goal: 2, stars: 2, emoji: '🗣️', title: '2 farklı karakterle konuş' },
   { id: 'heart1', ev: 'gesture_heart', goal: 1, stars: 1, emoji: '💗', title: 'Birine kalp gönder' },
 ]
 const QUEST_BY_ID = Object.fromEntries(QUESTS.map((q) => [q.id, q]))
@@ -79,6 +80,7 @@ const BADGES = [
   { id: 'host', emoji: '🏡', name: 'Misafirperver', desc: '3 farklı kişiyi evinde ağırla.', goal: 3, value: (s) => size(s.guests) },
   { id: 'player', emoji: '🎮', name: 'Oyuncu', desc: 'Bir mini oyun oyna.', goal: 1, value: (s) => s.games ?? 0 },
   { id: 'photographer', emoji: '📸', name: 'Fotoğrafçı', desc: 'İlk fotoğrafını çek.', goal: 1, value: (s) => s.photos ?? 0 },
+  { id: 'chatty', emoji: '🗣️', name: 'Sohbetçi', desc: '10 farklı karakterle (NPC) konuş.', goal: 10, value: (s) => size(s.npcs) },
   { id: 'streak', emoji: '🔥', name: 'Günlük Seri', desc: '3 gün üst üste en az bir günlük görev tamamla.', goal: 3, value: (s) => s.streak ?? 0 },
 ]
 
@@ -184,6 +186,10 @@ export default function progress(ctx) {
         break
       case 'game_played':
         s.games = (s.games ?? 0) + n
+        break
+      case 'npc_talk':
+        s.npcTalks = (s.npcTalks ?? 0) + n
+        if (pk) (s.npcs = s.npcs ?? {})[pk] = 1
         break
       case 'photo':
         s.photos = (s.photos ?? 0) + n
