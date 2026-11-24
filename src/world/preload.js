@@ -3,6 +3,8 @@
 //   preloadCritical(slug): şehir + oyuncunun avatarı (ilk çizim bunlara bağlı) — hemen çağrılır.
 //   preloadLater(): geri kalan her şey (mekân eşyaları, mobilya, NPC avatarları, hayvan, hediye…) — sahne açıldıktan sonra, boş zamanda.
 import { useGLTF } from '@react-three/drei'
+import { useLoader } from '@react-three/fiber'
+import { TextureLoader } from 'three'
 import { PROPS } from './layout'
 import { FURNITURE, furnitureUrl } from './furniture'
 
@@ -30,6 +32,7 @@ const load = (urls) =>
 
 export function preloadCritical(slug) {
   load([`/models/avatars/${slug}.glb`, ...CITY])
+  for (const n of ['grass', 'asphalt', 'cobble', 'sand']) useLoader.preload(TextureLoader, `/textures/${n}.webp`) // yer dokuları (City.jsx Flat)
 }
 
 export function preloadLater() {

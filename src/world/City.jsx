@@ -1,5 +1,6 @@
-import { useRef, useState } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useMemo, useRef, useState } from 'react'
+import { useFrame, useLoader } from '@react-three/fiber'
+import { RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
 import { Html, RoundedBox } from '@react-three/drei'
 import { BLANKETS, BUILDINGS, GAZEBO, PROPS, ROAD_HALF } from './layout'
 import Prop from './Prop'
@@ -11,11 +12,29 @@ const FACING = { s: 0, n: Math.PI, e: Math.PI / 2, w: -Math.PI / 2 }
 // katman yükseklikleri (z-fighting olmasın)
 const Y = { floor: 0.02, sidewalk: 0.04, road: 0.06, plaza: 0.08, mark: 0.1 }
 
-function Flat({ x = 0, z = 0, w, d, y, color, round }) {
+// Yer dokuları (Meshy ile üretilen üstten bakış desenler, scripts/make-tileable.py ile döşenebilir yapıldı): public/textures/<ad>.webp
+export const GROUND_TEX = { grass: 4.5, asphalt: 5, cobble: 3.2, sand: 4 } // doku adı → bir kiremitin kapladığı metre
+export const GROUND_URLS = Object.keys(GROUND_TEX).map((n) => `/textures/${n}.webp`)
+
+/** tex: GROUND_TEX adı. Doku dünya ölçüsünde döşenir (kiremit boyu metre), renk tonu `color` ile çarpılır (pastel ton verir). */
+function Flat({ x = 0, z = 0, w, d, y, color = '#ffffff', round, tex }) {
+  const base = useLoader(TextureLoader, `/textures/${tex ?? 'grass'}.webp`)
+  const map = useMemo(() => {
+    if (!tex) return null
+    const t = base.clone()
+    t.wrapS = t.wrapT = RepeatWrapping
+    t.colorSpace = SRGBColorSpace
+    t.anisotropy = 8
+    const m = GROUND_TEX[tex]
+    t.repeat.set((round ? round * 2 : w) / m, (round ? round * 2 : d) / m)
+    t.offset.set((x / m) % 1, (-z / m) % 1) // komşu parçalarda desen aynı hizadan devam etsin
+    t.needsUpdate = true
+    return t
+  }, [base, tex, w, d, round, x, z])
   return (
     <mesh position={[x, y, z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
       {round ? <circleGeometry args={[round, 64]} /> : <planeGeometry args={[w, d]} />}
-      <meshStandardMaterial color={color} roughness={0.95} />
+      <meshStandardMaterial color={color} map={map} roughness={0.95} />
     </mesh>
   )
 }
@@ -204,12 +223,12 @@ export default function City({ focusRef }) {
       <Sun focusRef={focusRef} />
 
       {/* zemin ve mahalle zeminleri */}
-      <Flat w={180} d={180} y={0} color="#d4f3dc" />
-      <Flat x={0} z={-30} w={28} d={36} y={Y.floor} color="#ffeadb" /> {/* kafe: sıcak kaldırım taşı */}
-      <Flat x={30} z={0} w={36} d={28} y={Y.floor} color="#e6dcff" /> {/* kulüp */}
-      <Flat x={-30} z={0} w={36} d={28} y={Y.floor} color="#bdeccb" /> {/* park çimi */}
-      <Flat x={0} z={38.5} w={28} d={17} y={Y.floor} color="#ffe9b8" /> {/* plaj kumu */}
-      <Flat x={0} z={46} w={92} d={3} y={Y.floor} color="#ffe9b8" />
+      <Flat w={180} d={180} y={0} tex="grass" />
+      <Flat x={0} z={-30} w={28} d={36} y={Y.floor} tex="cobble" color="#fff3ea" /> {/* kafe: sıcak kaldırım taşı */}
+      <Flat x={30} z={0} w={36} d={28} y={Y.floor} tex="cobble" color="#e3d6ff" /> {/* kulüp */}
+      <Flat x={-30} z={0} w={36} d={28} y={Y.floor} tex="grass" color="#f4fff6" /> {/* park çimi */}
+      <Flat x={0} z={38.5} w={28} d={17} y={Y.floor} tex="sand" /> {/* plaj kumu */}
+      <Flat x={0} z={46} w={92} d={3} y={Y.floor} tex="sand" />
       <Flat x={0} z={70} w={200} d={48} y={0.03} color="#9fd8f5" /> {/* deniz */}
       <Flat x={0} z={46.4} w={200} d={0.8} y={0.035} color="#e8f7ff" /> {/* köpük */}
       <mesh position={[-33, 0.04, -6]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -218,10 +237,10 @@ export default function City({ focusRef }) {
       </mesh>
 
       {/* kaldırım + yollar */}
-      <Flat x={0} w={road + 2.8} d={96} y={Y.sidewalk} color="#f7f0fb" />
-      <Flat z={0} w={96} d={road + 2.8} y={Y.sidewalk} color="#f7f0fb" />
-      <Flat x={0} w={road} d={96} y={Y.road} color="#e4d9f2" />
-      <Flat z={0} w={96} d={road} y={Y.road} color="#e4d9f2" />
+      <Flat x={0} w={road + 2.8} d={96} y={Y.sidewalk} tex="cobble" color="#fdf6ff" />
+      <Flat z={0} w={96} d={road + 2.8} y={Y.sidewalk} tex="cobble" color="#fdf6ff" />
+      <Flat x={0} w={road} d={96} y={Y.road} tex="asphalt" />
+      <Flat z={0} w={96} d={road} y={Y.road} tex="asphalt" />
       {DASHES.map((t) => (
         <group key={t}>
           <Flat x={0} z={t} w={0.28} d={1.8} y={Y.mark} color="#ffffff" />
@@ -230,7 +249,7 @@ export default function City({ focusRef }) {
       ))}
 
       {/* lobi meydanı */}
-      <Flat round={12} y={Y.plaza} color="#fff3f8" />
+      <Flat round={12} y={Y.plaza} tex="cobble" color="#ffeef6" />
       <Ring r0={6.6} r1={7.1} y={Y.mark} color="#ffd3e6" />
       <Ring r0={9.6} r1={10.2} y={Y.mark} color="#cfeaff" />
       <Flat round={3.4} y={Y.mark} color="#ffd3e6" />
