@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { useFrame, useLoader } from '@react-three/fiber'
-import { RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
+import { Color, RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
 import { Html, RoundedBox } from '@react-three/drei'
 import { BLANKETS, BUILDINGS, GAZEBO, PROPS, ROAD_HALF } from './layout'
 import Prop from './Prop'
@@ -96,19 +96,168 @@ function Label({ text, y, x, z, zOff = 0, focusRef, accent = '#ff8fb8' }) {
   )
 }
 
-function Building({ b, focusRef }) {
+// ---------- bina çeşitliliği ----------
+// Her bina, sırasına göre bir stil alır (komşu binalar farklı olur): cephe dokusu (Meshy), çatı biçimi, pencere türü ve süsler.
+const WALL_TEX = { brick: 2.4, siding: 2.0, mosaic: 2.6, plaster: 4, shingle: 2.0 } // doku adı → bir kiremitin metre boyu
+const STYLES = [
+  { wall: 'brick', roofType: 'gable', win: 'arch', shutters: true, chimney: true, door: '#c46b8e' },
+  { wall: 'siding', roofType: 'flat', win: 'round', flowerbox: true, door: '#3aa6a0' },
+  { wall: 'mosaic', roofType: 'hip', win: 'wide', door: '#e8873a' },
+  { wall: 'plaster', roofType: 'flat', win: 'rect', balcony: true, door: '#8a6bd1' },
+  { wall: 'brick', roofType: 'hip', win: 'rect', shutters: true, chimney: true, door: '#5b86d6' },
+  { wall: 'siding', roofType: 'gable', win: 'wide', flowerbox: true, door: '#d6577a' },
+]
+const lighten = (hex, t) => `#${new Color(hex).lerp(new Color('#ffffff'), t).getHexString()}`
+
+/** Dokulu düz yüzey (duvar/çatı paneli): doku dünya ölçüsünde döşenir, renk tonu çarpılır. */
+function Panel({ tex, w, h, color, position, rotation, repeat }) {
+  const base = useLoader(TextureLoader, `/textures/${tex}.webp`)
+  const map = useMemo(() => {
+    const t = base.clone()
+    t.wrapS = t.wrapT = RepeatWrapping
+    t.colorSpace = SRGBColorSpace
+    t.anisotropy = 8
+    const m = WALL_TEX[tex] ?? 2.4
+    t.repeat.set(repeat?.[0] ?? w / m, repeat?.[1] ?? h / m)
+    t.needsUpdate = true
+    return t
+  }, [base, tex, w, h, repeat])
+  return (
+    <mesh position={position} rotation={rotation} receiveShadow>
+      <planeGeometry args={[w, h]} />
+      <meshStandardMaterial color={color} map={map} roughness={0.7} />
+    </mesh>
+  )
+}
+
+function Roof({ w, d, h, color, type }) {
+  const tint = lighten(color, 0.35)
+  const shingle = useLoader(TextureLoader, '/textures/shingle.webp')
+  const map = useMemo(() => {
+    const t = shingle.clone()
+    t.wrapS = t.wrapT = RepeatWrapping
+    t.colorSpace = SRGBColorSpace
+    t.repeat.set(3, 2)
+    t.needsUpdate = true
+    return t
+  }, [shingle])
+  const mat = <meshStandardMaterial color={color} map={map} roughness={0.55} />
+  if (type === 'gable') {
+    const R = (d + 0.8) / 1.732
+    return (
+      <mesh position={[0, h + 0.5 + R * 0.2, 0]} rotation={[0, 0, Math.PI / 2]} scale={[0.4, 1, 1]} castShadow>
+        <cylinderGeometry args={[R, R, w + 0.8, 3, 1, false, Math.PI / 2]} />
+        {mat}
+      </mesh>
+    )
+  }
+  if (type === 'hip') {
+    return (
+      <mesh position={[0, h + 0.5 + 1.1, 0]} rotation={[0, Math.PI / 4, 0]} scale={[(w + 0.8) / 1.414, 1, (d + 0.8) / 1.414]} castShadow>
+        <coneGeometry args={[1, 2.2, 4]} />
+        {mat}
+      </mesh>
+    )
+  }
+  return (
+    <RoundedBox args={[w + 0.7, 0.7, d + 0.7]} radius={0.3} smoothness={3} position={[0, h + 0.15, 0]} castShadow>
+      <meshStandardMaterial color={tint} roughness={0.5} />
+    </RoundedBox>
+  )
+}
+
+function Window({ kind, x, y, z, w, accent, shutters, flowerbox }) {
+  const glass = <primitive object={SKY_MATS.window} attach="material" />
+  const trim = <meshStandardMaterial color="#fffaf2" roughness={0.5} />
+  return (
+    <group position={[x, y, z]}>
+      {kind === 'round' ? (
+        <>
+          <mesh>
+            <circleGeometry args={[0.62, 24]} />
+            {glass}
+          </mesh>
+          <mesh position={[0, 0, -0.01]}>
+            <circleGeometry args={[0.78, 24]} />
+            {trim}
+          </mesh>
+        </>
+      ) : (
+        <>
+          <mesh position={[0, 0, 0.0]}>
+            <boxGeometry args={[w, 1.1, 0.12]} />
+            {glass}
+          </mesh>
+          {kind === 'arch' && (
+            <mesh position={[0, 0.55, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[w / 2, w / 2, 0.12, 20]} />
+              {glass}
+            </mesh>
+          )}
+          {kind === 'wide' && (
+            <>
+              <mesh position={[0, 0, 0.07]}>
+                <boxGeometry args={[0.07, 1.1, 0.04]} />
+                {trim}
+              </mesh>
+              <mesh position={[0, 0, 0.07]}>
+                <boxGeometry args={[w, 0.07, 0.04]} />
+                {trim}
+              </mesh>
+            </>
+          )}
+        </>
+      )}
+      {shutters && kind !== 'round' &&
+        [-1, 1].map((sd) => (
+          <mesh key={sd} position={[sd * (w / 2 + 0.28), 0.1, 0.02]}>
+            <boxGeometry args={[0.4, 1.3, 0.08]} />
+            <meshStandardMaterial color={accent} roughness={0.6} />
+          </mesh>
+        ))}
+      {flowerbox && (
+        <group position={[0, -0.78, 0.2]}>
+          <mesh>
+            <boxGeometry args={[w + 0.3, 0.25, 0.34]} />
+            <meshStandardMaterial color={accent} roughness={0.6} />
+          </mesh>
+          {[-0.4, 0, 0.4].map((fx) => (
+            <mesh key={fx} position={[fx * (w / 1.6), 0.24, 0]}>
+              <sphereGeometry args={[0.17, 10, 8]} />
+              <meshStandardMaterial color={fx === 0 ? '#ffd35e' : '#ff7eb3'} roughness={0.6} />
+            </mesh>
+          ))}
+        </group>
+      )}
+    </group>
+  )
+}
+
+function Building({ b, i, focusRef }) {
   const { w, d, h, color, roof, facing, label, shop, neon } = b
+  const st = neon ? { ...STYLES[3], balcony: false } : STYLES[(i * 5 + (i >> 2)) % STYLES.length]
+  const roofType = h > 8 || neon ? 'flat' : st.roofType
   const count = Math.max(1, Math.floor(w / 3))
   const winY = Math.min(3.4, h - 0.9)
   const rows = h > 8 ? [winY, winY + 2.6, winY + 5.2].filter((y) => y < h - 0.8) : [winY]
+  const wallColor = lighten(color, st.wall === 'brick' ? 0.62 : 0.45)
+  const ww = Math.min(1.5, w / count - 0.8)
   return (
     <group position={[b.x, 0, b.z]} rotation={[0, FACING[facing], 0]}>
       <RoundedBox args={[w, h, d]} radius={0.35} smoothness={3} position={[0, h / 2, 0]} castShadow receiveShadow>
         <meshStandardMaterial color={color} roughness={0.55} />
       </RoundedBox>
-      <RoundedBox args={[w + 0.7, 0.7, d + 0.7]} radius={0.3} smoothness={3} position={[0, h + 0.15, 0]} castShadow>
-        <meshStandardMaterial color={roof} roughness={0.5} />
-      </RoundedBox>
+      {/* Meshy cephe dokusu: dört yüzeyde ince paneller (köşeler yuvarlak ve düz renkli kalır) */}
+      <Panel tex={st.wall} w={w - 0.5} h={h - 0.4} color={wallColor} position={[0, h / 2, d / 2 + 0.012]} />
+      <Panel tex={st.wall} w={w - 0.5} h={h - 0.4} color={wallColor} position={[0, h / 2, -d / 2 - 0.012]} rotation={[0, Math.PI, 0]} />
+      <Panel tex={st.wall} w={d - 0.5} h={h - 0.4} color={wallColor} position={[w / 2 + 0.012, h / 2, 0]} rotation={[0, Math.PI / 2, 0]} />
+      <Panel tex={st.wall} w={d - 0.5} h={h - 0.4} color={wallColor} position={[-w / 2 - 0.012, h / 2, 0]} rotation={[0, -Math.PI / 2, 0]} />
+      <Roof w={w} d={d} h={h} color={roof} type={roofType} />
+      {st.chimney && roofType !== 'flat' && (
+        <RoundedBox args={[0.8, 1.8, 0.8]} radius={0.1} smoothness={2} position={[w * 0.28, h + 2.2, -d * 0.15]} castShadow>
+          <meshStandardMaterial color={lighten(roof, 0.1)} roughness={0.6} />
+        </RoundedBox>
+      )}
 
       {/* kapı */}
       <RoundedBox args={[1.9, 2.5, 0.2]} radius={0.08} position={[0, 1.25, d / 2 + 0.05]}>
@@ -116,20 +265,38 @@ function Building({ b, focusRef }) {
       </RoundedBox>
       <mesh position={[0, 1.2, d / 2 + 0.17]}>
         <boxGeometry args={[1.5, 2.1, 0.05]} />
-        <meshStandardMaterial color="#8a6bd1" roughness={0.4} />
+        <meshStandardMaterial color={st.door} roughness={0.4} />
+      </mesh>
+      <mesh position={[0.5, 1.15, d / 2 + 0.21]}>
+        <circleGeometry args={[0.07, 12]} />
+        <meshStandardMaterial color="#ffd35e" roughness={0.3} />
       </mesh>
 
       {/* pencereler */}
-      {rows.map((y) =>
-        Array.from({ length: count }, (_, i) => {
-          const x = (i - (count - 1) / 2) * (w / count)
-          return (
-            <mesh key={`${y}-${i}`} position={[x, y, d / 2 + 0.06]}>
-              <boxGeometry args={[Math.min(1.5, w / count - 0.8), 1.1, 0.12]} />
-              <primitive object={SKY_MATS.window} attach="material" />
+      {rows.map((y, ri) =>
+        Array.from({ length: count }, (_, ci) => (
+          <Window key={`${y}-${ci}`} kind={st.win} x={(ci - (count - 1) / 2) * (w / count)} y={y} z={d / 2 + 0.06} w={st.win === 'wide' ? Math.min(2.0, w / count - 0.6) : ww} accent={roof} shutters={st.shutters && ri === 0} flowerbox={st.flowerbox && ri === 0} />
+        )),
+      )}
+
+      {/* balkon (yalnızca bazı stillerde, ikinci katın altında) */}
+      {st.balcony && !shop && h > 5 && (
+        <group position={[w * 0.25, 3.0, d / 2 + 0.55]}>
+          <mesh castShadow>
+            <boxGeometry args={[1.9, 0.14, 1.0]} />
+            <meshStandardMaterial color="#fffaf2" roughness={0.5} />
+          </mesh>
+          {[-0.9, -0.3, 0.3, 0.9].map((bx) => (
+            <mesh key={bx} position={[bx, 0.38, 0.45]}>
+              <boxGeometry args={[0.07, 0.62, 0.07]} />
+              <meshStandardMaterial color={roof} />
             </mesh>
-          )
-        }),
+          ))}
+          <mesh position={[0, 0.7, 0.45]}>
+            <boxGeometry args={[1.9, 0.07, 0.07]} />
+            <meshStandardMaterial color={roof} />
+          </mesh>
+        </group>
       )}
 
       {/* dükkan tentesi */}
@@ -256,7 +423,7 @@ export default function City({ focusRef }) {
       <Gazebo />
 
       {BUILDINGS.filter((b) => !b.gazebo).map((b, i) => (
-        <Building key={i} b={b} focusRef={focusRef} />
+        <Building key={i} b={b} i={i} focusRef={focusRef} />
       ))}
       {PROPS.map((p, i) => (
         <Prop key={i} {...p} />
