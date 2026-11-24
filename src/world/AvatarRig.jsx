@@ -6,7 +6,7 @@ import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js
 import { applyPose, makeRig } from './avatarPose'
 import { HeadAccessory } from './Accessories'
 import { cosStore } from './cosStore'
-import { applyLook } from './avatarLook'
+import { applyLook, trimBase } from './avatarLook'
 
 export const AVATAR_HEIGHT = 1.3
 const RIG_HEIGHT = 1.2 // meshy_rig çağrısındaki height_meters
@@ -32,6 +32,7 @@ export default function AvatarRig({ slug, anim = 'idle', pose, cosId }) {
         o.frustumCulled = false
       }
     })
+    trimBase(clone, slug)
     if (look) applyLook(clone, slug, look)
     return clone
     // eslint-disable-next-line react-hooks/exhaustive-deps

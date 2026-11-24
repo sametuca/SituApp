@@ -2,7 +2,7 @@ import { Suspense, useEffect, useMemo, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, useGLTF, useAnimations } from '@react-three/drei'
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js'
-import { applyLook } from '../../world/avatarLook'
+import { applyLook, trimBase } from '../../world/avatarLook'
 
 const TARGET_Y = 0.6
 
@@ -14,6 +14,7 @@ function Model({ slug, look }) {
     clone.traverse((o) => {
       if (o.isMesh) o.frustumCulled = false // skinned mesh'in sınır kutusu yanıltıcı
     })
+    trimBase(clone, slug)
     applyLook(clone, slug, look)
     return clone
     // eslint-disable-next-line react-hooks/exhaustive-deps

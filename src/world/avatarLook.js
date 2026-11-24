@@ -214,6 +214,28 @@ function hairMinY(mesh) {
   return b.min.y + (b.max.y - b.min.y) * 0.5
 }
 
+/** Elif'in modelinde ayakların altında ayakla birlikte hareket eden beyaz disk (üretim artığı) var: ayakkabı izinin dışındaki taban üçgenlerini atar. Geometri klonlar arasında paylaşılır; bir kez uygulanır. */
+export function trimBase(model, slug) {
+  if (slug !== 'elif') return
+  model.traverse((o) => {
+    if (!o.isSkinnedMesh || o.geometry.userData.baseTrimmed) return
+    const g = o.geometry, p = g.attributes.position, idx = g.index
+    if (!idx) return
+    const bad = (i) => {
+      const x = Math.abs(p.getX(i)), y = p.getY(i), z = p.getZ(i)
+      return y < -0.935 && (x > 0.215 || x < 0.025 || z < -0.125 || z > 0.235)
+    }
+    const out = []
+    for (let i = 0; i < idx.count; i += 3) {
+      const a = idx.getX(i), b = idx.getX(i + 1), c = idx.getX(i + 2)
+      if (bad(a) || bad(b) || bad(c)) continue
+      out.push(a, b, c)
+    }
+    g.setIndex(out)
+    g.userData.baseTrimmed = true
+  })
+}
+
 /** Klonlanmış model üzerine renk uygular; look boşsa (hepsi -1) hiçbir şey yapmaz. */
 export function applyLook(model, slug, look) {
   if (!look) return
