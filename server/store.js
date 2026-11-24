@@ -100,3 +100,24 @@ for (const sig of ['SIGINT', 'SIGTERM']) {
     if (!supa.enabled) writeNow() // çıkışı supa.hookShutdown() yapar (index.js)
   })
 }
+
+/** Yönetici paneli: tüm şikâyetler (yeniden eskiye). id: dosya modunda sıra no, Supabase'de satır id'si. */
+export async function allReports() {
+  if (supa.enabled) {
+    const rows = await supa.select('reports', 'select=*&order=created_at.desc&limit=300').catch(() => supa.select('reports', 'select=*'))
+    return rows.slice(0, 300).map((r) => ({ id: String(r.id), reason: r.reason, resolved: Boolean(r.data?.resolved), ...r.data, reporter: r.reporter, target: r.target }))
+  }
+  return db.reports.map((r, i) => ({ id: String(i), resolved: Boolean(r.resolved), ...r })).reverse()
+}
+export async function resolveReport(id) {
+  if (supa.enabled) {
+    const rows = await supa.select('reports', `select=id,data&id=eq.${encodeURIComponent(id)}`)
+    if (!rows[0]) return
+    return supa.patch('reports', `id=eq.${encodeURIComponent(id)}`, { data: { ...rows[0].data, resolved: true } })
+  }
+  const r = db.reports[Number(id)]
+  if (r) {
+    r.resolved = true
+    save()
+  }
+}

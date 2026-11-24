@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { Ico } from '../../components/Icon'
 
 const glass = 'border-2 border-white bg-white/75 shadow-soft backdrop-blur-md'
-const WHY = { dj: 'DJ kazancı' }
+const WHY = { dj: 'DJ kazancı', meetup: 'Buluşma', voley: 'Voleybol', kale: 'Kum kalesi', pet: '', ev: '', kira: '' }
 
 export function useEconomy({ net }) {
   const { on } = net
