@@ -4,6 +4,7 @@ import { Html, RoundedBox } from '@react-three/drei'
 import { BLANKETS, BUILDINGS, GAZEBO, PROPS, ROAD_HALF } from './layout'
 import Prop from './Prop'
 import Neighborhood from './Neighborhood.jsx'
+import { Em } from '../components/emoji'
 import { SKY_MATS, skyLive } from './Sky'
 
 const FACING = { s: 0, n: Math.PI, e: Math.PI / 2, w: -Math.PI / 2 }
@@ -29,23 +30,47 @@ function Ring({ r0, r1, y, color }) {
   )
 }
 
-const LABEL_RANGE = 30 // m: bundan uzaktaki bina etiketleri gizlenir (ekran kalabalık olmasın)
+const LABEL_RANGE = 34 // m: bundan uzaktaki bina pinleri gizlenir
+const LABEL_NAME_RANGE = 15 // m: bundan yakında pinin adı da açılır
 
-function Label({ text, y, x, z, focusRef }) {
-  const [show, setShow] = useState(true)
+// "🍰 Tatlı Dükkanı" → { icon: '🍰', name: 'Tatlı Dükkanı' }
+function splitLabel(text) {
+  const m = /^(\p{Extended_Pictographic}\uFE0F?)\s*(.*)$/u.exec(text)
+  return m ? { icon: m[1], name: m[2] } : { icon: '📍', name: text }
+}
+
+// Modern harita pini: renkli halkalı yuvarlak rozet + 3D ikon + sivri uç; yakında ad etiketi açılır.
+function Label({ text, y, x, z, zOff = 0, focusRef, accent = '#ff8fb8' }) {
+  const [mode, setMode] = useState(2) // 0 gizli, 1 yalnız rozet, 2 rozet + ad
   const clock = useRef(0)
   useFrame((_, dt) => {
     clock.current += dt
     if (clock.current < 0.4) return
     clock.current = 0
     const f = focusRef.current
-    setShow(Math.hypot(f.x - x, f.z - z) < LABEL_RANGE)
+    const dist = Math.hypot(f.x - x, f.z - z)
+    setMode(dist > LABEL_RANGE ? 0 : dist > LABEL_NAME_RANGE ? 1 : 2)
   })
-  if (!show) return null
+  if (mode === 0) return null
+  const { icon, name } = splitLabel(text)
   return (
-    <Html position={[0, y, 0]} center distanceFactor={16} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
-      <div className="whitespace-nowrap rounded-full border-2 border-white bg-white/90 px-3 py-1 text-sm font-extrabold text-[#4a3b5c] shadow-md">
-        {text}
+    <Html position={[0, y, zOff]} center distanceFactor={22} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
+      <div className="venue-pin flex flex-col items-center" style={{ '--pin': accent }}>
+        {mode === 2 && (
+          <div className="mb-1 whitespace-nowrap rounded-full bg-[#3d2f4f]/85 px-3 py-[3px] text-[13px] font-extrabold tracking-wide text-white shadow-lg backdrop-blur-sm">
+            {name}
+          </div>
+        )}
+        <div
+          className="grid h-[46px] w-[46px] place-items-center rounded-full bg-white shadow-[0_6px_14px_rgba(60,40,80,0.35)]"
+          style={{ border: '4px solid var(--pin)' }}
+        >
+          <Em e={icon} size={28} />
+        </div>
+        <div
+          className="-mt-[5px] h-3 w-3 rotate-45 rounded-[2px]"
+          style={{ background: 'var(--pin)', boxShadow: '0 4px 6px rgba(60,40,80,0.25)' }}
+        />
       </div>
     </Html>
   )
@@ -106,7 +131,7 @@ function Building({ b, focusRef }) {
           </mesh>
         </>
       )}
-      {label && <Label text={label} y={h + 2} x={b.x} z={b.z} focusRef={focusRef} />}
+      {label && <Label text={label} y={Math.min(h, 3.6) + 1.2} zOff={d / 2 + 0.6} x={b.x} z={b.z} focusRef={focusRef} accent={roof} />}
     </group>
   )
 }
