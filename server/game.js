@@ -24,6 +24,7 @@
 //     { t: 'voice', to, mime, dur, data } / { t: 'sticker', id, to? }   sesli mesaj, çıkartma (features/media.js)
 //     { t: 'kar_get' | 'kar_join' | 'kar_leave' | 'kar_clap' }   Gece Kulübü karaokesi: durum / sıraya gir / çık / alkışla (features/venues.js)
 //     { t: 'progress_get' } / { t: 'suggest_get' | 'suggest_hi' | 'suggest_close' }   görev/rozet durumu, günün önerisi (features/progress.js)
+//     { t: 'collect', id } / { t: 'collect_get' }   toplanabilir topla (≤ 1,8 m, aynı oda) / koleksiyon durumu (features/collect.js)
 //   sunucu → istemci
 //     { t: 'welcome', id, home, homeItems, homeOpen, x, z, players: [...], online }   home = kendi evinin anahtarı
 //     { t: 'room', room, owner, ownerName, venue, items, players: [...] }   oda değişti (room: 'city' | 'home:<anahtar>' | 'venue:<id>'; venue = mekân kimliği | null)
@@ -48,6 +49,7 @@
 //     { t: 'chat', id, name, text, ts, to?, dm? }
 //     { t: 'online', n }
 //     { t: 'kar' | 'kar_turn' | 'kar_claps' | 'kar_end' }   karaoke durumu, sıra sende, alkış sayısı, tur sonucu (features/venues.js)
+//     { t: 'collected', id, kind, stars, ttl } / { t: 'collect_state', c, s }   toplandı / koleksiyon durumu (welcome'da `collect`)   (features/collect.js)
 //     { t: 'progress', p } / { t: 'quest_done', quest } / { t: 'badge', badge } / { t: 'event', event } / { t: 'suggest', s }   (features/progress.js)
 //
 // Odalar: herkes 'city' odasında başlar; evler 'home:<sahip anahtarı>' odalarıdır. Oyuncular, sohbet ve konum

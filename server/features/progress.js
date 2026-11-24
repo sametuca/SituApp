@@ -5,7 +5,7 @@
 //   me yalnızca { key } de olabilir (çevrimdışı ev sahibi gibi); bildirim çevrimiçiyse iletilir.
 // Bilinen olay tipleri: chat, whisper, gesture, gesture_<kind> (wave, heart…), match, react, zone (karşı = mekan id),
 //   home_visit, guest (evime biri geldi; karşı = ziyaretçi), invite, furnish (n = eşya sayısı), night,
-//   game_played, npc_talk (karşı = NPC kimliği), photo (başka modüller gönderir). Bilinmeyen tipler stats[tip] sayacına eklenir.
+//   game_played, npc_talk (karşı = NPC kimliği), collect (karşı = tür), collect_star, treasure (karşı = sandık id), photo (başka modüller gönderir). Bilinmeyen tipler stats[tip] sayacına eklenir.
 // Sayaçlar store.user(key).stats'ta; kişi/mekan kümeleri (peers, zones, guests) { anahtar: 1 } nesneleridir.
 // Günler Europe/Istanbul saatine göre değişir.
 import { save, user } from '../store.js'
@@ -62,6 +62,8 @@ const QUESTS = [
   { id: 'react5', ev: 'react', goal: 5, stars: 1, emoji: '😊', title: '5 emoji tepkisi gönder' },
   { id: 'npc2', ev: 'npc_talk', distinct: true, goal: 2, stars: 2, emoji: '🗣️', title: '2 farklı karakterle konuş' },
   { id: 'heart1', ev: 'gesture_heart', goal: 1, stars: 1, emoji: '💗', title: 'Birine kalp gönder' },
+  { id: 'collect5', ev: 'collect_star', goal: 5, stars: 2, emoji: '⭐', title: '5 yıldız parçası topla' },
+  { id: 'treasure1', ev: 'treasure', goal: 1, stars: 3, emoji: '🧰', title: 'Bir gizli hazine bul' },
 ]
 const QUEST_BY_ID = Object.fromEntries(QUESTS.map((q) => [q.id, q]))
 const DAILY_COUNT = 3
@@ -81,6 +83,9 @@ const BADGES = [
   { id: 'player', emoji: '🎮', name: 'Oyuncu', desc: 'Bir mini oyun oyna.', goal: 1, value: (s) => s.games ?? 0 },
   { id: 'photographer', emoji: '📸', name: 'Fotoğrafçı', desc: 'İlk fotoğrafını çek.', goal: 1, value: (s) => s.photos ?? 0 },
   { id: 'chatty', emoji: '🗣️', name: 'Sohbetçi', desc: '10 farklı karakterle (NPC) konuş.', goal: 10, value: (s) => size(s.npcs) },
+  { id: 'collector', emoji: '🧺', name: 'Koleksiyoncu', desc: '100 toplanabilir topla (yıldız, kalp taşı, çiçek…).', goal: 100, value: (s) => s.collected ?? 0 },
+  { id: 'treasure_hunter', emoji: '🧰', name: 'Hazine Avcısı', desc: '5 farklı gizli hazine sandığı bul.', goal: 5, value: (s) => size(s.chests) },
+  { id: 'gardener', emoji: '🌸', name: 'Çiçek Bahçıvanı', desc: '30 çiçek topla.', goal: 30, value: (s) => s.collectKinds?.flower ?? 0 },
   { id: 'streak', emoji: '🔥', name: 'Günlük Seri', desc: '3 gün üst üste en az bir günlük görev tamamla.', goal: 3, value: (s) => s.streak ?? 0 },
 ]
 
@@ -194,6 +199,13 @@ export default function progress(ctx) {
       case 'photo':
         s.photos = (s.photos ?? 0) + n
         break
+      case 'collect': // toplanabilir (karşı = tür); zaman damgaları s.collect'te (features/collect.js)
+        s.collected = (s.collected ?? 0) + n
+        if (pk) (s.collectKinds = s.collectKinds ?? {})[pk] = (s.collectKinds[pk] ?? 0) + n
+        break
+      case 'treasure': // gizli sandık bulundu (karşı = sandık id)
+        if (pk) (s.chests = s.chests ?? {})[pk] = 1
+        break
       default:
         if (/^[a-z_]{1,24}$/.test(type)) s[type] = (s[type] ?? 0) + n
     }
@@ -232,6 +244,7 @@ export default function progress(ctx) {
     if (changed) pushState(me.key)
   }
   ctx.emitEvent = emitEvent
+  ctx.pushProgress = pushState
 
   // gün/etkinlik değişimlerini izle (dakikada bir kontrol)
   const timer = setInterval(() => {
