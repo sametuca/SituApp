@@ -54,6 +54,7 @@ Yeni sosyal özellikler çekirdek dosyaları şişirmeden kendi modüllerinde ya
 ## Tasarım kuralları (önemli)
 
 - **Tüm oyun pastel, stilize, oyuncak gibi olmalı.** Gerçekçi asset karışmamalı. Tutarlılık kullanıcı için en önemli şey.
+- **Öne çıkan objeler Meshy modeli olmalı (kodla çizme).** Karakterli/göze çarpan her şey (evcil hayvan, hediye, mobilya, mekân eşyaları, toplanabilirler, oturma yerleri, bina süsleri) GLB olarak Meshy'den üretilir; yalnızca küçük, fark edilmeyecek şeyler (ince çizgi/zemin karoları, ışık zinciri, parçacık, basit kutu/tabela, yardımcı şekiller) three.js ilkelleriyle çizilebilir. Toplu üretim: `NODE_USE_ENV_PROXY=1 node scripts/meshy-batch.mjs <spec.json> <çıktı klasörü>` (spec: `[{id, prompt}]`; görsel→3D→sıkıştırma otomatik, model başına ~25 kredi). Kredi sınırlı: önce `--dry-run`, aynı objeyi tekrar üretme.
 - Kadın avatarlarda pembe tema, erkeklerde (Deniz, Kaan, Ege) mavi tema (`TONES`).
 - Yeni ekran: `PastelBackground`, `ToyButton`, `candy-*` token'ları, Nunito yazı tipi.
 - Mobil öncelikli düşün: dokunma alanları büyük, joystick, alttan açılan çekmeceler.
