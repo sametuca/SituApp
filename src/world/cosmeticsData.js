@@ -76,12 +76,12 @@ export function sanitizeDecor(d) {
 
 // ---------- hediyeler ----------
 // Hediye kimlikleri mobilya kataloğundan (furniture.js) ayrıdır; ev düzenine 'gift-*' kimliğiyle girer.
-// fw/fd: yerdeki ayak izi (m). Model procedural çizilir (src/world/Gifts.jsx).
+// fw/fd: yerdeki ayak izi (m). Modeller Meshy GLB (public/models/gifts/, src/world/Gifts.jsx); ayak izi GLB ölçüsü × Gifts.jsx boyutu.
 export const GIFTS = [
-  { id: 'gift-bear', name: 'Peluş ayı', emoji: '🧸', fw: 0.9, fd: 0.9 },
-  { id: 'gift-heartbox', name: 'Kalp kutusu', emoji: '💝', fw: 0.7, fd: 0.7 },
-  { id: 'gift-roses', name: 'Gül buketi', emoji: '🌹', fw: 0.6, fd: 0.6 },
-  { id: 'gift-choco', name: 'Çikolata kutusu', emoji: '🍫', fw: 0.7, fd: 0.5 },
+  { id: 'gift-bear', name: 'Peluş ayı', emoji: '🧸', fw: 0.8, fd: 0.7 },
+  { id: 'gift-heartbox', name: 'Kalp kutusu', emoji: '💝', fw: 0.65, fd: 0.65 },
+  { id: 'gift-roses', name: 'Gül buketi', emoji: '🌹', fw: 0.65, fd: 0.7 },
+  { id: 'gift-choco', name: 'Çikolata kutusu', emoji: '🍫', fw: 0.65, fd: 0.55 },
 ]
 export const GIFT_BY_ID = Object.fromEntries(GIFTS.map((g) => [g.id, g]))
 export const GIFT_RANGE = 8 // m

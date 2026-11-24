@@ -1,164 +1,25 @@
-import { useRef, useSyncExternalStore } from 'react'
+import { Suspense, useRef, useSyncExternalStore } from 'react'
+import { useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { MathUtils } from 'three'
 import { cosStore } from './cosStore'
+import Prop from './Prop'
 
-// Evcil hayvanlar: pastel, yuvarlak, procedural (three.js ilkelleri). Model +z'ye bakar, yaklaşık 0,45 m boyunda.
+// Evcil hayvanlar: Meshy GLB (statik), hareket procedural (zıplama, nefes, sağa sola bakma). Yaklaşık 0,5 m boyunda.
 // Sunucu trafiği yok: konum, sahibin konumundan (yerel: focusRef, uzak: remotes) istemcide türetilir.
 
-const Eye = ({ x, y, z, r = 0.025 }) => (
-  <mesh position={[x, y, z]}>
-    <sphereGeometry args={[r, 10, 10]} />
-    <meshStandardMaterial color="#4a3b5c" roughness={0.3} />
-  </mesh>
-)
-const Blush = ({ x, y, z }) => (
-  <mesh position={[x, y, z]} scale={[1, 0.6, 0.4]}>
-    <sphereGeometry args={[0.03, 10, 10]} />
-    <meshStandardMaterial color="#ff9ec0" roughness={0.8} />
-  </mesh>
-)
-const M = ({ color }) => <meshStandardMaterial color={color} roughness={0.7} />
+const PET_URL = { cat: '/models/pets/pet-cat.glb', bunny: '/models/pets/pet-bunny.glb', chick: '/models/pets/pet-chick.glb' }
+const PET_SIZE = 0.5 // en büyük boyut (m); avatar 1,3 m
+Object.values(PET_URL).forEach((u) => useGLTF.preload(u))
 
-function Cat() {
-  const fur = '#ffd2a8'
-  return (
-    <group>
-      <mesh position={[0, 0.2, -0.02]} scale={[1, 0.9, 1.15]} castShadow>
-        <sphereGeometry args={[0.19, 20, 16]} />
-        <M color={fur} />
-      </mesh>
-      <mesh position={[0, 0.38, 0.12]} castShadow>
-        <sphereGeometry args={[0.16, 20, 16]} />
-        <M color={fur} />
-      </mesh>
-      {[1, -1].map((s) => (
-        <group key={s} position={[s * 0.1, 0.52, 0.1]} rotation={[0, 0, -s * 0.25]}>
-          <mesh>
-            <coneGeometry args={[0.06, 0.13, 4]} />
-            <M color={fur} />
-          </mesh>
-          <mesh position={[0, -0.01, 0.02]} scale={[0.6, 0.7, 0.5]}>
-            <coneGeometry args={[0.05, 0.12, 4]} />
-            <M color="#ffb3cd" />
-          </mesh>
-        </group>
-      ))}
-      <Eye x={0.06} y={0.4} z={0.265} />
-      <Eye x={-0.06} y={0.4} z={0.265} />
-      <mesh position={[0, 0.355, 0.275]}>
-        <sphereGeometry args={[0.018, 8, 8]} />
-        <M color="#ff8fb5" />
-      </mesh>
-      <Blush x={0.1} y={0.355} z={0.24} />
-      <Blush x={-0.1} y={0.355} z={0.24} />
-      {/* kuyruk */}
-      <mesh position={[0, 0.27, -0.22]} rotation={[0.3, 0, 0]}>
-        <torusGeometry args={[0.09, 0.03, 8, 16, Math.PI * 1.2]} />
-        <M color="#ffb98c" />
-      </mesh>
-      {[0.08, -0.08].map((x) => (
-        <mesh key={x} position={[x, 0.04, 0.08]}>
-          <sphereGeometry args={[0.055, 10, 10]} />
-          <M color={fur} />
-        </mesh>
-      ))}
-    </group>
-  )
-}
-
-function Bunny() {
-  const fur = '#fffaf5'
-  return (
-    <group>
-      <mesh position={[0, 0.19, -0.02]} scale={[1, 0.95, 1.1]} castShadow>
-        <sphereGeometry args={[0.18, 20, 16]} />
-        <M color={fur} />
-      </mesh>
-      <mesh position={[0, 0.37, 0.1]} castShadow>
-        <sphereGeometry args={[0.15, 20, 16]} />
-        <M color={fur} />
-      </mesh>
-      {[1, -1].map((s) => (
-        <group key={s} position={[s * 0.07, 0.56, 0.06]} rotation={[-0.15, 0, -s * 0.12]}>
-          <mesh>
-            <capsuleGeometry args={[0.04, 0.17, 6, 12]} />
-            <M color={fur} />
-          </mesh>
-          <mesh position={[0, 0, 0.025]} scale={[0.55, 1, 0.4]}>
-            <capsuleGeometry args={[0.035, 0.15, 6, 12]} />
-            <M color="#ffc4dc" />
-          </mesh>
-        </group>
-      ))}
-      <Eye x={0.055} y={0.39} z={0.235} />
-      <Eye x={-0.055} y={0.39} z={0.235} />
-      <mesh position={[0, 0.35, 0.248]}>
-        <sphereGeometry args={[0.016, 8, 8]} />
-        <M color="#ff8fb5" />
-      </mesh>
-      <Blush x={0.09} y={0.35} z={0.22} />
-      <Blush x={-0.09} y={0.35} z={0.22} />
-      <mesh position={[0, 0.2, -0.2]}>
-        <sphereGeometry args={[0.06, 12, 12]} />
-        <M color="#ffe3ef" />
-      </mesh>
-      {[0.07, -0.07].map((x) => (
-        <mesh key={x} position={[x, 0.04, 0.08]}>
-          <sphereGeometry args={[0.05, 10, 10]} />
-          <M color={fur} />
-        </mesh>
-      ))}
-    </group>
-  )
-}
-
-function Chick() {
-  const fur = '#ffe27a'
-  return (
-    <group>
-      <mesh position={[0, 0.2, 0]} castShadow>
-        <sphereGeometry args={[0.2, 22, 18]} />
-        <M color={fur} />
-      </mesh>
-      <mesh position={[0, 0.42, 0.04]} castShadow>
-        <sphereGeometry args={[0.13, 20, 16]} />
-        <M color={fur} />
-      </mesh>
-      <mesh position={[0, 0.405, 0.16]} rotation={[Math.PI / 2, 0, 0]}>
-        <coneGeometry args={[0.035, 0.07, 10]} />
-        <M color="#ffab6b" />
-      </mesh>
-      <Eye x={0.055} y={0.44} z={0.14} r={0.022} />
-      <Eye x={-0.055} y={0.44} z={0.14} r={0.022} />
-      <Blush x={0.09} y={0.405} z={0.12} />
-      <Blush x={-0.09} y={0.405} z={0.12} />
-      {[1, -1].map((s) => (
-        <mesh key={s} position={[s * 0.19, 0.2, -0.02]} rotation={[0, 0, -s * 0.5]} scale={[0.5, 1, 0.8]}>
-          <sphereGeometry args={[0.09, 12, 12]} />
-          <M color="#ffd65c" />
-        </mesh>
-      ))}
-      <mesh position={[0, 0.48, 0.02]}>
-        <coneGeometry args={[0.03, 0.08, 6]} />
-        <M color={fur} />
-      </mesh>
-      {[0.06, -0.06].map((x) => (
-        <mesh key={x} position={[x, 0.015, 0.02]} scale={[1, 0.5, 1.4]}>
-          <sphereGeometry args={[0.04, 8, 8]} />
-          <M color="#ffab6b" />
-        </mesh>
-      ))}
-    </group>
-  )
-}
-
-const MODELS = { cat: Cat, bunny: Bunny, chick: Chick }
-
-/** Hareketsiz/önizleme için evcil hayvan modeli. */
+/** Evcil hayvan modeli (Meshy GLB; orijin = tabanın ortası, +z'ye bakar). Hareket PetFollower'da procedural. */
 export function PetModel({ kind }) {
-  const Model = MODELS[kind]
-  return Model ? <Model /> : null
+  const url = PET_URL[kind]
+  return url ? (
+    <Suspense fallback={null}>
+      <Prop model={url} x={0} z={0} scale={PET_SIZE} />
+    </Suspense>
+  ) : null
 }
 
 const STOP_DIST = 0.95 // sahibine bu kadar yaklaşınca durur
@@ -221,7 +82,8 @@ function PetFollower({ kind, getOwner }) {
       if (s.moving) {
         b.position.y = Math.abs(Math.sin(s.phase)) * 0.14
         b.rotation.x = Math.sin(s.phase) * 0.1
-        b.rotation.z = 0
+        b.rotation.y = 0
+        b.rotation.z = Math.sin(s.phase * 0.5) * 0.08
         b.scale.set(1, 1, 1)
       } else {
         // dururken: nefes alır, hafifçe sallanır, ara sıra küçük bir zıplama yapar
@@ -229,6 +91,8 @@ function PetFollower({ kind, getOwner }) {
         b.position.y = hop
         b.rotation.x = 0
         b.rotation.z = Math.sin(s.t * 2.2) * 0.05
+        // ara sıra sağa sola bakar
+        b.rotation.y = Math.sin(s.t * 0.7) * Math.max(0, Math.sin(s.t * 0.23)) * 0.6
         const br = 1 + Math.sin(s.t * 3) * 0.02
         b.scale.set(1, br, 1)
       }
