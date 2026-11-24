@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { isDemoMode, validate, AuthError } from '../lib/auth'
@@ -15,6 +15,21 @@ export default function AuthPage() {
   const { user, loading, recovery, signIn, signUp, resetPassword, updatePassword, resendConfirmation } = useAuth()
   const location = useLocation()
   const [mode, setMode] = useState('login') // login | register
+  const [online, setOnline] = useState(null) // sunucudaki çevrimiçi sayısı (yalnızca bu ekranda gösterilir)
+  useEffect(() => {
+    let alive = true
+    const load = () =>
+      fetch('/api/health')
+        .then((r) => r.json())
+        .then((d) => alive && Number.isFinite(d.online) && setOnline(d.online))
+        .catch(() => alive && setOnline(null))
+    load()
+    const t = setInterval(load, 15000)
+    return () => {
+      alive = false
+      clearInterval(t)
+    }
+  }, [])
   const [form, setForm] = useState(EMPTY)
   const [errors, setErrors] = useState({})
   const [formError, setFormError] = useState('')
@@ -145,6 +160,12 @@ export default function AuthPage() {
           <p className="mt-1 text-sm font-bold tracking-wide text-ink-soft">
             Avatarını seç. Mekânı bul. Bağlantını kur. 💫
           </p>
+          {online != null && (
+            <p className="mx-auto mt-3 inline-flex items-center gap-1.5 rounded-full border-2 border-white bg-white/80 px-3 py-1 text-xs font-extrabold text-ink-soft shadow-soft">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              {online} çevrimiçi
+            </p>
+          )}
         </header>
 
         {/* maskot */}

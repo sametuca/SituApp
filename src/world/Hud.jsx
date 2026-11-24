@@ -40,11 +40,14 @@ export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings, 
           <span>{zone.emoji}</span>
           <span className="text-sm font-extrabold text-[#4a3b5c]">{zone.name}</span>
         </div>
-        <div className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-extrabold text-[#8a7a9c] ${glass}`}>
-          <span className={`h-2 w-2 rounded-full ${dot}`} />
-          {label}
-          {dnd && <span title="Rahatsız etme açık"> · 🌙</span>}
-        </div>
+        {/* çevrimiçi sayısı yalnızca giriş ekranında; burada yalnızca bağlantı sorunu ya da rahatsız etme açıkken bilgi çıkar */}
+        {(status !== 'online' || dnd) && (
+          <div className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-extrabold text-[#8a7a9c] ${glass}`}>
+            {status !== 'online' && <span className={`h-2 w-2 rounded-full ${dot}`} />}
+            {status !== 'online' && label}
+            {dnd && <span title="Rahatsız etme açık">{status !== 'online' ? ' · ' : ''}🌙 Rahatsız etme</span>}
+          </div>
+        )}
       </div>
       <div className="pointer-events-auto relative flex gap-2" ref={menuRef}>
         {extraNodes}
