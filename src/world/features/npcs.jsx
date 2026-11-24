@@ -84,6 +84,15 @@ export function useNpcs(ctx) {
 
   const nearNpc = near && !open ? NPC_BY_ID[near] : null
 
+  // konuşma balonu NPC'nin başında görünür (NpcLayer 'situapp:npc-say' dinler); çekmece kapanınca silinir
+  const sayId = open?.id
+  const sayText = open ? talk.text : null
+  useEffect(() => {
+    if (!sayId) return
+    window.dispatchEvent(new CustomEvent('situapp:npc-say', { detail: { id: sayId, text: sayText } }))
+    return () => window.dispatchEvent(new CustomEvent('situapp:npc-say', { detail: { id: sayId, text: null } }))
+  }, [sayId, sayText])
+
   // E ile konuş, Esc ile kapat
   useEffect(() => {
     const onKey = (e) => {

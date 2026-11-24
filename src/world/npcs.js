@@ -159,6 +159,16 @@ const venueNpcs = VENUES.filter((v) => v.npc).map((v) => ({
   ],
 }))
 
+// AFK botlar: oyuna girmiş ama klavyeden kalkmış gerçek oyuncu gibi görünen, hareketsiz 5 karakter (şehirde, kimlikleri Reddit tarzı).
+// NPC değildir: konuşmaz, sunucu bilmez, görev/rozet saymaz. Yalnızca istemcide çizilir (NpcLayer AfkView).
+export const AFK_BOTS = [
+  { id: 'afk1', avatar: 'zeynep', name: 'pixel_pancake42', x: -19.6, z: -2.4, ry: 1.2 },
+  { id: 'afk2', avatar: 'kaan', name: 'NotAGoodUsername', x: 10.6, z: -1.2, ry: -1.9 },
+  { id: 'afk3', avatar: 'mira', name: 'sleepy_toaster_', x: -2.6, z: -33, ry: 2.6 },
+  { id: 'afk4', avatar: 'deniz', name: 'midnight_bagel', x: 1.8, z: 23, ry: 0.4 },
+  { id: 'afk5', avatar: 'elif', name: 'ThrowawayTulip', x: 17.5, z: 8.5, ry: -0.6 },
+]
+
 export const NPCS = [...CITY.map((n) => ({ where: 'city', ...n })), ...venueNpcs]
 export const NPC_BY_ID = Object.fromEntries(NPCS.map((n) => [n.id, n]))
 export const npcsFor = (where) => NPCS.filter((n) => n.where === where)

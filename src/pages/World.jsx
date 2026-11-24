@@ -665,7 +665,7 @@ function WorldScene({ avatar }) {
           enablePan={false}
           target={[start.x, 0.8, start.z]}
           minDistance={3.5}
-          maxDistance={home ? 10 : venue ? 12 : 16}
+          maxDistance={home ? 10 : venue ? 11 : 11}
           minPolarAngle={0.35}
           maxPolarAngle={Math.PI / 2.15}
         />

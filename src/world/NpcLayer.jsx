@@ -7,7 +7,7 @@ import { Html } from '@react-three/drei'
 import { Em } from '../components/emoji'
 import { MathUtils } from 'three'
 import AvatarRig, { AVATAR_HEIGHT } from './AvatarRig'
-import { CLICK_RADIUS, GREET_RADIUS, TALK_RADIUS, displayName, npcsFor, posAt } from './npcs'
+import { AFK_BOTS, CLICK_RADIUS, GREET_RADIUS, TALK_RADIUS, displayName, npcsFor, posAt } from './npcs'
 
 const ACTIVE_ON = 34 // m: bu kadar yakındaysa model yüklenir/çizilir
 const ACTIVE_OFF = 40
@@ -178,6 +178,15 @@ const NpcView = memo(function NpcView({ npc, focusRef, onTalk }) {
   const pose = useMemo(() => (npc.pose ? { current: npc.pose } : undefined), [npc.pose])
   const Prop = npc.prop && PROPS[npc.prop]
 
+  // konuşma balonu: yalnızca bu NPC ile konuşulurken (diyalog çekmecesi 'situapp:npc-say' yollar)
+  useEffect(() => {
+    const on = (e) => {
+      if (e.detail?.id === npc.id) setBubble(e.detail.text ?? null)
+    }
+    window.addEventListener('situapp:npc-say', on)
+    return () => window.removeEventListener('situapp:npc-say', on)
+  }, [npc.id])
+
   // drei <Html> ilk çizim turunda bağlanmasın
   useEffect(() => {
     const t = setTimeout(() => setReady(true), 700)
@@ -216,22 +225,6 @@ const NpcView = memo(function NpcView({ npc, focusRef, onTalk }) {
       s.tag = showTag
       setTag(showTag)
     }
-    // selam balonu
-    const now = performance.now()
-    const near = d < GREET_RADIUS
-    if (near && !s.near) {
-      s.near = true
-      s.bubble = npc.lines[s.i++ % npc.lines.length]
-      s.until = now + 4500
-      setBubble(s.bubble)
-    } else if (!near && s.near) {
-      s.near = false
-      s.bubble = null
-      setBubble(null)
-    } else if (s.bubble && now > s.until) {
-      s.bubble = null
-      setBubble(null)
-    }
   })
 
   return (
@@ -268,6 +261,45 @@ const NpcView = memo(function NpcView({ npc, focusRef, onTalk }) {
   )
 })
 
+/** AFK bot: hareketsiz, gerçek oyuncu etiketiyle (mavi hap + 💤). Yakındaysa model yüklenir. */
+const AfkView = memo(function AfkView({ bot, focusRef }) {
+  const [active, setActive] = useState(false)
+  const [ready, setReady] = useState(false)
+  const act = useRef(false)
+  const clock = useRef(0)
+  useEffect(() => {
+    const t = setTimeout(() => setReady(true), 900)
+    return () => clearTimeout(t)
+  }, [])
+  useFrame((_, dt) => {
+    clock.current += dt
+    if (clock.current < 0.4) return
+    clock.current = 0
+    const f = focusRef.current
+    const d = Math.hypot(f.x - bot.x, f.z - bot.z)
+    const on = act.current ? d < ACTIVE_OFF : d < ACTIVE_ON
+    if (on !== act.current) {
+      act.current = on
+      setActive(on)
+    }
+  })
+  if (!active) return null
+  return (
+    <group position={[bot.x, 0, bot.z]} rotation={[0, bot.ry, 0]}>
+      <Suspense fallback={null}>
+        <AvatarRig slug={bot.avatar} anim="idle" />
+      </Suspense>
+      {ready && (
+        <Html position={[0, AVATAR_HEIGHT + 0.45, 0]} center distanceFactor={9} zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}>
+          <div className="whitespace-nowrap rounded-full border-2 border-white bg-[#6ec3f0] px-2.5 py-0.5 text-xs font-extrabold text-white shadow">
+            {bot.name} <span className="opacity-90">💤</span>
+          </div>
+        </Html>
+      )}
+    </group>
+  )
+})
+
 /** Bulunduğun yerin (şehir ya da mekân) NPC'lerini çizer; en yakın konuşulabilir NPC'yi onNear ile bildirir. */
 export default function NpcLayer({ where, focusRef, onTalk, onNear }) {
   const list = useMemo(() => (where ? npcsFor(where) : []), [where])
@@ -297,6 +329,7 @@ export default function NpcLayer({ where, focusRef, onTalk, onNear }) {
       {list.map((n) => (
         <NpcView key={n.id} npc={n} focusRef={focusRef} onTalk={onTalk} />
       ))}
+      {where === 'city' && AFK_BOTS.map((b) => <AfkView key={b.id} bot={b} focusRef={focusRef} />)}
     </group>
   )
 }

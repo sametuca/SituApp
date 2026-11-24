@@ -43,13 +43,15 @@ function splitLabel(text) {
 function Label({ text, y, x, z, zOff = 0, focusRef, accent = '#ff8fb8' }) {
   const [mode, setMode] = useState(2) // 0 gizli, 1 yalnız rozet, 2 rozet + ad
   const clock = useRef(0)
-  useFrame((_, dt) => {
+  useFrame(({ camera }, dt) => {
     clock.current += dt
     if (clock.current < 0.4) return
     clock.current = 0
     const f = focusRef.current
     const dist = Math.hypot(f.x - x, f.z - z)
-    setMode(dist > LABEL_RANGE ? 0 : dist > LABEL_NAME_RANGE ? 1 : 2)
+    // kameraya çok yakın pin (distanceFactor yüzünden) dev boyuna çıkmasın
+    const camDist = Math.hypot(camera.position.x - x, camera.position.y - y, camera.position.z - z)
+    setMode(dist > LABEL_RANGE || camDist < 12 ? 0 : dist > LABEL_NAME_RANGE ? 1 : 2)
   })
   if (mode === 0) return null
   const { icon, name } = splitLabel(text)
