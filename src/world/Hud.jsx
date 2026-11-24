@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ToyButton } from '../components/ui'
+import { emojiSrc } from '../components/emoji'
 import { BUILDINGS, GUIDE, ROAD_HALF, ZONES } from './layout'
 
 const glass = 'border-2 border-white bg-white/75 shadow-soft backdrop-blur-md'
@@ -102,69 +103,176 @@ export function ZoneToast({ zone }) {
 }
 
 // ---------- harita ----------
-const MAP = 150
-const RANGE = 48 // harita ±48 m
-const toMap = (v) => ((v + RANGE) / (RANGE * 2)) * MAP
+// Küçük harita: oyuncuyu ortalar, yakın çevreyi (±LOCAL_R m) gösterir, mekân ikonları + yakındaki oyuncular. Dokununca büyür:
+// tüm şehir + bölge adları + bölgelere ışınlanma düğmeleri. Çizim canvas'ta (yüksek çözünürlük).
+const LOCAL_R = 30 // küçük harita yarıçapı (m)
+const WORLD_R = 52 // büyük harita yarıçapı (m)
+const iconCache = new Map()
+const iconOf = (emoji) => {
+  const src = emojiSrc(emoji)
+  if (!src) return null
+  let im = iconCache.get(src)
+  if (!im) {
+    im = new Image()
+    im.src = src
+    iconCache.set(src, im)
+  }
+  return im.complete && im.naturalWidth ? im : null
+}
+const ZONE_CENTER = Object.fromEntries(ZONES.map((z) => [z.id, z.shape === 'circle' ? [z.x, z.z] : [(z.x0 + z.x1) / 2, (z.z0 + z.z1) / 2]]))
+
+function drawMap(ctx, S, big, f, remotes) {
+  const r = big ? WORLD_R : LOCAL_R
+  const cx = big ? 0 : f.x
+  const cz = big ? 0 : f.z
+  const k = S / (r * 2)
+  const X = (v) => (v - cx) * k + S / 2
+  const Z = (v) => (v - cz) * k + S / 2
+  const len = (m) => m * k
+  ctx.save()
+  ctx.clearRect(0, 0, S, S)
+  if (!big) {
+    ctx.beginPath()
+    ctx.arc(S / 2, S / 2, S / 2, 0, Math.PI * 2)
+    ctx.clip() // yuvarlak, oyuncu ortada
+  }
+  ctx.fillStyle = '#bfe9c9' // çimen
+  ctx.fillRect(0, 0, S, S)
+  ctx.fillStyle = '#9fd8f5' // deniz
+  ctx.fillRect(0, Z(46), S, S)
+  ctx.fillStyle = '#ffe9b8' // plaj kumu
+  ctx.fillRect(X(-14), Z(30), len(28), len(16))
+  ctx.fillStyle = '#e9d3dc' // kaldırımlar (arnavut kaldırımı tonu)
+  ctx.fillRect(X(-ROAD_HALF - 1.4), 0, len(ROAD_HALF * 2 + 2.8), S)
+  ctx.fillRect(0, Z(-ROAD_HALF - 1.4), S, len(ROAD_HALF * 2 + 2.8))
+  ctx.fillStyle = '#c9c3d6' // yollar
+  ctx.fillRect(X(-ROAD_HALF), 0, len(ROAD_HALF * 2), S)
+  ctx.fillRect(0, Z(-ROAD_HALF), S, len(ROAD_HALF * 2))
+  ctx.fillStyle = '#f7d9e6' // lobi meydanı
+  ctx.beginPath()
+  ctx.arc(X(0), Z(0), len(11), 0, Math.PI * 2)
+  ctx.fill()
+  ctx.strokeStyle = '#ffffff'
+  ctx.lineWidth = Math.max(1, len(0.5))
+  ctx.beginPath()
+  ctx.arc(X(0), Z(0), len(7), 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.fillStyle = '#9fd8f5' // çeşme
+  ctx.beginPath()
+  ctx.arc(X(0), Z(0), len(2.4), 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = '#d9b8ff' // çardak
+  ctx.beginPath()
+  ctx.arc(X(-30), Z(0), len(3.2), 0, Math.PI * 2)
+  ctx.fill()
+  // binalar
+  for (const b of BUILDINGS) {
+    if (b.gazebo) continue
+    const side = b.facing === 'e' || b.facing === 'w'
+    const w = side ? b.d : b.w
+    const d = side ? b.w : b.d
+    ctx.fillStyle = b.roof
+    ctx.beginPath()
+    ctx.roundRect(X(b.x - w / 2), Z(b.z - d / 2), len(w), len(d), len(0.8))
+    ctx.fill()
+    if (b.label) {
+      const im = iconOf(b.label.split(' ')[0])
+      const sz = Math.max(len(3), big ? 15 : 13)
+      if (im) ctx.drawImage(im, X(b.x) - sz / 2, Z(b.z) - sz / 2, sz, sz)
+    }
+  }
+  // bölge adları (büyük harita)
+  if (big) {
+    ctx.font = '800 11px Nunito, system-ui, sans-serif'
+    ctx.textAlign = 'center'
+    ctx.lineJoin = 'round'
+    for (const z of ZONES) {
+      const [zx, zz] = ZONE_CENTER[z.id]
+      const ty = z.id === 'lobby' ? Z(zz + 13.5) : Z(zz)
+      ctx.lineWidth = 3
+      ctx.strokeStyle = 'rgba(255,255,255,0.9)'
+      ctx.strokeText(z.name, X(zx), ty)
+      ctx.fillStyle = '#4a3b5c'
+      ctx.fillText(z.name, X(zx), ty)
+    }
+  }
+  // diğer oyuncular
+  for (const rp of remotes.current.values()) {
+    ctx.fillStyle = '#a88bff'
+    ctx.strokeStyle = '#ffffff'
+    ctx.lineWidth = 1.5
+    ctx.beginPath()
+    ctx.arc(X(rp.x), Z(rp.z), big ? 3.4 : 4, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
+  }
+  // Rehber
+  ctx.fillStyle = '#ff7eb3'
+  ctx.beginPath()
+  ctx.arc(X(GUIDE.x), Z(GUIDE.z), 3.4, 0, Math.PI * 2)
+  ctx.fill()
+  // kendin: nabız halkası + yönü gösteren ok
+  const t = (performance.now() % 1600) / 1600
+  ctx.strokeStyle = `rgba(255,126,179,${0.55 * (1 - t)})`
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  ctx.arc(X(f.x), Z(f.z), 6 + t * 12, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.translate(X(f.x), Z(f.z))
+  ctx.rotate(-f.ry + Math.PI)
+  ctx.fillStyle = '#ffffff'
+  ctx.strokeStyle = '#e85a98'
+  ctx.lineWidth = 2.2
+  ctx.beginPath()
+  ctx.moveTo(0, -8)
+  ctx.lineTo(6, 6.5)
+  ctx.lineTo(0, 3)
+  ctx.lineTo(-6, 6.5)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  ctx.restore()
+}
 
 export function Minimap({ focusRef, remotes, compact }) {
   const canvas = useRef(null)
+  const [big, setBig] = useState(false)
+  const S = big ? (compact ? 280 : 360) : compact ? 112 : 160 // ekranda CSS boyutu (px)
   useEffect(() => {
-    const ctx = canvas.current.getContext('2d')
-    const draw = () => {
-      ctx.clearRect(0, 0, MAP, MAP)
-      ctx.fillStyle = '#d4f3dc'
-      ctx.fillRect(0, 0, MAP, MAP)
-      ctx.fillStyle = '#9fd8f5' // deniz
-      ctx.fillRect(0, toMap(46), MAP, MAP)
-      ctx.fillStyle = '#ffe9b8' // kum
-      ctx.fillRect(toMap(-14), toMap(30), toMap(14) - toMap(-14), toMap(46) - toMap(30))
-      ctx.fillStyle = '#e4d9f2' // yollar
-      ctx.fillRect(toMap(-ROAD_HALF), 0, toMap(ROAD_HALF) - toMap(-ROAD_HALF), MAP)
-      ctx.fillRect(0, toMap(-ROAD_HALF), MAP, toMap(ROAD_HALF) - toMap(-ROAD_HALF))
-      ctx.fillStyle = '#fff3f8' // meydan
-      ctx.beginPath()
-      ctx.arc(toMap(0), toMap(0), toMap(11) - toMap(0), 0, Math.PI * 2)
-      ctx.fill()
-      for (const b of BUILDINGS) {
-        if (b.gazebo) continue
-        ctx.fillStyle = b.roof
-        ctx.fillRect(toMap(b.x - b.w / 2), toMap(b.z - b.d / 2), (b.w / (RANGE * 2)) * MAP, (b.d / (RANGE * 2)) * MAP)
-      }
-      ctx.fillStyle = '#ff7eb3'
-      ctx.beginPath()
-      ctx.arc(toMap(GUIDE.x), toMap(GUIDE.z), 3, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.fillStyle = '#a88bff'
-      for (const r of remotes.current.values()) {
-        ctx.beginPath()
-        ctx.arc(toMap(r.x), toMap(r.z), 3.2, 0, Math.PI * 2)
-        ctx.fill()
-      }
-      // kendin: yönü gösteren üçgen
-      const f = focusRef.current
-      ctx.save()
-      ctx.translate(toMap(f.x), toMap(f.z))
-      ctx.rotate(-f.ry + Math.PI)
-      ctx.fillStyle = '#ffffff'
-      ctx.strokeStyle = '#e85a98'
-      ctx.lineWidth = 2
-      ctx.beginPath()
-      ctx.moveTo(0, -6)
-      ctx.lineTo(4.5, 5)
-      ctx.lineTo(-4.5, 5)
-      ctx.closePath()
-      ctx.fill()
-      ctx.stroke()
-      ctx.restore()
-    }
+    const cv = canvas.current
+    const ctx = cv.getContext('2d')
+    const dpr = Math.min(2, window.devicePixelRatio || 1)
+    cv.width = S * dpr
+    cv.height = S * dpr
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    const draw = () => drawMap(ctx, S, big, focusRef.current, remotes)
     draw()
-    const timer = setInterval(draw, 120)
+    const timer = setInterval(draw, 100)
     return () => clearInterval(timer)
-  }, [focusRef, remotes])
+  }, [focusRef, remotes, big, S])
 
+  const travel = (z) => {
+    focusRef.current.teleport = z.spawn
+    setBig(false)
+  }
   return (
-    <div className={`pointer-events-none absolute right-3 top-16 z-10 overflow-hidden rounded-2xl p-1 ${glass}`} aria-label="Harita">
-      <canvas ref={canvas} width={MAP} height={MAP} className="block rounded-xl" style={{ width: MAP * (compact ? 0.62 : 0.85), height: MAP * (compact ? 0.62 : 0.85) }} />
+    <div className="pointer-events-auto absolute right-3 top-16 z-10" aria-label="Harita">
+      <div className={`overflow-hidden ${big ? 'rounded-3xl' : 'rounded-full'} p-1 ${glass}`}>
+        <button onClick={() => setBig((v) => !v)} aria-label={big ? 'Haritayı küçült' : 'Haritayı büyüt'} className="relative block">
+          <canvas ref={canvas} className={`block ${big ? 'rounded-2xl' : 'rounded-full'}`} style={{ width: S, height: S }} />
+          {!big && <span className="absolute left-1/2 top-0.5 -translate-x-1/2 rounded-full bg-white/85 px-1.5 text-[9px] font-black text-[#8a7a9c]">K</span>}
+        </button>
+        {big && (
+          <div className="mt-1 flex flex-wrap justify-center gap-1 px-0.5 pb-0.5">
+            {ZONES.map((z) => (
+              <button key={z.id} onClick={() => travel(z)} className="flex items-center gap-1 rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-extrabold text-[#4a3b5c] transition hover:bg-[#ffd6e8] active:scale-95">
+                <span>{z.emoji}</span>
+                {z.name.replace(' Meydanı', '').replace(' Sokağı', '').replace('Gece ', '')}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
