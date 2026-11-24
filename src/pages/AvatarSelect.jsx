@@ -95,9 +95,6 @@ export default function AvatarSelect() {
           <Suspense fallback={<div className="grid h-full place-items-center text-7xl">🧸</div>}>
             <AvatarPreview slug={slugOf(selected)} look={look} rotatable pedestal={PEDESTAL[tone]} className="absolute inset-0 h-full w-full" />
           </Suspense>
-          <p className="pointer-events-none absolute left-1/2 top-3 -translate-x-1/2 rounded-full bg-white/70 px-4 py-1 text-xs font-extrabold text-ink-soft backdrop-blur-sm">
-            ↔ sürükleyerek döndür
-          </p>
         </section>
 
         {/* seçim paneli */}

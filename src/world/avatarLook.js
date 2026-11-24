@@ -175,7 +175,7 @@ vec3 lookApply(vec3 col){
     for (int i=0;i<${HAIR_N};i++){ float d = distance(sc, uHairRef[i]); if (d<best){best=d;hairRef=uHairRef[i];} }
     float skinH = 9.0;
     for (int i=0;i<3;i++) skinH = min(skinH, distance(sc, uSkinRef[i]));
-    hairW = (1.0 - smoothstep(tol*0.7, tol*1.25, best)) * smoothstep(-0.07, -0.03, skinH - best); // ten saça yakınsa saç sayılmaz (yüz boyanmasın)
+    hairW = (1.0 - smoothstep(tol*0.7, tol*1.25, best)) * mix(1.0, smoothstep(-0.07, -0.03, skinH - best), step(uBrow.z, vBind.z)); // yüzde ten saça yakınsa saç sayılmaz; ense/tepede (yüzün gerisi) ten kontrolü yok
   }
   // kaş / göz kapağı bandı saç sayılmaz (kaşlar ve kirpikler boyanmasın); sakal ve saç bu bandın dışında kalır
   float inBrow = step(uBrow.x, vBind.y) * step(vBind.y, uBrow.y) * step(uBrow.z, vBind.z) * step(abs(vBind.x - uBrowX.x), uBrowX.y) * step(0.9, vHead);
