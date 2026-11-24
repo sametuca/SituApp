@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { useFrame, useLoader } from '@react-three/fiber'
-import { Color, RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
+import { CanvasTexture, Color, RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
 import { Html, RoundedBox } from '@react-three/drei'
 import { BLANKETS, BUILDINGS, GAZEBO, PROPS, ROAD_HALF } from './layout'
 import Prop from './Prop'
@@ -403,6 +403,20 @@ function Sea() {
     }
     return [mk(water, 14, 700), mk(foam, 9, 700), mk(foam, 7, 120)]
   }, [water, foam])
+  // köpük şeridi kenarları yumuşasın: ortası dolu, iki kenarı saydam bir alfa haritası
+  const fade = useMemo(() => {
+    const cv = document.createElement('canvas')
+    cv.width = 4
+    cv.height = 64
+    const g = cv.getContext('2d')
+    const gr = g.createLinearGradient(0, 0, 0, 64)
+    gr.addColorStop(0, '#000')
+    gr.addColorStop(0.5, '#fff')
+    gr.addColorStop(1, '#000')
+    g.fillStyle = gr
+    g.fillRect(0, 0, 4, 64)
+    return new CanvasTexture(cv)
+  }, [])
   const mat = useRef()
   const mat2 = useRef()
   const matRing = useRef()
@@ -418,14 +432,14 @@ function Sea() {
     const night = Number.isFinite(worldClock.night) ? worldClock.night : 0
     if (mat.current) mat.current.color.copy(WATER_COLOR).lerp(WATER_NIGHT, night * 0.85)
     if (mat2.current) mat2.current.opacity = 0.16 + Math.sin(t * 0.9) * 0.05
-    if (matRing.current) matRing.current.opacity = 0.38 + Math.sin(t * 1.6) * 0.14 // kıyıda köpük nefes alır
+    if (matRing.current) matRing.current.opacity = 0.42 + Math.sin(t * 1.6) * 0.14 // kıyıda köpük nefes alır
   })
   const edge = ISLAND + RIM
   const strips = [
-    [0, -edge - 0.9, edge * 2 + 3.6, 1.8],
-    [0, edge + 0.9, edge * 2 + 3.6, 1.8],
-    [-edge - 0.9, 0, 1.8, edge * 2],
-    [edge + 0.9, 0, 1.8, edge * 2],
+    [0, -edge - 1.2, edge * 2 + 4.8, 2.6],
+    [0, edge + 1.2, edge * 2 + 4.8, 2.6],
+    [-edge - 1.2, 0, 2.6, edge * 2],
+    [edge + 1.2, 0, 2.6, edge * 2],
   ]
   return (
     <group>
@@ -440,7 +454,7 @@ function Sea() {
       {strips.map(([x, z, w, d], i) => (
         <mesh key={i} position={[x, -0.02, z]} rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[w, d]} />
-          <meshBasicMaterial ref={i === 0 ? matRing : undefined} map={ring} transparent opacity={0.6} depthWrite={false} />
+          <meshBasicMaterial ref={i === 0 ? matRing : undefined} map={ring} alphaMap={fade} transparent opacity={0.6} depthWrite={false} />
         </mesh>
       ))}
     </group>
