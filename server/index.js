@@ -8,6 +8,10 @@ import { fileURLToPath } from 'node:url'
 
 import { importAsset, readManifest } from './assets.js'
 import { attachGameServer } from './game.js'
+import { initStore } from './store.js'
+import { initHomes } from './homes.js'
+import { initNames } from './auth.js'
+import * as supa from './supa.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 dotenv.config({ path: path.join(__dirname, '.env') })
@@ -155,5 +159,8 @@ app.get('/api/health', (_req, res) => {
 })
 
 const PORT = Number(process.env.PORT) || 3001
-const server = app.listen(PORT, () => console.log(`SituApp sunucusu: http://localhost:${PORT} (WebSocket: /ws)`))
+// Supabase ortamı varsa kalıcı veri belleğe yüklenmeden dinlemeye başlama
+await Promise.all([initStore(), initHomes(), initNames()])
+supa.hookShutdown()
+const server = app.listen(PORT, () => console.log(`SituApp sunucusu: http://localhost:${PORT} (WebSocket: /ws) — ${supa.enabled ? 'Supabase modu' + (supa.allowGuest ? ' (misafirlere açık)' : '') : 'demo/dosya modu'}`))
 game = attachGameServer(server)

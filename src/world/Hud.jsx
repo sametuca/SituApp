@@ -1,22 +1,33 @@
 import { useEffect, useRef, useState } from 'react'
 import { ToyButton } from '../components/ui'
 import { BUILDINGS, GUIDE, ROAD_HALF, ZONES } from './layout'
+import { PLOTS, PLOT_D, PLOT_W, STREET_X, STREET_HALF, occupiedPlots } from './neighborhood'
 
 const glass = 'border-2 border-white bg-white/75 shadow-soft backdrop-blur-md'
 
 // ---------- üst çubuk ----------
-export function TopBar({ zone, online, status, onExit, onHelp }) {
+// extraButtons: özellik modüllerinin düğmeleri [{ key, emoji, label, onClick, badge? }] (sol sütunda, geri düğmesinin altında)
+// extraNodes: hazır JSX düğmeler (sağ grupta, ⚙️'nin solunda)
+export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings, extraButtons = [], extraNodes = null }) {
   const dot = status === 'online' ? 'bg-emerald-400' : status === 'connecting' ? 'bg-amber-400' : 'bg-rose-400'
   const label = status === 'online' ? `${online} çevrimiçi` : status === 'connecting' ? 'Bağlanıyor…' : 'Çevrimdışı (tek başına)'
   return (
     <div className="pointer-events-none absolute left-0 right-0 top-0 z-10 flex items-start justify-between gap-2 px-3 py-3">
-      <button
-        onClick={onExit}
-        aria-label="Karakter seçimine dön"
-        className={`pointer-events-auto grid h-10 w-10 place-items-center rounded-full text-lg font-black text-[#4a3b5c] transition hover:bg-white ${glass}`}
-      >
-        ←
-      </button>
+      <div className="pointer-events-auto flex flex-col gap-2">
+        <button
+          onClick={onExit}
+          aria-label="Karakter seçimine dön"
+          className={`grid h-10 w-10 place-items-center rounded-full text-lg font-black text-[#4a3b5c] transition hover:bg-white ${glass}`}
+        >
+          ←
+        </button>
+        {extraButtons.map((b) => (
+          <button key={b.key} onClick={b.onClick} aria-label={b.label} title={b.label} className={`relative grid h-10 w-10 place-items-center rounded-full text-lg transition hover:bg-white active:scale-95 ${glass}`}>
+            {b.emoji}
+            {b.badge ? <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[#ff7eb3] px-1 text-[10px] font-black text-white">{b.badge}</span> : null}
+          </button>
+        ))}
+      </div>
       <div className="flex flex-col items-center gap-2">
         <div className={`flex items-center gap-2 rounded-full px-4 py-1.5 ${glass}`}>
           <span>{zone.emoji}</span>
@@ -25,15 +36,24 @@ export function TopBar({ zone, online, status, onExit, onHelp }) {
         <div className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-extrabold text-[#8a7a9c] ${glass}`}>
           <span className={`h-2 w-2 rounded-full ${dot}`} />
           {label}
+          {dnd && <span title="Rahatsız etme açık"> · 🌙</span>}
         </div>
       </div>
-      <button
-        onClick={onHelp}
-        aria-label="Yardım"
-        className={`pointer-events-auto grid h-10 w-10 place-items-center rounded-full text-lg font-black text-[#ff7eb3] transition hover:bg-white ${glass}`}
-      >
-        ?
-      </button>
+      <div className="pointer-events-auto flex gap-2">
+        {extraNodes}
+        {onSettings && (
+          <button onClick={onSettings} aria-label="Ayarlar" className={`grid h-10 w-10 place-items-center rounded-full text-lg transition hover:bg-white ${glass}`}>
+            ⚙️
+          </button>
+        )}
+        <button
+          onClick={onHelp}
+          aria-label="Yardım"
+          className={`grid h-10 w-10 place-items-center rounded-full text-lg font-black text-[#ff7eb3] transition hover:bg-white ${glass}`}
+        >
+          ?
+        </button>
+      </div>
     </div>
   )
 }
@@ -87,6 +107,16 @@ export function Minimap({ focusRef, remotes, compact }) {
         if (b.gazebo) continue
         ctx.fillStyle = b.roof
         ctx.fillRect(toMap(b.x - b.w / 2), toMap(b.z - b.d / 2), (b.w / (RANGE * 2)) * MAP, (b.d / (RANGE * 2)) * MAP)
+      }
+      // Konut Mahallesi: sokak + parseller (sahipli = pembe çatı, boş = gri)
+      ctx.fillStyle = '#f7f0fb'
+      for (const [z0, z1] of [[-47, -14], [14, 47]]) ctx.fillRect(toMap(STREET_X - STREET_HALF), toMap(z0), toMap(STREET_X + STREET_HALF) - toMap(STREET_X - STREET_HALF), toMap(z1) - toMap(z0))
+      for (const pl of PLOTS) {
+        const side = pl.facing === 'e' || pl.facing === 'w'
+        const w = side ? PLOT_D : PLOT_W
+        const d = side ? PLOT_W : PLOT_D
+        ctx.fillStyle = occupiedPlots.has(pl.id) ? '#ffb6d3' : '#dcd6e6'
+        ctx.fillRect(toMap(pl.x - w / 2 + 0.4), toMap(pl.z - d / 2 + 0.4), ((w - 0.8) / (RANGE * 2)) * MAP, ((d - 0.8) / (RANGE * 2)) * MAP)
       }
       ctx.fillStyle = '#ff7eb3'
       ctx.beginPath()
@@ -169,16 +199,29 @@ export function ChatPanel({ feed, onSend, status }) {
           <p
             key={`${m.ts}-${i}`}
             className={`w-fit max-w-full break-words rounded-2xl px-3 py-1 text-sm font-semibold ${
-              m.kind === 'system' ? 'bg-[#ff7eb3]/90 text-white' : m.self ? 'bg-[#a9ddf5]/95 text-[#2f4a5c]' : 'bg-white/90 text-[#4a3b5c]'
+              m.kind === 'system'
+                ? 'bg-[#ff7eb3]/90 text-white'
+                : m.whisper
+                  ? 'border-2 border-dashed border-[#c9b6f5] bg-[#f4edff]/95 italic text-[#5b3fa8]'
+                  : m.self
+                    ? 'bg-[#a9ddf5]/95 text-[#2f4a5c]'
+                    : 'bg-white/90 text-[#4a3b5c]'
             }`}
           >
             {m.kind === 'system' ? (
               <>🧭 {m.text}</>
             ) : (
-              <>
-                <span className="font-extrabold">{m.name}: </span>
-                {m.text}
-              </>
+              m.whisper ? (
+                <>
+                  🤫 <span className="font-extrabold">{m.self ? `${m.toName ?? ''}’a fısıldadın` : `${m.name} fısıldadı`}: </span>
+                  {m.text}
+                </>
+              ) : (
+                <>
+                  <span className="font-extrabold">{m.name}: </span>
+                  {m.text}
+                </>
+              )
             )}
           </p>
         ))}
@@ -210,7 +253,7 @@ export function HintBar() {
 }
 
 // ---------- modal çerçevesi ----------
-function Modal({ children, onClose, label }) {
+export function Modal({ children, onClose, label }) {
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
@@ -249,6 +292,7 @@ export function HelpModal({ onClose }) {
       <ul className="mt-2 flex flex-col gap-2">
         <Row k="W A S D">veya ok tuşlarıyla yürü</Row>
         <Row k="Shift">basılı tut, koş</Row>
+        <Row k="E">kapının önündeyken içeri gir / dışarı çık</Row>
         <Row k="Fare">sürükle: kamerayı döndür · tekerlek: yakınlaştır</Row>
       </ul>
 
@@ -258,7 +302,21 @@ export function HelpModal({ onClose }) {
         <Row k="/yakındakiler">yakınındaki oyuncuları listele</Row>
         <Row k="/mekanlar">şehirdeki mekanlar</Row>
         <Row k="/ışınlan kafe">lobi, kafe, kulüp, park veya plaja git</Row>
+        <Row k="/f Elif …">yakındaki birine fısılda 🤫 (en fazla 7 m; çevre yalnızca “fısıldıyor” görür)</Row>
+        <Row k="1-9, 0">kafanın üstünde emoji uçur ❤️😘😍 (ya da 😊 düğmesi)</Row>
+        <Row k="/ev">kendi evine gir (lobideki 🏠 kapıdan da girebilirsin)</Row>
+        <Row k="/dışarı">evden şehre dön</Row>
+        <Row k="/davet Elif">çevrimiçi birini evine çağır (yakınındaki oyuncu kartından 🏠 ile de olur)</Row>
+        <Row k="/ziyaret Elif">açık ya da davetli olduğun bir eve git</Row>
+        <Row k="/kapı aç">evini herkese aç · /kapı kapat: yalnızca davetliler</Row>
         <Row k="/yardım">bu paneli aç</Row>
+      </ul>
+
+      <h3 className="mt-4 text-sm font-extrabold uppercase tracking-wide text-[#ff7eb3]">Flört 💗</h3>
+      <ul className="mt-2 flex flex-col gap-2">
+        <Row k="Karaktere tıkla">ya da yakındaki kartta 💗: kalp, çiçek, göz kırp, öpücük, selam, dans</Row>
+        <Row k="🤫 Fısılda">yalnızca o kişi duyar; etraftakiler yazdığını görmez</Row>
+        <Row k="💞 Eşleşme">ikiniz de birbirine kalp gönderirseniz (10 dk içinde) eşleşirsiniz</Row>
       </ul>
 
       <h3 className="mt-4 text-sm font-extrabold uppercase tracking-wide text-[#ff7eb3]">Mekanlar</h3>
@@ -285,6 +343,7 @@ export function HelpModal({ onClose }) {
 const TIPS = [
   { emoji: '🚶', title: 'Yürümek için', text: 'W A S D ya da ok tuşları. Shift ile koşarsın.' },
   { emoji: '💬', title: 'Sohbet', text: 'Enter’a bas, yaz, tekrar Enter. /yardım ile komutlar.' },
+  { emoji: '💗', title: 'Etkileşim', text: 'Birine tıkla: kalp, çiçek ya da fısıltı 🤫. 1-9 tuşları emoji uçurur.' },
   { emoji: '🗺️', title: 'Harita', text: 'Sağ üstteki haritadan yolunu bul. Rehber lobide, çeşmenin yanında.' },
 ]
 const TIP_START_MS = 1500

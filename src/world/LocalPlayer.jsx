@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { MathUtils, Vector3 } from 'three'
 import AvatarRig from './AvatarRig'
 import { resolveCollisions } from './layout'
+import { together } from './features/togetherStore'
 
 const WALK_SPEED = 3.2 // m/sn
 const RUN_SPEED = 6.5
@@ -20,9 +21,9 @@ const isTyping = (e) => e.target instanceof HTMLElement && (e.target.tagName ===
 /**
  * Yerel oyuncu: WASD / ok tuşları + Shift ile koşma, kameraya göre hareket, çarpışma, takip eden kamera.
  * focusRef.current = { x, z, ry, anim, teleport } paylaşılan durumdur (HUD, güneş ışığı, minimap okur).
- * focusRef.current.teleport = [x, z] atanırsa bir sonraki karede oyuncu oraya ışınlanır.
+ * focusRef.current.teleport = [x, z, ry?] atanırsa bir sonraki karede oyuncu oraya ışınlanır.
  */
-export default function LocalPlayer({ slug, start, focusRef, controlsRef, joystickRef, onMove, children }) {
+export default function LocalPlayer({ slug, start, focusRef, controlsRef, joystickRef, onMove, collide = resolveCollisions, children }) {
   const camera = useThree((s) => s.camera)
   const group = useRef()
   const keys = useRef({})
@@ -76,9 +77,10 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
       controlsRef.current?.target.set(start.x, 0.8, start.z)
     }
     if (f.teleport) {
-      const [tx, tz] = f.teleport
+      const [tx, tz, tr] = f.teleport
       f.teleport = null
       placeAt(tx, tz)
+      if (tr !== undefined) g.rotation.y = tr
     }
 
     const k = keys.current
@@ -94,7 +96,16 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
       analog = Math.max(0.5, Math.min(1, mag))
       running = mag > 0.85
     }
-    const moving = Boolean(fwdIn || rightIn)
+    let moving = Boolean(fwdIn || rightIn)
+
+    // oturuyor / dans ediyor: hareket girdisi duruşu bitirir (sunucuya haber verilir), aksi halde konum kilitli
+    if (together.self.current && moving) together.onBreak?.(true)
+    const posed = together.self.current
+    if (posed) {
+      moving = false
+      const diff = MathUtils.euclideanModulo(posed.ry - g.rotation.y + Math.PI, Math.PI * 2) - Math.PI
+      g.rotation.y += diff * Math.min(1, dt * 8)
+    }
 
     if (moving) {
       const { fwd, right, dir, up } = v
@@ -105,7 +116,7 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
       dir.copy(fwd).multiplyScalar(fwdIn).addScaledVector(right, rightIn).normalize()
 
       const speed = (running ? RUN_SPEED : WALK_SPEED) * analog * Math.min(dt, 0.1)
-      const [nx, nz] = resolveCollisions(g.position.x + dir.x * speed, g.position.z + dir.z * speed)
+      const [nx, nz] = collide(g.position.x + dir.x * speed, g.position.z + dir.z * speed)
       const dx = nx - g.position.x
       const dz = nz - g.position.z
       g.position.x = nx
@@ -134,7 +145,7 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
 
   return (
     <group ref={group}>
-      <AvatarRig slug={slug} anim={anim} />
+      <AvatarRig slug={slug} anim={anim} pose={together.self} cosId="self" />
       {children}
     </group>
   )

@@ -1,0 +1,192 @@
+import { useEffect, useRef, useState } from 'react'
+import Prop from './Prop'
+import { PlacedGift } from './Gifts'
+import { GIFT_BY_ID } from './cosmeticsData'
+import { FURNITURE, FURNITURE_BY_ID, FURNITURE_SETS, furnitureUrl } from './furniture'
+import { clampToRoom, footprint, isValid, snap } from './homeLayout'
+import { HOME_ROOM } from './layout'
+
+const glass = 'border-2 border-white bg-white/85 shadow-soft backdrop-blur-md'
+
+/**
+ * Odanın mobilyaları. editing açıkken bir mobilyaya basıp sürükleyerek taşırsın; bırakınca geçersiz yerdeyse
+ * eski yerine döner. Seçili mobilyanın altında yeşil (geçerli) ya da kırmızı (çakışıyor) bir iz görünür.
+ *
+ * items/setItems: ev düzeni (homeLayout.js). selected/setSelected: seçili uid.
+ * controlsRef: sürüklerken kamera kontrolünü kapatmak için.
+ */
+export function FurnitureLayer({ items, setItems, editing, selected, setSelected, controlsRef }) {
+  const drag = useRef(null) // { uid, start: {x,z}, origin: {x,z}|null }
+  const itemsRef = useRef(items)
+  useEffect(() => {
+    itemsRef.current = items
+  }, [items])
+
+  const endDrag = () => {
+    const d = drag.current
+    if (!d) return
+    drag.current = null
+    if (controlsRef.current) controlsRef.current.enabled = true
+    // geçersiz yerde bıraktıysa eski yerine dön
+    if (!isValid(itemsRef.current, d.uid)) {
+      setItems((list) => list.map((i) => (i.uid === d.uid ? { ...i, x: d.start.x, z: d.start.z } : i)))
+    }
+  }
+  useEffect(() => {
+    window.addEventListener('pointerup', endDrag)
+    window.addEventListener('pointercancel', endDrag)
+    return () => {
+      window.removeEventListener('pointerup', endDrag)
+      window.removeEventListener('pointercancel', endDrag)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (!editing) drag.current = null
+  }, [editing])
+
+  const grab = (e, it) => {
+    if (!editing) return
+    e.stopPropagation?.()
+    setSelected(it.uid)
+    drag.current = { uid: it.uid, start: { x: it.x, z: it.z }, origin: null, base: { x: it.x, z: it.z } }
+    if (controlsRef.current) controlsRef.current.enabled = false
+  }
+
+  // zemin düzlemi: sürükleme konumunu verir (yalnızca düzenlerken)
+  const onFloorDown = (e) => {
+    const d = drag.current
+    if (d && !d.origin) d.origin = { x: e.point.x, z: e.point.z }
+    else if (!d) setSelected(null)
+  }
+  const onFloorMove = (e) => {
+    const d = drag.current
+    if (!d) return
+    if (!d.origin) d.origin = { x: e.point.x, z: e.point.z }
+    const [x, z] = clampToRoom(snap(d.base.x + e.point.x - d.origin.x), snap(d.base.z + e.point.z - d.origin.z))
+    setItems((list) => list.map((i) => (i.uid === d.uid ? { ...i, x, z } : i)))
+  }
+
+  return (
+    <group>
+      {items.map((it) => {
+        const def = FURNITURE_BY_ID[it.id] ?? GIFT_BY_ID[it.id] // hediyeler ayrı katalogdan (cosmeticsData)
+        if (!def) return null
+        const isSel = editing && selected === it.uid
+        const f = footprint(it.id)
+        return (
+          <group key={it.uid}>
+            {isSel && (
+              <mesh position={[it.x, 0.035, it.z]} rotation={[-Math.PI / 2, 0, -it.ry]}>
+                <planeGeometry args={[f.w + 0.3, f.d + 0.3]} />
+                <meshBasicMaterial color={isValid(items, it.uid) ? '#7be0a8' : '#ff7a8a'} transparent opacity={0.55} />
+              </mesh>
+            )}
+            <group onPointerDown={(e) => grab(e, it)}>
+              {GIFT_BY_ID[it.id] ? <PlacedGift id={it.id} x={it.x} z={it.z} ry={it.ry} from={it.from} /> : <Prop model={furnitureUrl(it.id)} x={it.x} z={it.z} ry={it.ry} scale={def.size} />}
+            </group>
+          </group>
+        )
+      })}
+      {editing && (
+        <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]} onPointerDown={onFloorDown} onPointerMove={onFloorMove}>
+          <planeGeometry args={[HOME_ROOM.hw * 2 + 6, HOME_ROOM.hd * 2 + 6]} />
+          <meshBasicMaterial visible={false} />
+        </mesh>
+      )}
+    </group>
+  )
+}
+
+// ---------- ekran paneli ----------
+export function EditToggle({ onClick, touch }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`absolute right-3 z-10 flex items-center gap-2 rounded-full px-4 py-2 text-sm font-extrabold text-[#4a3b5c] transition hover:bg-white ${glass} ${touch ? 'top-16' : 'top-16'}`}
+    >
+      🛋️ Döşe
+    </button>
+  )
+}
+
+/**
+ * Alttan açılan döşeme çekmecesi: katalog + seçili mobilya düğmeleri.
+ * tabs (özellik modüllerinden): [{ key, label, render(tabApi) }]; tabApi = { furn, place } — "Dekor", "Hediyeler" gibi ek sekmeler.
+ */
+export function FurnitureSheet({ count, max, selected, selectedName, onAdd, onRotate, onRemove, onClose, tabs = [], tabApi }) {
+  const [tab, setTab] = useState('items')
+  const [set, setSet] = useState('classic') // eşya teması (Klasik / Romantik / Bahar / Retro)
+  const extra = tabs.find((t) => t.key === tab)
+  return (
+    <div className="absolute inset-x-0 bottom-0 z-20 mx-auto w-full max-w-2xl animate-pop px-2 pb-2" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
+      <div className={`rounded-[1.75rem] p-3 ${glass}`}>
+        <div className="mb-2 flex items-center gap-2">
+          <p className="min-w-0 flex-1 truncate text-sm font-black text-[#4a3b5c]">
+            {selected ? `${selectedName} seçili · sürükleyerek taşı` : '🛋️ Döşeme modu · bir eşyaya dokun'}
+            <span className="ml-2 text-xs font-bold text-[#8a7a9c]">
+              {count}/{max}
+            </span>
+          </p>
+          {selected && (
+            <>
+              <button onClick={onRotate} aria-label="Döndür" className="grid h-9 w-9 place-items-center rounded-full border-2 border-white bg-[#e9ddff] text-lg shadow-soft">
+                ↻
+              </button>
+              <button onClick={onRemove} aria-label="Kaldır" className="grid h-9 w-9 place-items-center rounded-full border-2 border-white bg-[#ffd0dc] text-lg shadow-soft">
+                🗑
+              </button>
+            </>
+          )}
+          <button onClick={onClose} className="rounded-full border-b-4 border-[#e85a98] bg-[#ff7eb3] px-4 py-1.5 text-sm font-extrabold text-white shadow-soft active:translate-y-[2px] active:border-b-2">
+            ✓ Bitti
+          </button>
+        </div>
+        {tabs.length > 0 && (
+          <div className="mb-2 flex gap-1.5 overflow-x-auto">
+            {[{ key: 'items', label: '🛋️ Eşyalar' }, ...tabs].map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                className={`shrink-0 rounded-full border-2 border-white px-3 py-1 text-xs font-extrabold transition ${tab === t.key ? 'bg-[#a88bff] text-white' : 'bg-white/70 text-[#4a3b5c] hover:bg-white'}`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        )}
+        {extra ? (
+          extra.render(tabApi)
+        ) : (
+        <>
+        <div className="mb-1.5 flex gap-1.5 overflow-x-auto">
+          {FURNITURE_SETS.map((st) => (
+            <button
+              key={st.id}
+              onClick={() => setSet(st.id)}
+              aria-pressed={set === st.id}
+              className={`shrink-0 rounded-full border-2 border-white px-3 py-1 text-[11px] font-extrabold transition ${set === st.id ? 'bg-[#ff7eb3] text-white' : 'bg-white/70 text-[#4a3b5c] hover:bg-white'}`}
+            >
+              {st.emoji} {st.name}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {FURNITURE.filter((f) => f.set === set).map((f) => (
+            <button
+              key={f.id}
+              onClick={() => onAdd(f.id)}
+              className="flex w-20 shrink-0 flex-col items-center gap-1 rounded-2xl border-2 border-white bg-white/70 p-1.5 transition hover:bg-white active:scale-95"
+            >
+              <img src={`/models/furniture/${f.id}.webp`} alt="" width="56" height="56" className="h-14 w-14 rounded-xl object-contain" loading="lazy" />
+              <span className="w-full truncate text-center text-[11px] font-extrabold text-[#4a3b5c]">{f.name}</span>
+            </button>
+          ))}
+        </div>
+        </>
+        )}
+      </div>
+    </div>
+  )
+}
