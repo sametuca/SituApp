@@ -160,7 +160,7 @@ export default function together(ctx) {
       }, OFFER_TTL)
       offers.set(target.id, { from: me.id, timer })
       offerOf.set(me.id, target.id)
-      send(target.ws, { t: 'dance_offer', id: me.id, name: me.name, avatar: me.avatar, ttl: OFFER_TTL })
+      send(target.ws, { t: 'dance_offer', id: me.id, key: me.key, name: me.name, avatar: me.avatar, ttl: OFFER_TTL })
       info(me, `💃 ${target.name} dansa davet edildi.`)
     },
 

@@ -7,6 +7,7 @@ import { DoorPrompt } from '../Social'
 import { PHOTO_SPOT, SEATS, SEAT_LABEL, resolveCollisions, zoneAt } from '../layout'
 import { AlbumModal, Countdown, PhotoPreview, composePhoto, loadAlbum, removeFromAlbum, saveToAlbum } from './photo'
 import { together } from './togetherStore'
+import Portrait from '../Portrait'
 
 const glass = 'border-2 border-white bg-white/85 shadow-soft backdrop-blur-md'
 const SIT_PROMPT = 1.7 // m: bu kadar yakında boş koltuk varsa "Otur" çıkar
@@ -33,7 +34,7 @@ function DanceOfferCard({ offer, onAnswer }) {
   return (
     <div className={`pointer-events-auto w-[min(94vw,23rem)] animate-pop rounded-3xl p-3 ${glass}`} role="alertdialog" aria-label={`${offer.name} seni dansa davet ediyor`}>
       <div className="flex items-center gap-3">
-        <img src={`/avatars/${offer.avatar}.png`} alt="" width="44" height="44" className="h-11 w-11 rounded-full border-2 border-white bg-white/60 object-cover object-top" />
+        <Portrait peer={offer} size={44} className="h-11 w-11" />
         <p className="min-w-0 flex-1 text-sm font-black text-[#4a3b5c]">
           <span className="block truncate">💃 {offer.name}</span>
           <span className="text-xs font-bold text-[#8a7a9c]">seni dansa davet ediyor · {left} sn</span>

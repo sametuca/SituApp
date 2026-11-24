@@ -6,6 +6,7 @@ const REASONS = [
   ['uygunsuz', '🔞 Uygunsuz içerik'],
   ['spam', '📢 Spam / reklam'],
   ['sahte', '🎭 Sahte profil / dolandırıcılık'],
+  ['foto', '📷 Profil fotoğrafı'],
   ['diger', '❔ Diğer'],
 ]
 

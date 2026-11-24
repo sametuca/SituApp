@@ -12,6 +12,8 @@ const DEMO_SESSION_KEY = 'situapp_demo_session'
 export class AuthError extends Error {}
 
 // ---------- doğrulama ----------
+// Supabase `profiles.username` kısıtıyla aynı olmalı
+export const USERNAME_RE = /^[A-Za-z0-9_çğıöşüÇĞİÖŞÜ-]+$/
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
 export function validate({ mode, username, email, password, confirm, adult }) {
@@ -19,7 +21,7 @@ export function validate({ mode, username, email, password, confirm, adult }) {
   if (mode === 'register') {
     const u = (username ?? '').trim()
     if (u.length < 3 || u.length > 16) errors.username = 'Kullanıcı adı 3-16 karakter olmalı.'
-    else if (!/^[\p{L}\p{N}_.]+$/u.test(u)) errors.username = 'Sadece harf, rakam, nokta ve alt çizgi kullan.'
+    else if (!USERNAME_RE.test(u)) errors.username = 'Sadece harf (a-z, Türkçe harfler), rakam, tire ve alt çizgi kullan.'
   }
   if (!EMAIL_RE.test((email ?? '').trim())) errors.email = 'Geçerli bir e-posta gir.'
   if (mode === 'register') {
@@ -78,27 +80,58 @@ const demo = {
   async resetPassword() {
     return 'Demo modunda şifre sıfırlama yok. Yeni bir hesap açabilirsin.'
   },
+  async updatePassword() {
+    throw new AuthError('Demo modunda şifre değiştirilemez.')
+  },
+  async resendConfirmation() {
+    return 'Demo modunda e-posta doğrulaması yok.'
+  },
+  async getToken() {
+    return null
+  },
 }
 
 // ---------- supabase ----------
 const SUPABASE_ERRORS = {
   'Invalid login credentials': 'E-posta veya şifre hatalı.',
   'User already registered': 'Bu e-posta ile zaten bir hesap var.',
-  'Email not confirmed': 'E-postanı doğrulaman gerekiyor. Gelen kutunu kontrol et.',
+  'Email not confirmed': 'E-postanı doğrulaman gerekiyor. Gelen kutunu (ve gereksiz klasörünü) kontrol et.',
+  'Database error saving new user': 'Bu kullanıcı adı alınmış.',
+  'New password should be different from the old password.': 'Yeni şifren eskisinden farklı olmalı.',
+  'Auth session missing!': 'Bağlantının süresi dolmuş. Şifre sıfırlama e-postasını yeniden iste.',
 }
-const toAuthError = (e) =>
-  new AuthError(SUPABASE_ERRORS[e.message] ?? (e.status === 429 ? 'Çok fazla deneme. Biraz bekle.' : 'Bir şeyler ters gitti, tekrar dene.'))
+const toAuthError = (e) => {
+  const msg = String(e?.message ?? '')
+  if (SUPABASE_ERRORS[msg]) return new AuthError(SUPABASE_ERRORS[msg])
+  if (/password should be at least|weak/i.test(msg)) return new AuthError('Şifre en az 8 karakter olmalı.')
+  if (e?.code === 'email_address_invalid') return new AuthError('Bu e-posta adresi geçersiz görünüyor.')
+  if (e?.code === 'weak_password') return new AuthError('Şifre çok zayıf, daha uzun/karışık bir şifre dene.')
+  if (e?.status === 429 || /rate limit/i.test(msg)) return new AuthError('Çok fazla deneme. Biraz bekle.')
+  return new AuthError('Bir şeyler ters gitti, tekrar dene.')
+}
 
 const toUser = (u) => (u ? { id: u.id, email: u.email, username: u.user_metadata?.username ?? u.email.split('@')[0] } : null)
 
 const remote = {
   async signUp({ email, password, username }) {
+    const name = username.trim()
+    // kullanıcı adı boş mu? (sunucu tarafı RPC; tetikleyici yine de benzersizliği garanti eder)
+    const { data: free, error: rpcErr } = await supabase.rpc('username_available', { p_name: name })
+    if (!rpcErr && free === false) throw new AuthError('Bu kullanıcı adı alınmış.')
+    let avatar = 'zeynep'
+    try {
+      avatar = JSON.parse(localStorage.getItem('situapp_avatar'))?.slug ?? 'zeynep'
+    } catch {
+      /* seçim yok */
+    }
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { data: { username: username.trim() } },
+      options: { data: { username: name, avatar }, emailRedirectTo: window.location.origin },
     })
     if (error) throw toAuthError(error)
+    // e-posta zaten kayıtlıysa Supabase (kullanıcı sızdırmamak için) sahte bir kullanıcı döner: identities boş
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) throw new AuthError('Bu e-posta ile zaten bir hesap var.')
     // e-posta doğrulaması açıksa oturum hemen oluşmaz
     return { user: toUser(data.user), needsConfirmation: !data.session }
   },
@@ -119,6 +152,20 @@ const remote = {
     if (error) throw toAuthError(error)
     return 'Şifre sıfırlama bağlantısı e-postana gönderildi.'
   },
+  async updatePassword(password) {
+    const { error } = await supabase.auth.updateUser({ password })
+    if (error) throw toAuthError(error)
+  },
+  async resendConfirmation(email) {
+    const { error } = await supabase.auth.resend({ type: 'signup', email: email.trim(), options: { emailRedirectTo: window.location.origin } })
+    if (error) throw toAuthError(error)
+    return 'Doğrulama e-postası yeniden gönderildi. 💌'
+  },
+  /** Oyun sunucusuna gönderilecek access_token (süresi dolmuşsa supabase-js yeniler). */
+  async getToken() {
+    const { data } = await supabase.auth.getSession()
+    return data.session?.access_token ?? null
+  },
 }
 
 export const authService = isDemoMode ? demo : remote
@@ -126,6 +173,6 @@ export const authService = isDemoMode ? demo : remote
 /** Oturum değişince çağrılır (yalnızca Supabase modunda). Abonelikten çıkma fonksiyonu döner. */
 export function subscribeToAuth(callback) {
   if (isDemoMode) return () => {}
-  const { data } = supabase.auth.onAuthStateChange((_event, session) => callback(toUser(session?.user)))
+  const { data } = supabase.auth.onAuthStateChange((event, session) => callback(toUser(session?.user), event))
   return () => data.subscription.unsubscribe()
 }

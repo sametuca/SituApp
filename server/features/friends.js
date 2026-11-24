@@ -11,7 +11,7 @@
 //     { t: 'mail_get' } / { t: 'mail_read', id | all } / { t: 'mail_delete', id | all }
 //     { t: 'read', to }                    özel sohbeti (DM) görüyorum: gönderene "okundu" iletilir
 //   sunucu → istemci
-//     { t: 'friends', list: [{ key, name, avatar, online, where, dnd, lastSeen }], requests: [{ key, name, ts }], unread }
+//     { t: 'friends', list: [{ key, name, avatar, photo, online, where, dnd, lastSeen }], requests: [{ key, name, ts }], unread }
 //        (welcome mesajında `friendsInit` olarak da gelir)
 //     { t: 'friend_request', key, name, avatar }   canlı istek kartı (hedef DND ise gönderilmez)
 //     { t: 'friend_added', key, name } / { t: 'friend_online', key, name }
@@ -74,6 +74,7 @@ export default function friends(ctx) {
         where: visible ? whereIs(o) : null,
         dnd: visible ? Boolean(o.dnd) : false,
         lastSeen: visible ? 0 : (fu?.lastSeen ?? 0),
+        photo: ctx.photoUrlFor?.(me.key, key) ?? null,
       }
     })
     return {
@@ -104,6 +105,8 @@ export default function friends(ctx) {
     ua.inbox = ua.inbox.filter((i) => !(i.kind === 'request' && i.key === b.key))
     ub.inbox = ub.inbox.filter((i) => !(i.kind === 'request' && i.key === a.key))
     save()
+    ctx.photoRefresh?.(a.key) // "yalnızca arkadaşlarım" fotoğrafları artık görünür
+    ctx.photoRefresh?.(b.key)
   }
   const blockedEither = (ka, kb) => Boolean(user(ka).blocks[kb] || user(kb).blocks[ka])
 
@@ -231,6 +234,8 @@ export default function friends(ctx) {
         delete u.friends[key]
         if (hasUser(key)) delete user(key).friends[me.key]
         save()
+        ctx.photoRefresh?.(me.key) // artık arkadaş değil: "yalnızca arkadaşlarım" fotoğrafı gizlenir
+        ctx.photoRefresh?.(key)
         push(me)
         push(onlineOf(key))
       },

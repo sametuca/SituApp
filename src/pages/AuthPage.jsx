@@ -12,7 +12,7 @@ const QUICK_LOGIN = { email: 'test@situapp.dev', password: 'situapp-test-123' }
 const SHOW_QUICK_LOGIN = import.meta.env.DEV && isDemoMode // production build'de kod dışarıda kalır
 
 export default function AuthPage() {
-  const { user, loading, signIn, signUp, resetPassword } = useAuth()
+  const { user, loading, recovery, signIn, signUp, resetPassword, updatePassword, resendConfirmation } = useAuth()
   const location = useLocation()
   const [mode, setMode] = useState('login') // login | register
   const [form, setForm] = useState(EMPTY)
@@ -22,9 +22,11 @@ export default function AuthPage() {
   const [busy, setBusy] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [shaking, setShaking] = useState(false)
+  const [verifyEmail, setVerifyEmail] = useState('') // e-posta doğrulaması bekleniyor
+  const [newPw, setNewPw] = useState({ password: '', confirm: '' })
 
   if (loading) return <PastelBackground><div className="min-h-svh" /></PastelBackground>
-  if (user) return <Navigate to={location.state?.from ?? '/avatar'} replace />
+  if (user && !recovery) return <Navigate to={location.state?.from ?? '/avatar'} replace />
 
   const isRegister = mode === 'register'
   const set = (key) => (e) => {
@@ -60,7 +62,7 @@ export default function AuthPage() {
       if (isRegister) {
         const res = await signUp(form)
         if (res.needsConfirmation) {
-          setNotice('Hesabın oluşturuldu! E-postana gelen bağlantıyla doğrula, sonra giriş yap. 💌')
+          setVerifyEmail(form.email.trim())
           setMode('login')
           setForm({ ...EMPTY, email: form.email })
         }
@@ -87,6 +89,36 @@ export default function AuthPage() {
       }
     } catch (err) {
       fail({}, err instanceof AuthError ? err.message : 'Hızlı giriş başarısız.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const onResend = async () => {
+    const email = verifyEmail || form.email
+    if (!email.trim()) return fail({ email: 'Önce e-postanı yaz.' })
+    setBusy(true)
+    try {
+      setNotice(await resendConfirmation(email))
+      setFormError('')
+    } catch (err) {
+      fail({}, err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const onNewPassword = async (e) => {
+    e.preventDefault()
+    const errs = {}
+    if (newPw.password.length < 8) errs.password = 'Şifre en az 8 karakter olmalı.'
+    if (newPw.confirm !== newPw.password) errs.confirm = 'Şifreler eşleşmiyor.'
+    if (Object.keys(errs).length) return fail(errs)
+    setBusy(true)
+    try {
+      await updatePassword(newPw.password) // başarıyla bitince recovery kapanır, <Navigate> yönlendirir
+    } catch (err) {
+      fail({}, err instanceof AuthError ? err.message : 'Bir şeyler ters gitti, tekrar dene.')
     } finally {
       setBusy(false)
     }
@@ -128,6 +160,38 @@ export default function AuthPage() {
             shaking ? 'animate-shake' : 'animate-pop'
           }`}
         >
+          {recovery ? (
+            <form onSubmit={onNewPassword} noValidate className="flex flex-col gap-4">
+              <h2 className="text-center text-xl font-black text-ink">Yeni şifre belirle 🔑</h2>
+              <Field id="new-password" label="Yeni şifre" icon="🔒" type="password" autoComplete="new-password" placeholder="en az 8 karakter" value={newPw.password} onChange={(e) => setNewPw((p) => ({ ...p, password: e.target.value }))} error={errors.password} />
+              <Field id="new-confirm" label="Yeni şifre (tekrar)" icon="🔒" type="password" autoComplete="new-password" placeholder="şifreni tekrar yaz" value={newPw.confirm} onChange={(e) => setNewPw((p) => ({ ...p, confirm: e.target.value }))} error={errors.confirm} />
+              {formError && (
+                <p role="alert" className="rounded-xl bg-candy-pink/30 px-3 py-2 text-sm font-bold text-candy-pink-dark">
+                  {formError}
+                </p>
+              )}
+              <ToyButton type="submit" loading={busy}>
+                Şifremi Kaydet
+              </ToyButton>
+            </form>
+          ) : verifyEmail ? (
+            <div className="flex flex-col items-center gap-3 text-center" role="status">
+              <div className="text-6xl">💌</div>
+              <h2 className="text-xl font-black text-ink">E-postanı doğrula</h2>
+              <p className="text-sm font-semibold text-ink-soft">
+                <b className="text-ink">{verifyEmail}</b> adresine bir doğrulama bağlantısı gönderdik. Bağlantıya dokun, sonra buradan giriş yap. Gelmediyse gereksiz klasörüne de bak.
+              </p>
+              {notice && <p className="rounded-xl bg-candy-mint/50 px-3 py-2 text-sm font-bold text-ink">{notice}</p>}
+              {formError && <p role="alert" className="rounded-xl bg-candy-pink/30 px-3 py-2 text-sm font-bold text-candy-pink-dark">{formError}</p>}
+              <ToyButton type="button" loading={busy} onClick={onResend}>
+                Yeniden gönder
+              </ToyButton>
+              <button type="button" onClick={() => { setVerifyEmail(''); setNotice(''); setFormError('') }} className="text-sm font-extrabold text-candy-pink-dark hover:underline">
+                Giriş ekranına dön
+              </button>
+            </div>
+          ) : (
+            <>
           {/* sekmeler */}
           <div role="tablist" aria-label="Giriş veya kayıt" className="mb-5 grid grid-cols-2 gap-1 rounded-2xl bg-candy-lilac/40 p-1">
             {[
@@ -241,6 +305,11 @@ export default function AuthPage() {
                 </p>
               )}
               {notice && <p className="rounded-xl bg-candy-mint/50 px-3 py-2 text-sm font-bold text-ink">{notice}</p>}
+              {/doğrulaman/.test(formError) && (
+                <button type="button" onClick={onResend} className="mt-2 text-xs font-extrabold text-candy-lilac-deep hover:underline">
+                  Doğrulama e-postasını yeniden gönder
+                </button>
+              )}
             </div>
 
             <ToyButton type="submit" loading={busy}>
@@ -258,6 +327,8 @@ export default function AuthPage() {
               {isRegister ? 'Giriş yap' : 'Kayıt ol'}
             </button>
           </p>
+            </>
+          )}
         </section>
 
         {SHOW_QUICK_LOGIN && (

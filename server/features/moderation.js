@@ -3,7 +3,7 @@
 import { addReport, save, user } from '../store.js'
 import { moderate } from '../profanity.js'
 
-const REASONS = new Set(['taciz', 'spam', 'uygunsuz', 'sahte', 'diger'])
+const REASONS = new Set(['taciz', 'spam', 'uygunsuz', 'sahte', 'foto', 'diger'])
 const RECENT_MAX = 12 // şikâyet bağlamı için tutulan son mesaj sayısı
 
 export default function moderation(ctx) {
@@ -73,7 +73,7 @@ export default function moderation(ctx) {
         if (!target || target.id === me.id) return
         me.lastReport = now
         const reason = REASONS.has(msg.reason) ? msg.reason : 'diger'
-        addReport({ ts: now, from: me.key, fromName: me.name, target: target.key, targetName: target.name, reason, context: target.recent.slice(-RECENT_MAX) })
+        addReport({ ts: now, from: me.key, fromName: me.name, target: target.key, targetName: target.name, reason, context: target.recent.slice(-RECENT_MAX), ...(reason === 'foto' ? { photo_path: target.photo ?? null } : {}) })
         send(me.ws, { t: 'info', text: '⚠️ Şikâyetin alındı, teşekkürler. İstersen kişiyi engelleyebilirsin.' })
       },
       dnd(me, msg) {

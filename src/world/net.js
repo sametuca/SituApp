@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { authService } from '../lib/auth'
+import { photoStore } from './photoStore'
 
 const ANIMS = ['idle', 'walk', 'run']
 const SEND_INTERVAL_MS = 100
@@ -19,7 +21,7 @@ const wsUrl = () =>
  * roster (id listesi) yalnızca biri girip çıkınca değişir.
  */
 export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvited, onRoom, onGesture, onMatch }) {
-  const [status, setStatus] = useState('connecting') // connecting | online | offline
+  const [status, setStatus] = useState('connecting') // connecting | online | offline | kicked (aynı hesap başka yerde açıldı) | auth (oturum geçersiz)
   const [online, setOnline] = useState(1)
   const [roster, setRoster] = useState([])
   const [spawn, setSpawn] = useState(null)
@@ -76,7 +78,16 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
       const ws = new WebSocket(wsUrl())
       wsRef.current = ws
 
-      ws.onopen = () => ws.send(JSON.stringify({ t: 'join', name, avatar }))
+      // Supabase modunda access_token gider; sunucu adı token'dan türetir (name yalnızca demo/misafir içindir)
+      ws.onopen = async () => {
+        let token = null
+        try {
+          token = await authService.getToken()
+        } catch {
+          /* oturum yok: sunucu auth_required der */
+        }
+        if (ws.readyState === 1) ws.send(JSON.stringify({ t: 'join', name, avatar, ...(token ? { token } : {}) }))
+      }
 
       ws.onmessage = (ev) => {
         let m
@@ -87,7 +98,23 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
         }
         listeners.current.get(m.t)?.forEach((fn) => fn(m))
         switch (m.t) {
+          case 'auth_required':
+          case 'kicked':
+            stopped = true // yeniden bağlanma: oturum geçersiz ya da hesap başka yerde açık
+            setStatus(m.t === 'kicked' ? 'kicked' : 'auth')
+            break
+          case 'photo':
+            photoStore.set(m.key, m.url)
+            break
+          case 'profile':
+            photoStore.set(remotes.current.get(m.id)?.key, m.photo ?? null)
+            break
+          case 'friends':
+            for (const f of m.list ?? []) photoStore.set(f.key, f.photo ?? null)
+            break
           case 'welcome':
+            photoStore.reset(m.photos)
+            for (const f of m.friendsInit?.list ?? []) photoStore.set(f.key, f.photo ?? null)
             retry = 0
             selfId.current = m.id
             blockedKeys.current = new Set((m.blocked ?? []).map((b) => b.key))
@@ -207,7 +234,7 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
         wsRef.current = null
         remotes.current.clear()
         syncRoster()
-        if (stopped) return
+        if (stopped) return // (kicked/auth: durum zaten ayarlandı)
         setStatus('offline')
         setOnline(1)
         retry += 1

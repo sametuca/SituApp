@@ -7,6 +7,7 @@ const AuthContext = createContext(null)
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [recovery, setRecovery] = useState(false) // şifre sıfırlama bağlantısıyla dönüldü: yeni şifre belirlenecek
 
   useEffect(() => {
     let cancelled = false
@@ -15,7 +16,11 @@ export function AuthProvider({ children }) {
       setUser(u)
       setLoading(false)
     })
-    const unsubscribe = subscribeToAuth((u) => !cancelled && setUser(u))
+    const unsubscribe = subscribeToAuth((u, event) => {
+      if (cancelled) return
+      if (event === 'PASSWORD_RECOVERY') setRecovery(true)
+      setUser(u)
+    })
     return () => {
       cancelled = true
       unsubscribe()
@@ -42,9 +47,18 @@ export function AuthProvider({ children }) {
     setUser(null)
   }, [])
 
+  const updatePassword = useCallback(async (password) => {
+    await authService.updatePassword(password)
+    setRecovery(false)
+  }, [])
+
   const value = useMemo(
-    () => ({ user, loading, signUp, signIn, signOut, resetPassword: authService.resetPassword }),
-    [user, loading, signUp, signIn, signOut],
+    () => ({
+      user, loading, recovery, signUp, signIn, signOut, updatePassword,
+      resetPassword: authService.resetPassword,
+      resendConfirmation: authService.resendConfirmation,
+    }),
+    [user, loading, recovery, signUp, signIn, signOut, updatePassword],
   )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

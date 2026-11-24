@@ -2,7 +2,8 @@
 //
 // Protokol (JSON):
 //   istemci → sunucu
-//     { t: 'join', name, avatar }            bir kez, bağlanınca
+//     { t: 'join', name, avatar, token? }    bir kez, bağlanınca. Supabase modunda token (access_token) ZORUNLU: ad profiles'tan gelir,
+//                                             istemcinin name'i yok sayılır; geçersizse { t:'auth_required' } + kapanır (ALLOW_GUEST=1: tokensiz misafir)
 //     { t: 'move', x, z, ry, anim }          ~10 Hz
 //     { t: 'chat', text, to? }               to verilirse özel mesaj (yalnızca alıcı + gönderen)
 //     { t: 'room', to: 'city' | 'home', owner? }   odaya geç; 'home' + owner yoksa kendi evin
@@ -14,7 +15,7 @@
 //     { t: 'gesture', to, kind }                   birine jest: heart | flower | wink | wave | kiss | dance (≤ 8 m)
 //     { t: 'typing', to }                          özel sohbette "yazıyor…" göstergesi
 //     { t: 'block', id } / { t: 'unblock', key }   engelle / engeli kaldır
-//     { t: 'report', id, reason }                  şikâyet (taciz | spam | uygunsuz | sahte | diger)
+//     { t: 'report', id, reason }                  şikâyet (taciz | spam | uygunsuz | sahte | foto | diger)
 //     { t: 'dnd', on }                             rahatsız etme modu
 //     { t: 'sit', seat, slot } / { t: 'pose_end' } / { t: 'poses' }      oturma (features/together.js; ayrıntı orada)
 //     { t: 'dance_invite', to } / { t: 'dance_reply', id, accept }       çift dans
@@ -46,19 +47,23 @@
 //     { t: 'state', p: [[id, x, z, ry, animIdx], ...] }   ~10 Hz, yalnızca değişenler
 //     { t: 'chat', id, name, text, ts, to?, dm? }
 //     { t: 'online', n }
+//     { t: 'auth_required' } / { t: 'kicked' }          token geçersiz/eksik · aynı hesap başka yerden bağlandı (bağlantı kapanır)
+//     profil fotoğrafı (features/profile.js): { t:'profile_photo', path|null } · { t:'photo_privacy', who:'all'|'friends' } → { t:'photo', key, url|null } (kişi başına, izne göre)
 //     { t: 'progress', p } / { t: 'quest_done', quest } / { t: 'badge', badge } / { t: 'event', event } / { t: 'suggest', s }   (features/progress.js)
 //
 // Odalar: herkes 'city' odasında başlar; evler 'home:<sahip anahtarı>' odalarıdır. Oyuncular, sohbet ve konum
 // güncellemeleri yalnızca aynı odadakilere gider. Ev anahtarı oyuncu adından türetilir (kimlik doğrulama gelince
 // kullanıcı id'sine geçilmeli).
 //
-// NOT: Kimlik doğrulama henüz yok; isim istemciden gelir ve doğrulanmaz.
-// Gerçek hesaplara geçilince join mesajına oturum token'ı eklenip burada doğrulanmalı.
+// Kimlik: Supabase ortamı varsa (server/supa.js) me.uid = auth uid, me.key/homeKey = uid, ad = profiles.username.
+// Aynı hesap ikinci kez bağlanınca eskisine { t:'kicked' } gider. Ortam yoksa isim istemciden gelir (demo, doğrulanmaz).
 import { WebSocketServer } from 'ws'
 import crypto from 'node:crypto'
 import { getHome, homeExists, saveItems, setOpen } from './homes.js'
 import { moderate } from './profanity.js'
 import { FEATURE_FACTORIES } from './features/index.js'
+import * as supa from './supa.js'
+import { loadProfile, saveAvatar, setName, uidByName } from './auth.js'
 
 const WORLD_HALF = 60 // dünya sınırı (±m); istemci haritasıyla aynı olmalı
 const MAX_PLAYERS = 100
@@ -89,8 +94,18 @@ const clean = (s, max) =>
     .trim()
     .slice(0, max)
 
-// ev sahibi anahtarı: küçük harf, yalnızca harf/rakam/_/- (Türkçe harfler dahil)
-const homeKey = (name) => clean(name, 16).toLowerCase().replace(/[^a-z0-9ğüşıöç_-]/g, '') || 'misafir'
+// ev sahibi anahtarı (demo/misafir): küçük harf, yalnızca harf/rakam/_/- (Türkçe harfler dahil)
+const legacyKey = (name) => clean(name, 16).toLowerCase().replace(/[^a-z0-9ğüşıöç_-]/g, '') || 'misafir'
+// Supabase modunda anahtar = uid: UUID verilirse kendisi, ad verilirse kullanıcı adından uid; bilinmeyen ad → ad tabanlı (evi yok)
+const homeKey = (v) => {
+  const s = String(v ?? '').trim()
+  if (supa.enabled) {
+    if (supa.UUID_RE.test(s)) return s.toLowerCase()
+    const uid = uidByName(s.slice(0, 16))
+    if (uid) return uid
+  }
+  return legacyKey(s)
+}
 
 const num = (v, lim) => {
   const n = Number(v)
@@ -164,8 +179,68 @@ export function attachGameServer(httpServer) {
     broadcast({ t: 'join', p: publicInfo(p) }, p.id, room)
   }
 
+  // Supabase modu: token doğrula, kullanıcı adı/avatarı profiles'tan al (istemcinin gönderdiği ad yok sayılır).
+  // Dönüş: null (ad tabanlı demo/misafir akışı) | 'denied' | { uid, username, avatar, photo, photoHidden }
+  const resolveIdentity = async (msg) => {
+    if (!supa.enabled) return null
+    if (!msg.token) return supa.allowGuest ? null : 'denied'
+    const u = await supa.verifyToken(msg.token)
+    if (!u) return 'denied'
+    const prof = await loadProfile(u.id)
+    if (!prof) return 'denied'
+    setName(prof.username, u.id)
+    const wanted = AVATARS.has(msg.avatar) ? msg.avatar : null
+    const avatar = wanted ?? (AVATARS.has(prof.avatar) ? prof.avatar : 'zeynep')
+    if (wanted && wanted !== prof.avatar) saveAvatar(u.id, wanted).catch(() => {})
+    return { uid: u.id, username: prof.username, avatar, photo: prof.photo_path ?? null, photoHidden: prof.photo_hidden === true }
+  }
+
+  const createPlayer = (msg, ident) => {
+    const joinName = moderate(clean(msg.name, 16), { contact: false })
+    let guestName = (joinName.flagged ? '' : joinName.text) || 'Misafir'
+    if (supa.enabled && uidByName(guestName)) guestName = 'Misafir' // misafir gerçek bir kullanıcı adını taklit edemez
+    const me = {
+      id: crypto.randomUUID().slice(0, 8),
+      ws: msg.__ws,
+      name: ident ? ident.username : guestName,
+      avatar: ident ? ident.avatar : AVATARS.has(msg.avatar) ? msg.avatar : 'zeynep',
+      // lobi meydanında, çeşmenin güneyinde rastgele bir yere doğ
+      x: (Math.random() - 0.5) * 6,
+      z: 6 + Math.random() * 3,
+      ry: Math.PI,
+      anim: 'idle',
+      dirty: false,
+      lastChat: 0,
+      room: 'city',
+      uid: ident?.uid ?? null,
+      photo: ident?.photo ?? null,
+      photoHidden: ident?.photoHidden ?? false,
+    }
+    me.homeKey = ident ? ident.uid : legacyKey(guestName)
+    me.key = me.homeKey // kalıcı kimlik anahtarı (Supabase modunda auth uid; demo/misafirde addan türer)
+    players.set(me.id, me)
+    emit('onJoin', me)
+    send(me.ws, {
+      ...Object.assign({}, ...features.map((f) => f.welcome?.(me) ?? {})),
+      t: 'welcome',
+      id: me.id,
+      name: me.name,
+      home: me.homeKey,
+      homeItems: getHome(me.homeKey)?.items ?? null,
+      homeOpen: Boolean(getHome(me.homeKey)?.open),
+      x: me.x,
+      z: me.z,
+      players: inRoom('city', me.id).map(publicInfo),
+      online: players.size,
+    })
+    broadcast({ t: 'join', p: publicInfo(me) }, me.id, 'city')
+    broadcast({ t: 'online', n: players.size })
+    return me
+  }
+
   wss.on('connection', (ws) => {
     let me = null
+    let joining = false
     ws.isAlive = true
     ws.on('pong', () => (ws.isAlive = true))
 
@@ -179,45 +254,31 @@ export function attachGameServer(httpServer) {
       if (!msg || typeof msg.t !== 'string') return
       if (raw.length > MAX_TEXT_PAYLOAD && !BIG_TYPES.has(msg.t)) return
 
-      if (msg.t === 'join' && !me) {
+      if (msg.t === 'join' && !me && !joining) {
         if (players.size >= MAX_PLAYERS) {
           send(ws, { t: 'full' })
           return ws.close()
         }
-        const avatar = AVATARS.has(msg.avatar) ? msg.avatar : 'zeynep'
-        const joinName = moderate(clean(msg.name, 16), { contact: false })
-        me = {
-          id: crypto.randomUUID().slice(0, 8),
-          ws,
-          name: (joinName.flagged ? '' : joinName.text) || 'Misafir',
-          avatar,
-          // lobi meydanında, çeşmenin güneyinde rastgele bir yere doğ
-          x: (Math.random() - 0.5) * 6,
-          z: 6 + Math.random() * 3,
-          ry: Math.PI,
-          anim: 'idle',
-          dirty: false,
-          lastChat: 0,
-          room: 'city',
-          homeKey: homeKey(msg.name),
-        }
-        me.key = me.homeKey // kalıcı kimlik anahtarı (şimdilik addan türer)
-        players.set(me.id, me)
-        emit('onJoin', me)
-        send(ws, {
-          ...Object.assign({}, ...features.map((f) => f.welcome?.(me) ?? {})),
-          t: 'welcome',
-          id: me.id,
-          home: me.homeKey,
-          homeItems: getHome(me.homeKey)?.items ?? null,
-          homeOpen: Boolean(getHome(me.homeKey)?.open),
-          x: me.x,
-          z: me.z,
-          players: inRoom('city', me.id).map(publicInfo),
-          online: players.size,
-        })
-        broadcast({ t: 'join', p: publicInfo(me) }, me.id, 'city')
-        broadcast({ t: 'online', n: players.size })
+        joining = true
+        resolveIdentity(msg)
+          .then((ident) => {
+            if (ws.readyState !== 1) return
+            if (ident === 'denied') {
+              send(ws, { t: 'auth_required' })
+              return ws.close(4401, 'auth')
+            }
+            // aynı hesap ikinci kez bağlanırsa eskisini at
+            if (ident) for (const o of players.values()) if (o.uid === ident.uid) {
+              send(o.ws, { t: 'kicked' })
+              o.ws.close(4001, 'kicked')
+            }
+            me = createPlayer({ ...msg, __ws: ws }, ident)
+          })
+          .catch((e) => {
+            console.error('Giriş hatası:', e.message)
+            send(ws, { t: 'auth_required', retry: true })
+            ws.close(4401, 'auth')
+          })
         return
       }
 
@@ -299,7 +360,7 @@ export function attachGameServer(httpServer) {
         if (dist(me, target) > GESTURE_RANGE) return send(ws, { t: 'info', text: `${target.name} çok uzakta, biraz yaklaş.` })
         if (refuse(me, target, 'gesture')) return
         me.lastGesture = now
-        send(target.ws, { t: 'gesture', id: me.id, name: me.name, avatar: me.avatar, kind: msg.kind, emoji })
+        send(target.ws, { t: 'gesture', id: me.id, key: me.key, name: me.name, avatar: me.avatar, kind: msg.kind, emoji })
         broadcast({ t: 'react', id: me.id, e: emoji }, undefined, me.room, me)
         emitEvent(me, 'gesture', 1, target)
         emitEvent(me, `gesture_${msg.kind}`, 1, target)
@@ -309,8 +370,8 @@ export function attachGameServer(httpServer) {
           if (now - (target.hearts?.get(me.id) ?? 0) < MATCH_WINDOW_MS) {
             target.hearts.delete(me.id)
             me.hearts.delete(target.id)
-            send(ws, { t: 'match', id: target.id, name: target.name, avatar: target.avatar })
-            send(target.ws, { t: 'match', id: me.id, name: me.name, avatar: me.avatar })
+            send(ws, { t: 'match', id: target.id, key: target.key, name: target.name, avatar: target.avatar })
+            send(target.ws, { t: 'match', id: me.id, key: me.key, name: me.name, avatar: me.avatar })
             broadcast({ t: 'react', id: me.id, e: '💞' }, undefined, me.room)
             broadcast({ t: 'react', id: target.id, e: '💞' }, undefined, me.room)
             emitEvent(me, 'match', 1, target)

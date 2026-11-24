@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Modal } from '../Hud'
+import Portrait from '../Portrait'
 
 // Arkadaşlık, varlık, mesaj kutusu, okundu bilgisi ve tarayıcı bildirimi (sunucu: server/features/friends.js).
 
@@ -85,8 +86,8 @@ function useTabAlerts(enabled) {
 }
 
 // ---------- küçük bileşenler ----------
-function Avatar({ name, size = 'h-11 w-11' }) {
-  return <img src={`/avatars/${name}.png`} alt="" width="44" height="44" className={`${size} shrink-0 rounded-full border-2 border-white bg-white/60 object-cover object-top`} />
+function Avatar({ name, pkey, size = 'h-11 w-11' }) {
+  return <Portrait peer={{ key: pkey, avatar: name }} size={44} className={size} />
 }
 
 function Pill({ onClick, children, tone = 'pink', disabled, label }) {
@@ -149,7 +150,7 @@ function FriendRow({ f, onGoto, onMessage, onChat, onRemove, composing, onSendMa
     <li className="rounded-2xl bg-[#f6f0ff] p-2.5">
       <div className="flex items-center gap-3">
         <div className="relative">
-          <Avatar name={f.avatar} />
+          <Avatar name={f.avatar} pkey={f.key} />
           <span className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white ${f.online ? 'bg-emerald-400' : 'bg-[#cfc6de]'}`} />
         </div>
         <div className="min-w-0 flex-1">
@@ -343,7 +344,7 @@ function Cards({ cards, onDismiss, onAnswer, onOpen }) {
       {cards.map((c) => (
         <div key={c.id} className={`pointer-events-auto animate-pop rounded-3xl p-2.5 pl-4 ${glass}`} role="status">
           <div className="flex items-center gap-3">
-            {c.avatar ? <Avatar name={c.avatar} size="h-10 w-10" /> : <span className="text-2xl">{c.emoji}</span>}
+            {c.avatar ? <Avatar name={c.avatar} pkey={c.key} size="h-10 w-10" /> : <span className="text-2xl">{c.emoji}</span>}
             <p className="min-w-0 flex-1 text-sm font-black text-[#4a3b5c]">{c.text}</p>
             <button onClick={() => onDismiss(c.id)} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black text-[#8a7a9c] hover:bg-[#ffd6e8]/70">
               ✕

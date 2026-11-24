@@ -1,9 +1,10 @@
-// Ev deposu: her evin mobilya listesi ve "herkese açık" ayarı, server/data/homes.json dosyasında tutulur.
-// Basit dosya tabanlı depolama; ileride Supabase'e geçilirse yalnızca bu dosya değişir
-// (getHome / saveItems / setOpen / homeExists arayüzü aynı kalsın).
+// Ev deposu: her evin mobilya listesi, "herkese açık" ayarı ve dekoru. Arayüz senkron (getHome / saveItems / setOpen /
+// getDecor / setDecor / homeExists). Supabase ortamı varsa `homes` tablosu açılışta belleğe yüklenir (`await initHomes()`)
+// ve değişenler write-behind ile yazılır; yoksa server/data/homes.json dosyası kullanılır.
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import * as supa from './supa.js'
 import { FURNITURE_BY_ID } from '../src/world/furniture.js'
 import { HOME_ROOM } from '../src/world/layout.js'
 import { GIFT_BY_ID, sanitizeDecor } from '../src/world/cosmeticsData.js'
@@ -19,8 +20,20 @@ try {
   /* ilk çalıştırma ya da bozuk dosya: boş başla */
 }
 
+let mirror = null
+export async function initHomes() {
+  if (!supa.enabled) return
+  const rows = await supa.select('homes', 'select=uid,data')
+  homes = {}
+  for (const r of rows) homes[r.uid] = r.data ?? {}
+  mirror = supa.createMirror({ table: 'homes', getAll: () => homes, toRow: (uid, data) => ({ uid, data }), label: 'Ev kaydı' })
+  mirror.prime(rows, (r) => r.uid, (r) => r.data ?? {})
+  console.log(`Supabase: ${rows.length} ev yüklendi.`)
+}
+
 let timer = null
 function persist() {
+  if (supa.enabled) return mirror?.touch()
   clearTimeout(timer)
   timer = setTimeout(() => {
     try {

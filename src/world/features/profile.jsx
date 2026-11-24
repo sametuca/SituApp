@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Modal } from '../Hud'
+import { PhotoSection } from './photoUpload'
 
 const NUDGE_KEY = 'situapp_profile_nudge'
 const MAX_TAGS = 6
@@ -93,7 +94,7 @@ function ProfileCard({ peer, profile, mine, catalog, request, onIce }) {
   )
 }
 
-function ProfileEditor({ initial, catalog, onSave, onClose }) {
+function ProfileEditor({ initial, catalog, onSave, onClose, net, photoEnabled, privacy, setPrivacy }) {
   const [bio, setBio] = useState(initial?.bio ?? '')
   const [age, setAge] = useState(initial?.age ? String(initial.age) : '')
   const [city, setCity] = useState(initial?.city ?? '')
@@ -106,6 +107,9 @@ function ProfileEditor({ initial, catalog, onSave, onClose }) {
   return (
     <Modal onClose={onClose} label="Profilim">
       <h2 className="text-2xl font-black text-[#4a3b5c]">Profilim 💗</h2>
+      <div className="mt-3">
+        <PhotoSection net={net} enabled={photoEnabled} privacy={privacy} setPrivacy={setPrivacy} />
+      </div>
       <form
         className="mt-4 flex flex-col gap-4"
         onSubmit={(e) => {
@@ -160,6 +164,8 @@ export function useProfile({ net, say, panel, setPanel, home }) {
   const [catalog, setCatalog] = useState([])
   const [cache, setCache] = useState({}) // oyuncu id → profil | null
   const [nudge, setNudge] = useState(false)
+  const [photoEnabled, setPhotoEnabled] = useState(false)
+  const [privacy, setPrivacy] = useState('all')
   const [incoming, setIncoming] = useState([]) // yanıt bekleyen buz kırıcılar
   const [answers, setAnswers] = useState([]) // karşı tarafın seçimleri
   const reqAt = useRef({})
@@ -168,6 +174,8 @@ export function useProfile({ net, say, panel, setPanel, home }) {
     const offs = [
       net.on('welcome', (m) => {
         setMine(m.profile ?? null)
+        setPhotoEnabled(Boolean(m.photoEnabled))
+        setPrivacy(m.photoPrivacy ?? 'all')
         setCatalog(m.profileTags ?? [])
         setCache({})
         setIncoming([])
@@ -177,6 +185,7 @@ export function useProfile({ net, say, panel, setPanel, home }) {
           setTimeout(() => setNudge(true), 30000)
         }
       }),
+      net.on('photo_privacy', (m) => setPrivacy(m.who)),
       net.on('profile_saved', (m) => {
         setMine(m.profile)
         say('Profilin kaydedildi 💗')
@@ -224,6 +233,10 @@ export function useProfile({ net, say, panel, setPanel, home }) {
       {panel === 'profile' && (
         <ProfileEditor
           initial={mine}
+          net={net}
+          photoEnabled={photoEnabled}
+          privacy={privacy}
+          setPrivacy={setPrivacy}
           catalog={catalog}
           onClose={() => setPanel(null)}
           onSave={(p) => {

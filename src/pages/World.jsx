@@ -127,7 +127,7 @@ export default function World() {
 
 function WorldScene({ avatar }) {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const slug = AVATARS.includes(String(avatar.name).toLowerCase()) ? String(avatar.name).toLowerCase() : 'zeynep'
   const name = user?.username ?? avatar.name
 
@@ -544,6 +544,27 @@ function WorldScene({ avatar }) {
         />
       </Canvas>
 
+      {(net.status === 'kicked' || net.status === 'auth') && (
+        <div className="fixed inset-0 z-[80] grid place-items-center bg-white/70 px-5 backdrop-blur-sm" role="alertdialog">
+          <div className="w-full max-w-sm rounded-[2rem] border-2 border-white bg-white p-6 text-center shadow-toy">
+            <div className="text-5xl">{net.status === 'kicked' ? '🔌' : '🔑'}</div>
+            <h2 className="mt-2 text-xl font-black text-ink">{net.status === 'kicked' ? 'Hesabın başka yerde açıldı' : 'Oturumun geçersiz'}</h2>
+            <p className="mt-1 text-sm font-semibold text-ink-soft">
+              {net.status === 'kicked' ? 'Aynı hesapla yalnızca tek yerden oynanabilir. Burada devam etmek için sayfayı yenile.' : 'Devam etmek için yeniden giriş yapmalısın.'}
+            </p>
+            <div className="mt-4 flex justify-center gap-2">
+              {net.status === 'kicked' && (
+                <button type="button" onClick={() => location.reload()} className="rounded-2xl bg-candy-pink px-4 py-2 text-sm font-extrabold text-ink shadow-soft">
+                  Yeniden bağlan
+                </button>
+              )}
+              <button type="button" onClick={() => signOut()} className="rounded-2xl bg-candy-lilac/60 px-4 py-2 text-sm font-extrabold text-ink shadow-soft">
+                Çıkış yap
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <TopBar zone={zone} online={net.online} status={net.status} dnd={net.dnd} onSettings={() => setPanel('settings')} extraButtons={feat.extraButtons} extraNodes={feat.extraNodes} onExit={() => navigate('/avatar')} onHelp={() => setHelp(true)} />
       <ZoneToast zone={zone} />
       {!home && <Minimap focusRef={focusRef} remotes={net.remotes} compact={touch} />}

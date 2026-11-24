@@ -1,7 +1,12 @@
 // Profil, ilgi etiketleri ve buz kırıcı kartlar.
 // Mesajlar: profile_save {profile} · profile {id} → profile {id, profile} · icebreaker {to} → icebreaker {id,name,qid,q,a,b}
 //           icebreaker_answer {to, qid, pick:'a'|'b'} → gönderene icebreaker_answer {id,name,a,b,choice}
+// Profil fotoğrafı (yalnızca Supabase modu, hesaplı oyuncu): istemci Storage'a `<uid>/<ad>.jpg` yükler, sonra
+//   profile_photo {path|null} (dakikada 3) → profile_photo {ok, url|null} ; photo_privacy {who:'all'|'friends'} → photo_privacy {who}
+//   Sunucu her izleyici için ayrı url hesaplar ve { t:'photo', key, url|null } yollar (welcome.photos: toplu). photo_hidden (moderasyon) → hiçbir yerde gösterilmez.
 import { save, user } from '../store.js'
+import * as supa from '../supa.js'
+import { savePhotoPath } from '../auth.js'
 
 export const TAGS = [
   ['kahve', '☕', 'Kahve'],
@@ -85,13 +90,100 @@ export default function profile(ctx) {
   const pending = new Map()
   const pkey = (from, to) => `${from}>${to}`
 
+  // ---- profil fotoğrafı ----
+  const PHOTO_PATH_RE = (uid) => new RegExp(`^${uid}/[A-Za-z0-9._-]{1,80}$`)
+  const onlineByKey = (k) => [...players.values()].find((p) => p.key === k)
+  /** İzleyici (anahtar) → sahibin fotoğraf adresi ya da null (yok / gizli / engelli / "yalnızca arkadaşlarım"). */
+  const photoUrlFor = (viewerKey, ownerKey) => {
+    const o = onlineByKey(ownerKey)
+    const u = hasStored(ownerKey)
+    const path = o ? o.photo : u?.photo
+    const hidden = o ? o.photoHidden : u?.photoHidden
+    if (!path || hidden) return null
+    if (viewerKey === ownerKey) return supa.photoUrl(path)
+    if (u?.blocks?.[viewerKey] || user(viewerKey).blocks?.[ownerKey]) return null
+    if (u?.photoPrivacy === 'friends' && !u.friends?.[viewerKey]) return null
+    return supa.photoUrl(path)
+  }
+  const hasStored = (k) => (k ? user(k) : null)
+  const pushPhoto = (ownerKey) => {
+    for (const v of players.values()) send(v.ws, { t: 'photo', key: ownerKey, url: photoUrlFor(v.key, ownerKey) })
+  }
+  ctx.photoUrlFor = photoUrlFor
+  ctx.photoRefresh = pushPhoto
+  // moderasyon: photo_hidden / photo_path değişikliklerini (başka yerden, örn. yönetici) 5 dakikada bir al
+  const refresher = setInterval(async () => {
+    const uids = [...players.values()].filter((p) => p.uid).map((p) => p.uid)
+    if (!supa.enabled || !uids.length) return
+    try {
+      const rows = await supa.select('profiles', `select=id,photo_path,photo_hidden&id=in.(${uids.join(',')})`)
+      for (const r of rows) {
+        const p = onlineByKey(r.id)
+        if (!p || (p.photo === (r.photo_path ?? null) && p.photoHidden === (r.photo_hidden === true))) continue
+        p.photo = r.photo_path ?? null
+        p.photoHidden = r.photo_hidden === true
+        Object.assign(user(p.key), { photo: p.photo, photoHidden: p.photoHidden })
+        pushPhoto(p.key)
+      }
+    } catch {
+      /* bir sonraki turda tekrar */
+    }
+  }, 5 * 60_000)
+  refresher.unref()
+
   return {
-    api: { publicProfile: (p) => pub(stored(p.key)) },
-    welcome: (me) => ({ profile: pub(stored(me.key)), profileTags: TAGS }),
+    api: { publicProfile: (p) => pub(stored(p.key)), photoUrlFor },
+    onJoin(me) {
+      if (!me.uid) return
+      const u = user(me.key)
+      u.photo = me.photo
+      u.photoHidden = me.photoHidden
+      save()
+      pushPhoto(me.key)
+    },
+    welcome(me) {
+      const photos = {}
+      for (const p of players.values()) {
+        const url = photoUrlFor(me.key, p.key)
+        if (url) photos[p.key] = url
+      }
+      return { profile: pub(stored(me.key)), profileTags: TAGS, photos, photoPrivacy: user(me.key).photoPrivacy ?? 'all', photoEnabled: Boolean(me.uid) }
+    },
     onLeave(me) {
       for (const k of [...pending.keys()]) if (k.startsWith(`${me.id}>`) || k.endsWith(`>${me.id}`)) pending.delete(k)
     },
     handlers: {
+      profile_photo(me, msg) {
+        if (!me.uid) return info(me, '📷 Fotoğraf için hesap gerekli.')
+        const now = Date.now()
+        me.photoReqs = (me.photoReqs ?? []).filter((t) => now - t < 60_000)
+        if (me.photoReqs.length >= 3) return info(me, '📷 Biraz yavaş, dakikada en fazla 3 kez değiştirebilirsin.')
+        me.photoReqs.push(now)
+        const path = msg.path === null ? null : typeof msg.path === 'string' ? msg.path : undefined
+        if (path === undefined || (path !== null && !PHOTO_PATH_RE(me.uid).test(path))) return send(me.ws, { t: 'profile_photo', ok: false })
+        const apply = async () => {
+          if (path && !(await supa.objectExists(path))) return send(me.ws, { t: 'profile_photo', ok: false })
+          await savePhotoPath(me.uid, path)
+          me.photo = path
+          user(me.key).photo = path
+          save()
+          send(me.ws, { t: 'profile_photo', ok: true, url: photoUrlFor(me.key, me.key) })
+          pushPhoto(me.key)
+        }
+        apply().catch((e) => {
+          console.error('Fotoğraf kaydedilemedi:', e.message)
+          send(me.ws, { t: 'profile_photo', ok: false })
+        })
+      },
+
+      photo_privacy(me, msg) {
+        if (msg.who !== 'all' && msg.who !== 'friends') return
+        user(me.key).photoPrivacy = msg.who
+        save()
+        send(me.ws, { t: 'photo_privacy', who: msg.who })
+        pushPhoto(me.key)
+      },
+
       profile_save(me, msg) {
         const now = Date.now()
         if (now - (me.lastProfileSave ?? 0) < 1000) return info(me, 'Biraz yavaş, profilini az önce kaydettin.')
@@ -123,7 +215,7 @@ export default function profile(ctx) {
         const target = players.get(id)
         // engelli çift birbirinin profilini göremez (sezdirmeden boş döner)
         if (!target || (target.id !== me.id && mod().blockedPair(me, target))) return send(me.ws, { t: 'profile', id, profile: null })
-        send(me.ws, { t: 'profile', id, profile: pub(stored(target.key)) ?? EMPTY })
+        send(me.ws, { t: 'profile', id, profile: pub(stored(target.key)) ?? EMPTY, photo: photoUrlFor(me.key, target.key) })
       },
 
       icebreaker(me, msg) {

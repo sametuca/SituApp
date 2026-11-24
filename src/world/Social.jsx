@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ToyButton } from '../components/ui'
 import { MicButton, StickerBubble, StickerPanel, VoiceBubble } from './features/media'
 import { CHAT_EMOJIS, GESTURES, GESTURE_BY_KIND, QUICK_REPLIES, REACTIONS, WHISPER_RANGE } from './interact'
+import Portrait from './Portrait'
 
 const glass = 'border-2 border-white bg-white/80 shadow-soft backdrop-blur-md'
 
@@ -94,7 +95,7 @@ export function NearbyCard({ peer, touch, onChat, onInteract, onDismiss }) {
       role="status"
     >
       <div className={`flex items-center gap-3 rounded-3xl p-2.5 pr-3 ${glass}`}>
-        <img src={`/avatars/${peer.avatar}.png`} alt="" width="44" height="44" className="h-11 w-11 shrink-0 rounded-full border-2 border-white bg-white/60 object-cover object-top" />
+        <Portrait peer={peer} size={44} className="h-11 w-11" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-black text-[#4a3b5c]">{peer.name}</p>
           <p className="text-xs font-bold text-[#8a7a9c]">yakınında 👋</p>
@@ -209,7 +210,7 @@ export function InteractSheet({ peer, near, canInvite, touch, extras = [], heade
       aria-label={`${peer.name} ile etkileşim`}
     >
       <div className="flex items-center gap-3">
-        <img src={`/avatars/${peer.avatar}.png`} alt="" width="48" height="48" className="h-12 w-12 rounded-full border-2 border-white bg-white/60 object-cover object-top" />
+        <Portrait peer={peer} size={48} className="h-12 w-12" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-base font-black text-[#4a3b5c]">{peer.name}</p>
           <p className={`text-xs font-bold ${near ? 'text-emerald-500' : 'text-[#8a7a9c]'}`}>
@@ -359,13 +360,7 @@ export function MatchOverlay({ peer, onChat, onClose }) {
       ))}
       <div className="relative flex w-full max-w-sm animate-pop flex-col items-center gap-3 rounded-[2rem] border-2 border-white bg-white/90 p-6 text-center shadow-toy">
         <p className="text-sm font-extrabold uppercase tracking-widest text-[#ff7eb3]">Eşleşme</p>
-        <img
-          src={`/avatars/${peer.avatar}.png`}
-          alt=""
-          width="112"
-          height="112"
-          className="h-28 w-28 rounded-full border-4 border-white bg-white/60 object-cover object-top shadow-soft [animation:match-pulse_1.6s_ease-in-out_infinite]"
-        />
+        <Portrait peer={peer} size={112} className="h-28 w-28 !border-4 shadow-soft [animation:match-pulse_1.6s_ease-in-out_infinite]" />
         <h2 className="text-3xl font-black text-[#4a3b5c]">💞 {peer.name}</h2>
         <p className="text-sm font-semibold text-[#6f5f82]">Birbirinize kalp gönderdiniz. Belki de ilk adımı atma zamanı… 🌙</p>
         <div className="mt-1 flex w-full flex-col gap-2">
@@ -463,7 +458,7 @@ export function ChatSheet({ peer, feed, onSend, onClose, touch, typing, onTyping
     >
       <div className="flex items-center gap-3">
         {peer ? (
-          <img src={`/avatars/${peer.avatar}.png`} alt="" width="40" height="40" className="h-10 w-10 rounded-full border-2 border-white bg-white/60 object-cover object-top" />
+          <Portrait peer={peer} size={40} className="h-10 w-10" />
         ) : (
           <span className="grid h-10 w-10 place-items-center rounded-full bg-[#d6c7ff]/60 text-xl">💬</span>
         )}

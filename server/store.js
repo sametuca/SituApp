@@ -1,10 +1,12 @@
-// Sosyal veriler için kalıcı depo (server/data/social.json): kullanıcı başına engeller, ayarlar, profil, arkadaşlar,
-// mesaj kutusu, rozetler, görevler + şikâyet kayıtları. Kimlik anahtarı şimdilik oyuncu adından türer (homeKey);
-// gerçek hesaplara geçilince anahtar kullanıcı id'si olmalı. Arayüz (user / save / addReport) aynı kalırsa
-// depolama Supabase'e taşınabilir.
+// Sosyal veriler için kalıcı depo: kullanıcı başına engeller, ayarlar, profil, arkadaşlar,
+// mesaj kutusu, rozetler, görevler + şikâyet kayıtları. Arayüz SENKRON (user / save / hasUser / allUsers / addReport).
+// - Supabase ortamı varsa (server/supa.js): açılışta `user_data` tamamen belleğe yüklenir (`await initStore()`),
+//   değişenler write-behind ile yazılır (800 ms), şikâyetler `reports` tablosuna eklenir. Anahtar = auth uid.
+// - Yoksa (demo): server/data/social.json dosyası; anahtar oyuncu adından türer.
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import * as supa from './supa.js'
 
 const DIR = process.env.SITUAPP_DATA_DIR || path.join(path.dirname(fileURLToPath(import.meta.url)), 'data')
 const FILE = path.join(DIR, 'social.json')
@@ -16,8 +18,21 @@ try {
   /* ilk çalıştırma */
 }
 
+let mirror = null
+/** Supabase modunda kullanıcı kayıtlarını yükler; dosya modunda bir şey yapmaz. sunucu listen etmeden önce çağır. */
+export async function initStore() {
+  if (!supa.enabled) return
+  const rows = await supa.select('user_data', 'select=uid,data')
+  db = { users: {}, reports: [] }
+  for (const r of rows) db.users[r.uid] = r.data ?? {}
+  mirror = supa.createMirror({ table: 'user_data', getAll: () => db.users, toRow: (uid, data) => ({ uid, data }), label: 'Kullanıcı verisi' })
+  mirror.prime(rows, (r) => r.uid, (r) => r.data ?? {})
+  console.log(`Supabase: ${rows.length} kullanıcı kaydı yüklendi.`)
+}
+
 let timer = null
 export function save() {
+  if (supa.enabled) return mirror?.touch()
   clearTimeout(timer)
   timer = setTimeout(() => {
     try {
@@ -56,6 +71,14 @@ export const hasUser = (key) => Boolean(db.users[key])
 export const allUsers = () => db.users
 
 export function addReport(r) {
+  if (supa.enabled) {
+    const uuid = (k) => (supa.UUID_RE.test(k ?? '') ? k : null)
+    const { ts, from, fromName, target, targetName, reason, ...rest } = r
+    supa
+      .insert('reports', [{ reporter: uuid(from), target: uuid(target), reason, data: { ts, fromName, targetName, from, target, ...rest } }])
+      .catch((e) => console.error('Şikâyet yazılamadı:', e.message))
+    return
+  }
   db.reports.push(r)
   if (db.reports.length > 500) db.reports.splice(0, db.reports.length - 500)
   save()
