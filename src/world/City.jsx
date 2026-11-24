@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { Html, RoundedBox } from '@react-three/drei'
 import { BUILDINGS, GAZEBO, PROPS, ROAD_HALF } from './layout'
 import Prop from './Prop'
+import { SKY_MATS, skyLive } from './Sky'
 
 const FACING = { s: 0, n: Math.PI, e: Math.PI / 2, w: -Math.PI / 2 }
 
@@ -79,7 +80,7 @@ function Building({ b, focusRef }) {
           return (
             <mesh key={`${y}-${i}`} position={[x, y, d / 2 + 0.06]}>
               <boxGeometry args={[Math.min(1.5, w / count - 0.8), 1.1, 0.12]} />
-              <meshStandardMaterial color="#fff6cf" emissive="#ffe49a" emissiveIntensity={0.35} roughness={0.3} />
+              <primitive object={SKY_MATS.window} attach="material" />
             </mesh>
           )
         }),
@@ -96,11 +97,11 @@ function Building({ b, focusRef }) {
         <>
           <mesh position={[0, h - 0.6, d / 2 + 0.12]}>
             <boxGeometry args={[w * 0.85, 0.28, 0.1]} />
-            <meshStandardMaterial color="#ff8ad8" emissive="#ff5fcf" emissiveIntensity={1.4} />
+            <primitive object={SKY_MATS.neonPink} attach="material" />
           </mesh>
           <mesh position={[0, 0.5, d / 2 + 0.12]}>
             <boxGeometry args={[w * 0.85, 0.2, 0.1]} />
-            <meshStandardMaterial color="#8fd8ff" emissive="#4fc3ff" emissiveIntensity={1.4} />
+            <primitive object={SKY_MATS.neonBlue} attach="material" />
           </mesh>
         </>
       )}
@@ -122,7 +123,7 @@ function Fountain() {
       </mesh>
       <mesh ref={water} position={[0, 0.62, 0]}>
         <cylinderGeometry args={[2.1, 2.1, 0.12, 48]} />
-        <meshStandardMaterial color="#9fdcff" roughness={0.1} metalness={0.1} emissive="#6cc7f5" emissiveIntensity={0.25} />
+        <primitive object={SKY_MATS.water} attach="material" />
       </mesh>
       <mesh position={[0, 1.2, 0]} castShadow>
         <cylinderGeometry args={[0.35, 0.5, 1.2, 24]} />
@@ -130,7 +131,7 @@ function Fountain() {
       </mesh>
       <mesh position={[0, 2.0, 0]} castShadow>
         <sphereGeometry args={[0.6, 24, 24]} />
-        <meshStandardMaterial color="#a9ddf5" roughness={0.2} emissive="#6cc7f5" emissiveIntensity={0.3} />
+        <primitive object={SKY_MATS.fountainTop} attach="material" />
       </mesh>
     </group>
   )
@@ -165,7 +166,10 @@ function Sun({ focusRef }) {
     const l = light.current
     if (!l) return
     const f = focusRef.current
-    l.position.set(f.x + 14, 22, f.z + 10)
+    // güneş/ay yönü ve rengi gün-gece döngüsünden (Sky.jsx)
+    l.position.set(f.x + skyLive.dir.x * 28, skyLive.dir.y * 28, f.z + skyLive.dir.z * 28)
+    l.color.copy(skyLive.color)
+    l.intensity = skyLive.intensity
     l.target.position.set(f.x, 0, f.z)
     l.target.updateMatrixWorld()
   })

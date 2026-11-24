@@ -9,6 +9,7 @@ import { EditToggle, FurnitureLayer, FurnitureSheet } from '../world/HomeEditor'
 import { FURNITURE_BY_ID } from '../world/furniture'
 import { useFeatures } from '../world/features'
 import TogetherScene from '../world/features/TogetherScene'
+import Sky, { skyBase } from '../world/Sky'
 import { GIFT_BY_ID } from '../world/cosmeticsData'
 import { MAX_ITEMS, findFreeSpot, furnitureColliders, isValid, loadHome, newUid, saveHome } from '../world/homeLayout'
 import LocalPlayer from '../world/LocalPlayer'
@@ -493,10 +494,9 @@ function WorldScene({ avatar }) {
       <Canvas shadows camera={{ fov: 55, near: 0.3, far: 300, position: [start.x, 4.2, start.z + 8] }}>
         <color attach="background" args={[home ? '#f9e3f1' : '#cfeaff']} />
         <fog attach="fog" args={home ? ['#f9e3f1', 30, 60] : ['#e8f6ff', 50, 140]} />
-        <ambientLight intensity={0.7} />
-        <hemisphereLight args={['#ffffff', '#ffd6ea', 1.1]} />
+        <Sky home={Boolean(home)} focusRef={focusRef} />
 
-        <TogetherScene focusRef={focusRef} home={Boolean(home)} base={home ? { bg: '#f9e3f1', fog: ['#f9e3f1', 30, 60] } : { bg: '#cfeaff', fog: ['#e8f6ff', 50, 140] }} />
+        <TogetherScene focusRef={focusRef} home={Boolean(home)} base={skyBase} />
         <Suspense fallback={null}>
           {home ? (
             <HomeRoom ownerName={home.ownerName} decor={feat.homeDecor}>

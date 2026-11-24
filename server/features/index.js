@@ -13,5 +13,6 @@ import progress from './progress.js'
 import media from './media.js'
 import together from './together.js'
 import npcs from './npcs.js'
+import weather from './weather.js'
 
-export const FEATURE_FACTORIES = [moderation, games, friends, profile, progress, media, together, cosmetics, npcs]
+export const FEATURE_FACTORIES = [moderation, games, friends, profile, progress, media, together, cosmetics, npcs, weather]
