@@ -179,9 +179,9 @@ export default function CollectiblesLayer({ where, focusRef, store, onNear, onPi
   if (!where) return null
   return (
     <group>
-      {vis.map((c, i) => (
+      {vis.map((c) => (
         <Suspense key={c.id} fallback={null}>
-          <Item col={c} phase={(c.x * 0.37 + c.z * 0.51) % 6.28 + i * 0} store={store} onPick={onPick} />
+          <Item col={c} phase={(c.x * 0.37 + c.z * 0.51) % 6.28} store={store} onPick={onPick} />
         </Suspense>
       ))}
       <Glints visRef={visRef} focusRef={focusRef} />
