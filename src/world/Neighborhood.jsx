@@ -245,7 +245,7 @@ function Garden({ g }) {
 }
 
 // ---------- parsel ----------
-function OwnedPlot({ plot, data }) {
+function OwnedPlot({ data }) {
   const ext = data.ext ?? DEFAULT_EXTERIOR
   return (
     <>
@@ -282,7 +282,7 @@ function EmptyPlot({ plot }) {
 function Plot({ plot, data }) {
   return (
     <group position={[plot.x, 0, plot.z]} rotation={[0, plot.ry, 0]}>
-      {data ? <OwnedPlot plot={plot} data={data} /> : <EmptyPlot plot={plot} />}
+      {data ? <OwnedPlot data={data} /> : <EmptyPlot plot={plot} />}
     </group>
   )
 }
