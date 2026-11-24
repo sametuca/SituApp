@@ -246,12 +246,14 @@ export function useTogether(ctx) {
   useEffect(() => {
     if (!shoot) return
     if (shoot.n > 0) {
+      window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: { name: 'beep', final: shoot.n === 1 } }))
       const t = setTimeout(() => setShoot({ n: shoot.n - 1 }), 900)
       return () => clearTimeout(t)
     }
     // çekim: önce ekran beyaza parlasın, kare alınır, önizleme açılır
     let alive = true
     setFlash(true)
+    window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'shutter' }))
     const done = setTimeout(() => setFlash(false), 450)
     ;(async () => {
       try {
