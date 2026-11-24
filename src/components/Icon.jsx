@@ -2,7 +2,7 @@
 // Kural: DÜĞME/MENÜ gibi arayüz kromu için <Ico name="..." />; içerik (yiyecek, mekân, tepki, sohbet) emojileri Fluent 3D'de kalır (emoji.jsx).
 import {
   ArrowLeft, Armchair, Basket, Bicycle, ChatCircleDots, Coins, GearSix, Heart, House, Moon, PersonSimpleWalk, Question,
-  SpeakerHigh, SpeakerSlash, Smiley, Star, Storefront, Sun, SunHorizon, Trophy, Gift, GameController, PaperPlaneTilt, HandGrabbing,
+  SpeakerHigh, SpeakerSlash, Smiley, Star, Storefront, Sun, SunHorizon, Trophy, Gift, GameController, PaperPlaneTilt, HandGrabbing, Sword,
 } from '@phosphor-icons/react'
 
 const ICONS = {
@@ -12,6 +12,7 @@ const ICONS = {
   friends: [Heart, '#fda533'],
   quests: [Star, '#f2a30f'],
   trophy: [Trophy, '#f2a30f'],
+  pvp: [Sword, '#e5654a'],
   soundOn: [SpeakerHigh, '#4b9fd6'],
   soundOff: [SpeakerSlash, '#9a8cae'],
   collection: [Basket, '#e0873a'],

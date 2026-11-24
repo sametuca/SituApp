@@ -22,5 +22,6 @@ import housing from './housing.js'
 import rental from './rental.js'
 import pets from './pets.js'
 import beach from './beach.js'
+import pvp from './pvp.js'
 
-export const FEATURE_FACTORIES = [moderation, games, friends, profile, progress, media, together, cosmetics, npcs, weather, venues, collect, economy, dj, housing, rental, pets, beach]
+export const FEATURE_FACTORIES = [moderation, games, friends, profile, progress, media, together, cosmetics, npcs, weather, venues, collect, economy, dj, housing, rental, pets, beach, pvp]
