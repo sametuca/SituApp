@@ -33,8 +33,9 @@ export async function initStore() {
 let timer = null
 export function save() {
   if (supa.enabled) return mirror?.touch()
-  clearTimeout(timer)
+  if (timer) return // kısıtlama: yoğun aktivitede de en geç 4 sn'de bir yazılır
   timer = setTimeout(() => {
+    timer = null
     try {
       fs.mkdirSync(DIR, { recursive: true })
       const tmp = `${FILE}.tmp`
@@ -43,7 +44,7 @@ export function save() {
     } catch (e) {
       console.error('Sosyal veri yazılamadı:', e.message)
     }
-  }, 500)
+  }, 4000)
 }
 
 const defaults = () => ({
@@ -82,4 +83,20 @@ export function addReport(r) {
   db.reports.push(r)
   if (db.reports.length > 500) db.reports.splice(0, db.reports.length - 500)
   save()
+}
+
+// dosya modunda (Supabase yok) kapanırken bekleyen yazmayı hemen yap (kısıtlama yüzünden son 4 sn kaybolmasın)
+function writeNow() {
+  try {
+    fs.mkdirSync(DIR, { recursive: true })
+    fs.writeFileSync(`${FILE}.tmp`, JSON.stringify(db))
+    fs.renameSync(`${FILE}.tmp`, FILE)
+  } catch {
+    /* kapanırken sessiz */
+  }
+}
+for (const sig of ['SIGINT', 'SIGTERM']) {
+  process.on(sig, () => {
+    if (!supa.enabled) writeNow() // çıkışı supa.hookShutdown() yapar (index.js)
+  })
 }

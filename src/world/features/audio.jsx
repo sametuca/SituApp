@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { PLAY_LIMIT, zoneAt } from '../layout'
+import { PLAY_BOUNDS, zoneAt } from '../layout'
 import { VENUE_BY_ID, venueIdOf } from '../venues'
 import { subscribeWorld, worldClock } from '../worldClock'
 import { createMusic, OUTDOOR, VENUE_SCENE, ZONE_SCENE } from '../audio/music'
@@ -26,7 +26,7 @@ function whereAmI(room, f) {
   }
   const z = zoneAt(f.x, f.z).id
   const scene = ZONE_SCENE[z] ?? 'lobby'
-  return { scene, surface: z === 'park' ? 'grass' : z === 'beach' ? 'sand' : 'city', outdoor: OUTDOOR.has(scene) }
+  return { scene, surface: ['park', 'meadow', 'forest', 'pond'].includes(z) ? 'grass' : z === 'beach' ? 'sand' : 'city', outdoor: OUTDOOR.has(scene) }
 }
 
 function Slider({ label, value, onChange, onRelease }) {
@@ -97,12 +97,12 @@ export function useAudio({ net, focusRef, home, panel }) {
       }
     })
     const poll = setInterval(sync, 500)
-    // kıyı dalgaları: adanın kenarına (PLAY_LIMIT) yaklaştıkça artar; evde/mekânda yok
+    // kıyı dalgaları: adanın kenarına (PLAY_BOUNDS) yaklaştıkça artar; evde/mekânda yok
     const shoreTimer = setInterval(() => {
       if (!music) return
       const indoors = homeRef.current || String(roomRef.current).startsWith('venue:')
       const f = focusRef.current
-      const edge = PLAY_LIMIT - Math.max(Math.abs(f.x), Math.abs(f.z)) // kenara kalan mesafe (m)
+      const edge = Math.min(f.x - PLAY_BOUNDS.x0, PLAY_BOUNDS.x1 - f.x, f.z - PLAY_BOUNDS.z0, PLAY_BOUNDS.z1 - f.z) // kenara kalan mesafe (m)
       music.setShore(indoors ? 0 : Math.pow(Math.max(0, 1 - edge / 22), 1.4))
     }, 250)
     return () => {

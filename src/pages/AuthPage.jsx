@@ -15,20 +15,11 @@ export default function AuthPage() {
   const { user, loading, recovery, signIn, signUp, resetPassword, updatePassword, resendConfirmation } = useAuth()
   const location = useLocation()
   const [mode, setMode] = useState('login') // login | register
-  const [online, setOnline] = useState(null) // sunucudaki çevrimiçi sayısı (yalnızca bu ekranda gösterilir)
+  // Çevrimiçi sayısı: her zaman 100-150 arasında, yavaşça oynayan bir değer gösterilir (gerçek sayıdan bağımsız).
+  const [online, setOnline] = useState(() => 100 + Math.floor(Math.random() * 51))
   useEffect(() => {
-    let alive = true
-    const load = () =>
-      fetch('/api/health')
-        .then((r) => r.json())
-        .then((d) => alive && Number.isFinite(d.online) && setOnline(d.online))
-        .catch(() => alive && setOnline(null))
-    load()
-    const t = setInterval(load, 15000)
-    return () => {
-      alive = false
-      clearInterval(t)
-    }
+    const t = setInterval(() => setOnline((n) => Math.max(100, Math.min(150, n + Math.floor(Math.random() * 7) - 3))), 4000)
+    return () => clearInterval(t)
   }, [])
   const [form, setForm] = useState(EMPTY)
   const [errors, setErrors] = useState({})

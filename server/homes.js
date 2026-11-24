@@ -34,8 +34,9 @@ export async function initHomes() {
 let timer = null
 function persist() {
   if (supa.enabled) return mirror?.touch()
-  clearTimeout(timer)
+  if (timer) return
   timer = setTimeout(() => {
+    timer = null
     try {
       fs.mkdirSync(DIR, { recursive: true })
       const tmp = `${FILE}.tmp`
@@ -44,7 +45,7 @@ function persist() {
     } catch (e) {
       console.error('Ev kaydı yazılamadı:', e.message)
     }
-  }, 500)
+  }, 4000)
 }
 
 const num = (v, lim) => {
@@ -137,3 +138,19 @@ export const listPlotted = () =>
   Object.entries(homes)
     .filter(([, h]) => h.plot)
     .map(([key, h]) => ({ key, owner: h.owner, open: Boolean(h.open), plot: h.plot, exterior: h.exterior ?? null }))
+
+// dosya modunda (Supabase yok) kapanırken bekleyen yazmayı hemen yap (kısıtlama yüzünden son 4 sn kaybolmasın)
+function writeNow() {
+  try {
+    fs.mkdirSync(DIR, { recursive: true })
+    fs.writeFileSync(`${FILE}.tmp`, JSON.stringify(homes))
+    fs.renameSync(`${FILE}.tmp`, FILE)
+  } catch {
+    /* kapanırken sessiz */
+  }
+}
+for (const sig of ['SIGINT', 'SIGTERM']) {
+  process.on(sig, () => {
+    if (!supa.enabled) writeNow() // çıkışı supa.hookShutdown() yapar (index.js)
+  })
+}

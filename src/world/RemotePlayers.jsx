@@ -7,6 +7,9 @@ import AvatarRig, { AVATAR_HEIGHT } from './AvatarRig'
 import { GUIDE } from './layout'
 import { together } from './features/togetherStore'
 import { BIKE_POSE } from './bikeStore'
+import { playerPos } from './cull'
+
+const NEAR_DRAW = 42 // m: bu mesafeden uzaktaki oyuncular çizilmez
 import BikeModel from './Bike'
 
 /** Karakterin üstünde isim etiketi, konuşma balonu, uçan emoji tepkisi ve (fısıldıyorsa) 🤫. */
@@ -65,6 +68,8 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
   const [bubble, setBubble] = useState(null)
   const animRef = useRef('idle')
   const bubbleRef = useRef(null)
+  const [near, setNear] = useState(true) // uzaktaki oyuncular çizilmez (500 oyuncuda FPS için)
+  const nearRef = useRef(true)
   const { reaction, whisper } = useLiveFlags(id, reactions, whispering)
   const pose = useMemo(() => ({ get current() { return together.poses.get(id) ?? (remotes.current.get(id)?.anim === 'ride' ? BIKE_POSE : null) } }), [id, remotes])
 
@@ -77,6 +82,12 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
     r.x = MathUtils.lerp(r.x, r.tx, k)
     r.z = MathUtils.lerp(r.z, r.tz, k)
     g.position.set(r.x, 0, r.z)
+    const d2 = (r.x - playerPos.x) ** 2 + (r.z - playerPos.z) ** 2
+    const nn = nearRef.current ? d2 < NEAR_DRAW * NEAR_DRAW * 1.15 : d2 < NEAR_DRAW * NEAR_DRAW
+    if (nn !== nearRef.current) {
+      nearRef.current = nn
+      setNear(nn)
+    }
     const diff = MathUtils.euclideanModulo(r.tr - g.rotation.y + Math.PI, Math.PI * 2) - Math.PI
     g.rotation.y += diff * k
 
@@ -102,13 +113,13 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
       onPointerOver={() => onPick && (document.body.style.cursor = 'pointer')}
       onPointerOut={() => (document.body.style.cursor = '')}
     >
-      <AvatarRig slug={avatar} anim={anim === 'ride' ? 'idle' : anim} pose={pose} cosId={id} />
-      {anim === 'ride' && (
+      {near && <AvatarRig slug={avatar} anim={anim === 'ride' ? 'idle' : anim} pose={pose} cosId={id} />}
+      {near && anim === 'ride' && (
         <Suspense fallback={null}>
           <BikeModel />
         </Suspense>
       )}
-      <Tag name={name} bubble={bubble} reaction={reaction} whisper={whisper} />
+      {near && <Tag name={name} bubble={bubble} reaction={reaction} whisper={whisper} />}
     </group>
   )
 })

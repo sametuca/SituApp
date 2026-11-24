@@ -1,18 +1,18 @@
 // Süs bitkisi yerleri (saf JS, deterministik): çalı ve çim öbekleri yalnızca ÇİMLİ boş alanlara serpiştirilir —
 // yol/kaldırım/meydan/kum/binalar/süs nesneleri/çardak/battaniyeler hariç (layout.js ile aynı geometriye bakar).
-import { BLANKETS, BUILDINGS, GAZEBO, PROPS, ROAD_HALF } from './layout.js'
+import { BLANKETS, BUILDINGS, GAZEBO, ISLAND, PROPS, ROAD_HALF } from './layout.js'
 
-const ISLAND = 50
 let seed = 20240607
 const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296)
 
-const RH = ROAD_HALF + 1.6 // yol + kaldırım payı
+const RH = ROAD_HALF + 1.6 // yol + kaldırım payı (dar şerit: bitki kaldırıma taşmasın)
 
 function grassFree(x, z, pad) {
-  if (Math.abs(x) > ISLAND - 0.8 || Math.abs(z) > ISLAND - 0.8) return false
+  if (x < ISLAND.x0 + 1 || x > ISLAND.x1 - 1 || z < ISLAND.z0 + 1 || z > ISLAND.z1 - 1) return false
   if (Math.hypot(x, z) < 13) return false // lobi meydanı
-  if (Math.abs(x) < RH + pad) return false // kuzey-güney yol
+  if (Math.abs(x) < RH + pad && z < 49) return false // kuzey-güney yol
   if (x > -12 && Math.abs(z) < RH + pad) return false // doğu-batı yol (batısı park)
+  if (Math.hypot(x + 30, z - 30) < 9 + pad) return false // gölet
   if (x <= -12 && x >= -27 && Math.abs(z) < 2.4 + pad) return false // park patikası
   if (x > -14.5 && x < 14.5 && z < -11) return false // kafe sokağı kaldırım taşı zemini
   if (x > 11.5 && x < 48.5 && Math.abs(z) < 14.5) return false // kulüp bölgesi zemini
@@ -31,11 +31,11 @@ function grassFree(x, z, pad) {
   return true
 }
 
-function scatter(count, minDist, pad, tries = 6000) {
+function scatter(count, minDist, pad, tries = 20000) {
   const out = []
   for (let i = 0; i < tries && out.length < count; i++) {
-    const x = (rnd() * 2 - 1) * (ISLAND - 1)
-    const z = (rnd() * 2 - 1) * (ISLAND - 1)
+    const x = ISLAND.x0 + rnd() * (ISLAND.x1 - ISLAND.x0)
+    const z = ISLAND.z0 + rnd() * (ISLAND.z1 - ISLAND.z0)
     if (!grassFree(x, z, pad)) continue
     if (out.some((o) => (o.x - x) ** 2 + (o.z - z) ** 2 < minDist * minDist)) continue
     out.push({ x, z, ry: rnd() * Math.PI * 2, s: 0.85 + rnd() * 0.4 })
@@ -44,5 +44,5 @@ function scatter(count, minDist, pad, tries = 6000) {
 }
 
 /** Çalılar seyrek (≥ 4 m arayla), çim öbekleri biraz daha sık; ikisi de pastel ve düşük yoğunlukta. */
-export const BUSHES = scatter(34, 4.2, 0.6)
-export const TUFTS = scatter(190, 1.9, 0.2)
+export const BUSHES = scatter(90, 5.5, 0.6)
+export const TUFTS = scatter(300, 3.2, 0.2)

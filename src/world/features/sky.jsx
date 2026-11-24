@@ -49,6 +49,9 @@ function Toggle({ on, onClick }) {
   )
 }
 
+// Gece-gündüz döngüsü şimdilik kapalı: oyun hep gündüz (tatlı, aydınlık görünüm). Geri açmak için false yap. Test için ?hour= ve ?daylen= yine çalışır.
+const DAY_ONLY = true
+
 export function useSky({ net, touch, home, venue, focusRef }) {
   const { on } = net
   const q = useMemo(() => params(), [])
@@ -93,7 +96,7 @@ export function useSky({ net, touch, home, venue, focusRef }) {
   useEffect(() => {
     const tick = () => {
       const m = MODES.find((x) => x.id === modeRef.current)
-      const hour = urlHour != null && !dayLen ? urlHour : m?.hour != null ? m.hour : currentHour()
+      const hour = urlHour != null && !dayLen ? urlHour : DAY_ONLY ? 12.5 : m?.hour != null ? m.hour : currentHour()
       const phase = phaseOf(hour)
       publishWorld({ hour, phase, night: nightAt(hour), sunset: sunsetAt(hour), weather: weatherRef.current })
       setNow((p) => (fmtHour(p.hour) === fmtHour(hour) && p.phase === phase ? p : { hour, phase }))
@@ -114,24 +117,6 @@ export function useSky({ net, touch, home, venue, focusRef }) {
   }
 
   const settingsSections = [
-    <section key="time" className="flex flex-col gap-2">
-      <div>
-        <p className="text-sm font-black text-[#4a3b5c]">🌗 Zaman</p>
-        <p className="text-xs font-semibold text-[#8a7a9c]">Şehrin gün-gece döngüsü. “Gerçek saat” yerel saatini (İstanbul) izler.</p>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        {MODES.map((m) => (
-          <button
-            key={m.id}
-            onClick={() => pickMode(m.id)}
-            aria-pressed={mode === m.id}
-            className={`rounded-2xl border-2 px-2 py-2 text-sm font-extrabold transition active:scale-95 ${mode === m.id ? 'border-white bg-[#a88bff] text-white shadow' : 'border-white bg-white/70 text-[#4a3b5c]'}`}
-          >
-            {m.emoji} {m.label}
-          </button>
-        ))}
-      </div>
-    </section>,
     <section key="weather" className="flex items-start gap-3">
       <div className="min-w-0 flex-1">
         <p className="text-sm font-black text-[#4a3b5c]">🌦️ Hava efektleri</p>
@@ -142,19 +127,13 @@ export function useSky({ net, touch, home, venue, focusRef }) {
   ]
 
   const wEmoji = WEATHER_EMOJI[weather]
-  const menuNodes = (
+  // gece-gündüz kapalı olduğundan menüde saat satırı yok; yalnızca hava durumu açık değilse küçük bir satır
+  const menuNodes = wEmoji && weather !== 'clear' ? (
     <div className="flex items-center gap-3 rounded-2xl bg-[#f3f0fa] px-3 py-2 text-sm font-extrabold text-[#4a3b5c]">
-      <Ico name={now.phase === 'night' ? 'night' : now.phase === 'day' ? 'day' : 'dusk'} size={22} />
-      <span className="flex-1">
-        <span className="tabular-nums">{fmtHour(now.hour)}</span>
-        <span className="ml-1 text-xs font-bold text-[#8a7a9c]">
-          · {now.phase === 'night' ? 'Gece' : now.phase === 'dusk' ? 'Gün batımı' : now.phase === 'dawn' ? 'Şafak' : 'Gündüz'}
-          {wEmoji ? ` · ${WEATHER_NAME[weather]}` : ''}
-        </span>
-      </span>
-      {wEmoji && <span className="text-lg">{wEmoji}</span>}
+      <span className="flex-1">{WEATHER_NAME[weather]}</span>
+      <span className="text-lg">{wEmoji}</span>
     </div>
-  )
+  ) : null
 
   const reduced = eventOn && read(EVENT_FX_KEY, '1') !== '0'
   const worldEffects = fxOn && !home && !venue ? <WeatherFx focusRef={focusRef} touch={touch} reduced={reduced} /> : null

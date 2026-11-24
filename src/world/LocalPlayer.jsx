@@ -4,6 +4,7 @@ import { MathUtils, Vector3 } from 'three'
 import AvatarRig from './AvatarRig'
 import { resolveCollisions } from './layout'
 import { together } from './features/togetherStore'
+import { playerPos } from './cull'
 import { BIKE_POSE, BIKE_SPEED, bike, useRiding } from './bikeStore'
 import BikeModel from './Bike'
 
@@ -144,6 +145,8 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
     }
     f.x = g.position.x
     f.z = g.position.z
+    playerPos.x = f.x
+    playerPos.z = f.z
     f.ry = g.rotation.y
     f.anim = next
     onMove?.(f.x, f.z, f.ry, next)

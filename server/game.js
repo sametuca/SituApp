@@ -75,9 +75,12 @@ import * as supa from './supa.js'
 import { loadProfile, saveAvatar, setName, uidByName } from './auth.js'
 import { VENUE_BY_ID, isVenueRoom, venueIdOf, venueRoom } from '../src/world/venues.js'
 
-const WORLD_HALF = 60 // dünya sınırı (±m); istemci haritasıyla aynı olmalı
-const MAX_PLAYERS = 100
+const WORLD_HALF = 110 // dünya sınırı (±m); istemci layout.js WORLD_HALF ile aynı
+const MAX_PLAYERS = 600
 const TICK_MS = 100
+const AOI_R = 55 // m: konum yayını ilgi alanı (500+ oyuncu için)
+const NEAR_R = 24 // m: bu mesafedekiler her tick güncellenir
+const CHAT_RANGE = 70 // m: şehirde herkese açık sohbet/emoji yalnızca bu mesafedekilere gider
 const MAX_PAYLOAD = 144 * 1024 // yalnızca sesli mesaj (≤ 96 KB ses → ~128 KB base64) için; diğer mesajlar aşağıda 8 KB ile sınırlı
 const MAX_TEXT_PAYLOAD = 8192 // ev kaydı (40 eşya) 2 KB'ı aşabilir
 const BIG_TYPES = new Set(['voice'])
@@ -130,10 +133,11 @@ export function attachGameServer(httpServer) {
   const send = (ws, msg) => ws.readyState === 1 && ws.send(JSON.stringify(msg))
   // room verilirse yalnızca o odadakilere gider
   // from verilirse, gönderenle arasında engel olan alıcılara gitmez
-  const broadcast = (msg, exceptId, room, from) => {
+  const broadcast = (msg, exceptId, room, from, near) => {
     const data = JSON.stringify(msg)
     for (const p of players.values()) {
       if (p.id === exceptId || (room && p.room !== room) || p.ws.readyState !== 1) continue
+      if (near && Math.hypot(p.x - near.x, p.z - near.z) > near.r) continue // yakındakiler (büyük dünyada gürültüyü azaltır)
       if (from && mod.blockedPair(from, p)) continue
       p.ws.send(data)
     }
@@ -420,7 +424,7 @@ export function attachGameServer(httpServer) {
           send(ws, dm)
           emitEvent(me, 'chat', 1, target)
         } else {
-          broadcast({ t: 'chat', id: me.id, name: me.name, text, ts: now }, undefined, me.room, me)
+          broadcast({ t: 'chat', id: me.id, name: me.name, text, ts: now }, undefined, me.room, me, me.room === 'city' ? { x: me.x, z: me.z, r: CHAT_RANGE } : undefined)
           emitEvent(me, 'chat')
         }
       }
@@ -438,18 +442,67 @@ export function attachGameServer(httpServer) {
     ws.on('error', () => ws.terminate())
   })
 
-  // değişen konumları toplu yayınla
+  // Değişen konumlar toplu yayınılır. 500+ oyuncu için ilgi alanı (AOI): herkes yalnızca yakınındakileri alır
+  // (≤ NEAR_R her tick, NEAR_R-AOI_R arası her 4. tick), ayrıca her 2 sn'de bir yakındaki herkesin tam anlık görüntüsü gelir.
+  let tickNo = 0
+  const profile = process.env.SITUAPP_PROFILE === '1'
+  let tickMs = 0
+  let tickMax = 0
   const tick = setInterval(() => {
-    const changed = []
+    const t0 = profile ? performance.now() : 0
+    tickNo++
+    const full = tickNo % 20 === 0
+    const far = tickNo % 4 === 0
+    const byRoom = new Map()
     for (const p of players.values()) {
-      if (!p.dirty) continue
+      p.moved = p.dirty
       p.dirty = false
-      changed.push([p.room, p.id, +p.x.toFixed(2), +p.z.toFixed(2), +p.ry.toFixed(2), ANIMS.indexOf(p.anim)])
+      let r = byRoom.get(p.room)
+      if (!r) byRoom.set(p.room, (r = { cells: new Map(), any: false }))
+      const key = `${Math.floor(p.x / AOI_R)},${Math.floor(p.z / AOI_R)}`
+      let c = r.cells.get(key)
+      if (!c) r.cells.set(key, (c = []))
+      c.push(p)
+      if (p.moved) r.any = true
     }
-    if (!changed.length) return
-    for (const p of players.values()) {
-      const others = changed.filter((c) => c[0] === p.room && c[1] !== p.id).map((c) => c.slice(1))
-      if (others.length) send(p.ws, { t: 'state', p: others })
+    for (const r of byRoom.values()) {
+      if (!r.any && !full) continue
+      for (const [key, list] of r.cells) {
+        const [cx, cz] = key.split(',').map(Number)
+        const around = []
+        for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) {
+          const c = r.cells.get(`${cx + dx},${cz + dz}`)
+          if (c) around.push(...c)
+        }
+        for (const p of list) {
+          const out = []
+          for (const q of around) {
+            if (q === p || (!q.moved && !full)) continue
+            const dx = q.x - p.x
+            const dz = q.z - p.z
+            const d2 = dx * dx + dz * dz
+            if (d2 > AOI_R * AOI_R || (d2 > NEAR_R * NEAR_R && !far && !full)) continue
+            if (q.entryTick !== tickNo) {
+              // her oyuncunun satırı tick başına bir kez metne çevrilir, alıcılar arasında paylaşılır
+              q.entryTick = tickNo
+              q.entry = `["${q.id}",${Math.round(q.x * 100) / 100},${Math.round(q.z * 100) / 100},${Math.round(q.ry * 100) / 100},${ANIMS.indexOf(q.anim)}]`
+            }
+            out.push(q.entry)
+            if (out.length >= 120) break
+          }
+          if (out.length && p.ws.readyState === 1) p.ws.send(`{"t":"state","p":[${out.join(',')}]}`)
+        }
+      }
+    }
+    if (profile) {
+      const d = performance.now() - t0
+      tickMs += d
+      tickMax = Math.max(tickMax, d)
+      if (tickNo % 50 === 0) {
+        console.log(`[profil] oyuncu=${players.size} tick ort=${(tickMs / 50).toFixed(2)}ms maks=${tickMax.toFixed(1)}ms rss=${Math.round(process.memoryUsage().rss / 1048576)}MB`)
+        tickMs = 0
+        tickMax = 0
+      }
     }
   }, TICK_MS)
 

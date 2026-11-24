@@ -147,13 +147,14 @@ export function createMirror({ table, getAll, toRow, label }) {
     prime(rows, keyOf, dataOf) {
       for (const r of rows) snap.set(keyOf(r), JSON.stringify(dataOf(r)))
     },
-    touch(delay = 800) {
-      if (!enabled) return
-      clearTimeout(timer)
+    // Kısıtlama (throttle): sürekli aktivite olsa bile en geç `delay` ms sonra yazar (eskiden debounce'tu: 500 oyuncuda hiç yazılmazdı).
+    touch(delay = 5000) {
+      if (!enabled || timer) return
       timer = setTimeout(() => void m.flush(), delay)
     },
     async flush() {
       clearTimeout(timer)
+      timer = null
       if (busy) await busy.catch(() => {})
       const dirty = []
       for (const [k, v] of Object.entries(getAll())) {

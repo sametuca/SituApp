@@ -1,4 +1,5 @@
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
+import { useCull } from './cull'
 import { useGLTF } from '@react-three/drei'
 import { Box3, Vector3 } from 'three'
 
@@ -17,8 +18,10 @@ export default function Prop({ model, x, z, scale = 1, ry = 0 }) {
     })
     return clone
   }, [scene])
+  const g = useRef()
+  useCull(g, x, z)
   return (
-    <group position={[x, 0, z]} rotation={[0, ry, 0]} scale={scale}>
+    <group ref={g} position={[x, 0, z]} rotation={[0, ry, 0]} scale={scale}>
       <primitive object={object} />
     </group>
   )

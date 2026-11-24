@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ToyButton } from '../components/ui'
 import { emojiSrc } from '../components/emoji'
 import { Ico } from '../components/Icon'
-import { BUILDINGS, GUIDE, ROAD_HALF, ZONES } from './layout'
+import { BUILDINGS, GUIDE, ISLAND, RIM, ROAD_END, ROAD_HALF, ZONES } from './layout'
 
 const glass = 'border-2 border-white bg-white/75 shadow-soft backdrop-blur-md'
 
@@ -107,7 +107,7 @@ export function ZoneToast({ zone }) {
 // Küçük harita: oyuncuyu ortalar, yakın çevreyi (±LOCAL_R m) gösterir, mekân ikonları + yakındaki oyuncular. Dokununca büyür:
 // tüm şehir + bölge adları + bölgelere ışınlanma düğmeleri. Çizim canvas'ta (yüksek çözünürlük).
 const LOCAL_R = 30 // küçük harita yarıçapı (m)
-const WORLD_R = 60 // büyük harita yarıçapı (m)
+const WORLD_R = 112 // büyük harita yarıçapı (m); merkez (0, -25)
 const iconCache = new Map()
 const iconOf = (emoji) => {
   const src = emojiSrc(emoji)
@@ -125,7 +125,7 @@ const ZONE_CENTER = Object.fromEntries(ZONES.map((z) => [z.id, z.shape === 'circ
 function drawMap(ctx, S, big, f, remotes) {
   const r = big ? WORLD_R : LOCAL_R
   const cx = big ? 0 : f.x
-  const cz = big ? 0 : f.z
+  const cz = big ? -25 : f.z
   const k = S / (r * 2)
   const X = (v) => (v - cx) * k + S / 2
   const Z = (v) => (v - cz) * k + S / 2
@@ -140,18 +140,25 @@ function drawMap(ctx, S, big, f, remotes) {
   ctx.fillStyle = '#9fdcef' // deniz (adanın dört yanı)
   ctx.fillRect(0, 0, S, S)
   ctx.fillStyle = '#f6e3b0' // kıyı kumu
-  ctx.fillRect(X(-53.5), Z(-53.5), len(107), len(107))
-  ctx.fillStyle = '#bfe9c9' // çimen
-  ctx.fillRect(X(-50), Z(-50), len(100), len(100))
+  ctx.fillRect(X(ISLAND.x0 - RIM), Z(ISLAND.z0 - RIM), len(ISLAND.x1 - ISLAND.x0 + RIM * 2), len(ISLAND.z1 - ISLAND.z0 + RIM * 2))
+  ctx.fillStyle = '#c8ecd0' // çimen
+  ctx.fillRect(X(ISLAND.x0), Z(ISLAND.z0), len(ISLAND.x1 - ISLAND.x0), len(ISLAND.z1 - ISLAND.z0))
   ctx.fillStyle = '#ffe9b8' // plaj kumu
   ctx.fillRect(X(-14), Z(30), len(28), len(20))
+  ctx.fillStyle = '#bfeaf5' // gölet
+  ctx.beginPath()
+  ctx.arc(X(-30), Z(30), len(7), 0, Math.PI * 2)
+  ctx.fill()
   ctx.fillStyle = '#e9d3dc' // kaldırımlar (arnavut kaldırımı tonu)
-  ctx.fillRect(X(-ROAD_HALF - 1.4), 0, len(ROAD_HALF * 2 + 2.8), S)
-  ctx.fillRect(X(-12), Z(-ROAD_HALF - 1.4), S, len(ROAD_HALF * 2 + 2.8)) // doğu-batı: batıda (park) yol yok
+  const nsY0 = Z(ROAD_END.north)
+  const nsH = len(ROAD_END.south - ROAD_END.north)
+  const ewW = len(ROAD_END.east + 12)
+  ctx.fillRect(X(-ROAD_HALF - 1.4), nsY0, len(ROAD_HALF * 2 + 2.8), nsH)
+  ctx.fillRect(X(-12), Z(-ROAD_HALF - 1.4), ewW, len(ROAD_HALF * 2 + 2.8)) // doğu-batı: batıda (park) yol yok
   ctx.fillRect(X(-26), Z(-1.7), len(14), len(3.4)) // park patikası
-  ctx.fillStyle = '#c9c3d6' // yollar
-  ctx.fillRect(X(-ROAD_HALF), 0, len(ROAD_HALF * 2), S)
-  ctx.fillRect(X(-12), Z(-ROAD_HALF), S, len(ROAD_HALF * 2))
+  ctx.fillStyle = '#d8cfe6' // yollar
+  ctx.fillRect(X(-ROAD_HALF), nsY0, len(ROAD_HALF * 2), nsH)
+  ctx.fillRect(X(-12), Z(-ROAD_HALF), ewW, len(ROAD_HALF * 2))
   ctx.fillStyle = '#f7d9e6' // lobi meydanı
   ctx.beginPath()
   ctx.arc(X(0), Z(0), len(11), 0, Math.PI * 2)
