@@ -157,6 +157,7 @@ uniform vec3 uHairTo; uniform vec3 uOutTo; uniform vec3 uEyeTo;
 uniform float uUseHair; uniform float uUseOut; uniform float uUseEye;
 uniform vec3 uEyeC0; uniform vec3 uEyeC1; uniform float uEyeR;
 varying float vHead; varying float vHand; varying float vFoot; varying vec3 vBind;
+uniform float uHairMinY;
 uniform vec3 uBrow; uniform vec2 uBrowX; // uBrowX: yüz orta x, yarı genişlik // x: yüz bandı alt y, y: üst y, z: yüzün ön z eşiği
 float lookLum(vec3 c){ return dot(c, vec3(0.299,0.587,0.114)); }
 vec3 lookRecolor(vec3 col, vec3 ref, vec3 to, float w){
@@ -178,7 +179,7 @@ vec3 lookApply(vec3 col){
   }
   // kaş / göz kapağı bandı saç sayılmaz (kaşlar ve kirpikler boyanmasın); sakal ve saç bu bandın dışında kalır
   float inBrow = step(uBrow.x, vBind.y) * step(vBind.y, uBrow.y) * step(uBrow.z, vBind.z) * step(abs(vBind.x - uBrowX.x), uBrowX.y) * step(0.9, vHead);
-  hairW *= (1.0 - inBrow);
+  hairW *= (1.0 - inBrow) * step(uHairMinY, vBind.y); // saç belden aşağıda olamaz (etek altı, pantolon)
   if (uUseHair > 0.5 && hairW > 0.0) res = lookRecolor(res, pow(hairRef, vec3(2.2)), uHairTo, hairW);
   if (uUseOut > 0.5 && vHead < 0.8 && vHand < 0.4) {
     // gövdede ten ve siyah çizgiler dışındaki HER yama kıyafettir (baskı/desen parçaları dahil); saç renkleri hariç
@@ -204,6 +205,14 @@ vec3 lookApply(vec3 col){
   return res;
 }
 `
+
+/** Saçın inebileceği en düşük y: gövde boyunun yarısı (uzun saç kalçaya yetişmez; etek altı/pantolon saç sayılmaz). */
+function hairMinY(mesh) {
+  const g = mesh.geometry
+  g.computeBoundingBox()
+  const b = g.boundingBox
+  return b.min.y + (b.max.y - b.min.y) * 0.5
+}
 
 /** Klonlanmış model üzerine renk uygular; look boşsa (hepsi -1) hiçbir şey yapmaz. */
 export function applyLook(model, slug, look) {
@@ -233,7 +242,8 @@ export function applyLook(model, slug, look) {
       uUseEye: { value: useE && eyes?.eyes.length === 2 ? 1 : 0 },
       uEyeC0: { value: new Vector3(...(eyes?.eyes[0] ?? [0, 0, 0])) },
       uEyeC1: { value: new Vector3(...(eyes?.eyes[1] ?? [0, 0, 0])) },
-      uBrow: { value: eyes?.eyes.length === 2 ? new Vector3(eyes.eyes[0][1] - 0.035, eyes.eyes[0][1] + 0.075, Math.min(eyes.eyes[0][2], eyes.eyes[1][2]) - 0.07) : new Vector3(9, -9, 9) },
+      uHairMinY: { value: hairMinY(o) },
+      uBrow: { value: eyes?.eyes.length === 2 ? new Vector3(eyes.eyes[0][1] - 0.07, eyes.eyes[0][1] + 0.075, Math.min(eyes.eyes[0][2], eyes.eyes[1][2]) - 0.07) : new Vector3(9, -9, 9) },
       uBrowX: { value: eyes?.eyes.length === 2 ? new Vector2((eyes.eyes[0][0] + eyes.eyes[1][0]) / 2, Math.abs(eyes.eyes[0][0] - eyes.eyes[1][0]) / 2 + 0.03) : new Vector2(0, 0) },
       uEyeR: { value: eyes?.r ?? 0.02 },
     }
