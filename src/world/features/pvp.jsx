@@ -71,7 +71,7 @@ function Lobby({ lobby, send, now }) {
   const queued = lobby?.queued
   return (
     <div>
-      <h2 className="text-2xl font-black text-[#4a3b5c]">Düello ⚔️</h2>
+      <h2 className="text-2xl font-black text-[#4a3b5c]">Düello</h2>
       {me && (
         <p className="mt-1 text-sm font-bold text-ink-soft">
           Puanın <b>{me.elo}</b> · {me.w} galibiyet / {me.l} yenilgi
@@ -81,7 +81,7 @@ function Lobby({ lobby, send, now }) {
       <div className="mt-2 grid gap-2">
         {queued ? (
           <div className="rounded-2xl bg-candy-lilac/40 p-3 text-center text-sm font-extrabold text-ink">
-            Rakip bekleniyor… {GAMES[queued]?.emoji ?? '🎲'}
+            Rakip bekleniyor…
             <button type="button" className={`${btn} ml-2 bg-white`} onClick={() => send({ t: 'pvp_cancel' })}>
               Vazgeç
             </button>
@@ -89,12 +89,12 @@ function Lobby({ lobby, send, now }) {
         ) : (
           <>
             <button type="button" className={`${btn} bg-candy-pink`} onClick={() => send({ t: 'pvp_queue', game: 'any' })}>
-              🎲 Rastgele düello
+              Rastgele düello
             </button>
             <div className="grid grid-cols-3 gap-2">
               {Object.entries(GAMES).map(([id, g]) => (
                 <button key={id} type="button" title={g.hint} className={`${btn} bg-white px-2 text-xs`} onClick={() => send({ t: 'pvp_queue', game: id })}>
-                  {g.emoji} {g.name}
+                  {g.name}
                 </button>
               ))}
             </div>
@@ -106,7 +106,6 @@ function Lobby({ lobby, send, now }) {
         {(lobby?.list ?? []).length === 0 && <p className="text-sm font-semibold text-ink-soft">Şu an kimse beklemiyor. Sıraya gir, biri gelsin!</p>}
         {(lobby?.list ?? []).map((w) => (
           <div key={w.id} className="flex items-center gap-2 rounded-2xl bg-white p-2 shadow-soft">
-            <span className="text-2xl">{GAMES[w.game]?.emoji ?? '🎲'}</span>
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-black text-ink">{w.name}</div>
               <div className="text-xs font-bold text-ink-soft">
@@ -121,7 +120,7 @@ function Lobby({ lobby, send, now }) {
       </div>
       {(lobby?.top ?? []).length > 0 && (
         <>
-          <p className="mt-4 text-xs font-extrabold uppercase tracking-wide text-ink-soft">En iyiler 🏆</p>
+          <p className="mt-4 text-xs font-extrabold uppercase tracking-wide text-ink-soft">En iyiler</p>
           <ol className="mt-1 text-sm font-bold text-ink">
             {lobby.top.map((t, i) => (
               <li key={i}>
@@ -145,7 +144,7 @@ function Match({ match, result, send, now, onBack }) {
   return (
     <div className="text-center">
       <h2 className="text-xl font-black text-[#4a3b5c]">
-        {g.emoji} {g.name}
+        {g.name}
       </h2>
       <p className="text-sm font-bold text-ink-soft">
         Rakip: <b>{opp.name}</b> ({opp.elo})
