@@ -3,7 +3,7 @@ import { screenK } from './screenK'
 import { useFrame, useLoader } from '@react-three/fiber'
 import { CanvasTexture, Color, DataTexture, ExtrudeGeometry, Shape, LinearFilter, RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
 import { Html, RoundedBox } from '@react-three/drei'
-import { BLANKETS, BUILDINGS, GAZEBO, ISLAND, PROPS, RIM, ROAD_END, ROAD_HALF } from './layout'
+import { BLANKETS, BUILDINGS, GAZEBO, ISLAND, PROPS, RIM, ROAD_END, ROAD_HALF, TOWELS } from './layout'
 import { useCull } from './cull'
 import Facade from './Facade'
 import { facadeOf } from './facadeData'
@@ -662,6 +662,12 @@ export default function City({ focusRef }) {
         <Prop key={i} {...p} />
       ))}
       <Plants />
+      {TOWELS.map((t, i) => (
+        <mesh key={i} position={[t.x, 0.05, t.z]} rotation={[-Math.PI / 2, 0, t.ry]} receiveShadow>
+          <planeGeometry args={[0.95, 1.9]} />
+          <meshStandardMaterial color={t.c} roughness={1} />
+        </mesh>
+      ))}
       {BLANKETS.map((b, i) => (
         <Blanket key={i} b={b} />
       ))}

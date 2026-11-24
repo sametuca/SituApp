@@ -153,6 +153,10 @@ const M = {
   umbrella: '/models/beach/beach-umbrella.glb',
   lounger: '/models/beach/beach-lounger.glb',
   palm: '/models/beach/beach-palm.glb',
+  lifeguard: '/models/beach/lifeguard.glb',
+  volleyball: '/models/beach/volleyball.glb',
+  sandcastle: '/models/beach/sandcastle.glb',
+  plane: '/models/airport/toy-plane.glb',
 }
 const p = (model, x, z, scale, r = 0, ry = 0) => ({ model: M[model], x, z, scale, r, ry })
 
@@ -190,6 +194,15 @@ for (const side of [-1, 1]) {
   }
 }
 for (const [x, z] of [[-12, 31], [12, 31], [-11, 48], [11, 48]]) PROPS.push(p('palm', x, z, 4.6, 0.5))
+// plaj ortamı (yeni oyuncuların doğduğu yer): cankurtaran kulesi, voleybol, kum kaleleri, havalimanı terminali + park etmiş uçak
+PROPS.push(p('lifeguard', -15.5, 41, 3.4, 1.0), p('volleyball', 19, 45, 4.6, 0, Math.PI / 2), p('sandcastle', -5.5, 47.6, 1.5, 0.5), p('sandcastle', 6.5, 48.2, 1.2, 0.4, 0.8))
+BUILDINGS.push(b(-23, 44, 10, 7, 6, 'blue', 's', '🛬 Terminal'))
+PROPS.push(p('plane', -23, 48.6, 4.4, 1.4, 0.3))
+// plaj havluları (yere serili küçük renkli dikdörtgenler; City.jsx çizer)
+export const TOWELS = [
+  { x: -10.2, z: 44.6, ry: 0.2, c: '#ffd35e' }, { x: 8.2, z: 44.2, ry: -0.3, c: '#7fcdf3' }, { x: 11, z: 46.6, ry: 0.1, c: '#b79cff' },
+  { x: -12.4, z: 47.2, ry: 0.4, c: '#8fdcb4' }, { x: 14.5, z: 42.5, ry: -0.5, c: '#ffb48c' },
+]
 // mahalle köşelerinde ağaçlar
 for (const [x, z] of [[17, -33], [17, 33], [47 - 2, 14]]) PROPS.push(p('tree', x, z, 3.6, 0.7))
 
