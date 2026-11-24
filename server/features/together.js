@@ -3,7 +3,7 @@
 // (Fotoğraf kabini ve gün batımı anı yalnızca istemcidedir: src/world/features/together.jsx.)
 //
 // İstemci → sunucu
-//   { t: 'sit', seat, slot }          koltuğa otur (şehirde, ≤ 2.6 m)
+//   { t: 'sit', seat, slot }          koltuğa otur (şehirde ya da mekân içinde, ≤ 2.6 m; kimlikler layout.js SEATS / venueLayout.js)
 //   { t: 'pose_end' }                 kalk / dansı bırak
 //   { t: 'poses' }                    odadaki herkesin oturma/dans durumunu iste
 //   { t: 'dance_invite', to }         dansa davet (≤ 6 m)
@@ -13,10 +13,20 @@
 //                                     | { kind: 'dance', mate, lead, x, z, ry, cx, cz, dur }
 //   { t: 'poses', list: [{ id, pose }] }
 //   { t: 'dance_offer', id, name, avatar, ttl } / { t: 'dance_cancel', id }
-//   { t: 'sit_pair', id, name, avatar }   bankta yan yana oturdun
+//   { t: 'sit_pair', id, name, avatar, kind }   yan yana oturdun (kind: koltuk türü; 'table' = aynı masayı paylaşıyorsunuz)
 import { SEATS } from '../../src/world/layout.js'
+import { isVenueRoom, venueIdOf } from '../../src/world/venues.js'
+import { venueSeatMap } from '../../src/world/venueLayout.js'
 
 const SEAT_BY_ID = new Map(SEATS.map((s) => [s.id, s]))
+// Odaya göre koltuk tablosu: şehir (SEATS) ya da mekânın iç mekân koltukları (venueLayout.js). Ev odasında koltuk yok.
+const seatTable = (room) => (room === 'city' ? SEAT_BY_ID : isVenueRoom(room) ? venueSeatMap(venueIdOf(room)) : null)
+// aynı grup (aynı masanın sandalyeleri, yan yana şezlonglar) ya da aynı koltuğun yerleri = "yan yana"
+const groupKeys = (table, seat) => {
+  const keys = []
+  for (const o of table.values()) if (o.id === seat.id || (seat.group && o.group === seat.group)) o.slots.forEach((_, k) => keys.push(`${o.id}:${k}`))
+  return keys
+}
 const SIT_RANGE = 2.6 // m: koltuğa bu kadar yakın olmalısın
 const DANCE_RANGE = 6 // m
 const DANCE_GAP = 0.55 // dansçıların orta noktadan uzaklığı
@@ -88,27 +98,28 @@ export default function together(ctx) {
       const now = Date.now()
       if (now - (me.lastSit ?? 0) < 500) return
       me.lastSit = now
-      if (me.room !== 'city' || me.pose) return
-      const seat = SEAT_BY_ID.get(String(msg.seat))
+      const table = seatTable(me.room)
+      if (!table || me.pose) return
+      const seat = table.get(String(msg.seat))
       const slotIdx = Number.isInteger(msg.slot) ? msg.slot : -1
       const slot = seat?.slots[slotIdx]
       if (!slot) return
       if (Math.hypot(me.x - slot.x, me.z - slot.z) > SIT_RANGE) return info(me, 'Biraz yaklaş, sonra otur 🪑')
       if (taken.has(`${seat.id}:${slotIdx}`)) return info(me, 'Bu yer dolu.')
       // yanındaki koltukta seni engelleyen/engellediğin biri varsa yer "dolu" görünür (sebep sezdirilmez)
-      const neighbours = seat.slots.map((_, k) => players.get(taken.get(`${seat.id}:${k}`))).filter((o) => o && o.id !== me.id)
+      const neighbours = groupKeys(table, seat).map((key) => players.get(taken.get(key))).filter((o) => o && o.id !== me.id)
       if (neighbours.some((o) => mod().blockedPair(me, o))) return info(me, 'Bu yer dolu.')
 
       taken.set(`${seat.id}:${slotIdx}`, me.id)
-      startPose(me, { kind: 'sit', style: seat.kind, seat: seat.id, slot: slotIdx, x: slot.x, z: slot.z, ry: +seat.ry.toFixed(3) })
+      startPose(me, { kind: 'sit', style: seat.style ?? seat.kind, seatKind: seat.kind, seat: seat.id, slot: slotIdx, x: slot.x, z: slot.z, ry: +seat.ry.toFixed(3) })
       announce(me)
       ctx.emitEvent?.(me, 'sit')
 
       // yan yana oturanlar: ikisine 💞 ve "Sohbet et" kısayolu (engel/DND varsa sessiz)
       for (const o of neighbours) {
         if (mod().reach(me, o, 'gesture') || mod().reach(o, me, 'gesture')) continue
-        send(me.ws, { t: 'sit_pair', id: o.id, name: o.name, avatar: o.avatar })
-        send(o.ws, { t: 'sit_pair', id: me.id, name: me.name, avatar: me.avatar })
+        send(me.ws, { t: 'sit_pair', id: o.id, name: o.name, avatar: o.avatar, kind: seat.kind })
+        send(o.ws, { t: 'sit_pair', id: me.id, name: me.name, avatar: me.avatar, kind: seat.kind })
         broadcast({ t: 'react', id: me.id, e: '💞' }, undefined, me.room, me)
         broadcast({ t: 'react', id: o.id, e: '💞' }, undefined, me.room, o)
       }

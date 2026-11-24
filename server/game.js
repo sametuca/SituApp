@@ -6,7 +6,7 @@
 //                                             istemcinin name'i yok sayılır; geçersizse { t:'auth_required' } + kapanır (ALLOW_GUEST=1: tokensiz misafir)
 //     { t: 'move', x, z, ry, anim }          ~10 Hz
 //     { t: 'chat', text, to? }               to verilirse özel mesaj (yalnızca alıcı + gönderen)
-//     { t: 'room', to: 'city' | 'home', owner? }   odaya geç; 'home' + owner yoksa kendi evin
+//     { t: 'room', to: 'city' | 'home' | 'venue', owner?, id? }   odaya geç; 'home' + owner yoksa kendi evin; 'venue' + id = girilebilir mekân (src/world/venues.js)
 //     { t: 'home_save', items }                    kendi evinin düzenini kaydet (kalıcı) ve içindekilere yay
 //     { t: 'home_open', open }                     evi herkese aç / yalnızca davetlilere kapat
 //     { t: 'invite', to? | name? }                 bir oyuncuyu evine davet et (id ya da ad)
@@ -23,10 +23,11 @@
 //     { t: 'decor_set', decor } / { t: 'decor_get', owner }   ev dekoru (yalnızca sahibi yazar; bulunduğun evi okursun)
 //     { t: 'gift_send', to, kind } / { t: 'gift_reply', offer, accept }   hediye gönder / gelen hediyeye cevap (≤ 8 m)
 //     { t: 'voice', to, mime, dur, data } / { t: 'sticker', id, to? }   sesli mesaj, çıkartma (features/media.js)
+//     { t: 'kar_get' | 'kar_join' | 'kar_leave' | 'kar_clap' }   Gece Kulübü karaokesi: durum / sıraya gir / çık / alkışla (features/venues.js)
 //     { t: 'progress_get' } / { t: 'suggest_get' | 'suggest_hi' | 'suggest_close' }   görev/rozet durumu, günün önerisi (features/progress.js)
 //   sunucu → istemci
 //     { t: 'welcome', id, home, homeItems, homeOpen, x, z, players: [...], online }   home = kendi evinin anahtarı
-//     { t: 'room', room, owner, ownerName, items, players: [...] }   oda değişti (room: 'city' | 'home:<anahtar>')
+//     { t: 'room', room, owner, ownerName, venue, items, players: [...] }   oda değişti (room: 'city' | 'home:<anahtar>' | 'venue:<id>'; venue = mekân kimliği | null)
 //     { t: 'home_items', owner, items }                bulunduğun evin düzeni değişti
 //     { t: 'invited', owner, ownerName }               biri seni evine davet etti
 //     { t: 'react', id, e }                            birinin emoji tepkisi
@@ -49,6 +50,7 @@
 //     { t: 'online', n }
 //     { t: 'auth_required' } / { t: 'kicked' }          token geçersiz/eksik · aynı hesap başka yerden bağlandı (bağlantı kapanır)
 //     profil fotoğrafı (features/profile.js): { t:'profile_photo', path|null } · { t:'photo_privacy', who:'all'|'friends' } → { t:'photo', key, url|null } (kişi başına, izne göre)
+//     { t: 'kar' | 'kar_turn' | 'kar_claps' | 'kar_end' }   karaoke durumu, sıra sende, alkış sayısı, tur sonucu (features/venues.js)
 //     { t: 'progress', p } / { t: 'quest_done', quest } / { t: 'badge', badge } / { t: 'event', event } / { t: 'suggest', s }   (features/progress.js)
 //
 // Odalar: herkes 'city' odasında başlar; evler 'home:<sahip anahtarı>' odalarıdır. Oyuncular, sohbet ve konum
@@ -64,6 +66,7 @@ import { moderate } from './profanity.js'
 import { FEATURE_FACTORIES } from './features/index.js'
 import * as supa from './supa.js'
 import { loadProfile, saveAvatar, setName, uidByName } from './auth.js'
+import { VENUE_BY_ID, isVenueRoom, venueIdOf, venueRoom } from '../src/world/venues.js'
 
 const WORLD_HALF = 60 // dünya sınırı (±m); istemci haritasıyla aynı olmalı
 const MAX_PLAYERS = 100
@@ -154,6 +157,7 @@ export function attachGameServer(httpServer) {
   // oyuncu odaya girebilir mi? Şehir serbest; ev: sahibi, davetli ya da ev herkese açıksa
   const canEnter = (p, room) => {
     if (room === 'city') return true
+    if (isVenueRoom(room)) return Object.hasOwn(VENUE_BY_ID, venueIdOf(room)) // mekânlar herkese açık
     const key = room.slice(5)
     if (key === p.homeKey) return true
     if (!homeExists(key) && ![...players.values()].some((o) => o.homeKey === key)) return false
@@ -171,6 +175,7 @@ export function attachGameServer(httpServer) {
     send(p.ws, {
       t: 'room',
       room,
+      venue: venueIdOf(room),
       owner: key,
       ownerName: key ? ownerNameOf(key) : null,
       items: key ? (getHome(key)?.items ?? []) : [],
@@ -298,10 +303,13 @@ export function attachGameServer(httpServer) {
         me.dirty = true
         emit('onMove', me)
       } else if (msg.t === 'room') {
-        const room = msg.to === 'home' ? `home:${typeof msg.owner === 'string' ? homeKey(msg.owner) : me.homeKey}` : 'city'
-        if (!canEnter(me, room)) return send(ws, { t: 'denied', reason: 'Bu eve girmek için davet gerekiyor ya da ev kapalı.' })
+        const room = msg.to === 'venue' ? (typeof msg.id === 'string' ? venueRoom(msg.id) : 'city') : msg.to === 'home' ? `home:${typeof msg.owner === 'string' ? homeKey(msg.owner) : me.homeKey}` : 'city'
+        if (!canEnter(me, room)) return send(ws, { t: 'denied', reason: isVenueRoom(room) ? 'Bu mekân bulunamadı.' : 'Bu eve girmek için davet gerekiyor ya da ev kapalı.' })
         changeRoom(me, room)
-        if (room !== 'city' && room.slice(5) !== me.homeKey) {
+        if (isVenueRoom(room)) {
+          emitEvent(me, 'venue_enter', 1, venueIdOf(room))
+          emitEvent(me, 'zone', 1, `v-${venueIdOf(room)}`) // mekâna girmek "yeni mekân gezmek" sayılır
+        } else if (room !== 'city' && room.slice(5) !== me.homeKey) {
           emitEvent(me, 'home_visit')
           emitEvent({ key: room.slice(5) }, 'guest', 1, me)
         }

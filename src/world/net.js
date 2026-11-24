@@ -270,9 +270,9 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
     return ws?.readyState === 1
   }, [])
 
-  /** Odaya geç. target: 'city' | { home: true, owner? } (owner yoksa kendi evin). */
+  /** Odaya geç. target: 'city' | { owner? } (ev; owner yoksa kendi evin) | { venue: id } (girilebilir mekân). */
   const enterRoom = useCallback((target) => {
-    const msg = target === 'city' ? { to: 'city' } : { to: 'home', ...(target.owner ? { owner: target.owner } : {}) }
+    const msg = target === 'city' ? { to: 'city' } : target.venue ? { to: 'venue', id: target.venue } : { to: 'home', ...(target.owner ? { owner: target.owner } : {}) }
     wantRoom.current = target === 'city' ? null : msg
     const ws = wsRef.current
     if (ws?.readyState === 1) ws.send(JSON.stringify({ t: 'room', ...msg }))

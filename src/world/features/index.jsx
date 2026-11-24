@@ -7,7 +7,7 @@
 //   extraNodes:        üst çubuğun sağ grubuna hazır JSX düğmeler
 //   readAt:            { oyuncuId: ts } DM okundu bilgisi
 //   worldEffects:      <Canvas> içine çizilecek R3F düğümleri (sezon efektleri…)
-// ctx: { net, say, touch, openChat, closeInteract, roster, focusRef, home, panel, setPanel, chatTarget, pushFeed, slug }
+// ctx: { net, say, touch, openChat, closeInteract, roster, focusRef, home, venue (mekân kimliği | null), panel, setPanel, chatTarget, pushFeed, slug }
 // Ek dönüş alanları: homeDecor (HomeRoom'a), editorTabs (Döşe çekmecesine sekme), sceneNodes (Canvas içine R3F düğümleri: evcil hayvan).
 // Yeni özellik: src/world/features/<ad>.jsx yaz, aşağıya bir satır ekle (kuralı bozma: hook sırası sabit olmalı).
 import { Modal } from '../Hud'
@@ -22,6 +22,7 @@ import { useCosmetics } from './cosmetics'
 import { useNpcs } from './npcs'
 import { useAudio } from './audio'
 import { useSky } from './sky'
+import { useVenues } from './venues'
 
 function SettingsPanel({ sections, onClose }) {
   return (
@@ -36,7 +37,7 @@ function SettingsPanel({ sections, onClose }) {
 }
 
 export function useFeatures(ctx) {
-  const parts = [useModeration(ctx), useGames(ctx), useFriends(ctx), useProfile(ctx), useProgress(ctx), useMedia(ctx), useTogether(ctx), useCosmetics(ctx), useNpcs(ctx), useAudio(ctx), useSky(ctx)]
+  const parts = [useModeration(ctx), useGames(ctx), useFriends(ctx), useProfile(ctx), useProgress(ctx), useMedia(ctx), useTogether(ctx), useCosmetics(ctx), useNpcs(ctx), useAudio(ctx), useSky(ctx), useVenues(ctx)]
 
   const peerActions = (peer) => parts.flatMap((p) => p.peerActions?.(peer) ?? [])
   const peerHeader = (peer) => parts.map((p, i) => (p.peerHeader ? <div key={i}>{p.peerHeader(peer)}</div> : null))
