@@ -9,7 +9,7 @@ import { BEACH } from '../../src/world/layout.js'
 const CYCLE_MS = Number(process.env.SITUAPP_MEETUP_CYCLE_MS) || 30 * 60 * 1000
 const ANNOUNCE_MS = Math.min(3 * 60 * 1000, CYCLE_MS / 3)
 const ACTIVE_MS = Math.min(3 * 60 * 1000, CYCLE_MS / 4)
-const NET = { x: 14.5, z: 42, r: 5 } // voleybol filesi (layout.js volleyball prop'u)
+const NET = { x: 5.5, z: 37, r: 5 } // voleybol filesi (layout.js volleyball prop'u)
 const WIN_SCORE = 5
 const HIT_WINDOW = 420 // ms
 const TURN_MS = [1700, 1500, 1350, 1200, 1100]
