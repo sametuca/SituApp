@@ -213,7 +213,7 @@ function Tod({ g, act }) {
           )}
         </>
       )}
-      <p className="text-center text-[11px] font-bold text-[#b3a5c6]">{rounds} tur oynandı</p>
+      <p className="text-center text-[0.6875rem] font-bold text-[#b3a5c6]">{rounds} tur oynandı</p>
     </div>
   )
 }

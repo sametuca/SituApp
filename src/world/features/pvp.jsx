@@ -130,7 +130,7 @@ function Lobby({ lobby, send, now }) {
           </ol>
         </>
       )}
-      <p className="mt-3 text-[11px] font-semibold text-ink-soft">Kazanç ve puan; aynı kişiyle günde en çok 3 maçta işler.</p>
+      <p className="mt-3 text-[0.6875rem] font-semibold text-ink-soft">Kazanç ve puan; aynı kişiyle günde en çok 3 maçta işler.</p>
     </div>
   )
 }

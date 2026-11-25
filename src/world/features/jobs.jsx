@@ -44,10 +44,10 @@ function JobCard({ job, current, onPick, locked, cost }) {
           <p className="text-xs font-extrabold" style={{ color: j.deep }}>{j.tag}</p>
         </div>
       </div>
-      <p className="mt-2 text-[13px] font-semibold leading-snug text-[#5d4d70]">{j.desc}</p>
+      <p className="mt-2 text-[0.8125rem] font-semibold leading-snug text-[#5d4d70]">{j.desc}</p>
       <ul className="mt-2 flex flex-col gap-0.5">
         {j.perks.map((p) => (
-          <li key={p} className="text-[12px] font-bold text-[#6f5f82]">✨ {p}</li>
+          <li key={p} className="text-[0.75rem] font-bold text-[#6f5f82]">✨ {p}</li>
         ))}
       </ul>
       <ToyButton onClick={() => onPick(job)} disabled={current || locked} className="mt-3 !py-2.5 !text-sm">
@@ -66,7 +66,7 @@ function Guide({ job }) {
   return (
     <ol className="mt-3 flex flex-col gap-2">
       {steps.map((s, i) => (
-        <li key={i} className="flex gap-2.5 rounded-2xl bg-[#fbf7ff] p-2.5 text-[13px] font-semibold text-[#5d4d70]">
+        <li key={i} className="flex gap-2.5 rounded-2xl bg-[#fbf7ff] p-2.5 text-[0.8125rem] font-semibold text-[#5d4d70]">
           <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#fdb252] text-xs font-black text-white">{i + 1}</span>
           {s}
         </li>
@@ -143,9 +143,9 @@ function JobsPanel({ st, onPick, onSell, onClose }) {
       </div>
       <div className="mt-2.5 flex items-center gap-2">
         <Bar value={lv.into} max={lv.need || 1} tone={j.deep} h="h-3" />
-        <span className="shrink-0 text-[11px] font-extrabold tabular-nums text-[#8a7a9c]">{lv.max ? 'MAX' : `${lv.into}/${lv.need} XP`}</span>
+        <span className="shrink-0 text-[0.6875rem] font-extrabold tabular-nums text-[#8a7a9c]">{lv.max ? 'MAX' : `${lv.into}/${lv.need} XP`}</span>
       </div>
-      <p className="mt-1.5 text-[12px] font-bold text-[#6f5f82]">
+      <p className="mt-1.5 text-[0.75rem] font-bold text-[#6f5f82]">
         {job === 'gardener' && `Satış +%${Math.round((PERK.sell(lv.level) - 1) * 100)} · çifte hasat %${Math.round(PERK.double(lv.level) * 100)}`}
         {job === 'fisher' && `Satış +%${Math.round((PERK.sell(lv.level) - 1) * 100)} · çekme süresi ${(PERK.window(lv.level) / 1000).toFixed(1)} sn · nadir şansı ×${PERK.luck(lv.level).toFixed(2)}`}
         {job === 'postman' && `Kargo kapasitesi ${PERK.cap(lv.level)} · kazanç +%${Math.round((PERK.pay(lv.level) - 1) * 100)}`}
@@ -153,7 +153,7 @@ function JobsPanel({ st, onPick, onSell, onClose }) {
 
       <div className="mt-3 flex gap-2" role="tablist">
         {[['quests', `✅ Görevler ${doneN}/${qs.length}`], ['bag', '🎒 Çanta'], ['guide', '❓ Rehber']].map(([id, label]) => (
-          <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)} className={`flex-1 rounded-2xl px-2 py-2.5 text-[13px] font-extrabold transition active:scale-95 ${tab === id ? 'bg-[#fdb252] text-white shadow-soft' : 'bg-[#f6f0ff] text-[#4a3b5c]'}`}>
+          <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)} className={`flex-1 rounded-2xl px-2 py-2.5 text-[0.8125rem] font-extrabold transition active:scale-95 ${tab === id ? 'bg-[#fdb252] text-white shadow-soft' : 'bg-[#f6f0ff] text-[#4a3b5c]'}`}>
             {label}
           </button>
         ))}
@@ -167,7 +167,7 @@ function JobsPanel({ st, onPick, onSell, onClose }) {
               <li key={q.id} className={`rounded-2xl border-2 px-3 py-2.5 shadow-soft ${q.done ? 'border-[#bfe8cf] bg-[#f1fbf5]' : 'border-white bg-[#fbf7ff]'}`}>
                 <div className="flex items-center gap-2">
                   <p className="min-w-0 flex-1 text-sm font-extrabold text-[#4a3b5c]">{q.done ? '✅ ' : ''}{t?.text(q.goal)}</p>
-                  <span className="shrink-0 rounded-full bg-[#fff3c8] px-2 py-0.5 text-[11px] font-black text-[#8a5a00]">+{t?.coins} 🪙</span>
+                  <span className="shrink-0 rounded-full bg-[#fff3c8] px-2 py-0.5 text-[0.6875rem] font-black text-[#8a5a00]">+{t?.coins} 🪙</span>
                 </div>
                 <div className="mt-1.5 flex items-center gap-2">
                   <Bar value={q.n} max={q.goal} tone={q.done ? '#43b97f' : j.deep} />
@@ -176,7 +176,7 @@ function JobsPanel({ st, onPick, onSell, onClose }) {
               </li>
             )
           })}
-          <p className="text-center text-[11px] font-bold text-[#8a7a9c]">Görevler her gün (Türkiye saatiyle gece yarısı) yenilenir.</p>
+          <p className="text-center text-[0.6875rem] font-bold text-[#8a7a9c]">Görevler her gün (Türkiye saatiyle gece yarısı) yenilenir.</p>
         </ul>
       )}
 
@@ -212,7 +212,7 @@ function JobsPanel({ st, onPick, onSell, onClose }) {
                           <p className="truncate text-sm font-extrabold text-[#4a3b5c]">
                             {m?.name} <span className="text-[#8a7a9c]">×{n}</span>
                           </p>
-                          <p className="text-[11px] font-bold text-[#8a7a9c]">
+                          <p className="text-[0.6875rem] font-bold text-[#8a7a9c]">
                             {unit} 🪙 / adet{' '}
                             <span className={mult >= 1.15 ? 'text-[#2f9a6a]' : mult <= 0.9 ? 'text-[#d9604a]' : ''}>{mult >= 1.15 ? '↑ talep yüksek' : mult <= 0.9 ? '↓ düşük' : ''}</span>
                             {r && kind === 'fish' && <span style={{ color: r.color }}> · {r.name}</span>}
@@ -226,7 +226,7 @@ function JobsPanel({ st, onPick, onSell, onClose }) {
               )}
             </div>
           ))}
-          <p className="text-center text-[11px] font-bold text-[#8a7a9c]">Pazar fiyatları her gün değişir. Günlük satış kazancının üst sınırı vardır.</p>
+          <p className="text-center text-[0.6875rem] font-bold text-[#8a7a9c]">Pazar fiyatları her gün değişir. Günlük satış kazancının üst sınırı vardır.</p>
         </div>
       )}
 
@@ -252,7 +252,7 @@ function CatchCard({ res, onDone }) {
   return (
     <div className="pointer-events-none absolute left-1/2 top-[22%] z-20 w-[min(88vw,19rem)] -translate-x-1/2 animate-pop">
       <div className={`rounded-[2rem] p-4 text-center ${glass}`} style={{ boxShadow: `0 10px 30px ${r.color}55` }}>
-        <p className="text-[11px] font-black uppercase tracking-wide" style={{ color: r.color }}>{r.name}{res.quick ? ' · ⚡ çabuk çektin' : ''}</p>
+        <p className="text-[0.6875rem] font-black uppercase tracking-wide" style={{ color: r.color }}>{r.name}{res.quick ? ' · ⚡ çabuk çektin' : ''}</p>
         <div className="mx-auto mt-1 grid h-20 w-20 place-items-center rounded-full" style={{ background: `${r.color}22` }}>
           <Em e={f?.emoji ?? '🐟'} size={52} />
         </div>

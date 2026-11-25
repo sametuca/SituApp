@@ -165,7 +165,7 @@ export function ReactionBar({ onReact, touch }) {
               className="relative grid h-12 w-12 place-items-center rounded-2xl text-2xl transition hover:bg-[#ffedd6]/70 active:scale-90"
             >
               {e}
-              {!touch && i < 10 && <span className="absolute bottom-0 right-1 text-[10px] font-black text-[#8a7a9c]">{(i + 1) % 10}</span>}
+              {!touch && i < 10 && <span className="absolute bottom-0 right-1 text-[0.625rem] font-black text-[#8a7a9c]">{(i + 1) % 10}</span>}
             </button>
           ))}
         </div>
@@ -220,12 +220,12 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch }) {
               }`}
             >
               {!touch && (
-                <span className="absolute left-1.5 top-0.5 text-[9px] font-black text-[#8a7a9c]">
+                <span className="absolute left-1.5 top-0.5 text-[0.5625rem] font-black text-[#8a7a9c]">
                   {sk.key}
                 </span>
               )}
               <span className={`text-xl leading-none ${onCd ? 'opacity-45 grayscale-[35%]' : ''}`}>{sk.emoji}</span>
-              <span className="mt-0.5 text-[10px] font-extrabold leading-none text-[#5b4a70]">{sk.label}</span>
+              <span className="mt-0.5 text-[0.625rem] font-extrabold leading-none text-[#5b4a70]">{sk.label}</span>
               {onCd && (
                 <>
                   <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-[#4a3b5c]/35 transition-[height] duration-100" style={{ height: `${fillPct}%` }} />
@@ -244,13 +244,13 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch }) {
         title="Koleksiyon ve seviye ilerlemesini aç"
         className="flex items-center gap-2 rounded-2xl bg-[#faf6ff]/90 px-2 py-1 text-left transition hover:bg-white active:scale-[0.99]"
       >
-        <span className="shrink-0 rounded-full bg-[#ffe48f] px-2 py-0.5 text-[10px] font-black text-[#7a5b00]">
+        <span className="shrink-0 rounded-full bg-[#ffe48f] px-2 py-0.5 text-[0.625rem] font-black text-[#7a5b00]">
           Sv. {lv.level}
         </span>
         <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#eadfff]">
           <div className="h-full rounded-full bg-gradient-to-r from-[#ffe48f] via-[#fdb252] to-[#ff9248] transition-[width] duration-500" style={{ width: `${pct}%` }} />
         </div>
-        <span className="shrink-0 text-[10px] font-black tabular-nums text-[#6b4fc0]">
+        <span className="shrink-0 text-[0.625rem] font-black tabular-nums text-[#6b4fc0]">
           EXP {lv.into}/{lv.span}
         </span>
       </button>
@@ -313,7 +313,7 @@ export function InteractSheet({ peer, near, canInvite, touch, extras = [], heade
             className="flex flex-col items-center gap-0.5 rounded-2xl border-2 border-white bg-[#fff2e3]/80 py-2 text-[#4a3b5c] transition active:scale-95 enabled:hover:bg-[#ffead0] disabled:opacity-45"
           >
             <span className="text-2xl">{g.emoji}</span>
-            <span className="text-[11px] font-extrabold">{g.label}</span>
+            <span className="text-[0.6875rem] font-extrabold">{g.label}</span>
           </button>
         ))}
       </div>
@@ -581,7 +581,7 @@ export function ChatSheet({ peer, feed, onSend, onClose, touch, typing, onTyping
                     : 'self-start bg-[#f1e6ff] text-[#4a3b5c]'
             }`}
           >
-            {m.kind === 'system' ? `🧭 ${m.text}` : m.whisper ? `🤫 ${m.text}` : !peer && !m.self ? <><b>{m.name}: </b>{m.text}</> : peer && m.self && m.dm ? <>{m.text}<span className={`ml-1.5 text-[11px] font-black ${m.ts <= readUpTo ? 'text-[#3b8fd6]' : 'text-[#2f4a5c]/50'}`} title={m.ts <= readUpTo ? 'Okundu' : 'Gönderildi'}>{m.ts <= readUpTo ? '✓✓' : '✓'}</span></> : m.text}
+            {m.kind === 'system' ? `🧭 ${m.text}` : m.whisper ? `🤫 ${m.text}` : !peer && !m.self ? <><b>{m.name}: </b>{m.text}</> : peer && m.self && m.dm ? <>{m.text}<span className={`ml-1.5 text-[0.6875rem] font-black ${m.ts <= readUpTo ? 'text-[#3b8fd6]' : 'text-[#2f4a5c]/50'}`} title={m.ts <= readUpTo ? 'Okundu' : 'Gönderildi'}>{m.ts <= readUpTo ? '✓✓' : '✓'}</span></> : m.text}
           </p>
           ),
         )}

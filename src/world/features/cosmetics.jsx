@@ -168,7 +168,7 @@ function PetAdopt({ onPick, onLater }) {
             <button key={p.id} onClick={() => onPick(p.id)} className="rounded-3xl border-2 border-white bg-gradient-to-b from-[#f3f0fa] to-white p-4 shadow-soft transition active:scale-95 hover:-translate-y-0.5">
               <div className="grid h-20 place-items-center text-6xl">{p.emoji}</div>
               <p className="mt-1 text-base font-black text-[#4a3b5c]">{p.name}</p>
-              <p className="text-[11px] font-bold text-[#8a7a9c]">1 hafta ücretsiz</p>
+              <p className="text-[0.6875rem] font-bold text-[#8a7a9c]">1 hafta ücretsiz</p>
             </button>
           ))}
         </div>
@@ -298,7 +298,7 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
         <button
           type="button"
           onClick={() => setZoomMode((z) => (z === 'full' ? 'close' : 'full'))}
-          className="absolute left-2.5 top-2.5 rounded-full border border-white bg-white/85 px-2.5 py-1 text-[11px] font-black text-[#4a3b5c] shadow-sm backdrop-blur-sm transition hover:bg-white active:scale-95"
+          className="absolute left-2.5 top-2.5 rounded-full border border-white bg-white/85 px-2.5 py-1 text-[0.6875rem] font-black text-[#4a3b5c] shadow-sm backdrop-blur-sm transition hover:bg-white active:scale-95"
         >
           {zoomMode === 'full' ? '🔍 Yakınlaş' : '🧍 Tam Boy'}
         </button>
@@ -308,7 +308,7 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
             type="button"
             onClick={randomize}
             title="Sürpriz kombin yap"
-            className="rounded-full border border-white bg-white/85 px-2.5 py-1 text-[11px] font-black text-[#6b4fc0] shadow-sm backdrop-blur-sm transition hover:bg-white active:scale-95"
+            className="rounded-full border border-white bg-white/85 px-2.5 py-1 text-[0.6875rem] font-black text-[#6b4fc0] shadow-sm backdrop-blur-sm transition hover:bg-white active:scale-95"
           >
             🎲 Sürpriz
           </button>
@@ -353,7 +353,7 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
           <button
             key={k}
             onClick={() => setTab(k)}
-            className={`rounded-2xl border-2 border-white px-1.5 py-2 text-[11px] font-extrabold transition active:scale-95 sm:text-xs ${tab === k ? 'bg-[#a88bff] text-white shadow-soft' : 'bg-[#f6f0ff] text-[#4a3b5c] hover:bg-[#efe6ff]'}`}
+            className={`rounded-2xl border-2 border-white px-1.5 py-2 text-[0.6875rem] font-extrabold transition active:scale-95 sm:text-xs ${tab === k ? 'bg-[#a88bff] text-white shadow-soft' : 'bg-[#f6f0ff] text-[#4a3b5c] hover:bg-[#efe6ff]'}`}
           >
             {label}
           </button>
@@ -365,7 +365,7 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
         {tab === 'presets' && (
           <div className="flex flex-col gap-3">
             <div>
-              <p className="mb-1.5 text-[11px] font-black uppercase tracking-wide text-[#8a7a9c]">💖 Favori Kombinlerim (Kaydet & Tek Tıkla Giy)</p>
+              <p className="mb-1.5 text-[0.6875rem] font-black uppercase tracking-wide text-[#8a7a9c]">💖 Favori Kombinlerim (Kaydet & Tek Tıkla Giy)</p>
               <div className="grid grid-cols-3 gap-2">
                 {[0, 1, 2].map((i) => {
                   const f = favs[i]
@@ -377,14 +377,14 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
                         className="flex w-full flex-col items-center gap-0.5 rounded-2xl border-2 border-white bg-gradient-to-b from-[#fff6eb] to-white px-2 py-2 text-center shadow-soft transition hover:border-[#fdb252] active:scale-95"
                       >
                         <span className="text-lg">👗</span>
-                        <span className="text-[11px] font-black text-[#4a3b5c]">{f.name}</span>
-                        <span className="text-[10px] font-bold text-[#fdb252]">Giy</span>
+                        <span className="text-[0.6875rem] font-black text-[#4a3b5c]">{f.name}</span>
+                        <span className="text-[0.625rem] font-bold text-[#fdb252]">Giy</span>
                       </button>
                       <button
                         type="button"
                         onClick={(e) => clearFav(i, e)}
                         aria-label={`${f.name} sil`}
-                        className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-white/90 text-[10px] font-black text-[#8a7a9c] hover:text-rose-500"
+                        className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-white/90 text-[0.625rem] font-black text-[#8a7a9c] hover:text-rose-500"
                       >
                         ✕
                       </button>
@@ -397,7 +397,7 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
                       className="flex flex-col items-center justify-center gap-0.5 rounded-2xl border-2 border-dashed border-[#d6c7ff] bg-[#faf6ff] px-2 py-2.5 text-center transition hover:border-[#a88bff] active:scale-95"
                     >
                       <span className="text-base font-black text-[#a88bff]">＋</span>
-                      <span className="text-[11px] font-extrabold text-[#6b4fc0]">Slot {i + 1}’e Kaydet</span>
+                      <span className="text-[0.6875rem] font-extrabold text-[#6b4fc0]">Slot {i + 1}’e Kaydet</span>
                     </button>
                   )
                 })}
@@ -405,7 +405,7 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
             </div>
 
             <div>
-              <p className="mb-1.5 text-[11px] font-black uppercase tracking-wide text-[#8a7a9c]">✨ Hazır Stil Paketleri</p>
+              <p className="mb-1.5 text-[0.6875rem] font-black uppercase tracking-wide text-[#8a7a9c]">✨ Hazır Stil Paketleri</p>
               <div className="grid grid-cols-2 gap-2">
                 {OUTFIT_PRESETS.map((p) => {
                   const active = sameLook(look, p.look) && acc?.id === p.acc?.id && acc2?.id === p.acc2?.id
@@ -419,7 +419,7 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
                       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-2xl shadow-sm">{p.emoji}</span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-xs font-black text-[#4a3b5c]">{p.name}</p>
-                        <p className="truncate text-[10px] font-semibold text-[#8a7a9c]">{p.desc}</p>
+                        <p className="truncate text-[0.625rem] font-semibold text-[#8a7a9c]">{p.desc}</p>
                       </div>
                     </button>
                   )
@@ -438,7 +438,7 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
         {tab === 'acc' && (
           <div className="flex flex-col gap-3">
             <div>
-              <p className="mb-1.5 text-[11px] font-black uppercase tracking-wide text-[#8a7a9c]">👑 Baş & Saç</p>
+              <p className="mb-1.5 text-[0.6875rem] font-black uppercase tracking-wide text-[#8a7a9c]">👑 Baş & Saç</p>
               <div className="grid grid-cols-4 gap-1.5">
                 <ItemButton active={!acc} emoji="🚫" label="Yok" onClick={() => pickAcc(null)} />
                 {ACCESSORIES.map((a) => (
@@ -448,7 +448,7 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
             </div>
 
             <div>
-              <p className="mb-1.5 text-[11px] font-black uppercase tracking-wide text-[#8a7a9c]">✨ Yüz, Kanat & Çanta (Ekstra)</p>
+              <p className="mb-1.5 text-[0.6875rem] font-black uppercase tracking-wide text-[#8a7a9c]">✨ Yüz, Kanat & Çanta (Ekstra)</p>
               <div className="grid grid-cols-4 gap-1.5">
                 <ItemButton active={!acc2} emoji="🚫" label="Yok" onClick={() => pickAcc2(null)} />
                 {STYLE_ACCESSORIES.map((a) => (
@@ -459,7 +459,7 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
 
             <div className="rounded-2xl border-2 border-white bg-[#faf6ff] p-2.5">
               <div className="mb-2 flex items-center justify-between gap-2">
-                <span className="text-[11px] font-black text-[#4a3b5c]">🎨 Aksesuar Rengi</span>
+                <span className="text-[0.6875rem] font-black text-[#4a3b5c]">🎨 Aksesuar Rengi</span>
                 <div className="flex gap-1">
                   {[
                     ['acc', 'Baş'],
@@ -469,7 +469,7 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
                       key={s}
                       type="button"
                       onClick={() => setColorSlot(s)}
-                      className={`rounded-full px-2.5 py-0.5 text-[10px] font-black transition ${colorSlot === s ? 'bg-[#a88bff] text-white' : 'bg-white text-[#6b4fc0]'}`}
+                      className={`rounded-full px-2.5 py-0.5 text-[0.625rem] font-black transition ${colorSlot === s ? 'bg-[#a88bff] text-white' : 'bg-white text-[#6b4fc0]'}`}
                     >
                       {lbl}
                     </button>
@@ -500,7 +500,7 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
               <p className="text-xs font-extrabold text-[#4a3b5c]">
                 {petLeft > 0 ? `🐾 Bakım süresi: ${petLeft >= 48 ? `${Math.ceil(petLeft / 24)} gün` : `${petLeft} saat`}` : '🐾 Evcil hayvan süresi bitti'}
               </p>
-              <button onClick={onRenew} disabled={coins < PET_RENEW_PRICE} className="rounded-full bg-[#ffe48f] px-3 py-1 text-[11px] font-black text-[#8a5a00] shadow transition active:scale-95 disabled:opacity-50">
+              <button onClick={onRenew} disabled={coins < PET_RENEW_PRICE} className="rounded-full bg-[#ffe48f] px-3 py-1 text-[0.6875rem] font-black text-[#8a5a00] shadow transition active:scale-95 disabled:opacity-50">
                 +1 hafta · {PET_RENEW_PRICE} 🪙
               </button>
             </div>
@@ -536,7 +536,7 @@ function ItemButton({ active, emoji, label, onClick }) {
       <span className="text-2xl" aria-hidden>
         {emoji}
       </span>
-      <span className="w-full truncate text-[10px] font-extrabold leading-tight text-[#4a3b5c]">{label}</span>
+      <span className="w-full truncate text-[0.625rem] font-extrabold leading-tight text-[#4a3b5c]">{label}</span>
     </button>
   )
 }
@@ -661,8 +661,8 @@ function GiftsTab({ gifts, furn, place }) {
             <span className="text-3xl" aria-hidden>
               {def?.emoji}
             </span>
-            <span className="w-full truncate text-center text-[11px] font-extrabold text-[#4a3b5c]">{def?.name}</span>
-            <span className="w-full truncate text-center text-[10px] font-bold text-[#8a7a9c]">{placed ? 'Odada ✓' : `${g.from} 💝`}</span>
+            <span className="w-full truncate text-center text-[0.6875rem] font-extrabold text-[#4a3b5c]">{def?.name}</span>
+            <span className="w-full truncate text-center text-[0.625rem] font-bold text-[#8a7a9c]">{placed ? 'Odada ✓' : `${g.from} 💝`}</span>
           </button>
         )
       })}

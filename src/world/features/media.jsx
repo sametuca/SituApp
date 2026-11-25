@@ -63,7 +63,7 @@ export function StickerBubble({ id, self }) {
   return (
     <div className={`flex w-fit max-w-[85%] flex-col items-center rounded-3xl border-2 border-white px-4 py-2 shadow-soft ${self ? 'self-end' : 'self-start'}`} style={{ background: s.bg }}>
       <span className="text-5xl leading-tight">{s.art}</span>
-      <span className="text-[11px] font-extrabold text-[#4a3b5c]">{s.label}</span>
+      <span className="text-[0.6875rem] font-extrabold text-[#4a3b5c]">{s.label}</span>
     </div>
   )
 }
@@ -155,7 +155,7 @@ export function StickerPanel({ onPick }) {
             style={{ background: set.bg }}
           >
             <span className="text-3xl leading-tight">{it.art}</span>
-            <span className="line-clamp-1 w-full text-center text-[9px] font-extrabold text-[#4a3b5c]">{it.label}</span>
+            <span className="line-clamp-1 w-full text-center text-[0.5625rem] font-extrabold text-[#4a3b5c]">{it.label}</span>
           </button>
         ))}
       </div>

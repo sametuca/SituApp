@@ -77,7 +77,7 @@ function Volley({ vb, me, onHit, onLeave }) {
           >
             Vur! <span className="text-xs opacity-80">(Boşluk)</span>
           </button>
-          <button onClick={onLeave} className="mt-1 w-full text-center text-[11px] font-extrabold text-[#8a7a9c] hover:underline">Ayrıl</button>
+          <button onClick={onLeave} className="mt-1 w-full text-center text-[0.6875rem] font-extrabold text-[#8a7a9c] hover:underline">Ayrıl</button>
         </>
       )}
     </div>
@@ -205,7 +205,7 @@ export function useBeach({ net, focusRef, home, venue, touch, say }) {
           <p className="text-xs font-black text-[#c9731a]">
             🌅 Gün batımı buluşması · {meetup.phase === 'soon' ? `${mmss(meetup.start - now)} sonra` : `${mmss(meetup.end - now)} kaldı`}
           </p>
-          <p className="text-[11px] font-bold text-[#8a7a9c]">
+          <p className="text-[0.6875rem] font-bold text-[#8a7a9c]">
             {meetup.phase === 'soon' ? 'Plajın ortasına gel, altın kazan!' : dist <= BEACH.r + 4 ? `Plajdasın 🪙 · ${meetup.n} kişi burada` : `Plaja gel (${dist} m) · ${meetup.n} kişi bekliyor`}
           </p>
         </div>

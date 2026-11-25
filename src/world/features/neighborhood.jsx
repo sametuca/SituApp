@@ -24,7 +24,7 @@ function ExteriorTab({ ext, onChange, plotN }) {
   const pick = (cls, on) => `${pillBase} ${on ? 'bg-[#a88bff] text-white' : 'bg-white/80 text-[#4a3b5c]'} ${cls}`
   return (
     <div className="flex max-h-[38svh] flex-col gap-1 overflow-y-auto pb-1">
-      <p className="rounded-2xl bg-white/60 px-3 py-1.5 text-[11px] font-bold text-[#8a7a9c]">
+      <p className="rounded-2xl bg-white/60 px-3 py-1.5 text-[0.6875rem] font-bold text-[#8a7a9c]">
         {plotN ? `🏘️ Konut Mahallesi · ${plotN}. parsel — değişiklikler herkese görünür.` : '🏘️ İlk değişikliğinde Konut Mahallesi’nde sana bir parsel verilir.'}
       </p>
       <Row label="Ev stili">
@@ -74,7 +74,7 @@ function ExteriorTab({ ext, onChange, plotN }) {
           }}
           className="min-w-0 flex-1 rounded-2xl border-2 border-white bg-white/85 px-3 py-2 text-sm font-bold text-[#4a3b5c] outline-none placeholder:text-[#b9aecb] focus:border-[#c9b6f5]"
         />
-        <span className="w-9 shrink-0 text-right text-[10px] font-black text-[#8a7a9c]">
+        <span className="w-9 shrink-0 text-right text-[0.625rem] font-black text-[#8a7a9c]">
           {msg.length}/{WELCOME_MAX}
         </span>
       </label>

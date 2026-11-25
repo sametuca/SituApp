@@ -135,7 +135,7 @@ function AfkPlayerModal({ bot, onClose, say }) {
         {p.tags?.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {p.tags.map((tg) => (
-              <span key={tg} className="inline-flex items-center rounded-full border border-white bg-[#f6f0ff] px-2.5 py-0.5 text-[11px] font-extrabold text-[#5b4a70]">
+              <span key={tg} className="inline-flex items-center rounded-full border border-white bg-[#f6f0ff] px-2.5 py-0.5 text-[0.6875rem] font-extrabold text-[#5b4a70]">
                 {tg}
               </span>
             ))}
@@ -157,7 +157,7 @@ function AfkPlayerModal({ bot, onClose, say }) {
             className="flex flex-col items-center gap-0.5 rounded-2xl border-2 border-white bg-[#fff2e3]/80 py-2 text-[#4a3b5c] transition hover:bg-[#ffead0] active:scale-95"
           >
             <span className="text-xl">{emoji}</span>
-            <span className="text-[11px] font-extrabold">{label}</span>
+            <span className="text-[0.6875rem] font-extrabold">{label}</span>
           </button>
         ))}
       </div>
@@ -171,7 +171,7 @@ function AfkPlayerModal({ bot, onClose, say }) {
                 {t}
               </div>
             ))}
-            <p className="text-right text-[10px] font-bold text-[#8a7a9c]">✓ İletildi · dönünce görecek</p>
+            <p className="text-right text-[0.625rem] font-bold text-[#8a7a9c]">✓ İletildi · dönünce görecek</p>
           </div>
         )}
         <form onSubmit={sendMsg} className="flex gap-2">

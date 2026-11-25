@@ -58,7 +58,7 @@ const safeStore = {
 }
 
 function Chip({ tag, on, common, onClick, small }) {
-  const cls = `inline-flex items-center gap-1 rounded-full border-2 font-extrabold transition ${small ? 'px-2 py-0.5 text-[11px]' : 'px-3 py-1.5 text-sm'} ${
+  const cls = `inline-flex items-center gap-1 rounded-full border-2 font-extrabold transition ${small ? 'px-2 py-0.5 text-[0.6875rem]' : 'px-3 py-1.5 text-sm'} ${
     on ? 'border-[#fdb252] bg-[#ffead0] text-[#926021]' : common ? 'border-[#ffb703] bg-[#fff3c4] text-[#8a5a00]' : 'border-white bg-[#f6f0ff] text-[#5b4a70]'
   }`
   const body = (
@@ -94,7 +94,7 @@ function ProfileCard({ peer, profile, mine, catalog, request, onIce }) {
       {loading ? (
         <p className="text-xs font-bold text-[#8a7a9c]">Profil yükleniyor…</p>
       ) : !has ? (
-        <div className="grid grid-cols-2 gap-1.5 text-[11px] font-bold text-[#8a7a9c]">
+        <div className="grid grid-cols-2 gap-1.5 text-[0.6875rem] font-bold text-[#8a7a9c]">
           <p>🎂 Doğum: <span className="font-semibold opacity-70">Belirtilmedi</span></p>
           <p>📍 Şehir: <span className="font-semibold opacity-70">Belirtilmedi</span></p>
           <p>📸 Instagram: <span className="font-semibold opacity-70">—</span></p>
@@ -177,16 +177,16 @@ function ProfileEditor({ initial, catalog, onSave, onClose, net, photoEnabled, p
         <label className="flex flex-col gap-1">
           <span className="text-sm font-black text-[#4a3b5c]">Hakkında</span>
           <textarea value={bio} onChange={(e) => setBio(e.target.value)} maxLength={120} rows={2} placeholder="Kendinden kısaca bahset…" className={`${field} resize-none`} />
-          <span className="self-end text-[11px] font-bold text-[#8a7a9c]">{bio.length}/120</span>
+          <span className="self-end text-[0.6875rem] font-bold text-[#8a7a9c]">{bio.length}/120</span>
         </label>
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1">
             <span className="flex items-center justify-between text-sm font-black text-[#4a3b5c]">
               <span>🎂 Doğum Tarihi</span>
-              {ageNum !== null && !ageBad && <span className="rounded-full bg-[#efe6ff] px-2 py-0.5 text-[10px] text-[#6b4fc0]">{ageNum} yaş</span>}
+              {ageNum !== null && !ageBad && <span className="rounded-full bg-[#efe6ff] px-2 py-0.5 text-[0.625rem] text-[#6b4fc0]">{ageNum} yaş</span>}
             </span>
             <input type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} aria-invalid={ageBad} className={field} />
-            {ageBad && <span className="text-[11px] font-bold text-rose-400">18–99 yaş arasında olmalı.</span>}
+            {ageBad && <span className="text-[0.6875rem] font-bold text-rose-400">18–99 yaş arasında olmalı.</span>}
           </label>
           <label className="flex flex-col gap-1">
             <span className="text-sm font-black text-[#4a3b5c]">📍 Şehir</span>
@@ -393,7 +393,7 @@ export function useProfile({ net, say, panel, setPanel, home }) {
               <p className="text-sm font-extrabold text-[#4a3b5c]">
                 🧊 {a.name} şunu seçti: <span className="text-[#fda533]">{a.choice}</span>
               </p>
-              <p className="text-[11px] font-semibold text-[#8a7a9c]">
+              <p className="text-[0.6875rem] font-semibold text-[#8a7a9c]">
                 {a.a} · {a.b}
               </p>
             </div>

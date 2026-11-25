@@ -49,7 +49,7 @@ export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings, 
             className={`relative grid h-12 w-12 place-items-center rounded-full text-xl transition hover:bg-white active:scale-95 ${glass} ${b.highlight ? 'ring-2 ring-[#fdb252] shadow-[0_0_14px_rgba(253,178,82,0.55)]' : ''}`}
           >
             {b.icon ? <Ico name={b.icon} size={26} /> : b.emoji}
-            {b.badge ? <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full border-2 border-white bg-[#fdb252] px-1 text-[11px] font-black text-white">{b.badge}</span> : null}
+            {b.badge ? <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full border-2 border-white bg-[#fdb252] px-1 text-[0.6875rem] font-black text-white">{b.badge}</span> : null}
             {!b.badge && b.highlight ? <span className="absolute -right-0.5 -top-0.5 h-3 w-3 animate-ping rounded-full bg-[#fdb252]" /> : null}
             {!b.badge && b.highlight ? <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-[#fdb252]" /> : null}
           </button>
@@ -81,7 +81,7 @@ export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings, 
           className={`relative grid h-12 w-12 place-items-center rounded-full text-xl transition hover:bg-white active:scale-95 ${glass}`}
         >
           <Ico name="settings" size={26} />
-          {menuBadge > 0 && <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full border-2 border-white bg-[#fdb252] px-1 text-[10px] font-black text-white">{menuBadge}</span>}
+          {menuBadge > 0 && <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full border-2 border-white bg-[#fdb252] px-1 text-[0.625rem] font-black text-white">{menuBadge}</span>}
         </button>
         {menu && (
           <div className="absolute right-0 top-14 z-20 flex w-72 flex-col gap-1 rounded-3xl border-2 border-white bg-white/95 p-2 shadow-soft backdrop-blur-md" onClick={() => setMenu(false)}>
@@ -281,6 +281,8 @@ function drawMap(ctx, S, big, f, remotes) {
   ctx.restore()
 }
 
+const rootK = () => (typeof window === 'undefined' ? 1 : parseFloat(getComputedStyle(document.documentElement).fontSize) / 16 || 1)
+
 export function Minimap({ focusRef, remotes, compact }) {
   const canvas = useRef(null)
   const [big, setBig] = useState(false)
@@ -297,7 +299,7 @@ export function Minimap({ focusRef, remotes, compact }) {
       window.removeEventListener('keydown', onKey)
     }
   }, [big])
-  const S = big ? Math.max(290, Math.min(compact ? 360 : 580, Math.round(Math.min(winSize.w * 0.86, winSize.h * 0.62)))) : compact ? 136 : 204 // ekranda CSS boyutu (px)
+  const S = big ? Math.max(290, Math.min(compact ? 360 : 580, Math.round(Math.min(winSize.w * 0.86, winSize.h * 0.62)))) : Math.round((compact ? 136 : 204) * rootK()) // ekranda CSS boyutu (px; kök yazı tipiyle büyür)
   useEffect(() => {
     const cv = canvas.current
     if (!cv) return
@@ -369,9 +371,9 @@ export function Minimap({ focusRef, remotes, compact }) {
       <div className={`overflow-hidden rounded-full p-1.5 ${glass}`}>
         <button onClick={() => setBig(true)} title="Büyüt ve ışınlan" aria-label="Haritayı büyüt" className="relative block active:scale-95 transition-transform">
           <canvas ref={canvas} className="block rounded-full" style={{ width: S, height: S }} />
-          <span className="absolute left-1/2 top-1 -translate-x-1/2 rounded-full bg-white/90 px-2 py-[1px] text-[11px] font-black text-[#8a7a9c] shadow-sm">K</span>
+          <span className="absolute left-1/2 top-1 -translate-x-1/2 rounded-full bg-white/90 px-2 py-[1px] text-[0.6875rem] font-black text-[#8a7a9c] shadow-sm">K</span>
           {zoneName && (
-            <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-white/95 px-2.5 py-[2px] text-[11px] font-extrabold text-[#4a3b5c] shadow-sm">
+            <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-white/95 px-2.5 py-[2px] text-[0.6875rem] font-extrabold text-[#4a3b5c] shadow-sm">
               {zoneName}
             </span>
           )}
@@ -517,7 +519,7 @@ export function HelpModal({ onClose, inCity = false, onOpenWardrobe, onGoHome, o
         <div className="flex items-center justify-between gap-2 rounded-2xl border-2 border-white bg-[#faf6ff] p-2.5 shadow-soft">
           <div className="min-w-0">
             <p className="text-xs font-black text-[#4a3b5c]">👗 Gardırop & Stil</p>
-            <p className="text-[11px] font-semibold text-[#8a7a9c]">Soldaki 👗 · Toni & Güy · /gardırop</p>
+            <p className="text-[0.6875rem] font-semibold text-[#8a7a9c]">Soldaki 👗 · Toni & Güy · /gardırop</p>
           </div>
           {onOpenWardrobe && (
             <button onClick={onOpenWardrobe} className="shrink-0 rounded-xl bg-[#a88bff] px-2.5 py-1.5 text-xs font-extrabold text-white active:scale-95">
@@ -528,7 +530,7 @@ export function HelpModal({ onClose, inCity = false, onOpenWardrobe, onGoHome, o
         <div className="flex items-center justify-between gap-2 rounded-2xl border-2 border-white bg-[#fff8f0] p-2.5 shadow-soft">
           <div className="min-w-0">
             <p className="text-xs font-black text-[#4a3b5c]">🏠 Kendi Evin</p>
-            <p className="text-[11px] font-semibold text-[#8a7a9c]">Lobi güneybatısı · /ev · 🪑 Döşe</p>
+            <p className="text-[0.6875rem] font-semibold text-[#8a7a9c]">Lobi güneybatısı · /ev · 🪑 Döşe</p>
           </div>
           {inCity && onGoHome && (
             <button onClick={onGoHome} className="shrink-0 rounded-xl bg-[#fdb252] px-2.5 py-1.5 text-xs font-extrabold text-white active:scale-95">
@@ -539,7 +541,7 @@ export function HelpModal({ onClose, inCity = false, onOpenWardrobe, onGoHome, o
         <div className="flex items-center justify-between gap-2 rounded-2xl border-2 border-white bg-[#f0f9ff] p-2.5 shadow-soft">
           <div className="min-w-0">
             <p className="text-xs font-black text-[#4a3b5c]">🗺️ Şehir Haritası</p>
-            <p className="text-[11px] font-semibold text-[#8a7a9c]">Sağ üst daireye bas → ışınlan</p>
+            <p className="text-[0.6875rem] font-semibold text-[#8a7a9c]">Sağ üst daireye bas → ışınlan</p>
           </div>
           {inCity && onOpenMap && (
             <button onClick={onOpenMap} className="shrink-0 rounded-xl bg-[#5fc0ea] px-2.5 py-1.5 text-xs font-extrabold text-white active:scale-95">
@@ -550,7 +552,7 @@ export function HelpModal({ onClose, inCity = false, onOpenWardrobe, onGoHome, o
         <div className="flex items-center justify-between gap-2 rounded-2xl border-2 border-white bg-[#effcf4] p-2.5 shadow-soft">
           <div className="min-w-0">
             <p className="text-xs font-black text-[#4a3b5c]">💇 Toni & Güy & Mekanlar</p>
-            <p className="text-[11px] font-semibold text-[#8a7a9c]">Kapı önünde E ile gir/çık</p>
+            <p className="text-[0.6875rem] font-semibold text-[#8a7a9c]">Kapı önünde E ile gir/çık</p>
           </div>
         </div>
       </div>
@@ -746,18 +748,18 @@ export function StartGuide({ touch, ready = true, inCity, inAirport = false, onD
       <div className="min-w-0 flex-1">
         <p className="text-xs font-extrabold leading-snug text-[#4a3b5c]">{content.text}</p>
         <div className="mt-1 flex items-center gap-1.5">
-          <span className="text-[10px] font-black text-[#8a7a9c]">{stepIdx}/{visibleSteps.length}</span>
+          <span className="text-[0.625rem] font-black text-[#8a7a9c]">{stepIdx}/{visibleSteps.length}</span>
           {content.action && (
-            <button onClick={content.action.fn} className={`rounded-full px-2.5 py-0.5 text-[10px] font-black shadow-sm active:scale-95 ${content.action.cls}`}>
+            <button onClick={content.action.fn} className={`rounded-full px-2.5 py-0.5 text-[0.625rem] font-black shadow-sm active:scale-95 ${content.action.cls}`}>
               {content.action.label}
             </button>
           )}
-          <button onClick={advance} className="rounded-full bg-[#f6f0ff] px-2 py-0.5 text-[10px] font-black text-[#6b4fc0] hover:bg-[#ede4ff] active:scale-95">
+          <button onClick={advance} className="rounded-full bg-[#f6f0ff] px-2 py-0.5 text-[0.625rem] font-black text-[#6b4fc0] hover:bg-[#ede4ff] active:scale-95">
             {stepIdx === visibleSteps.length ? 'Bitir ✓' : 'İleri ›'}
           </button>
         </div>
       </div>
-      <button onClick={onDone} aria-label="İpucunu kapat" className="absolute right-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full text-[10px] font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
+      <button onClick={onDone} aria-label="İpucunu kapat" className="absolute right-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full text-[0.625rem] font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
         ✕
       </button>
     </div>

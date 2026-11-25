@@ -41,5 +41,5 @@ export function emojify(v) {
 export function Em({ e, size, className = '' }) {
   const src = emojiSrc(e)
   if (!src) return <span className={className}>{e}</span>
-  return <img className={`em ${className}`} src={src} alt={e} draggable={false} style={size ? { width: size, height: size } : undefined} />
+  return <img className={`em ${className}`} src={src} alt={e} draggable={false} style={size ? { width: `${size / 16}rem`, height: `${size / 16}rem` } : undefined} />
 }

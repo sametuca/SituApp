@@ -62,7 +62,7 @@ function CollectionPanel({ data, onClose }) {
                       <p className="text-sm font-extrabold text-[#4a3b5c]">
                         {k.plural} <span className="font-bold text-[#8a7a9c]">· {n} toplandı</span>
                       </p>
-                      <p className="text-[11px] font-semibold text-[#8a7a9c]">
+                      <p className="text-[0.6875rem] font-semibold text-[#8a7a9c]">
                         Bugün kalan: {s.left[id] ?? 0}/{TOTAL_BY_KIND[id]} · her biri +{k.stars} ⭐
                       </p>
                     </div>
@@ -74,7 +74,7 @@ function CollectionPanel({ data, onClose }) {
                       {Math.min(n, k.series.goal)}/{k.series.goal}
                     </span>
                   </div>
-                  <p className="mt-1 text-[11px] font-bold text-[#7a5fd0]">
+                  <p className="mt-1 text-[0.6875rem] font-bold text-[#7a5fd0]">
                     {done ? `✅ ${k.series.name} tamamlandı` : `${k.series.name}: ${k.series.goal} tane topla → +${k.series.bonus} ⭐`}
                   </p>
                 </li>

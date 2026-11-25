@@ -95,7 +95,7 @@ function FeedbackModal({ who, onClose, onSent }) {
           />
           {err && <p className="mt-2 text-xs font-bold text-rose-400">{err}</p>}
           <div className="mt-3 flex items-center justify-between gap-3">
-            <span className="text-[11px] font-bold text-ink-soft">{text.length}/1500</span>
+            <span className="text-[0.6875rem] font-bold text-ink-soft">{text.length}/1500</span>
             <ToyButton onClick={send} loading={busy} disabled={text.trim().length < 5}>
               Gönder
             </ToyButton>
