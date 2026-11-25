@@ -11,6 +11,7 @@ import { screenK } from './screenK'
 import WorkProp from './WorkProp'
 
 export const AVATAR_HEIGHT = 1.3
+const FEET_LIFT = 0.085 // en yüksek yer zemini (meydan taşı) 0,08
 const RIG_HEIGHT = 1.2 // meshy_rig çağrısındaki height_meters
 
 /** Satın alınan sokak ürünü (dondurma, çiçek, balon, gazete): yeme/keyif animasyonu sırasında avatarın önünde görünür. */
@@ -282,13 +283,14 @@ export default function AvatarRig({ slug, anim = 'idle', pose, cosId }) {
     if (pose) applyPose(rig, activePose, dt)
   })
 
+  // Taş meydan/kaldırım zeminleri y=0,04-0,08'de: ayakkabılar yere gömülüp kaybolmasın diye avatar topluca bu kadar yukarıda durur
   return (
-    <>
+    <group position={[0, FEET_LIFT, 0]}>
       <primitive object={model} />
       {pose && <WorkProp pose={pose} />}
       {cosId && <HeadAccessory model={model} cosId={cosId} />}
       {handProp && <HandProp item={handProp.item} t0={handProp.t0} />}
       {lounging && <LoungeRelaxProps />}
-    </>
+    </group>
   )
 }
