@@ -171,6 +171,14 @@ app.get('/api/health', (_req, res) => {
   })
 })
 
+// Üretim: derlenmiş ön yüzü (dist/) aynı sunucudan ver → tek servis = oyun + API + WebSocket aynı adreste (CORS/VITE_WS_URL gerekmez).
+const DIST = path.join(__dirname, '..', 'dist')
+if (existsSync(path.join(DIST, 'index.html'))) {
+  app.use(express.static(DIST, { maxAge: '1h', setHeaders: (res, f) => f.endsWith('index.html') && res.setHeader('Cache-Control', 'no-cache') }))
+  app.get(/^\/(?!api\/|ws).*/, (_req, res) => res.sendFile(path.join(DIST, 'index.html'))) // SPA yönlendirmesi (/avatar, /world, /admin)
+  console.log('Ön yüz dist/ klasöründen sunuluyor.')
+}
+
 const PORT = Number(process.env.PORT) || 3001
 // Supabase ortamı varsa kalıcı veri belleğe yüklenmeden dinlemeye başlama
 await Promise.all([initStore(), initHomes(), initNames()])
