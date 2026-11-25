@@ -175,3 +175,6 @@ export const isAvailable = () => !failed
 
 /** Geliştirme/test: canlı bağlam ve bus'lar. */
 export const debug = () => ({ ac, buses })
+
+// HMR: modül yeniden yüklenirken eski ses bağlamı kapanır (yoksa eski müzik çalmaya devam edip yenisiyle çakışır)
+if (import.meta.hot) import.meta.hot.dispose(() => { try { ac?.close() } catch { /* yut */ } })

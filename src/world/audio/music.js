@@ -355,7 +355,11 @@ const rainBed = (ac, out, t) => {
 /**
  * Canlı müzik denetçisi. out: müzik bus'ı. setScene(id, { outdoor }) ile bölge, setMood({ night, rain }) ile dünya havası.
  */
+let activeMusic = null // aynı anda tek müzik denetçisi çalışır (StrictMode/HMR/çift kayıt eski zamanlayıcıyı canlı bırakıp iki müziği üst üste bindirmesin)
+if (import.meta.hot) import.meta.hot.dispose(() => activeMusic?.stop())
+
 export function createMusic(ac, out) {
+  activeMusic?.stop()
   const moodFilter = ac.createBiquadFilter()
   moodFilter.type = 'lowpass'
   moodFilter.frequency.value = 12000
@@ -426,7 +430,7 @@ export function createMusic(ac, out) {
       /* müzik asla oyunu bozmasın */
     }
   }
-  return {
+  const api = {
     get scene() {
       return cur?.id ?? null
     },
@@ -469,6 +473,8 @@ export function createMusic(ac, out) {
     },
     mood,
   }
+  activeMusic = api
+  return api
 }
 
 /**
