@@ -13,144 +13,227 @@ const walk = (st, key, len, maxStep = 2) => {
   return st[key]
 }
 
-// ---------------------------------------------------------------- sahneler
+// ---------------------------------------------------------------- remix sahneler (%100 özgün, telifsiz Web Audio)
 
-const LOBBY = [
-  [48, 52, 55, 59],
-  [45, 48, 52, 55],
-  [41, 45, 48, 52],
-  [43, 47, 50, 52],
-]
-const lobby = {
-  bpm: 84,
-  step({ ac, out, t, s, bar, spb, st }) {
-    const ch = LOBBY[bar % 4]
-    if (s === 0) pad(ac, out, t, ch, spb * 16, 0.034, 800)
-    if (s === 0 || s === 8) bass(ac, out, t, N(ch[0] - 12), 0.15, 0.7)
-    if (s % 2 === 0 && chance(0.68)) {
-      const k = walk(st, 'arp', 4, 2)
-      bell(ac, out, t, N(ch[k] + 24), 0.045, 1.6)
-    }
-  },
-}
-
-// caz: ii-V-I-VI (do majör), fırça davul + yürüyen bas + piyano akorları
-const JAZZ = [
-  { root: 38, comp: [53, 57, 60, 64], walk: [0, 7, 4, 5] },
-  { root: 43, comp: [53, 59, 62, 64], walk: [0, 4, 7, 9] },
-  { root: 36, comp: [52, 55, 59, 62], walk: [0, 4, 7, 4] },
-  { root: 45, comp: [55, 61, 64, 65], walk: [0, 3, 7, 5] },
-]
-const LOUNGE = [
-  { root: 33, comp: [55, 59, 60, 64], walk: [0, 7, 3, 5] },
-  { root: 38, comp: [53, 57, 60, 64], walk: [0, 7, 5, 3] },
-  { root: 31, comp: [53, 59, 62, 64], walk: [0, 4, 7, 5] },
-  { root: 36, comp: [52, 55, 59, 62], walk: [0, 4, 7, 11] },
-]
-const SCALE_C = [72, 74, 76, 79, 81, 84]
-function makeJazz({ bpm, prog, melody, padOn = false, density = 1 }) {
+// Ortak remix ritim & bas motoru: dört vuruşlu kick, senkoplu bas, çıtır hi-hat/clap ve 8 ölçülük akılda kalıcı melodi döngüsü.
+function makeRemix({ bpm, prog, hookA, hookB, lead = 'mallet', padVol = 0.024, kickVol = 0.28, energy = 1, ambience }) {
+  const CHORD_STEPS = new Set([0, 3, 6, 10, 14])
+  const BASS_STEPS = new Set([0, 3, 6, 8, 11, 14])
   return {
     bpm,
-    step({ ac, out, t, s, bar, spb, st }) {
-      const c = prog[bar % 4]
-      if (s === 0 && padOn) pad(ac, out, t, c.comp, spb * 16, 0.022, 700)
-      if (s % 4 === 0) {
-        const beat = s / 4
-        bass(ac, out, t, N(c.root + c.walk[beat] + (beat === 3 ? 0 : 12)), 0.2 * (beat === 0 ? 1 : 0.8), 0.45)
-        brush(ac, out, t, beat % 2 === 0 ? 0.05 : 0.04)
+    step({ ac, out, t, s, bar, spb }) {
+      const b4 = bar % 4
+      const b8 = bar % 8
+      const ch = prog[b4]
+      const root = ch[0]
+      const isBreak = b8 === 7 && s >= 12 // 8. ölçü sonunda mini remix geçişi
+
+      // Sıcak pad tabanı
+      if (s === 0) pad(ac, out, t, ch, spb * 16, padVol, 1150)
+
+      // Davul: dört vuruşlu kick + 2 & 4 clap + offbeat hat + 16'lık shaker
+      if (s % 4 === 0 && !isBreak) kick(ac, out, t, kickVol)
+      if (b4 === 3 && s === 14 && energy >= 0.8) kick(ac, out, t, kickVol * 0.72)
+      if (s === 4 || s === 12) clap(ac, out, t, 0.075 * energy)
+      if (isBreak && (s === 13 || s === 14 || s === 15)) clap(ac, out, t, 0.055 * energy)
+      if (s % 4 === 2) hat(ac, out, t, 0.036 * energy, 0.07)
+      else if (s % 2 === 1) hat(ac, out, t, 0.014 * energy, 0.022)
+
+      // Senkoplu modern bas hattı (oktav sıçramalı)
+      if (BASS_STEPS.has(s) && !isBreak) {
+        const oct = s === 6 || s === 14 ? 0 : -12
+        bass(ac, out, t, N(root + oct), 0.16 * (s === 0 ? 1.05 : 0.82), s === 0 || s === 8 ? 0.36 : 0.22)
       }
-      if ((s === 4 || s === 12) && density > 0.5) brush(ac, out, t + spb * (8 / 3), 0.03, 0.08) // swing
-      if ((s === 4 || s === 12) && chance(0.5 * density)) noise(ac, out, t, { type: 'bandpass', f: 1900, q: 0.8, a: 0.004, d: 0.08, g: 0.035 })
-      if ((s === 0 && chance(0.85)) || (s === 10 && chance(0.5 * density))) {
-        c.comp.forEach((m, k) => keys(ac, out, t + k * 0.014, N(m), s === 0 ? 0.04 : 0.032, s === 0 ? 1.4 : 0.7))
+
+      // Senkoplu tropical-house / nu-disco akor vuruşları
+      if (CHORD_STEPS.has(s)) {
+        ch.forEach((m, k) => keys(ac, out, t + k * 0.008, N(m + 12), s === 0 ? 0.034 : 0.026, 0.28))
       }
-      if (s % 2 === 0 && chance(0.2 * density)) {
-        const k = walk(st, 'mel', melody.length, 2)
-        keys(ac, out, t + (s % 4 === 2 ? spb * 0.5 : 0), N(melody[k]), 0.045, 0.9)
+
+      // Akılda kalıcı 8 ölçülük remix melodisi (ilk 4 ölçü ana tema, sonraki 4 ölçü parlak oktav varyasyonu)
+      const seq = b8 < 4 ? hookA[b4] : hookB[b4]
+      const note = seq?.[s]
+      if (note) {
+        if (lead === 'pluck') pluck(ac, out, t, N(note), 0.072, 0.45)
+        else if (lead === 'synth') tone(ac, out, t, { f: N(note), type: 'triangle', a: 0.006, d: 0.26, g: 0.058, lp: 2800, lp2: 1100 })
+        else mallet(ac, out, t, N(note), 0.068, 0.42)
+        if (b8 >= 4 && s % 4 === 0) bell(ac, out, t, N(note + 12), 0.022, 0.65)
       }
     },
+    ...(ambience ? { ambience } : {}),
   }
 }
-const jazz = makeJazz({ bpm: 96, prog: JAZZ, melody: SCALE_C })
-const lounge = makeJazz({ bpm: 74, prog: LOUNGE, melody: [69, 72, 74, 76, 79, 81], padOn: true, density: 0.6 })
 
-// park: akustik tını (gitar arpeji) + kuşlar + hafif rüzgâr
-const PARK = [
-  [43, 50, 55, 59, 62, 67],
-  [40, 47, 52, 55, 59, 64],
-  [48, 52, 55, 60, 64, 67],
-  [50, 54, 57, 62, 66, 69],
-]
-const ARP = [0, 2, 3, 4, 3, 2, 4, 3]
-const park = {
-  bpm: 76,
-  step({ ac, out, t, s, bar, night, st }) {
-    const ch = PARK[bar % 4]
-    if (s % 2 === 0) {
-      const k = ARP[(s / 2) % 8]
-      pluck(ac, out, t, N(ch[k]), s === 0 ? 0.075 : 0.05, 0.9)
-      if (s === 0) pluck(ac, out, t, N(ch[0] - 12), 0.06, 1.2)
-    }
-    if (s % 2 === 1 && night < 0.55 && chance(0.07 * (1 - night))) {
-      const n = 2 + Math.floor(Math.random() * 3)
-      const f0 = rnd(2600, 4200)
-      for (let k = 0; k < n; k++) tone(ac, out, t + k * 0.075, { f: f0 * (1 + 0.04 * k), f2: f0 * 1.3, a: 0.004, d: 0.05, g: 0.022 })
-    }
-    st.n = (st.n ?? 0) + 1
-  },
-  ambience: (ac, out, t) => noiseLayer(ac, out, { type: 'bandpass', f: 500, q: 0.7, g: 0.02, lfo: { rate: 0.08, depth: 0.8 }, t, fade: 3 }),
-}
+// Lobi: 116 BPM Pastel Nu-Disco Remix (Cmaj7 → Am9 → Fmaj7 → G13)
+const lobby = makeRemix({
+  bpm: 116,
+  prog: [
+    [48, 52, 55, 59],
+    [45, 48, 52, 55],
+    [41, 45, 48, 52],
+    [43, 47, 50, 55],
+  ],
+  hookA: [
+    [76, 0, 79, 0, 0, 76, 74, 0, 72, 0, 74, 0, 76, 0, 79, 0],
+    [81, 0, 79, 0, 0, 76, 72, 0, 74, 0, 76, 0, 72, 0, 0, 0],
+    [77, 0, 76, 0, 0, 72, 74, 0, 76, 0, 79, 0, 81, 0, 79, 0],
+    [79, 0, 76, 0, 74, 0, 72, 0, 74, 0, 0, 76, 79, 0, 0, 0],
+  ],
+  hookB: [
+    [84, 0, 79, 0, 81, 0, 76, 0, 79, 0, 76, 74, 72, 0, 76, 0],
+    [81, 0, 84, 0, 79, 0, 76, 0, 72, 0, 74, 0, 76, 0, 79, 0],
+    [81, 0, 79, 0, 77, 0, 76, 0, 74, 0, 76, 0, 79, 0, 84, 0],
+    [83, 0, 79, 0, 76, 0, 74, 0, 79, 0, 81, 0, 83, 0, 0, 0],
+  ],
+  lead: 'mallet',
+  kickVol: 0.25,
+  energy: 0.9,
+})
 
-// plaj: ukulele çekimi + dalga gürültüsü
-const UKE = [
-  [67, 60, 64, 72],
-  [69, 60, 65, 72],
-  [67, 62, 71, 74],
-  [67, 60, 64, 69],
-]
-const beach = {
+// Kafe & Fırın: 102 BPM Lo-Fi Chillhop Remix (sıcak elektrik piyano + yumuşak beat)
+const jazz = makeRemix({
+  bpm: 102,
+  prog: [
+    [50, 53, 57, 60],
+    [43, 47, 50, 53],
+    [48, 52, 55, 59],
+    [45, 48, 52, 55],
+  ],
+  hookA: [
+    [72, 0, 0, 74, 0, 0, 76, 0, 74, 0, 72, 0, 69, 0, 0, 0],
+    [71, 0, 0, 74, 0, 0, 79, 0, 76, 0, 74, 0, 71, 0, 0, 0],
+    [72, 0, 76, 0, 79, 0, 76, 0, 74, 0, 72, 0, 0, 0, 76, 0],
+    [72, 0, 0, 71, 0, 0, 69, 0, 72, 0, 74, 0, 76, 0, 0, 0],
+  ],
+  hookB: [
+    [77, 0, 76, 0, 74, 0, 72, 0, 74, 0, 76, 0, 72, 0, 0, 0],
+    [79, 0, 76, 0, 74, 0, 71, 0, 74, 0, 76, 0, 79, 0, 0, 0],
+    [84, 0, 79, 0, 76, 0, 74, 0, 72, 0, 74, 0, 76, 0, 0, 0],
+    [76, 0, 74, 0, 72, 0, 69, 0, 72, 0, 76, 0, 0, 0, 0, 0],
+  ],
+  lead: 'pluck',
+  padVol: 0.022,
+  kickVol: 0.2,
+  energy: 0.65,
+})
+
+const lounge = makeRemix({
   bpm: 96,
-  step({ ac, out, t, s, bar }) {
-    const ch = UKE[bar % 4]
-    const down = s === 0 || s === 4 || s === 12
-    const up = s === 6 || s === 10 || s === 14
-    if (down || up) {
-      const order = down ? ch : [...ch].reverse()
-      order.forEach((m, k) => pluck(ac, out, t + k * 0.011, N(m), down ? 0.052 : 0.036, down ? 0.55 : 0.3))
-    }
-    if (s === 8 && chance(0.35)) mallet(ac, out, t, N(pick([79, 81, 84, 86])), 0.05, 0.6)
-    if (s === 0) bass(ac, out, t, N(ch[1] - 24), 0.1, 0.5)
-  },
+  prog: [
+    [45, 48, 52, 55],
+    [50, 53, 57, 60],
+    [43, 47, 50, 55],
+    [48, 52, 55, 59],
+  ],
+  hookA: [
+    [72, 0, 0, 76, 0, 0, 79, 0, 76, 0, 72, 0, 0, 0, 0, 0],
+    [74, 0, 0, 77, 0, 0, 81, 0, 77, 0, 74, 0, 0, 0, 0, 0],
+    [71, 0, 0, 74, 0, 0, 79, 0, 74, 0, 71, 0, 0, 0, 0, 0],
+    [72, 0, 74, 0, 76, 0, 79, 0, 76, 0, 0, 0, 0, 0, 0, 0],
+  ],
+  hookB: [
+    [76, 0, 79, 0, 81, 0, 79, 0, 76, 0, 72, 0, 0, 0, 0, 0],
+    [77, 0, 81, 0, 84, 0, 81, 0, 77, 0, 74, 0, 0, 0, 0, 0],
+    [79, 0, 76, 0, 74, 0, 71, 0, 74, 0, 76, 0, 0, 0, 0, 0],
+    [79, 0, 76, 0, 72, 0, 74, 0, 76, 0, 0, 0, 0, 0, 0, 0],
+  ],
+  lead: 'synth',
+  padVol: 0.025,
+  kickVol: 0.18,
+  energy: 0.55,
+})
+
+// Park: 108 BPM Ferah Akustik Tropical Remix + hafif rüzgâr
+const park = makeRemix({
+  bpm: 108,
+  prog: [
+    [43, 47, 50, 55],
+    [40, 43, 47, 52],
+    [48, 52, 55, 60],
+    [50, 54, 57, 62],
+  ],
+  hookA: [
+    [79, 0, 76, 0, 74, 0, 71, 0, 74, 0, 76, 0, 79, 0, 0, 0],
+    [76, 0, 74, 0, 71, 0, 67, 0, 71, 0, 74, 0, 76, 0, 0, 0],
+    [79, 0, 76, 0, 72, 0, 74, 0, 76, 0, 79, 0, 81, 0, 0, 0],
+    [78, 0, 74, 0, 71, 0, 74, 0, 78, 0, 79, 0, 0, 0, 0, 0],
+  ],
+  hookB: [
+    [83, 0, 79, 0, 76, 0, 74, 0, 79, 0, 83, 0, 79, 0, 0, 0],
+    [79, 0, 76, 0, 74, 0, 71, 0, 74, 0, 76, 0, 79, 0, 0, 0],
+    [84, 0, 79, 0, 76, 0, 79, 0, 81, 0, 79, 0, 76, 0, 0, 0],
+    [81, 0, 78, 0, 74, 0, 76, 0, 78, 0, 79, 0, 0, 0, 0, 0],
+  ],
+  lead: 'pluck',
+  padVol: 0.02,
+  kickVol: 0.2,
+  energy: 0.72,
+  ambience: (ac, out, t) => noiseLayer(ac, out, { type: 'bandpass', f: 500, q: 0.7, g: 0.016, lfo: { rate: 0.08, depth: 0.8 }, t, fade: 3 }),
+})
+
+// Plaj: 114 BPM Güneşli Tropical-House Remix (Fmaj7 → G6 → Em7 → Am7) + hafif okyanus esintisi
+const beach = makeRemix({
+  bpm: 114,
+  prog: [
+    [41, 45, 48, 52],
+    [43, 47, 50, 55],
+    [40, 43, 47, 50],
+    [45, 48, 52, 55],
+  ],
+  hookA: [
+    [81, 0, 79, 0, 76, 0, 72, 0, 76, 0, 79, 0, 81, 0, 79, 0],
+    [79, 0, 76, 0, 74, 0, 71, 0, 74, 0, 76, 0, 79, 0, 0, 0],
+    [79, 0, 76, 0, 74, 0, 71, 0, 76, 0, 74, 0, 72, 0, 0, 0],
+    [76, 0, 72, 0, 74, 0, 76, 0, 79, 0, 81, 0, 79, 0, 0, 0],
+  ],
+  hookB: [
+    [84, 0, 81, 0, 79, 0, 76, 0, 81, 0, 84, 0, 81, 0, 79, 0],
+    [83, 0, 79, 0, 76, 0, 74, 0, 79, 0, 83, 0, 79, 0, 0, 0],
+    [83, 0, 79, 0, 76, 0, 74, 0, 76, 0, 79, 0, 76, 0, 0, 0],
+    [81, 0, 79, 0, 76, 0, 72, 0, 76, 0, 79, 0, 84, 0, 0, 0],
+  ],
+  lead: 'mallet',
+  padVol: 0.024,
+  kickVol: 0.26,
+  energy: 0.95,
   ambience(ac, out, t) {
-    const a = noiseLayer(ac, out, { type: 'lowpass', f: 900, q: 0.4, g: 0.1, lfo: { rate: 0.11, depth: 0.85 }, t, fade: 3 })
-    const b = noiseLayer(ac, out, { type: 'highpass', f: 3500, q: 0.4, g: 0.012, lfo: { rate: 0.17, depth: 0.9 }, t, fade: 3 })
+    const a = noiseLayer(ac, out, { type: 'lowpass', f: 850, q: 0.4, g: 0.065, lfo: { rate: 0.11, depth: 0.85 }, t, fade: 3 })
+    const b = noiseLayer(ac, out, { type: 'highpass', f: 3500, q: 0.4, g: 0.008, lfo: { rate: 0.17, depth: 0.9 }, t, fade: 3 })
     return (at, f) => {
       a(at, f)
       b(at, f)
     }
   },
-}
+})
 
-// kulüp: house ~120 BPM (kick, hat, bas, pentatonik lead)
-const HOUSE = [33, 29, 36, 31]
-const PENT = [69, 72, 74, 76, 79, 81]
-const house = {
-  bpm: 120,
-  step({ ac, out, t, s, bar, st }) {
-    const root = HOUSE[bar % 4]
-    if (s % 4 === 0) kick(ac, out, t, 0.4)
-    if (s === 4 || s === 12) clap(ac, out, t, 0.1)
-    if (s % 4 === 2) hat(ac, out, t, 0.045, 0.08)
-    else if (s % 2 === 1 && chance(0.55)) hat(ac, out, t, 0.022, 0.025)
-    if (s % 4 === 2) tone(ac, out, t, { f: N(root + (chance(0.2) ? 12 : 0)), type: 'sawtooth', a: 0.004, d: 0.14, g: 0.11, lp: 900, lp2: 250 })
-    if (s === 0) pad(ac, out, t, [root + 24, root + 27, root + 31], 16 * (60 / 120 / 4), 0.018, 1200)
-    if ((s === 3 || s === 11) && chance(0.6)) [0, 3, 7].forEach((m) => tone(ac, out, t, { f: N(root + 24 + m), type: 'sawtooth', a: 0.004, d: 0.14, g: 0.025, lp: 2200, lp2: 800 }))
-    if (s % 2 === 0 && chance(bar % 4 === 3 ? 0.1 : 0.3)) {
-      const k = walk(st, 'lead', PENT.length, 2)
-      tone(ac, out, t, { f: N(PENT[k] + 12), type: 'square', a: 0.004, d: 0.2, g: 0.032, lp: 2600, lp2: 900 })
-    }
-  },
-}
+// Kulüp: 124 BPM Enerjik Festival House Remix (Am → F → C → G)
+const house = makeRemix({
+  bpm: 124,
+  prog: [
+    [45, 48, 52, 55],
+    [41, 45, 48, 52],
+    [48, 52, 55, 59],
+    [43, 47, 50, 55],
+  ],
+  hookA: [
+    [81, 0, 76, 81, 0, 79, 76, 0, 72, 0, 76, 0, 79, 0, 76, 0],
+    [77, 0, 72, 77, 0, 76, 72, 0, 69, 0, 72, 0, 76, 0, 72, 0],
+    [79, 0, 76, 79, 0, 84, 79, 0, 76, 0, 79, 0, 81, 0, 79, 0],
+    [79, 0, 74, 79, 0, 76, 74, 0, 71, 0, 74, 0, 76, 0, 79, 0],
+  ],
+  hookB: [
+    [84, 0, 81, 0, 79, 0, 76, 0, 81, 0, 84, 0, 88, 0, 84, 0],
+    [81, 0, 77, 0, 76, 0, 72, 0, 77, 0, 81, 0, 84, 0, 81, 0],
+    [84, 0, 79, 0, 76, 0, 79, 0, 84, 0, 88, 0, 84, 0, 79, 0],
+    [83, 0, 79, 0, 76, 0, 74, 0, 79, 0, 83, 0, 86, 0, 83, 0],
+  ],
+  lead: 'synth',
+  padVol: 0.022,
+  kickVol: 0.36,
+  energy: 1.15,
+})
+
+const SCALE_C = [72, 74, 76, 79, 81, 84]
 
 // ev: müzik kutusu ninnisi
 const HOME = [

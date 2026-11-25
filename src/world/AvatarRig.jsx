@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { useGLTF } from '@react-three/drei'
+import { Html, useGLTF } from '@react-three/drei'
 import { AnimationMixer } from 'three'
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { applyPose, applyUprightIdle, makeRig } from './avatarPose'
 import { HeadAccessory } from './Accessories'
 import { cosStore } from './cosStore'
 import { applyLook, trimBase } from './avatarLook'
+import { screenK } from './screenK'
 import WorkProp from './WorkProp'
 
 export const AVATAR_HEIGHT = 1.3
@@ -112,11 +113,108 @@ function HandProp({ item, t0 }) {
  * cosId verilirse aksesuarı (cosStore) kafa kemiğine takar.
  * AnimationMixer doğrudan klonlanmış modele bağlanır (drei useAnimations ilk açılışta T-pose'da kalabiliyordu).
  */
+/** Şezlong veya havluya uzanınca yanında beliren tropikal kokteyl, tepede pastel şemsiye ve yüzen "zZ Dinleniyor" işareti. */
+function LoungeRelaxProps() {
+  const root = useRef()
+  const scaleRef = useRef(0.01)
+  useFrame((_, dt) => {
+    if (!root.current) return
+    scaleRef.current = Math.min(1, scaleRef.current + dt * 4.2)
+    const s = 1 - Math.pow(1 - scaleRef.current, 3)
+    root.current.scale.setScalar(s)
+  })
+  const stripes = 8
+  return (
+    <group ref={root}>
+      {/* sağ yanda mini sehpa + tropikal kokteyl */}
+      <group position={[0.58, 0, 0.14]}>
+        <mesh position={[0, 0.12, 0]} castShadow>
+          <cylinderGeometry args={[0.19, 0.15, 0.24, 16]} />
+          <meshStandardMaterial color="#f7d6a8" roughness={0.6} />
+        </mesh>
+        <mesh position={[0, 0.25, 0]}>
+          <cylinderGeometry args={[0.2, 0.2, 0.03, 16]} />
+          <meshStandardMaterial color="#fff8ee" roughness={0.45} />
+        </mesh>
+        {/* kokteyl bardağı + pembe içecek + limon dilimi + pipet + mini şemsiye */}
+        <group position={[0, 0.27, 0]}>
+          <mesh position={[0, 0.08, 0]} castShadow>
+            <cylinderGeometry args={[0.068, 0.05, 0.16, 14]} />
+            <meshStandardMaterial color="#fffaf5" transparent opacity={0.62} roughness={0.18} />
+          </mesh>
+          <mesh position={[0, 0.075, 0]}>
+            <cylinderGeometry args={[0.058, 0.044, 0.125, 14]} />
+            <meshStandardMaterial color="#ff8fb8" roughness={0.3} />
+          </mesh>
+          <mesh position={[0.048, 0.155, 0]} rotation={[0.3, 0, -0.5]}>
+            <cylinderGeometry args={[0.036, 0.036, 0.012, 12]} />
+            <meshStandardMaterial color="#ffe066" roughness={0.45} />
+          </mesh>
+          <mesh position={[-0.015, 0.17, 0]} rotation={[0, 0, 0.26]}>
+            <cylinderGeometry args={[0.007, 0.007, 0.18, 6]} />
+            <meshStandardMaterial color="#7fe0c3" roughness={0.4} />
+          </mesh>
+          <group position={[0.025, 0.21, 0.015]} rotation={[0.12, 0, -0.35]}>
+            <mesh position={[0, -0.04, 0]}>
+              <cylinderGeometry args={[0.004, 0.004, 0.11, 5]} />
+              <meshStandardMaterial color="#f5e1c0" />
+            </mesh>
+            <mesh position={[0, 0.02, 0]}>
+              <coneGeometry args={[0.055, 0.028, 8]} />
+              <meshStandardMaterial color="#7fcdf3" roughness={0.45} />
+            </mesh>
+          </group>
+        </group>
+      </group>
+
+      {/* tepede pastel çizgili pofuduk şemsiye */}
+      <group position={[-0.56, 0, -0.34]} rotation={[0.08, 0, -0.14]}>
+        <mesh position={[0, 0.96, 0]} castShadow>
+          <cylinderGeometry args={[0.026, 0.032, 1.92, 10]} />
+          <meshStandardMaterial color="#fff8ee" roughness={0.45} />
+        </mesh>
+        <group position={[0, 1.88, 0]}>
+          {Array.from({ length: stripes }, (_, i) => (
+            <mesh key={i} rotation={[0, (i / stripes) * Math.PI * 2, 0]} castShadow>
+              <coneGeometry args={[1.08, 0.36, 4, 1, false, 0, (Math.PI * 2) / stripes]} />
+              <meshStandardMaterial color={i % 2 === 0 ? '#ffa3c4' : '#fff8ee'} roughness={0.45} />
+            </mesh>
+          ))}
+          <mesh position={[0, -0.16, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[1.04, 0.04, 8, 24]} />
+            <meshStandardMaterial color="#ffd35e" roughness={0.4} />
+          </mesh>
+          <mesh position={[0, 0.21, 0]}>
+            <sphereGeometry args={[0.075, 12, 10]} />
+            <meshStandardMaterial color="#ffd35e" roughness={0.3} />
+          </mesh>
+        </group>
+      </group>
+
+      {/* tepede yüzen zZ Dinleniyor işareti */}
+      <Html position={[0, 1.28, -0.15]} center distanceFactor={9 * screenK()} zIndexRange={[9, 0]} style={{ pointerEvents: 'none' }}>
+        <div className="flex flex-col items-center">
+          <div className="mb-0.5 flex items-end gap-0.5 font-black text-[#7a5fd0] drop-shadow-[0_2px_4px_rgba(255,255,255,0.95)]">
+            <span className="animate-bounce text-xs" style={{ animationDelay: '0s' }}>z</span>
+            <span className="animate-bounce text-sm" style={{ animationDelay: '0.18s' }}>Z</span>
+            <span className="animate-bounce text-base" style={{ animationDelay: '0.36s' }}>z</span>
+          </div>
+          <div className="whitespace-nowrap rounded-full border-2 border-white bg-[#fffaf4]/95 px-3 py-0.5 text-xs font-black text-[#5b4678] shadow-[0_4px_12px_rgba(74,59,92,0.18)]">
+            Dinleniyor
+          </div>
+        </div>
+      </Html>
+    </group>
+  )
+}
+
 export default function AvatarRig({ slug, anim = 'idle', pose, cosId }) {
   const { scene, animations } = useGLTF(`/models/avatars/${slug}.glb`)
   const current = useRef(null)
   const [handProp, setHandProp] = useState(null)
+  const [lounging, setLounging] = useState(false)
   const handKeyRef = useRef('')
+  const loungeRef = useRef(false)
   const look = useSyncExternalStore(cosStore.subscribe, () => cosStore.get(cosId)?.look ?? null)
   const lookKey = look ? `${look.h}.${look.e}.${look.o}` : ''
 
@@ -152,6 +250,11 @@ export default function AvatarRig({ slug, anim = 'idle', pose, cosId }) {
       handKeyRef.current = hpKey
       setHandProp(hpKey ? { item: activePose.item, t0: activePose.t0 } : null)
     }
+    const isLounge = activePose?.kind === 'sit' && activePose?.style === 'lounger'
+    if (isLounge !== loungeRef.current) {
+      loungeRef.current = isLounge
+      setLounging(isLounge)
+    }
     const next = actions[anim] ?? actions.idle
     const isIdle = !next || next === actions.idle
     if (isIdle) {
@@ -185,6 +288,7 @@ export default function AvatarRig({ slug, anim = 'idle', pose, cosId }) {
       {pose && <WorkProp pose={pose} />}
       {cosId && <HeadAccessory model={model} cosId={cosId} />}
       {handProp && <HandProp item={handProp.item} t0={handProp.t0} />}
+      {lounging && <LoungeRelaxProps />}
     </>
   )
 }

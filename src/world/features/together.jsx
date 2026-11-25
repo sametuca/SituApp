@@ -133,6 +133,7 @@ export function useTogether(ctx) {
   const [offer, setOffer] = useState(null) // gelen dans daveti { id, name, avatar, until }
   const [pair, setPair] = useState(null) // bankta yan yana oturduğum kişi { id, name, avatar }
   const [seatOpt, setSeatOpt] = useState(null)
+  const [fullSeat, setFullSeat] = useState(null) // yakındaki koltuk/masa tamamen doluysa: kind
   const [photoNear, setPhotoNear] = useState(false)
   const [nearAny, setNearAny] = useState(false)
   const [moment, setMoment] = useState(null) // gün batımı anı { id, name, until }
@@ -302,17 +303,25 @@ export function useTogether(ctx) {
       const now = Date.now()
       const posed = Boolean(together.self.current)
 
-      // koltuk
+      // koltuk (boş yer varsa seatOpt, hepsi doluysa fullSeat uyarısı)
       let opt = null
+      let full = null
       const seats = venue ? venueSeats(venue) : home ? null : SEATS // evde koltuk yok; mekânda iç mekân koltukları
       if (seats && !posed) {
         const taken = together.takenSeats()
         let best = SIT_PROMPT
+        let bestFull = SIT_PROMPT
         for (const seat of seats) {
           if (Math.abs(seat.x - f.x) > 4 || Math.abs(seat.z - f.z) > 4) continue
           seat.slots.forEach((sl, i) => {
-            if (taken.has(`${seat.id}:${i}`)) return
             const d = Math.hypot(sl.x - f.x, sl.z - f.z)
+            if (taken.has(`${seat.id}:${i}`)) {
+              if (d < bestFull) {
+                bestFull = d
+                full = seat.kind
+              }
+              return
+            }
             if (d < best) {
               best = d
               opt = { seat: seat.id, slot: i, kind: seat.kind, style: seat.style ?? seat.kind, x: sl.x, z: sl.z, ry: seat.ry }
@@ -321,6 +330,10 @@ export function useTogether(ctx) {
         }
       }
       setSeatOpt((p) => (p?.seat === opt?.seat && p?.slot === opt?.slot ? p : opt))
+      setFullSeat((p) => {
+        const next = opt ? null : full
+        return p === next ? p : next
+      })
       const spot = venue ? venueLayout(venue)?.photo : home ? null : PHOTO_SPOT // şehirde dış nokta, Fotoğraf Stüdyosu'nda iç nokta
       setPhotoNear(Boolean(spot) && Math.hypot(f.x - spot.x, f.z - spot.z) < spot.radius)
 
@@ -394,6 +407,7 @@ export function useTogether(ctx) {
       if (together.self.current) return stand(false)
       if (atDoor) return
       if (seatOpt) return sit()
+      if (fullSeat) return say('Boş yer yok 🪑')
       if (photoNear) return startShoot()
     }
   })
@@ -476,9 +490,29 @@ export function useTogether(ctx) {
       </div>
 
       {!busy && selfPose?.kind === 'sit' && (
-        <DoorPrompt emoji="🪑" label={selfPose.style === 'lounger' ? 'Uzanıyorsun' : 'Oturuyorsun'} action="Kalk" touch={touch} raised={nearAny} onGo={() => stand(false)} />
+        <DoorPrompt emoji={selfPose.style === 'lounger' ? '🏖️' : '🪑'} label={selfPose.style === 'lounger' ? 'Dinleniyorsun' : 'Oturuyorsun'} action="Kalk" touch={touch} raised={nearAny} onGo={() => stand(false)} />
       )}
-      {!busy && !atDoor && !selfPose && seatOpt && <DoorPrompt emoji="🪑" label={SEAT_LABEL[seatOpt.kind]} action="Otur" touch={touch} raised={nearAny} onGo={sit} />}
+      {!busy && !atDoor && !selfPose && seatOpt && (
+        <DoorPrompt
+          emoji={seatOpt.style === 'lounger' ? '🏖️' : '🪑'}
+          label={SEAT_LABEL[seatOpt.kind]}
+          action={seatOpt.style === 'lounger' ? 'Uzan' : 'Otur'}
+          touch={touch}
+          raised={nearAny}
+          onGo={sit}
+        />
+      )}
+      {!busy && !atDoor && !selfPose && !seatOpt && fullSeat && (
+        <div
+          className={`pointer-events-none absolute left-1/2 z-20 w-[min(92vw,18rem)] -translate-x-1/2 animate-pop ${touch ? (nearAny ? 'bottom-[13.5rem]' : 'bottom-[9.25rem]') : nearAny ? 'bottom-[14rem]' : 'bottom-[9.5rem]'}`}
+          role="status"
+        >
+          <div className={`flex items-center justify-center gap-2 rounded-3xl px-4 py-2.5 text-sm font-black text-[#8a7a9c] ${glass}`}>
+            <span aria-hidden>{fullSeat === 'lounger' || fullSeat === 'towel' ? '🏖️' : '🪑'}</span>
+            <span>Boş yer yok</span>
+          </div>
+        </div>
+      )}
       {!busy && !atDoor && !selfPose && !seatOpt && photoNear && <PhotoPrompt touch={touch} raised={nearAny} onShoot={startShoot} onAlbum={() => setPanel('photos')} />}
 
       {shoot && shoot.n > 0 && <Countdown n={shoot.n} />}

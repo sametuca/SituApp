@@ -144,16 +144,45 @@ export function useFeedback({ panel, setPanel, venue, home, name: who }) {
   const overlays = (
     <>
       {ask && !panel && !venue && !home && (
-        <div className="pointer-events-auto absolute bottom-24 left-3 z-20 flex w-[min(20rem,calc(100vw-1.5rem))] animate-pop items-start gap-3 rounded-2xl border-2 border-white bg-white/90 p-3 shadow-soft backdrop-blur-md" role="status">
-          <Ico name="feedback" size={28} />
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-black text-[#4a3b5c]">Oyunu nasıl buluyorsun?</p>
-            <p className="text-xs font-semibold text-[#8a7a9c]">SituApp pre-alpha. Kısa bir geri bildirim bize çok yardımcı olur.</p>
-            <div className="mt-2 flex gap-2">
-              <button onClick={open} className="rounded-full bg-[#fdb252] px-3 py-1 text-xs font-black text-white shadow active:scale-95">
-                Yaz
+        <div
+          className="pointer-events-auto fixed inset-0 z-40 grid place-items-center bg-[#4a3b5c]/30 p-4 backdrop-blur-[2px]"
+          onClick={dismiss}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Oyunu nasıl buluyorsun?"
+            onClick={(e) => e.stopPropagation()}
+            className="relative flex w-[min(92vw,26rem)] animate-pop flex-col items-center rounded-[2rem] border-2 border-white bg-white/95 p-6 text-center shadow-toy backdrop-blur-md"
+          >
+            <button
+              type="button"
+              onClick={dismiss}
+              aria-label="Kapat"
+              className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full bg-[#f6f0ff] text-sm font-black text-[#8a7a9c] transition hover:bg-[#ffedd6]/70"
+            >
+              ✕
+            </button>
+            <span className="grid h-16 w-16 place-items-center rounded-3xl bg-[#fff3c8] shadow-soft">
+              <Ico name="feedback" size={38} />
+            </span>
+            <h2 className="mt-3 text-xl font-black text-[#4a3b5c]">Oyunu nasıl buluyorsun?</h2>
+            <p className="mt-1.5 max-w-xs text-sm font-semibold leading-relaxed text-[#8a7a9c]">
+              SituApp pre-alpha aşamasında. Kısa bir geri bildirimin oyunu geliştirmemize çok yardımcı olur!
+            </p>
+            <div className="mt-5 flex w-full gap-2.5">
+              <button
+                type="button"
+                onClick={open}
+                className="flex-1 rounded-2xl border-b-4 border-[#d98a1c] bg-[#fdb252] py-3 text-base font-black text-white shadow-soft transition hover:brightness-105 active:translate-y-[2px] active:border-b-2"
+              >
+                Geri Bildirim Yaz
               </button>
-              <button onClick={dismiss} className="rounded-full bg-white px-3 py-1 text-xs font-extrabold text-[#8a7a9c] shadow active:scale-95">
+              <button
+                type="button"
+                onClick={dismiss}
+                className="rounded-2xl border-2 border-[#e9ddff] bg-[#faf6ff] px-5 py-3 text-sm font-extrabold text-[#6b4fc0] transition hover:bg-[#f1e8ff] active:scale-95"
+              >
                 Sonra
               </button>
             </div>

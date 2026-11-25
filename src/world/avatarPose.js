@@ -13,7 +13,7 @@ const NAMES = {
 }
 
 // Oturan avatar ayakta olduğu yüksekliğin bu kadar altına iner (m); negatif değer koltuk/sele üstüne çıkarır.
-export const SIT_DROP = { bench: -0.08, chair: -0.05, lounger: 0.12, floor: 0.42, bike: -0.27 }
+export const SIT_DROP = { bench: -0.08, chair: -0.05, lounger: 0.24, floor: 0.42, bike: -0.27 }
 
 const q1 = new Quaternion()
 const q2 = new Quaternion()
@@ -111,9 +111,13 @@ export function applyPose(rig, pose, dt) {
     model.position.y = -SIT_DROP[rig.style] * b
     model.position.z = rig.style === 'bike' ? -0.28 * b : 0
     if (rig.style === 'lounger') {
-      // şezlong: arkaya yaslan, bacaklar ileri uzanır
-      turn(rig, bones.hips, AX, -1.0 * b)
-      turn(rig, bones.head, AX, 0.7 * b)
+      // şezlong / havlu: keyifle arkaya uzan, baş hafif yukarıda, kollar yanlarda rahat
+      turn(rig, bones.hips, AX, -1.25 * b)
+      turn(rig, bones.head, AX, 0.48 * b)
+      turn(rig, bones.lArm, AX, -0.28 * b)
+      turn(rig, bones.rArm, AX, -0.28 * b)
+      turn(rig, bones.lArm, AZ, 0.22 * b)
+      turn(rig, bones.rArm, AZ, -0.22 * b)
     } else if (rig.style === 'bike') {
       // bisiklet: sele üstüne otur, hareket halindeyken pedal çevir, eller gidon elciklerinde
       if (rig.moving) rig.pedal += Math.min(dt, 0.1) * 10

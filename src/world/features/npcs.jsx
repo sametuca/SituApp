@@ -327,6 +327,11 @@ export function useNpcs(ctx) {
       ctx.setPanel('wardrobe')
       return
     }
+    if (o.action === 'open_surf' || o.action === 'open_surf_board') {
+      setTalk(null)
+      window.dispatchEvent(new CustomEvent('situapp:open-surf', { detail: { mode: o.action === 'open_surf_board' ? 'board' : 'lobby' } }))
+      return
+    }
     setTalk((t) => (t ? { ...t, text: pick(o.reply) } : t))
   }
 

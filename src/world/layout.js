@@ -287,6 +287,7 @@ const SEATS_PROPS = PROPS.flatMap((pr, i) => {
   return [{ id: `s${i}`, kind: d.kind, x: pr.x, z: pr.z, ry: pr.ry + d.face, slots: slotsOf(pr.x, pr.z, pr.ry, d) }]
 })
 const SEATS_BLANKET = BLANKETS.map((bl, i) => ({ id: `bl${i}`, kind: 'blanket', style: 'floor', x: bl.x, z: bl.z, ry: bl.ry, slots: slotsOf(bl.x, bl.z, bl.ry, { cap: 2, gap: 1.2, along: 'x' }) }))
+const SEATS_TOWEL = TOWELS.map((tw, i) => ({ id: `tw${i}`, kind: 'towel', style: 'lounger', x: tw.x, z: tw.z, ry: tw.ry, slots: [{ x: tw.x, z: tw.z }] }))
 // yan yana şezlonglar tek "grup": biri diğerinin yanına uzanınca sohbet kısayolu çıkar (sunucu da bunu okur)
 const loungers = SEATS_PROPS.filter((s) => s.kind === 'lounger')
 loungers.forEach((a, i) => {
@@ -294,8 +295,8 @@ loungers.forEach((a, i) => {
     if (Math.hypot(a.x - c.x, a.z - c.z) < 3.2) a.group = c.group = a.group ?? c.group ?? `lg${i}`
   })
 })
-export const SEATS = [...SEATS_PROPS, ...SEATS_BLANKET]
-export const SEAT_LABEL = { bench: 'Banka otur', lounger: 'Şezlonga uzan', chair: 'Sandalyeye otur', blanket: 'Battaniyeye otur', table: 'Masaya otur', stool: 'Taburede otur', sofa: 'Kanepeye otur' }
+export const SEATS = [...SEATS_PROPS, ...SEATS_BLANKET, ...SEATS_TOWEL]
+export const SEAT_LABEL = { bench: 'Banka otur', lounger: 'Şezlonga uzan', towel: 'Havluya uzan', chair: 'Sandalyeye otur', blanket: 'Battaniyeye otur', table: 'Masaya otur', stool: 'Taburede otur', sofa: 'Kanepeye otur' }
 
 // Fotoğraf Stüdyosu'nun (lobi, güneydoğu; kapısı güneye bakar) kapı önü: "Fotoğraf çek" istemi burada çıkar.
 export const PHOTO_SPOT = { x: 17, z: 27.4, radius: 2.7 }

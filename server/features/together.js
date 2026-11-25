@@ -107,10 +107,10 @@ export default function together(ctx) {
       const slot = seat?.slots[slotIdx]
       if (!slot) return
       if (Math.hypot(me.x - slot.x, me.z - slot.z) > SIT_RANGE) return info(me, 'Biraz yaklaş, sonra otur 🪑')
-      if (taken.has(`${seat.id}:${slotIdx}`)) return info(me, 'Bu yer dolu.')
+      if (taken.has(`${seat.id}:${slotIdx}`)) return info(me, 'Boş yer yok 🪑')
       // yanındaki koltukta seni engelleyen/engellediğin biri varsa yer "dolu" görünür (sebep sezdirilmez)
       const neighbours = groupKeys(table, seat).map((key) => players.get(taken.get(key))).filter((o) => o && o.id !== me.id)
-      if (neighbours.some((o) => mod().blockedPair(me, o))) return info(me, 'Bu yer dolu.')
+      if (neighbours.some((o) => mod().blockedPair(me, o))) return info(me, 'Boş yer yok 🪑')
 
       taken.set(`${seat.id}:${slotIdx}`, me.id)
       startPose(me, { kind: 'sit', style: seat.style ?? seat.kind, seatKind: seat.kind, seat: seat.id, slot: slotIdx, x: slot.x, z: slot.z, ry: +seat.ry.toFixed(3) })

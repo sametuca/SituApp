@@ -24,5 +24,6 @@ import pets from './pets.js'
 import beach from './beach.js'
 import pvp from './pvp.js'
 import jobs from './jobs.js'
+import surf from './surf.js'
 
-export const FEATURE_FACTORIES = [moderation, games, friends, profile, progress, media, together, cosmetics, npcs, weather, venues, collect, economy, dj, housing, rental, pets, beach, pvp, jobs]
+export const FEATURE_FACTORIES = [moderation, games, friends, profile, progress, media, together, cosmetics, npcs, weather, venues, collect, economy, dj, housing, rental, pets, beach, pvp, jobs, surf]
