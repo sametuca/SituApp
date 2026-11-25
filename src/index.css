@@ -162,3 +162,6 @@ html {
 }
 @keyframes hand-press { 0%, 8%, 92%, 100% { transform: scale(1); } 16%, 84% { transform: scale(0.88); } }
 @keyframes hand-arrow { 0%, 100% { opacity: 0.25; } 50% { opacity: 0.9; } }
+
+/* balık tutma: çekme süresi çubuğu */
+@keyframes shrink-w { from { width: 100%; } to { width: 0%; } }

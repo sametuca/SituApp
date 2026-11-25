@@ -6,6 +6,7 @@ import { MathUtils } from 'three'
 import AvatarRig, { AVATAR_HEIGHT } from './AvatarRig'
 import { GUIDE } from './layout'
 import { together } from './features/togetherStore'
+import { work } from './features/jobStore'
 import { BIKE_POSE } from './bikeStore'
 import { playerPos } from './cull'
 
@@ -84,7 +85,7 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
   const [afk, setAfk] = useState(false)
   const idleRef = useRef({ since: Date.now(), x: 0, z: 0, afk: false })
   const { reaction, whisper } = useLiveFlags(id, reactions, whispering)
-  const pose = useMemo(() => ({ get current() { return together.poses.get(id) ?? (remotes.current.get(id)?.anim === 'ride' ? BIKE_POSE : null) } }), [id, remotes])
+  const pose = useMemo(() => ({ get current() { return together.poses.get(id) ?? (remotes.current.get(id)?.anim === 'ride' ? BIKE_POSE : work.poses.get(id) ?? null) } }), [id, remotes])
 
   useFrame((_, dt) => {
     const r = remotes.current.get(id)

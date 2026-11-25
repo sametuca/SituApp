@@ -306,6 +306,7 @@ export const COLLIDERS = [
     return { type: 'box', x: bd.x, z: bd.z, hw: (side ? bd.d : bd.w) / 2 + 0.15, hd: (side ? bd.w : bd.d) / 2 + 0.15 }
   }),
   ...PROPS.filter((pr) => pr.r > 0).map((pr) => ({ type: 'circle', x: pr.x, z: pr.z, r: pr.r })),
+  { type: 'box', x: -25, z: 14, hw: 1.5, hd: 1.85 }, // Posta Merkezi (jobsData.js POST_CENTER; doğuya bakar)
 ]
 
 export const PLAYER_RADIUS = 0.4

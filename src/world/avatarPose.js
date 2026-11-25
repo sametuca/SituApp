@@ -61,6 +61,25 @@ export function applyUprightIdle(rig) {
   turn(rig, bones.rArm, AZ, 1.25)
 }
 
+/** Olta tutuşu: kol açısı (AX, negatif = öne/yukarı) ve gövde eğimi. phase: cast | wait | bite | reel; t: fazın başından beri sn; now: saat sn. */
+export function fishArm(phase, t, now) {
+  let a = -1.15
+  let lean = 0
+  if (phase === 'cast') {
+    const k = MathUtils.clamp(t / 0.8, 0, 1)
+    a = -1.15 - 1.15 * Math.sin(k * Math.PI) * (k < 0.55 ? 1 : 0.55)
+    lean = -0.12 * Math.sin(k * Math.PI) + 0.1 * ease(Math.max(0, (k - 0.5) * 2))
+  } else if (phase === 'bite') {
+    a = -1.15 - 0.28 * Math.abs(Math.sin(now * 14))
+    lean = 0.05 * Math.sin(now * 14)
+  } else if (phase === 'reel') {
+    const k = MathUtils.clamp(t / 0.5, 0, 1)
+    a = -1.15 - 0.75 * Math.sin(k * Math.PI)
+    lean = -0.1 * Math.sin(k * Math.PI)
+  } else a = -1.15 + Math.sin(now * 1.6) * 0.035
+  return { a, lean }
+}
+
 /** Her karede (mixer.update'ten sonra) çağır. pose: together pose ya da null. */
 export function applyPose(rig, pose, dt) {
   const goal = pose ? 1 : 0
@@ -69,6 +88,7 @@ export function applyPose(rig, pose, dt) {
     rig.style = pose.style ?? rig.style
     rig.lead = Boolean(pose.lead)
     rig.t0 = pose.t0 ?? 0
+    rig.phase = pose.phase ?? null
   }
   rig.blend += Math.sign(goal - rig.blend) * Math.min(Math.abs(goal - rig.blend), dt * (pose ? 4 : 6))
   const { model, bones } = rig
@@ -106,6 +126,35 @@ export function applyPose(rig, pose, dt) {
       turn(rig, bones.rLeg, AX, 1.5 * b)
       turn(rig, bones.lArm, AX, -0.35 * b)
       turn(rig, bones.rArm, AX, -0.35 * b)
+    }
+  } else if (rig.kind === 'work') {
+    const t = performance.now() / 1000 - rig.t0
+    const now = performance.now() / 1000
+    if (rig.style === 'fish') {
+      // olta: iki elle tutulur; atış = geriye savurup öne bırak, bekleme = hafif sallanma, vurdu = sert çekiş, çekme = yukarı kaldır
+      const { a, lean } = fishArm(rig.phase, t, now)
+      turn(rig, bones.lArm, AX, (a + 0.12) * b)
+      turn(rig, bones.rArm, AX, a * b)
+      turn(rig, bones.spine, AX, lean * b)
+      turn(rig, bones.head, AX, (rig.phase === 'bite' ? 0.14 : 0.05) * b)
+    } else if (rig.style === 'carry') {
+      // paketi göğüs hizasında iki kolla taşır; yürürken hafif yaylanır
+      const bob = Math.sin(now * 7) * 0.025
+      turn(rig, bones.lArm, AX, (-1.22 + bob) * b)
+      turn(rig, bones.rArm, AX, (-1.22 + bob) * b)
+      turn(rig, bones.lArm, AZ, -0.28 * b)
+      turn(rig, bones.rArm, AZ, 0.28 * b)
+      turn(rig, bones.spine, AX, -0.05 * b)
+    } else if (rig.style === 'tend') {
+      // bahçe işi: öne eğilip toprağa uzanır, küçük kürek/sulama hareketi
+      const k = MathUtils.clamp(t / 0.35, 0, 1)
+      const dig = Math.sin(now * 9) * 0.18
+      turn(rig, bones.spine, AX, 0.62 * ease(k) * b)
+      turn(rig, bones.hips, AX, 0.12 * ease(k) * b)
+      turn(rig, bones.head, AX, -0.25 * b)
+      turn(rig, bones.lArm, AX, (-1.35 + dig) * b)
+      turn(rig, bones.rArm, AX, (-1.35 - dig) * b)
+      model.position.y = -0.06 * ease(k) * b
     }
   } else if (rig.kind === 'dance') {
     const t = performance.now() / 1000 - rig.t0

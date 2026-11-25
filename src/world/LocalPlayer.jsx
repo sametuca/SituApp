@@ -4,6 +4,7 @@ import { MathUtils, Vector3 } from 'three'
 import AvatarRig from './AvatarRig'
 import { resolveCollisions } from './layout'
 import { together } from './features/togetherStore'
+import { work } from './features/jobStore'
 import { playerPos } from './cull'
 import { BIKE_POSE, BIKE_SPEED, bike, speedBoost, useRiding } from './bikeStore'
 import BikeModel from './Bike'
@@ -36,7 +37,7 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
   const placed = useRef(false)
   const riding = useRiding()
   // duruş: oturma/dans (together) ya da bisiklet; AvatarRig her karede .current okur
-  const pose = useMemo(() => ({ get current() { return bike.on ? BIKE_POSE : together.self.current } }), [])
+  const pose = useMemo(() => ({ get current() { return bike.on ? BIKE_POSE : together.self.current ?? work.self.current } }), [])
 
   useEffect(() => {
     const down = (e) => {
@@ -117,6 +118,12 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
       }
       const diff = MathUtils.euclideanModulo(posed.ry - g.rotation.y + Math.PI, Math.PI * 2) - Math.PI
       g.rotation.y += diff * Math.min(1, dt * 8)
+    }
+
+    // balık tutarken denize (güney, +z) dön; hareket edersen jobs modülü olta atmayı bırakır
+    if (work.self.current?.style === 'fish' && !moving) {
+      const diff = MathUtils.euclideanModulo(0 - g.rotation.y + Math.PI, Math.PI * 2) - Math.PI
+      g.rotation.y += diff * Math.min(1, dt * 7)
     }
 
     if (moving) {

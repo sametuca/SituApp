@@ -9,6 +9,7 @@ const ICONS = {
   quests: '⭐',
   trophy: '🏆',
   pvp: '⚔️',
+  job: '💼',
   soundOn: '🔊',
   soundOff: '🔇',
   collection: '🧺',
