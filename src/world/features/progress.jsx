@@ -210,6 +210,15 @@ export function useProgress({ net, say, focusRef, home, venue, panel, setPanel, 
         say(`⭐ Görev tamamlandı: ${m.quest.title} (+${m.quest.stars} ⭐)`)
       }),
       on('badge', (m) => {
+        // aynı rozet bu tarayıcıda bir kez gösterilir (sunucu verisi sıfırlansa/yeniden bağlansa tekrar tekrar çıkmasın)
+        try {
+          const k = `situapp_badge_seen:${net.homeKey ?? ''}`
+          const seen = JSON.parse(localStorage.getItem(k) || '[]')
+          if (seen.includes(m.badge.id)) return
+          localStorage.setItem(k, JSON.stringify([...seen, m.badge.id]))
+        } catch {
+          /* depolama yoksa yine göster */
+        }
         setToasts((t) => [...t, { key: Math.random(), kind: 'badge', ...m.badge }])
         say(`🏅 Yeni rozet: ${m.badge.name}`)
       }),

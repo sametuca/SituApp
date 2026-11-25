@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Html, RoundedBox } from '@react-three/drei'
 import { CanvasTexture, Object3D, RepeatWrapping, SRGBColorSpace } from 'three'
-import { HOME_ROOM } from './layout'
+import { HOME_ROOM, SURFACES } from './layout'
 import Prop from './Prop'
 import { CROP_BY_ID, LAND_TIERS, MAX_LAND_TIER, clampLandTier, cropProgress, gardenPlots } from './homeGarden'
 
@@ -339,7 +339,15 @@ export default function HomeGarden({ plots = [], landTier = 0, isOwnHome = false
   const lt = clampLandTier(landTier)
   const curLand = LAND_TIERS[lt]
   const nextLand = lt < MAX_LAND_TIER ? LAND_TIERS[lt + 1] : null
-  const coords = gardenPlots(lt)
+  const coords = useMemo(() => gardenPlots(lt), [lt, HOME_ROOM.hw]) // eslint-disable-line react-hooks/exhaustive-deps
+  // tarhların (1,58 m, 0,18 m yüksek) üstüne basılır: avatar içine gömülmesin
+  useEffect(() => {
+    const beds = coords.map((pt) => ({ x: pt.x, z: pt.z, hw: 0.82, hd: 0.82, top: 0.2 }))
+    SURFACES.push(...beds)
+    return () => {
+      for (const b of beds) SURFACES.splice(SURFACES.indexOf(b), 1)
+    }
+  }, [coords])
   const gw = curLand.width
   const gd = hd * 2 + 0.6
   const gx = hw + 0.3 + gw / 2

@@ -11,7 +11,16 @@ export const RIM = 3.5 // kıyı kum şeridi genişliği
 export const PLAY_BOUNDS = { x0: ISLAND.x0 - RIM + 1, x1: ISLAND.x1 + RIM - 1, z0: ISLAND.z0 - RIM + 1, z1: ISLAND.z1 + RIM - 1 }
 export const PLAY_LIMIT = 102 // (eski ad) kabaca en uzak kenar
 export const PIER = { x: 0, z0: 49.4, z1: 58.6, hw: 1.55, top: 0.37 }
-export const groundY = (x, z) => (Math.abs(x - PIER.x) <= PIER.hw && z >= PIER.z0 && z <= PIER.z1 ? PIER.top : 0)
+// Üzerine çıkılabilen yükseltilmiş yüzeyler (ev bahçesi tarhları vb.; HomeGarden kayıt eder): { x, z, hw, hd, top }
+export const SURFACES = []
+export const groundY = (x, z) => {
+  if (Math.abs(x - PIER.x) <= PIER.hw && z >= PIER.z0 && z <= PIER.z1) return PIER.top
+  for (let i = 0; i < SURFACES.length; i++) {
+    const s = SURFACES[i]
+    if (Math.abs(x - s.x) <= s.hw && Math.abs(z - s.z) <= s.hd) return s.top
+  }
+  return 0
+}
 export const ROAD_HALF = 4.3 // yolların yarı genişliği (8,6 m asfalt + her yanda 1,4 m kaldırım)
 // Meydan çevresinde dönel kavşak: çeşmeli meydan (PLAZA_R) → iç kaldırım → asfalt halka (RING.r0…r1) → dış kaldırım. Ana yollar halkaya bağlanır.
 export const PLAZA_R = 8.4
