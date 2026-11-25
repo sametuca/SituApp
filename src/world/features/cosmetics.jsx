@@ -158,6 +158,23 @@ function PreviewPet() {
 }
 
 /** İlk giriş: 1 haftalık ücretsiz evcil hayvan seçimi (kedi ya da köpek). */
+// Hediye evcil hayvan teklifi bir kez gösterilir: seçildiyse bu tarayıcıda kalıcı, "Şimdi değil" ise oturum boyunca (sunucu verisi sıfırlansa bile tekrar çıkmasın)
+const petOfferKey = (k) => `situapp_pet_offer_done:${k ?? ''}`
+function petOfferDone(k) {
+  try {
+    return localStorage.getItem(petOfferKey(k)) === '1' || sessionStorage.getItem(petOfferKey(k)) === '1'
+  } catch {
+    return false
+  }
+}
+function petOfferMark(k, sessionOnly = false) {
+  try {
+    ;(sessionOnly ? sessionStorage : localStorage).setItem(petOfferKey(k), '1')
+  } catch {
+    /* önemli değil */
+  }
+}
+
 function PetAdopt({ onPick, onLater }) {
   return (
     <Modal onClose={onLater} label="Evcil hayvan seç">
@@ -728,11 +745,11 @@ export function useCosmetics({ net, say, touch, home, homeItems, venue, focusRef
         setOthers(m.players)
         setGifts(m.gifts ?? [])
         setPetUntil(m.petUntil ?? 0)
-        setPetOffer(Boolean(m.petOffer))
+        setPetOffer(Boolean(m.petOffer) && !petOfferDone(net.homeKey))
         setCoins(m.coins ?? 0)
         if (m.home) setDecors((d) => ({ ...d, [m.home]: m.decor ?? null }))
       }),
-      on('pet_until', (m) => (setPetUntil(m.until ?? 0), setPetOffer(false))),
+      on('pet_until', (m) => (setPetUntil(m.until ?? 0), setPetOffer(false), petOfferMark(net.homeKey))),
       on('coins', (m) => setCoins(m.n)),
       on('join', (m) => cosStore.set(m.p.id, m.p.cos)),
       on('leave', (m) => cosStore.remove(m.id)),
@@ -893,7 +910,7 @@ export function useCosmetics({ net, say, touch, home, homeItems, venue, focusRef
           }}
         />
       )}
-      {petOffer && petOfferReady && !venue && !home && <PetAdopt onPick={(pet) => send({ t: 'pet_adopt', pet })} onLater={() => setPetOffer(false)} />}
+      {petOffer && petOfferReady && !venue && !home && <PetAdopt onPick={(pet) => (petOfferMark(homeKey), send({ t: 'pet_adopt', pet }))} onLater={() => (petOfferMark(homeKey, true), setPetOffer(false))} />}
       {giftTo && (
         <GiftPicker
           peer={giftTo}
