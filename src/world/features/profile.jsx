@@ -6,7 +6,40 @@ const NUDGE_KEY = 'situapp_profile_nudge'
 const MAX_TAGS = 6
 const glass = 'border-2 border-white bg-white/90 shadow-toy backdrop-blur-md'
 
-const isEmpty = (p) => !p || (!p.bio && !p.age && !p.city && !(p.tags?.length > 0))
+const isEmpty = (p) => !p || (!p.bio && !p.age && !p.birthDate && !p.city && !p.instagram && !p.x && !p.instagramLocked && !p.xLocked && !(p.tags?.length > 0))
+
+function SocialValue({ icon, value, locked }) {
+  return (
+    <p className="truncate">
+      {icon}{' '}
+      {value ? (
+        `@${value}`
+      ) : locked ? (
+        <span title="Sadece arkadaşlara açık" className="font-bold text-[#8a7a9c]">
+          🔒 Sadece arkadaşlar
+        </span>
+      ) : (
+        <span className="font-semibold text-[#8a7a9c]/75">—</span>
+      )}
+    </p>
+  )
+}
+
+function calcAge(birthDate) {
+  if (!birthDate) return null
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(birthDate)
+  if (!m) return null
+  const y = Number(m[1]), mo = Number(m[2]), d = Number(m[3])
+  const now = new Date()
+  let age = now.getFullYear() - y
+  if (now.getMonth() + 1 < mo || (now.getMonth() + 1 === mo && now.getDate() < d)) age--
+  return age
+}
+
+function fmtBirth(birthDate) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(birthDate ?? ''))
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : ''
+}
 const safeStore = {
   get: () => {
     try {
@@ -61,14 +94,24 @@ function ProfileCard({ peer, profile, mine, catalog, request, onIce }) {
       {loading ? (
         <p className="text-xs font-bold text-[#8a7a9c]">Profil yükleniyor…</p>
       ) : !has ? (
-        <p className="text-xs font-bold text-[#8a7a9c]">{peer.name} henüz profilini doldurmamış.</p>
+        <div className="grid grid-cols-2 gap-1.5 text-[11px] font-bold text-[#8a7a9c]">
+          <p>🎂 Doğum: <span className="font-semibold opacity-70">Belirtilmedi</span></p>
+          <p>📍 Şehir: <span className="font-semibold opacity-70">Belirtilmedi</span></p>
+          <p>📸 Instagram: <span className="font-semibold opacity-70">—</span></p>
+          <p>𝕏 X: <span className="font-semibold opacity-70">—</span></p>
+        </div>
       ) : (
         <>
-          {(profile.age || profile.city) && (
-            <p className="text-xs font-extrabold text-[#6b4fc0]">
-              {[profile.age ? `${profile.age} yaş` : null, profile.city ? `📍 ${profile.city}` : null].filter(Boolean).join(' · ')}
+          <div className="grid grid-cols-2 gap-1.5 text-xs font-extrabold text-[#6b4fc0]">
+            <p className="truncate">
+              🎂 {profile.birthDate ? `${fmtBirth(profile.birthDate)}${profile.age ? ` (${profile.age})` : ''}` : profile.age ? `${profile.age} yaş` : <span className="font-semibold text-[#8a7a9c]/75">Belirtilmedi</span>}
             </p>
-          )}
+            <p className="truncate">
+              📍 {profile.city ? profile.city : <span className="font-semibold text-[#8a7a9c]/75">Belirtilmedi</span>}
+            </p>
+            <SocialValue icon="📸" value={profile.instagram} locked={profile.instagramLocked} />
+            <SocialValue icon="𝕏" value={profile.x} locked={profile.xLocked} />
+          </div>
           {profile.bio && <p className="text-sm font-semibold italic text-[#4a3b5c]">“{profile.bio}”</p>}
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
@@ -96,13 +139,16 @@ function ProfileCard({ peer, profile, mine, catalog, request, onIce }) {
 
 function ProfileEditor({ initial, catalog, onSave, onClose, net, photoEnabled, privacy, setPrivacy }) {
   const [bio, setBio] = useState(initial?.bio ?? '')
-  const [age, setAge] = useState(initial?.age ? String(initial.age) : '')
+  const [birthDate, setBirthDate] = useState(initial?.birthDate ?? '')
   const [city, setCity] = useState(initial?.city ?? '')
+  const [instagram, setInstagram] = useState(initial?.instagram ?? '')
+  const [xHandle, setXHandle] = useState(initial?.x ?? '')
+  const [socialPrivacy, setSocialPrivacy] = useState(initial?.socialPrivacy === 'friends' ? 'friends' : 'all')
   const [tags, setTags] = useState(initial?.tags ?? [])
-  const ageNum = age === '' ? null : Number(age)
-  const ageBad = age !== '' && (!Number.isInteger(ageNum) || ageNum < 18 || ageNum > 99)
+  const ageNum = birthDate ? calcAge(birthDate) : (initial?.age ?? null)
+  const ageBad = Boolean(birthDate) && (ageNum === null || ageNum < 18 || ageNum > 99)
   const toggle = (id) => setTags((t) => (t.includes(id) ? t.filter((x) => x !== id) : t.length >= MAX_TAGS ? t : [...t, id]))
-  const field = 'w-full rounded-2xl border-2 border-[#d6c7ff] bg-[#faf6ff] px-4 py-2.5 text-base font-semibold text-[#4a3b5c] outline-none placeholder:text-[#8a7a9c]/60 focus:ring-4 focus:ring-[#d6c7ff]/60'
+  const field = 'w-full rounded-2xl border-2 border-[#d6c7ff] bg-[#faf6ff] px-3.5 py-2 text-sm font-semibold text-[#4a3b5c] outline-none placeholder:text-[#8a7a9c]/60 focus:ring-4 focus:ring-[#d6c7ff]/60'
 
   return (
     <Modal onClose={onClose} label="Profilim">
@@ -111,10 +157,21 @@ function ProfileEditor({ initial, catalog, onSave, onClose, net, photoEnabled, p
         <PhotoSection net={net} enabled={photoEnabled} privacy={privacy} setPrivacy={setPrivacy} />
       </div>
       <form
-        className="mt-4 flex flex-col gap-4"
+        className="mt-4 flex flex-col gap-3"
         onSubmit={(e) => {
           e.preventDefault()
-          if (!ageBad) onSave({ bio: bio.trim(), age: ageNum, city: city.trim(), tags })
+          if (!ageBad) {
+            onSave({
+              bio: bio.trim(),
+              birthDate,
+              age: ageNum,
+              city: city.trim(),
+              instagram: instagram.trim().replace(/^@+/, ''),
+              x: xHandle.trim().replace(/^@+/, ''),
+              socialPrivacy,
+              tags,
+            })
+          }
         }}
       >
         <label className="flex flex-col gap-1">
@@ -124,14 +181,47 @@ function ProfileEditor({ initial, catalog, onSave, onClose, net, photoEnabled, p
         </label>
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-black text-[#4a3b5c]">Yaş</span>
-            <input value={age} onChange={(e) => setAge(e.target.value.replace(/\D/g, '').slice(0, 2))} inputMode="numeric" placeholder="18+" aria-invalid={ageBad} className={field} />
-            {ageBad && <span className="text-[11px] font-bold text-rose-400">Yaş 18–99 arasında olmalı.</span>}
+            <span className="flex items-center justify-between text-sm font-black text-[#4a3b5c]">
+              <span>🎂 Doğum Tarihi</span>
+              {ageNum !== null && !ageBad && <span className="rounded-full bg-[#efe6ff] px-2 py-0.5 text-[10px] text-[#6b4fc0]">{ageNum} yaş</span>}
+            </span>
+            <input type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} aria-invalid={ageBad} className={field} />
+            {ageBad && <span className="text-[11px] font-bold text-rose-400">18–99 yaş arasında olmalı.</span>}
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-black text-[#4a3b5c]">Şehir</span>
+            <span className="text-sm font-black text-[#4a3b5c]">📍 Şehir</span>
             <input value={city} onChange={(e) => setCity(e.target.value)} maxLength={20} placeholder="İstanbul" className={field} />
           </label>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-black text-[#4a3b5c]">📸 Instagram</span>
+            <input value={instagram} onChange={(e) => setInstagram(e.target.value.replace(/\s/g, ''))} maxLength={30} placeholder="@kullaniciadi" className={field} />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-black text-[#4a3b5c]">𝕏 X (Twitter)</span>
+            <input value={xHandle} onChange={(e) => setXHandle(e.target.value.replace(/\s/g, ''))} maxLength={30} placeholder="@kullaniciadi" className={field} />
+          </label>
+        </div>
+        <div className="rounded-2xl bg-[#faf6ff] p-2.5">
+          <p className="text-xs font-black text-[#4a3b5c]">Instagram ve X’i kimler görsün?</p>
+          <div className="mt-1.5 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Sosyal hesap gizliliği">
+            {[
+              ['all', '🌍 Herkes'],
+              ['friends', '🔒 Sadece arkadaşlar'],
+            ].map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                role="radio"
+                aria-checked={socialPrivacy === id}
+                onClick={() => setSocialPrivacy(id)}
+                className={`rounded-2xl border-2 px-2 py-2 text-xs font-extrabold transition ${socialPrivacy === id ? 'border-[#fdb252] bg-[#ffead0] text-[#926021]' : 'border-white bg-white text-[#5b4a70]'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
         <div>
           <p className="text-sm font-black text-[#4a3b5c]">
@@ -191,6 +281,14 @@ export function useProfile({ net, say, panel, setPanel, home }) {
         say('Profilin kaydedildi 💗')
       }),
       net.on('profile', (m) => setCache((c) => ({ ...c, [m.id]: m.profile }))),
+      net.on('friends', () => {
+        reqAt.current = {}
+        setCache({})
+      }),
+      net.on('friend_added', () => {
+        reqAt.current = {}
+        setCache({})
+      }),
       net.on('icebreaker', (m) => setIncoming((l) => [...l.filter((x) => x.id !== m.id), m].slice(-3))),
       net.on('icebreaker_answer', (m) => {
         const k = Date.now() + Math.random()

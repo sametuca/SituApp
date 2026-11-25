@@ -22,12 +22,12 @@ import { MAX_ITEMS, findFreeSpot, furnitureColliders, isValid, loadHome, newUid,
 import LocalPlayer from '../world/LocalPlayer'
 import RemotePlayers, { GuideNpc, SelfTag } from '../world/RemotePlayers'
 import { useMultiplayer } from '../world/net'
-import { ChatPanel, HelpModal, HintBar, Minimap, StartGuide, TopBar, ZoneToast } from '../world/Hud'
-import { ChatFab, ChatSheet, DoorPrompt, GestureChip, IncomingChip, InteractSheet, InviteChip, Joystick, MatchOverlay, NearbyCard, ReactionBar } from '../world/Social'
-import { GESTURE_BY_KIND, REACTIONS, WHISPER_RANGE } from '../world/interact'
+import { ChatPanel, HelpModal, HintBar, Minimap, StartGuide, TopBar } from '../world/Hud'
+import { ChatFab, ChatSheet, DoorPrompt, GestureChip, IncomingChip, InteractSheet, InviteChip, Joystick, MatchOverlay, NearbyCard, ReactionBar, SkillBar } from '../world/Social'
+import { GESTURE_BY_KIND, REACTIONS, SKILL_COOLDOWN_MS, SKILLS, WHISPER_RANGE } from '../world/interact'
 import { useIsTouch } from '../world/useIsTouch'
 import { HOME_TIERS, applyHomeTier } from '../world/homeTiers'
-import { useRiding } from '../world/bikeStore'
+import { bike, useRiding } from '../world/bikeStore'
 import { BEACH_START, HOME_DOOR, HOME_ROOM, HOME_ZONE, SPAWN, TELEPORTS, ZONES, resolveCollisions, resolveRoom, zoneAt } from '../world/layout'
 
 const NO_ITEMS = []
@@ -546,9 +546,34 @@ function WorldScene({ avatar }) {
   }
   const react = useCallback((e) => net.sendReact(e), [net])
   const reactRef = useRef(react)
+  const [skillCd, setSkillCd] = useState({})
+  const skillCdRef = useRef({})
+  const soloDanceTimer = useRef(null)
+  useEffect(() => () => clearTimeout(soloDanceTimer.current), [])
+  const triggerSkill = useCallback(
+    (sk) => {
+      const now = Date.now()
+      if ((skillCdRef.current[sk.id] ?? 0) > now) return
+      const next = { ...skillCdRef.current, [sk.id]: now + SKILL_COOLDOWN_MS }
+      skillCdRef.current = next
+      setSkillCd(next)
+      react(sk.emoji)
+      window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: sk.sfx }))
+      if (sk.pose === 'dance' && !together.self.current && !bike.on) {
+        together.self.current = { kind: 'dance', lead: true, ry: focusRef.current.ry, t0: performance.now() / 1000, solo: true }
+        clearTimeout(soloDanceTimer.current)
+        soloDanceTimer.current = setTimeout(() => {
+          if (together.self.current?.solo) together.self.current = null
+        }, 2600)
+      }
+    },
+    [react],
+  )
+  const skillRef = useRef(triggerSkill)
   useEffect(() => {
     reactRef.current = react
-  }, [react])
+    skillRef.current = triggerSkill
+  }, [react, triggerSkill])
 
   // sohbet ettiğin oyuncu ayrılırsa çekmeceyi kapat
   useEffect(() => {
@@ -622,8 +647,12 @@ function WorldScene({ avatar }) {
       else if (e.code === 'KeyE' && !typing && nearVenueRef.current && !together.self.current) enterVenueRef.current(nearVenueRef.current)
       if (!typing && /^Digit[0-9]$/.test(e.code) && !e.ctrlKey && !e.metaKey && !e.altKey) {
         const n = Number(e.code.slice(5))
-        const emoji = REACTIONS[(n + 9) % 10]
-        if (emoji) reactRef.current(emoji)
+        if (n >= 1 && n <= SKILLS.length) {
+          skillRef.current(SKILLS[n - 1])
+        } else {
+          const emoji = REACTIONS[(n + 9) % 10]
+          if (emoji) reactRef.current(emoji)
+        }
       }
       if (typing || !editKeysRef.current.on) return
       if (e.code === 'KeyR') editKeysRef.current.rotate()
@@ -860,7 +889,6 @@ function WorldScene({ avatar }) {
         onExit={() => navigate('/avatar')}
         onHelp={() => setHelp(true)}
       />
-      <ZoneToast zone={zone} />
       {!home && !venue && <Minimap focusRef={focusRef} remotes={net.remotes} compact={touch} />}
       {touch ? (
         <>
@@ -873,7 +901,12 @@ function WorldScene({ avatar }) {
           <HintBar />
         </>
       )}
-      {!editing && !chatTarget && !interactPeer && <ReactionBar onReact={react} touch={touch} />}
+      {!editing && !chatTarget && !interactPeer && (
+        <>
+          <SkillBar xp={feat.xp} cooldowns={skillCd} onSkill={triggerSkill} onOpenExp={() => setPanel('collection')} touch={touch} />
+          <ReactionBar onReact={react} touch={touch} />
+        </>
+      )}
       {nearPeer && !chatTarget && !interactPeer && (
         <NearbyCard peer={nearPeer} touch={touch} onChat={() => openChat(nearPeer.id)} onInteract={() => setInteractId(nearPeer.id)} onDismiss={() => setDismissedId(nearPeer.id)} />
       )}

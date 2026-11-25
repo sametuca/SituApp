@@ -324,7 +324,16 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
     if (ws?.readyState === 1) ws.send(JSON.stringify(msg))
     return ws?.readyState === 1
   }, [])
-  const sendReact = useCallback((e) => send({ t: 'react', e }), [send])
+  const sendReact = useCallback(
+    (e) => {
+      if (send({ t: 'react', e })) return true
+      // çevrimdışı (tek başına) modda da kendi başının üstünde emoji uçur
+      const id = selfId.current ?? 'self'
+      reactions.current.set(id, { e, key: `${id}-${Date.now()}-${Math.random()}`, until: Date.now() + REACT_MS })
+      return true
+    },
+    [send],
+  )
   const sendWhisper = useCallback((text, to) => send({ t: 'whisper', text, to }), [send])
   const sendGesture = useCallback((to, kind) => send({ t: 'gesture', to, kind }), [send])
   const lastTyping = useRef(0)

@@ -75,7 +75,27 @@ const QUESTIONS = [
 
 const ICE_COOLDOWN_MS = 10_000
 const ICE_TTL_MS = 5 * 60_000
-const EMPTY = { bio: '', age: null, city: '', tags: [] }
+const EMPTY = { bio: '', age: null, birthDate: '', city: '', instagram: '', x: '', socialPrivacy: 'all', instagramLocked: false, xLocked: false, tags: [] }
+const HANDLE_RE = /^[a-zA-Z0-9._]{1,30}$/
+const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/
+
+function ageFromBirthDate(s) {
+  const m = DATE_RE.exec(String(s ?? '').trim())
+  if (!m) return null
+  const y = Number(m[1]), mo = Number(m[2]), d = Number(m[3])
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return null
+  const dt = new Date(Date.UTC(y, mo - 1, d))
+  if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== mo - 1 || dt.getUTCDate() !== d) return null
+  const now = new Date()
+  let age = now.getUTCFullYear() - y
+  if (now.getUTCMonth() + 1 < mo || (now.getUTCMonth() + 1 === mo && now.getUTCDate() < d)) age--
+  return age
+}
+
+function cleanHandle(v) {
+  const s = String(v ?? '').trim().replace(/^@+/, '').slice(0, 30)
+  return s && HANDLE_RE.test(s) ? s : ''
+}
 
 export default function profile(ctx) {
   const { players, send, clean } = ctx
@@ -83,8 +103,26 @@ export default function profile(ctx) {
   const info = (me, text) => send(me.ws, { t: 'info', text })
   const stored = (k) => user(k).profile ?? null
 
-  /** Herkese açık profil (yalnızca bilinen alanlar). */
-  const pub = (p) => (p ? { bio: String(p.bio ?? ''), age: p.age ?? null, city: String(p.city ?? ''), tags: (p.tags ?? []).filter((t) => TAG_IDS.has(t)) } : null)
+  /** Herkese açık profil (yalnızca bilinen alanlar; arkadaşlara özel sosyal hesaplar gizlenir). */
+  const pub = (p, viewerKey = null, ownerKey = null) => {
+    if (!p) return null
+    const priv = p.socialPrivacy === 'friends' ? 'friends' : 'all'
+    const canSeeSocials = priv === 'all' || (viewerKey && ownerKey && (viewerKey === ownerKey || Boolean(user(ownerKey).friends?.[viewerKey])))
+    const instagram = String(p.instagram ?? '')
+    const x = String(p.x ?? '')
+    return {
+      bio: String(p.bio ?? ''),
+      age: p.age ?? null,
+      birthDate: String(p.birthDate ?? ''),
+      city: String(p.city ?? ''),
+      instagram: canSeeSocials ? instagram : '',
+      x: canSeeSocials ? x : '',
+      socialPrivacy: priv,
+      instagramLocked: !canSeeSocials && Boolean(instagram),
+      xLocked: !canSeeSocials && Boolean(x),
+      tags: (p.tags ?? []).filter((t) => TAG_IDS.has(t)),
+    }
+  }
 
   // "gönderen>alıcı" → { qid, ts }: yanıt bekleyen buz kırıcılar
   const pending = new Map()
@@ -132,7 +170,7 @@ export default function profile(ctx) {
   refresher.unref()
 
   return {
-    api: { publicProfile: (p) => pub(stored(p.key)), photoUrlFor },
+    api: { publicProfile: (p, viewer) => pub(stored(p.key), viewer?.key ?? null, p.key), photoUrlFor },
     onJoin(me) {
       if (!me.uid) return
       const u = user(me.key)
@@ -147,7 +185,7 @@ export default function profile(ctx) {
         const url = photoUrlFor(me.key, p.key)
         if (url) photos[p.key] = url
       }
-      return { profile: pub(stored(me.key)), profileTags: TAGS, photos, photoPrivacy: user(me.key).photoPrivacy ?? 'all', photoEnabled: Boolean(me.uid) }
+      return { profile: pub(stored(me.key), me.key, me.key), profileTags: TAGS, photos, photoPrivacy: user(me.key).photoPrivacy ?? 'all', photoEnabled: Boolean(me.uid) }
     },
     onLeave(me) {
       for (const k of [...pending.keys()]) if (k.startsWith(`${me.id}>`) || k.endsWith(`>${me.id}`)) pending.delete(k)
@@ -188,8 +226,17 @@ export default function profile(ctx) {
         const now = Date.now()
         if (now - (me.lastProfileSave ?? 0) < 1000) return info(me, 'Biraz yavaş, profilini az önce kaydettin.')
         const raw = msg.profile && typeof msg.profile === 'object' ? msg.profile : {}
+        const birthRaw = String(raw.birthDate ?? '').trim()
+        let birthDate = ''
         let age = null
-        if (raw.age !== null && raw.age !== undefined && raw.age !== '') {
+        if (birthRaw) {
+          age = ageFromBirthDate(birthRaw)
+          if (age === null || age < 18 || age > 99) {
+            send(me.ws, { t: 'profile_error', field: 'birthDate' })
+            return info(me, '🔞 SituApp yalnızca 18 yaş ve üzeri içindir. Geçerli bir doğum tarihi seç.')
+          }
+          birthDate = birthRaw
+        } else if (raw.age !== null && raw.age !== undefined && raw.age !== '') {
           age = Number(raw.age)
           if (!Number.isInteger(age) || age < 18 || age > 99) {
             send(me.ws, { t: 'profile_error', field: 'age' })
@@ -200,10 +247,13 @@ export default function profile(ctx) {
         const tags = [...new Set(Array.isArray(raw.tags) ? raw.tags.filter((t) => typeof t === 'string' && TAG_IDS.has(t)) : [])].slice(0, 6)
         const bio = mod().censor(clean(String(raw.bio ?? '').slice(0, 400), 120))
         const city = mod().censor(clean(String(raw.city ?? '').slice(0, 100), 20))
-        const p = { bio: bio.slice(0, 120), age, city: city.slice(0, 20), tags }
+        const instagram = cleanHandle(mod().censor(raw.instagram ?? ''))
+        const x = cleanHandle(mod().censor(raw.x ?? ''))
+        const socialPrivacy = raw.socialPrivacy === 'friends' ? 'friends' : 'all'
+        const p = { bio: bio.slice(0, 120), age, birthDate, city: city.slice(0, 20), instagram, x, socialPrivacy, tags }
         user(me.key).profile = p
         save()
-        send(me.ws, { t: 'profile_saved', profile: p })
+        send(me.ws, { t: 'profile_saved', profile: pub(p, me.key, me.key) })
       },
 
       profile(me, msg) {
@@ -215,7 +265,7 @@ export default function profile(ctx) {
         const target = players.get(id)
         // engelli çift birbirinin profilini göremez (sezdirmeden boş döner)
         if (!target || (target.id !== me.id && mod().blockedPair(me, target))) return send(me.ws, { t: 'profile', id, profile: null })
-        send(me.ws, { t: 'profile', id, profile: pub(stored(target.key)) ?? EMPTY, photo: photoUrlFor(me.key, target.key) })
+        send(me.ws, { t: 'profile', id, profile: pub(stored(target.key), me.key, target.key) ?? EMPTY, photo: photoUrlFor(me.key, target.key) })
       },
 
       icebreaker(me, msg) {

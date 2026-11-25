@@ -4,15 +4,16 @@
 import { MathUtils, Quaternion, Vector3 } from 'three'
 
 const AX = new Vector3(1, 0, 0)
+const AY = new Vector3(0, 1, 0)
 const AZ = new Vector3(0, 0, 1)
 const NAMES = {
   hips: 'Hips', spine: 'Spine01', head: 'Head',
   lUp: 'LeftUpLeg', lLeg: 'LeftLeg', rUp: 'RightUpLeg', rLeg: 'RightLeg',
-  lArm: 'LeftArm', rArm: 'RightArm',
+  lArm: 'LeftArm', rArm: 'RightArm', lForeArm: 'LeftForeArm', rForeArm: 'RightForeArm',
 }
 
-// Oturan avatar ayakta olduğu yüksekliğin bu kadar altına iner (m); negatif değer koltuk minderine çıkarır.
-export const SIT_DROP = { bench: -0.08, chair: -0.05, lounger: 0.12, floor: 0.42, bike: 0.05 }
+// Oturan avatar ayakta olduğu yüksekliğin bu kadar altına iner (m); negatif değer koltuk/sele üstüne çıkarır.
+export const SIT_DROP = { bench: -0.08, chair: -0.05, lounger: 0.12, floor: 0.42, bike: -0.145 }
 
 const q1 = new Quaternion()
 const q2 = new Quaternion()
@@ -31,7 +32,7 @@ export function makeRig(model) {
       if (k && !bones[k]) bones[k] = o
     }
   })
-  return { model, bones, rest, blend: 0, kind: null, style: 'bench', lead: false, dirty: false }
+  return { model, bones, rest, blend: 0, kind: null, style: 'bench', lead: false, moving: false, pedal: 0, dirty: false }
 }
 
 /** Kemiği, model eksenlerinde verilen eksen/açıyla döndürür (üst kemiğin dönüşü ne olursa olsun). */
@@ -68,6 +69,7 @@ export function applyPose(rig, pose, dt) {
     rig.kind = pose.kind
     rig.style = pose.style ?? rig.style
     rig.lead = Boolean(pose.lead)
+    rig.moving = Boolean(pose.moving)
     rig.t0 = pose.t0 ?? 0
   }
   rig.blend += Math.sign(goal - rig.blend) * Math.min(Math.abs(goal - rig.blend), dt * (pose ? 4 : 6))
@@ -75,6 +77,7 @@ export function applyPose(rig, pose, dt) {
   if (rig.blend <= 0.001) {
     if (rig.dirty) {
       model.position.y = 0
+      model.position.z = 0
       model.rotation.y = 0
       rig.dirty = false
     }
@@ -86,19 +89,27 @@ export function applyPose(rig, pose, dt) {
 
   if (rig.kind === 'sit') {
     model.position.y = -SIT_DROP[rig.style] * b
+    model.position.z = rig.style === 'bike' ? -0.15 * b : 0
     if (rig.style === 'lounger') {
       // şezlong: arkaya yaslan, bacaklar ileri uzanır
       turn(rig, bones.hips, AX, -1.0 * b)
       turn(rig, bones.head, AX, 0.7 * b)
     } else if (rig.style === 'bike') {
-      // bisiklet: hafif öne eğik, bacaklar pedala doğru yarı bükük, kollar gidonda
-      turn(rig, bones.lUp, AX, -0.75 * b)
-      turn(rig, bones.rUp, AX, -0.75 * b)
-      turn(rig, bones.lLeg, AX, 0.85 * b)
-      turn(rig, bones.rLeg, AX, 0.85 * b)
-      turn(rig, bones.spine, AX, 0.18 * b)
-      turn(rig, bones.lArm, AX, -0.9 * b)
-      turn(rig, bones.rArm, AX, -0.9 * b)
+      // bisiklet: sele üstüne otur, hareket halindeyken pedal çevir, eller gidonda
+      if (rig.moving) rig.pedal += Math.min(dt, 0.1) * 10
+      const pL = rig.pedal
+      const pR = rig.pedal + Math.PI
+      if (rig.moving) model.position.y += Math.abs(Math.sin(rig.pedal)) * 0.015 * b
+      turn(rig, bones.hips, AZ, (rig.moving ? Math.sin(rig.pedal) * 0.04 : 0) * b)
+      turn(rig, bones.lUp, AX, (-1.06 + Math.sin(pL) * 0.42) * b)
+      turn(rig, bones.rUp, AX, (-1.06 + Math.sin(pR) * 0.42) * b)
+      turn(rig, bones.lLeg, AX, (1.26 - Math.cos(pL) * 0.36) * b)
+      turn(rig, bones.rLeg, AX, (1.26 - Math.cos(pR) * 0.36) * b)
+      turn(rig, bones.spine, AX, 0.36 * b)
+      turn(rig, bones.lArm, AX, -1.24 * b)
+      turn(rig, bones.rArm, AX, -1.24 * b)
+      turn(rig, bones.lArm, AY, -0.06 * b)
+      turn(rig, bones.rArm, AY, 0.06 * b)
     } else {
       turn(rig, bones.lUp, AX, -1.45 * b)
       turn(rig, bones.rUp, AX, -1.45 * b)
@@ -108,6 +119,7 @@ export function applyPose(rig, pose, dt) {
       turn(rig, bones.rArm, AX, -0.35 * b)
     }
   } else if (rig.kind === 'dance') {
+    model.position.z = 0
     const t = performance.now() / 1000 - rig.t0
     const beat = t * Math.PI * 2 * 1.8 // ~108 BPM
     model.position.y = Math.abs(Math.sin(beat)) * 0.16 * b // zıplama

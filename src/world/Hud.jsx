@@ -11,7 +11,17 @@ const glass = 'border-2 border-white bg-white/92 shadow-soft'
 // extraNodes: hazır JSX düğmeler (sağ grupta, ⚙️'nin solunda)
 export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings, extraButtons = [], extraNodes = null, menuNodes = null, menuBadge = 0 }) {
   const [menu, setMenu] = useState(false)
+  const [showDesc, setShowDesc] = useState(false)
   const menuRef = useRef(null)
+  useEffect(() => {
+    if (!zone?.desc) {
+      setShowDesc(false)
+      return undefined
+    }
+    setShowDesc(true)
+    const t = setTimeout(() => setShowDesc(false), 4200)
+    return () => clearTimeout(t)
+  }, [zone?.id, zone?.desc])
   useEffect(() => {
     if (!menu) return
     const off = (e) => { if (!menuRef.current?.contains(e.target)) setMenu(false) }
@@ -46,9 +56,12 @@ export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings, 
         ))}
       </div>
       <div className="flex flex-col items-center gap-2">
-        <div className={`flex items-center gap-2 rounded-full px-5 py-2 ${glass}`}>
-          <span className="text-lg">{zone.emoji}</span>
-          <span className="text-base font-extrabold text-[#4a3b5c]">{zone.name}</span>
+        <div className={`flex max-w-[min(86vw,22rem)] flex-col items-center px-5 py-2 text-center transition-all ${showDesc ? 'rounded-3xl' : 'rounded-full'} ${glass}`}>
+          <div className="flex items-center gap-2">
+            <span className="text-lg">{zone.emoji}</span>
+            <span className="text-base font-extrabold text-[#4a3b5c]">{zone.name}</span>
+          </div>
+          {showDesc && zone.desc && <p className="mt-0.5 text-xs font-semibold leading-snug text-[#8a7a9c]">{zone.desc}</p>}
         </div>
         {/* çevrimiçi sayısı yalnızca giriş ekranında; burada yalnızca bağlantı sorunu ya da rahatsız etme açıkken bilgi çıkar */}
         {(status !== 'online' || dnd) && (
@@ -272,9 +285,22 @@ export function Minimap({ focusRef, remotes, compact }) {
   const canvas = useRef(null)
   const [big, setBig] = useState(false)
   const [zoneName, setZoneName] = useState('')
-  const S = big ? (compact ? 310 : 440) : compact ? 136 : 204 // ekranda CSS boyutu (px)
+  const [winSize, setWinSize] = useState(() => ({ w: typeof window !== 'undefined' ? window.innerWidth : 1280, h: typeof window !== 'undefined' ? window.innerHeight : 720 }))
+  useEffect(() => {
+    if (!big) return undefined
+    const onResize = () => setWinSize({ w: window.innerWidth, h: window.innerHeight })
+    const onKey = (e) => e.key === 'Escape' && setBig(false)
+    window.addEventListener('resize', onResize)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('resize', onResize)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [big])
+  const S = big ? Math.max(290, Math.min(compact ? 360 : 580, Math.round(Math.min(winSize.w * 0.86, winSize.h * 0.62)))) : compact ? 136 : 204 // ekranda CSS boyutu (px)
   useEffect(() => {
     const cv = canvas.current
+    if (!cv) return
     const ctx = cv.getContext('2d')
     const dpr = Math.min(2, window.devicePixelRatio || 1)
     cv.width = S * dpr
@@ -303,28 +329,53 @@ export function Minimap({ focusRef, remotes, compact }) {
     focusRef.current.teleport = z.spawn
     setBig(false)
   }
-  return (
-    <div className="pointer-events-auto absolute right-3 top-[4.5rem] z-10" aria-label="Harita">
-      <div className={`overflow-hidden ${big ? 'rounded-3xl' : 'rounded-full'} p-1.5 ${glass}`}>
-        <button onClick={() => setBig((v) => !v)} title={big ? 'Haritayı küçült' : 'Büyüt ve ışınlan'} aria-label={big ? 'Haritayı küçült' : 'Haritayı büyüt'} className="relative block active:scale-95 transition-transform">
-          <canvas ref={canvas} className={`block ${big ? 'rounded-2xl' : 'rounded-full'}`} style={{ width: S, height: S }} />
-          {!big && <span className="absolute left-1/2 top-1 -translate-x-1/2 rounded-full bg-white/90 px-2 py-[1px] text-[11px] font-black text-[#8a7a9c] shadow-sm">K</span>}
-          {!big && zoneName && (
-            <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-white/95 px-2.5 py-[2px] text-[11px] font-extrabold text-[#4a3b5c] shadow-sm">
-              {zoneName}
-            </span>
-          )}
-        </button>
-        {big && (
-          <div className="mt-1.5 flex flex-wrap justify-center gap-1.5 px-1 pb-1">
+
+  if (big) {
+    return (
+      <div className="fixed inset-0 z-30 grid place-items-center bg-[#4a3b5c]/30 p-3 backdrop-blur-[2px]" onClick={() => setBig(false)}>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Şehir Haritası"
+          onClick={(e) => e.stopPropagation()}
+          className="flex max-h-[94svh] flex-col items-center gap-2.5 overflow-y-auto rounded-[2rem] border-2 border-white bg-white/95 p-4 shadow-toy animate-pop"
+          style={{ width: Math.min(winSize.w - 24, S + 36) }}
+        >
+          <div className="flex w-full items-center justify-between gap-2 px-1">
+            <div>
+              <h2 className="text-lg font-black text-[#4a3b5c]">🗺️ Şehir Haritası</h2>
+              <p className="text-xs font-bold text-[#8a7a9c]">Gitmek istediğin bölgeye tıkla</p>
+            </div>
+            <button onClick={() => setBig(false)} aria-label="Haritayı kapat" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f0ff] text-sm font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
+              ✕
+            </button>
+          </div>
+          <canvas ref={canvas} className="block rounded-2xl border-2 border-white shadow-soft" style={{ width: S, height: S }} />
+          <div className="flex w-full flex-wrap justify-center gap-1.5 pb-0.5">
             {ZONES.map((z) => (
-              <button key={z.id} onClick={() => travel(z)} className="flex items-center gap-1 rounded-full bg-white/85 px-2.5 py-1 text-xs font-extrabold text-[#4a3b5c] transition hover:bg-[#ffedd6] active:scale-95">
+              <button key={z.id} onClick={() => travel(z)} className="flex items-center gap-1.5 rounded-full border border-white bg-[#f6f0ff] px-3 py-1.5 text-xs font-extrabold text-[#4a3b5c] shadow-sm transition hover:bg-[#ffedd6] active:scale-95">
                 <span>{z.emoji}</span>
                 {z.name.replace(' Meydanı', '').replace(' Sokağı', '').replace('Gece ', '')}
               </button>
             ))}
           </div>
-        )}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="pointer-events-auto absolute right-3 top-[4.5rem] z-10" aria-label="Harita">
+      <div className={`overflow-hidden rounded-full p-1.5 ${glass}`}>
+        <button onClick={() => setBig(true)} title="Büyüt ve ışınlan" aria-label="Haritayı büyüt" className="relative block active:scale-95 transition-transform">
+          <canvas ref={canvas} className="block rounded-full" style={{ width: S, height: S }} />
+          <span className="absolute left-1/2 top-1 -translate-x-1/2 rounded-full bg-white/90 px-2 py-[1px] text-[11px] font-black text-[#8a7a9c] shadow-sm">K</span>
+          {zoneName && (
+            <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-white/95 px-2.5 py-[2px] text-[11px] font-extrabold text-[#4a3b5c] shadow-sm">
+              {zoneName}
+            </span>
+          )}
+        </button>
       </div>
     </div>
   )
@@ -419,7 +470,7 @@ export function ChatPanel({ feed, onSend, status }) {
 // ---------- alt ipucu çubuğu ----------
 export function HintBar() {
   return (
-    <p className="pointer-events-none absolute bottom-3 right-3 z-10 hidden rounded-full px-4 py-1.5 text-sm font-extrabold text-[#8a7a9c] sm:block">
+    <p className="pointer-events-none absolute bottom-3 right-3 z-10 hidden rounded-full px-4 py-1.5 text-sm font-extrabold text-[#8a7a9c] xl:block">
       <span className={`rounded-full px-4 py-2 ${glass}`}>WASD yürü · Sürükle: kamera · H yardım</span>
     </p>
   )

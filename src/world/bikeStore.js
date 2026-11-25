@@ -3,7 +3,6 @@
 import { useSyncExternalStore } from 'react'
 
 let on = false
-let until = 0 // isteğe bağlı kiralama zaman damgası (bisiklet artık herkese ücretsiz/açık)
 const subs = new Set()
 const emit = () => subs.forEach((f) => f())
 
@@ -17,16 +16,6 @@ export const bike = {
     on = v
     window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: v ? 'pop' : 'tick' }))
     emit()
-  },
-  get until() {
-    return until
-  },
-  setUntil(t) {
-    until = Number(t) || 0
-    emit()
-  },
-  get rented() {
-    return true
   },
   toggle() {
     this.set(!on)

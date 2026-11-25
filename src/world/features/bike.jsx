@@ -5,25 +5,12 @@ import { bike, useRiding } from '../bikeStore'
 
 const isTyping = (e) => e.target instanceof HTMLElement && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)
 
-export function useBike({ venue, net, say }) {
+export function useBike({ venue, say }) {
   const venueRef = useRef(venue)
   useEffect(() => {
     venueRef.current = venue
   }, [venue])
   const riding = useRiding()
-  const { on } = net
-
-  useEffect(() => {
-    const offs = [
-      on('welcome', (m) => bike.setUntil(m.bikeUntil)),
-      on('rental', (m) => {
-        bike.setUntil(m.until)
-        window.dispatchEvent(new CustomEvent('situapp:rented'))
-        if (!venueRef.current) bike.set(true)
-      }),
-    ]
-    return () => offs.forEach((off) => off())
-  }, [on])
 
   const tryToggle = useCallback(() => {
     if (venueRef.current) {

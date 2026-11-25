@@ -155,13 +155,6 @@ const venueNpcs = VENUES.filter((v) => v.npc).map((v) => ({
   ry: v.npc.ry ?? 0,
   lines: v.npc.lines,
   options: [
-    // Havalimanı memuru: kiralama burada yapılır (action → istemci 'rent' mesajı yollar; sunucu karar verir)
-    ...(v.type === 'airport'
-      ? [
-          { label: 'Bisiklet al 🚲', action: 'rent_bike', reply: ['Bisikletin hazır! Şehirde B tuşuyla veya soldaki 🚲 düğmesiyle istediğin zaman binebilirsin 🚲'] },
-          { label: 'Araba', action: 'rent_car', reply: ['Arabalar çok değerli… şimdilik bakiyen buna yetmiyor, camın ardından hayran kalabilirsin 😄'] },
-        ]
-      : []),
     ...(v.type === 'salon'
       ? [{ label: '👗 Gardırobu aç', action: 'open_wardrobe', reply: ['İşte ayna hazır! Saç, kıyafet ve aksesuarlarını dilediğin gibi seç ✨'] }]
       : []),
@@ -176,14 +169,105 @@ const venueNpcs = VENUES.filter((v) => v.npc).map((v) => ({
   ],
 }))
 
-// AFK botlar: oyuna girmiş ama klavyeden kalkmış gerçek oyuncu gibi görünen, hareketsiz 5 karakter (şehirde, kimlikleri Reddit tarzı).
-// NPC değildir: konuşmaz, sunucu bilmez, görev/rozet saymaz. Yalnızca istemcide çizilir (NpcLayer AfkView).
+// AFK oyuncular: gerçekçi profilleriyle şehirde dinlenen oyuncular (kimisi dolu, kimisi sade profil).
 export const AFK_BOTS = [
-  { id: 'afk1', avatar: 'zeynep', name: 'pixel_pancake42', x: -19.6, z: -2.4, ry: 1.2 },
-  { id: 'afk2', avatar: 'kaan', name: 'NotAGoodUsername', x: 10.6, z: -1.2, ry: -1.9 },
-  { id: 'afk3', avatar: 'mira', name: 'sleepy_toaster_', x: -2.6, z: -33, ry: 2.6 },
-  { id: 'afk4', avatar: 'deniz', name: 'midnight_bagel', x: 1.8, z: 23, ry: 0.4 },
-  { id: 'afk5', avatar: 'elif', name: 'ThrowawayTulip', x: 17.5, z: 8.5, ry: -0.6 },
+  {
+    id: 'afk1',
+    avatar: 'zeynep',
+    name: 'melis.kaya',
+    x: -19.6,
+    z: -2.4,
+    ry: 1.2,
+    profile: {
+      birthDate: '2001-06-18',
+      age: 25,
+      city: 'İzmir',
+      instagram: '',
+      x: '',
+      socialPrivacy: 'friends',
+      instagramLocked: true,
+      xLocked: true,
+      bio: 'Kahve kokusu ve gün batımı yürüyüşleri ☕🌅',
+      tags: ['☕ Kahve', '🏖️ Plaj', '📸 Fotoğraf', '🍰 Tatlı'],
+    },
+  },
+  {
+    id: 'afk2',
+    avatar: 'kaan',
+    name: 'berke_34',
+    x: 10.6,
+    z: -1.2,
+    ry: -1.9,
+    profile: {
+      birthDate: '1999-11-04',
+      age: 27,
+      city: 'İstanbul',
+      instagram: '',
+      x: '',
+      socialPrivacy: 'friends',
+      instagramLocked: true,
+      xLocked: true,
+      bio: 'Akşamları kulüpte müzik dinlemeyi severim 🎧',
+      tags: ['🎵 Müzik', '🍷 Gece hayatı', '🏋️ Spor', '🎮 Oyun'],
+    },
+  },
+  {
+    id: 'afk3',
+    avatar: 'mira',
+    name: 'selinay_',
+    x: -2.6,
+    z: -33,
+    ry: 2.6,
+    profile: {
+      birthDate: '2002-09-09',
+      age: 24,
+      city: 'Antalya',
+      instagram: '',
+      x: '',
+      socialPrivacy: 'friends',
+      instagramLocked: true,
+      xLocked: false,
+      bio: 'Resim, kediler ve sakin kafeler 🎨🐈',
+      tags: ['🎨 Sanat', '🐶 Hayvanlar', '☕ Kahve', '🌸 Bahçe'],
+    },
+  },
+  {
+    id: 'afk4',
+    avatar: 'deniz',
+    name: 'ardacan_06',
+    x: 1.8,
+    z: 23,
+    ry: 0.4,
+    profile: {
+      birthDate: '2003-03-22',
+      age: 23,
+      city: 'Ankara',
+      instagram: '',
+      x: '',
+      socialPrivacy: 'friends',
+      instagramLocked: false,
+      xLocked: true,
+      bio: 'Yeni geldim, şehir turundayım.',
+      tags: ['📚 Kitap', '🎬 Film'],
+    },
+  },
+  {
+    id: 'afk5',
+    avatar: 'elif',
+    name: 'elifnur.y',
+    x: 17.5,
+    z: 8.5,
+    ry: -0.6,
+    profile: {
+      birthDate: '',
+      age: null,
+      city: '',
+      instagram: '',
+      x: '',
+      bio: '',
+      tags: [],
+    },
+  },
 ]
 
 // NPC görünümü: oyunculardan ayırt edilsin diye her NPC'nin rolüne göre aksesuarı (şapka, gözlük, kulaklık…) ve ayağında rol halkası vardır.

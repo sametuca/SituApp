@@ -3,7 +3,7 @@ import { useGLTF } from '@react-three/drei'
 import { Box3, Vector3 } from 'three'
 
 export const BIKE_URL = '/models/bike/bike.glb'
-export const BIKE_LENGTH = 1.6 // m
+export const BIKE_LENGTH = 1.45 // m (oyuncak oranında avatar boyuyla uyumlu)
 export const BIKE_RY = Math.PI / 2 // Meshy bisikletinin önü -X'e bakıyor; +Z (avatarın baktığı yön) olması için
 
 /** Meshy bisikleti: en uzun boyutu BIKE_LENGTH, tabanı y=0, ortalı; önü +Z (avatarın baktığı yön). */
