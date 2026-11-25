@@ -198,7 +198,7 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch }) {
 
   return (
     <div
-      className={`pointer-events-auto absolute left-1/2 z-10 flex w-[min(92vw,21rem)] -translate-x-1/2 flex-col gap-1.5 rounded-3xl px-2.5 py-2 ${glass} ${touch ? 'bottom-[6.25rem] sm:bottom-3' : 'bottom-3'}`}
+      className={`pointer-events-auto absolute left-1/2 z-10 flex w-[min(92vw,25rem)] -translate-x-1/2 flex-col gap-2 rounded-3xl px-3 py-2.5 ${glass} ${touch ? 'bottom-[6.25rem] sm:bottom-3' : 'bottom-3'}`}
       aria-label="Beceri ve deneyim çubuğu"
     >
       <div className="grid grid-cols-4 gap-1.5">
@@ -215,21 +215,21 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch }) {
               onClick={() => onSkill(sk)}
               title={`${sk.label} (${sk.key}) · 5 sn`}
               aria-label={`${sk.label}${onCd ? ` (${secs} saniye bekle)` : ''}`}
-              className={`relative flex h-12 flex-col items-center justify-center overflow-hidden rounded-2xl border-2 transition ${
+              className={`relative flex h-[4.25rem] flex-col items-center justify-center overflow-hidden rounded-2xl border-2 transition ${
                 onCd ? 'cursor-not-allowed border-white/70 bg-[#ede6fa]' : 'border-white bg-[#faf6ff] shadow-sm hover:-translate-y-0.5 hover:bg-white active:scale-95'
               }`}
             >
               {!touch && (
-                <span className="absolute left-1.5 top-0.5 text-[0.5625rem] font-black text-[#8a7a9c]">
+                <span className="absolute left-2 top-1 text-[0.75rem] font-black text-[#8a7a9c]">
                   {sk.key}
                 </span>
               )}
-              <span className={`text-xl leading-none ${onCd ? 'opacity-45 grayscale-[35%]' : ''}`}>{sk.emoji}</span>
-              <span className="mt-0.5 text-[0.625rem] font-extrabold leading-none text-[#5b4a70]">{sk.label}</span>
+              <span className={`text-[1.7rem] leading-none ${onCd ? 'opacity-45 grayscale-[35%]' : ''}`}>{sk.emoji}</span>
+              <span className="mt-1 text-[0.8125rem] font-extrabold leading-none text-[#5b4a70]">{sk.label}</span>
               {onCd && (
                 <>
                   <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-[#4a3b5c]/35 transition-[height] duration-100" style={{ height: `${fillPct}%` }} />
-                  <span className="pointer-events-none absolute inset-0 grid place-items-center text-sm font-black text-white drop-shadow-[0_1px_3px_rgba(74,59,92,0.85)] tabular-nums">
+                  <span className="pointer-events-none absolute inset-0 grid place-items-center text-lg font-black text-white drop-shadow-[0_1px_3px_rgba(74,59,92,0.85)] tabular-nums">
                     {secs}
                   </span>
                 </>
@@ -242,15 +242,15 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch }) {
         type="button"
         onClick={onOpenExp}
         title="Koleksiyon ve seviye ilerlemesini aç"
-        className="flex items-center gap-2 rounded-2xl bg-[#faf6ff]/90 px-2 py-1 text-left transition hover:bg-white active:scale-[0.99]"
+        className="flex items-center gap-2 rounded-2xl bg-[#faf6ff]/90 px-2.5 py-1.5 text-left transition hover:bg-white active:scale-[0.99]"
       >
-        <span className="shrink-0 rounded-full bg-[#ffe48f] px-2 py-0.5 text-[0.625rem] font-black text-[#7a5b00]">
+        <span className="shrink-0 rounded-full bg-[#ffe48f] px-2.5 py-0.5 text-[0.8125rem] font-black text-[#7a5b00]">
           Sv. {lv.level}
         </span>
-        <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#eadfff]">
+        <div className="h-3 flex-1 overflow-hidden rounded-full bg-[#eadfff]">
           <div className="h-full rounded-full bg-gradient-to-r from-[#ffe48f] via-[#fdb252] to-[#ff9248] transition-[width] duration-500" style={{ width: `${pct}%` }} />
         </div>
-        <span className="shrink-0 text-[0.625rem] font-black tabular-nums text-[#6b4fc0]">
+        <span className="shrink-0 text-[0.8125rem] font-black tabular-nums text-[#6b4fc0]">
           EXP {lv.into}/{lv.span}
         </span>
       </button>
