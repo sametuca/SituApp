@@ -13,6 +13,7 @@ const NAMES = {
 }
 
 // Oturan avatar ayakta olduğu yüksekliğin bu kadar altına iner (m); negatif değer koltuk/sele üstüne çıkarır.
+const TOWEL_DROP = 0.44
 export const SIT_DROP = { bench: -0.08, chair: -0.05, stool: 0.14, lounger: 0.24, floor: 0.42, bike: -0.27 }
 
 const q1 = new Quaternion()
@@ -91,6 +92,7 @@ export function applyPose(rig, pose, dt) {
     rig.moving = Boolean(pose.moving)
     rig.t0 = pose.t0 ?? 0
     rig.phase = pose.phase ?? null
+    rig.seat = pose.seat ?? null
   }
   rig.blend += Math.sign(goal - rig.blend) * Math.min(Math.abs(goal - rig.blend), dt * (pose ? 4 : 6))
   const { model, bones } = rig
@@ -108,7 +110,9 @@ export function applyPose(rig, pose, dt) {
   model.updateWorldMatrix(true, true) // mixer kemikleri değiştirdi; dünya matrislerini tazele
 
   if (rig.kind === 'sit') {
-    model.position.y = -SIT_DROP[rig.style] * b
+    // havlu (yerde düz) şezlongdan çok daha alçak: gövde havlunun üstüne yatar (id'ler layout.js SEATS_TOWEL `tw<n>`)
+    const onTowel = rig.style === 'lounger' && String(rig.seat ?? '').startsWith('tw')
+    model.position.y = -(onTowel ? TOWEL_DROP : SIT_DROP[rig.style]) * b
     model.position.z = rig.style === 'bike' ? -0.28 * b : 0
     if (rig.style === 'lounger') {
       // şezlong / havlu: keyifle arkaya uzan, baş hafif yukarıda, kollar yanlarda rahat

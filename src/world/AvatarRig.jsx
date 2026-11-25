@@ -216,6 +216,7 @@ export default function AvatarRig({ slug, anim = 'idle', pose, cosId }) {
   const [lounging, setLounging] = useState(false)
   const handKeyRef = useRef('')
   const loungeRef = useRef(false)
+  const liftRef = useRef(null)
   const look = useSyncExternalStore(cosStore.subscribe, () => cosStore.get(cosId)?.look ?? null)
   const lookKey = look ? `${look.h}.${look.e}.${look.o}` : ''
 
@@ -252,6 +253,8 @@ export default function AvatarRig({ slug, anim = 'idle', pose, cosId }) {
       setHandProp(hpKey ? { item: activePose.item, t0: activePose.t0 } : null)
     }
     const isLounge = activePose?.kind === 'sit' && activePose?.style === 'lounger'
+    // oturma/yatma yükseklikleri (SIT_DROP) zemine göre ayarlı: oturanlarda taş payı verilmez
+    if (liftRef.current) liftRef.current.position.y = activePose?.kind === 'sit' ? 0 : FEET_LIFT
     if (isLounge !== loungeRef.current) {
       loungeRef.current = isLounge
       setLounging(isLounge)
@@ -285,7 +288,7 @@ export default function AvatarRig({ slug, anim = 'idle', pose, cosId }) {
 
   // Taş meydan/kaldırım zeminleri y=0,04-0,08'de: ayakkabılar yere gömülüp kaybolmasın diye avatar topluca bu kadar yukarıda durur
   return (
-    <group position={[0, FEET_LIFT, 0]}>
+    <group ref={liftRef} position={[0, FEET_LIFT, 0]}>
       <primitive object={model} />
       {pose && <WorkProp pose={pose} />}
       {cosId && <HeadAccessory model={model} cosId={cosId} />}
