@@ -7,6 +7,8 @@ import { DoorPrompt } from '../Social'
 import { Ico } from '../../components/Icon'
 import { VENUE_BY_ID } from '../venues'
 import { VENUE_DOORS } from '../venueDoors'
+import { FISH_BY_ID as MODEL_FISH } from '../jobsData'
+import { mkPose, work } from './jobStore'
 
 const FISH_SPOTS = [
   { id: 'pier', label: 'Sahil İskelesi · Balık Tut', x: 0, z: 51.2, wx: 0, wz: 58.6, r: 6.5 },
@@ -198,7 +200,7 @@ function DeliveryBeacon({ target }) {
 }
 
 /** Balık tutma mini oyunu: balığın nadirliğine göre hızı artar ve yakalama alanı daralır. */
-function FishingCard({ spot, onCatch, onClose, result, touch }) {
+function FishingCard({ spot, onCatch, onClose, onPhase, result, touch }) {
   const [phase, setPhase] = useState('wait') // wait | bite | done
   const [hooked, setHooked] = useState(null)
   const [zoneStart, setZoneStart] = useState(0.35)
@@ -282,6 +284,10 @@ function FishingCard({ spot, onCatch, onClose, result, touch }) {
     dir.current = 1
     setPhase('wait')
   }
+
+  useEffect(() => {
+    onPhase?.(phase, hooked, missed)
+  }, [phase, hooked, missed, onPhase])
 
   const shownFish = result ? (FISH_BY_ID[result.id] ?? hooked ?? result) : hooked
 
@@ -446,6 +452,69 @@ export function useJobs({ net, focusRef, home, venue, atDoor, touch, say, panel 
     return () => clearInterval(id)
   }, [inCity, focusRef, postTarget])
 
+  // ----- çalışma duruşu: olta tutma / kargo taşıma (kendi avatarım hemen, diğerlerine sunucu yayar) -----
+  const setPose = useCallback(
+    (style, phase = null, fish = null, pk = null) => {
+      work.self.current = style ? mkPose(style, phase, { fish, pk }) : null
+      send({ t: 'work_pose', style, phase, fish, pk })
+    },
+    [send],
+  )
+  const reelTimer = useRef(null)
+  const onFishPhase = useCallback(
+    (phase, hooked, missed) => {
+      clearTimeout(reelTimer.current)
+      if (phase === 'bite') setPose('fish', 'bite')
+      else if (phase === 'done' && !missed && hooked) {
+        const mid = MODEL_FISH[hooked.id] ? hooked.id : hooked.id === 'kalamar' ? 'ahtapot' : 'cipura'
+        setPose('fish', 'reel', mid)
+        reelTimer.current = setTimeout(() => setPose('fish', 'wait'), 2200)
+      } else setPose('fish', 'wait')
+    },
+    [setPose],
+  )
+  useEffect(() => {
+    if (!fishing) return undefined
+    setPose('fish', 'cast')
+    const t = setTimeout(() => setPose('fish', 'wait'), 900)
+    return () => {
+      clearTimeout(t)
+      clearTimeout(reelTimer.current)
+      setPose(null)
+    }
+  }, [fishing, setPose])
+  useEffect(() => {
+    if (fishing || !postTarget) return undefined
+    setPose('carry', null, null, 'box')
+    return () => setPose(null)
+  }, [postTarget, fishing, setPose])
+  useEffect(() => {
+    const myId = () => net.selfId?.current
+    const offs = [
+      on('welcome', () => {
+        work.poses.clear()
+        work.self.current = null
+        send({ t: 'work_get' })
+      }),
+      on('room', () => {
+        work.poses.clear()
+        send({ t: 'work_get' })
+      }),
+      on('works', (m) => {
+        work.poses.clear()
+        for (const w of m.list ?? []) work.poses.set(w.id, mkPose(w.style, w.phase ?? null, { fish: w.fish, pk: w.pk }))
+      }),
+      on('work', (m) => {
+        if (m.id === myId()) return // kendi duruşum yerelde zaten ayarlı
+        const prev = work.poses.get(m.id)
+        if (!m.style) return work.poses.delete(m.id)
+        if (prev && prev.style === m.style && prev.phase === (m.phase ?? null) && prev.fish === m.fish) return
+        work.poses.set(m.id, mkPose(m.style, m.phase ?? null, { fish: m.fish, pk: m.pk }))
+      }),
+    ]
+    return () => offs.forEach((off) => off())
+  }, [on, send, net.selfId])
+
   const startFishing = useCallback((spot) => {
     if (!spot) return
     fishedOnce.current = true
@@ -575,7 +644,7 @@ export function useJobs({ net, focusRef, home, venue, atDoor, touch, say, panel 
         <DoorPrompt label="Lobi Posta Kutusu" action="Paket Al" touch={touch} raised onGo={startPost} />
       )}
 
-      {fishing && <FishingCard spot={fishing} result={fishRes} touch={touch} onCatch={onCatch} onClose={() => setFishing(null)} />}
+      {fishing && <FishingCard spot={fishing} result={fishRes} touch={touch} onCatch={onCatch} onPhase={onFishPhase} onClose={() => setFishing(null)} />}
     </>
   )
 

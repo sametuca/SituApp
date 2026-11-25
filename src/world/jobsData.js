@@ -84,6 +84,7 @@ export const FISH = [
   { id: 'ahtapot', name: 'Ahtapot', emoji: '🐙', rar: 'epic', w: 3, lv: 4, price: 55, xp: 22, size: 0.46, body: '#d7b8ff', fin: '#b48cf0' },
   { id: 'kilic', name: 'Kılıç Balığı', emoji: '🐟', rar: 'epic', w: 2, lv: 5, price: 70, xp: 28, size: 0.7, body: '#b5c9ff', fin: '#8fa6f0' },
   { id: 'altin', name: 'Altın Balık', emoji: '🐠', rar: 'legend', w: 0.7, lv: 6, price: 160, xp: 40, size: 0.5, body: '#ffd34d', fin: '#ffae2b' },
+  { id: 'palyaco', name: 'Palyaço Balığı', emoji: '🐠', rar: 'rare', w: 0, lv: 1, price: 15, xp: 0, size: 0.42, body: '#ff8f45', fin: '#ffffff' },
   { id: 'inci', name: 'İnci Kabuk', emoji: '🐚', rar: 'rare', w: 1.2, lv: 3, price: 40, xp: 16, size: 0.3, body: '#ffe9ef', fin: '#f6c9d8', junk: true },
   { id: 'cizme', name: 'Eski Çizme', emoji: '🥾', rar: 'common', w: 9, lv: 1, price: 2, xp: 1, size: 0.34, body: '#c9a27a', fin: '#a07d58', junk: true },
   { id: 'yosun', name: 'Yosun Demeti', emoji: '🌿', rar: 'common', w: 8, lv: 1, price: 2, xp: 1, size: 0.34, body: '#8fd9a0', fin: '#5fb878', junk: true },
