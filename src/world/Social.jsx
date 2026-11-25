@@ -124,7 +124,7 @@ export function NearbyCard({ peer, touch, onChat, onInteract, onDismiss }) {
 export function DoorPrompt({ emoji, label, action, touch, raised, onGo }) {
   return (
     <div
-      className={`pointer-events-auto absolute left-1/2 z-10 w-[min(92vw,20rem)] -translate-x-1/2 animate-pop ${touch ? (raised ? 'bottom-64' : 'bottom-44') : raised ? 'bottom-[11rem]' : 'bottom-[6.75rem]'}`}
+      className={`pointer-events-auto absolute left-1/2 z-10 w-[min(94vw,24rem)] -translate-x-1/2 animate-pop ${touch ? (raised ? 'bottom-[21rem]' : 'bottom-[17rem]') : raised ? 'bottom-[14rem]' : 'bottom-[10.75rem]'}`}
       role="status"
     >
       <div className={`flex items-center gap-3 rounded-3xl p-2.5 pl-4 ${glass}`}>
