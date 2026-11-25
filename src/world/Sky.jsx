@@ -1,7 +1,7 @@
 // Gökyüzü, ışık ve gece görünümü (Canvas içi): güneş/ay yönü, ambient/hemisphere, arka plan + sis, yıldızlar, ay, güneş diski,
 // sokak lambası parıltıları, ıslak zemin parıltısı. Saat/hava: worldClock (features/sky.jsx yayımlar).
 // Ev içi (home) gün-geceden etkilenmez; yalnızca pencere gökyüzü rengi (skyLive.window) dışarıyı yansıtır.
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import {
   AdditiveBlending,
@@ -223,6 +223,8 @@ function Lamps({ focusRef }) {
   const pool = useRef()
   const lights = useRef([])
   const t = useRef(0)
+  const [lampLights, setLampLights] = useState(false)
+  const lampLightsRef = useRef(false)
   const tex = useMemo(() => glowTexture(SOFT), [])
   useEffect(() => () => tex.dispose(), [tex])
   const dummy = useMemo(() => new Object3D(), [])
@@ -244,6 +246,11 @@ function Lamps({ focusRef }) {
   useFrame((_, dt) => {
     const lit = skyLive.lit
     const on = lit > 0.02
+    // gündüz hiç ışık yok: gerçek nokta ışıkları sahnede bulunduğu sürece HER malzemenin gölgelendiricisine eklenir (boşuna maliyet)
+    if (on !== lampLightsRef.current) {
+      lampLightsRef.current = on
+      setLampLights(on)
+    }
     if (glow.current) glow.current.visible = on
     if (pool.current) pool.current.visible = on
     if (on && glow.current) {
@@ -282,7 +289,7 @@ function Lamps({ focusRef }) {
         <circleGeometry args={[0.5, 24]} />
         <meshBasicMaterial color="#ffd98a" transparent depthWrite={false} blending={AdditiveBlending} fog={false} toneMapped={false} />
       </instancedMesh>
-      {Array.from({ length: REAL_LIGHTS }, (_, i) => (
+      {lampLights && Array.from({ length: REAL_LIGHTS }, (_, i) => (
         <pointLight key={i} ref={(l) => (lights.current[i] = l)} color="#ffd391" intensity={0} distance={11} decay={2} position={[0, LAMP_TOP, 0]} />
       ))}
     </>

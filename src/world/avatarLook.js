@@ -237,11 +237,20 @@ export function trimBase(model, slug) {
 }
 
 /** Klonlanmış model üzerine renk uygular; look boşsa (hepsi -1) hiçbir şey yapmaz. */
+const matCache = new Map()
 export function applyLook(model, slug, look) {
-  if (!look) return
+  if (!look || (look.h < 0 && look.e < 0 && look.o < 0)) return // renk seçilmemiş: orijinal malzeme, ek maliyet yok
   const useH = look.h >= 0, useE = look.e >= 0, useO = look.o >= 0
   model.traverse((o) => {
     if (!o.isSkinnedMesh || !o.material) return
+    const ck = `${slug}:${look.h}.${look.e}.${look.o}`
+    if (o.material.userData.lookKey === ck) return
+    const hit = matCache.get(ck + ':' + o.geometry.uuid)
+    if (hit) {
+      ensureHead(o)
+      o.material = hit // aynı görünümdeki oyuncular tek malzemeyi paylaşır (daha az program/uniform yükü)
+      return
+    }
     ensureHead(o)
     const eyes = useE || useH ? findEyes(slug, o) : null
     const img = o.material.map?.image
@@ -277,6 +286,8 @@ export function applyLook(model, slug, look) {
       shader.fragmentShader = GLSL + shader.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n  diffuseColor.rgb = lookApply(diffuseColor.rgb);')
     }
     mat.customProgramCacheKey = () => 'look'
+    mat.userData.lookKey = ck
+    matCache.set(ck + ':' + o.geometry.uuid, mat)
     mat.needsUpdate = true
   })
 }

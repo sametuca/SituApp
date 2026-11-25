@@ -80,6 +80,7 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
   const bubbleRef = useRef(null)
   const [near, setNear] = useState(true) // uzaktaki oyuncular çizilmez (500 oyuncuda FPS için)
   const nearRef = useRef(true)
+  const shadowRef = useRef(true)
   const [afk, setAfk] = useState(false)
   const idleRef = useRef({ since: Date.now(), x: 0, z: 0, afk: false })
   const { reaction, whisper } = useLiveFlags(id, reactions, whispering)
@@ -95,6 +96,12 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
     r.z = MathUtils.lerp(r.z, r.tz, k)
     g.position.set(r.x, 0, r.z)
     const d2 = (r.x - playerPos.x) ** 2 + (r.z - playerPos.z) ** 2
+    // gölge kamerası ±20 m; uzaktaki oyuncular (frustumCulled=false) boşuna gölge geçişinde çizilmesin
+    const sh = d2 < (shadowRef.current ? 26 * 26 : 22 * 22)
+    if (sh !== shadowRef.current) {
+      shadowRef.current = sh
+      g.traverse((o) => { if (o.isMesh) o.castShadow = sh })
+    }
     const nn = nearRef.current ? d2 < NEAR_DRAW * NEAR_DRAW * 1.15 : d2 < NEAR_DRAW * NEAR_DRAW
     if (nn !== nearRef.current) {
       nearRef.current = nn
