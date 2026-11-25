@@ -13,7 +13,7 @@ const NAMES = {
 }
 
 // Oturan avatar ayakta olduğu yüksekliğin bu kadar altına iner (m); negatif değer koltuk/sele üstüne çıkarır.
-export const SIT_DROP = { bench: -0.08, chair: -0.05, lounger: 0.12, floor: 0.42, bike: -0.145 }
+export const SIT_DROP = { bench: -0.08, chair: -0.05, lounger: 0.12, floor: 0.42, bike: -0.27 }
 
 const q1 = new Quaternion()
 const q2 = new Quaternion()
@@ -109,27 +109,29 @@ export function applyPose(rig, pose, dt) {
 
   if (rig.kind === 'sit') {
     model.position.y = -SIT_DROP[rig.style] * b
-    model.position.z = rig.style === 'bike' ? -0.15 * b : 0
+    model.position.z = rig.style === 'bike' ? -0.28 * b : 0
     if (rig.style === 'lounger') {
       // şezlong: arkaya yaslan, bacaklar ileri uzanır
       turn(rig, bones.hips, AX, -1.0 * b)
       turn(rig, bones.head, AX, 0.7 * b)
     } else if (rig.style === 'bike') {
-      // bisiklet: sele üstüne otur, hareket halindeyken pedal çevir, eller gidonda
+      // bisiklet: sele üstüne otur, hareket halindeyken pedal çevir, eller gidon elciklerinde
       if (rig.moving) rig.pedal += Math.min(dt, 0.1) * 10
       const pL = rig.pedal
       const pR = rig.pedal + Math.PI
       if (rig.moving) model.position.y += Math.abs(Math.sin(rig.pedal)) * 0.015 * b
       turn(rig, bones.hips, AZ, (rig.moving ? Math.sin(rig.pedal) * 0.04 : 0) * b)
-      turn(rig, bones.lUp, AX, (-1.06 + Math.sin(pL) * 0.42) * b)
-      turn(rig, bones.rUp, AX, (-1.06 + Math.sin(pR) * 0.42) * b)
-      turn(rig, bones.lLeg, AX, (1.26 - Math.cos(pL) * 0.36) * b)
-      turn(rig, bones.rLeg, AX, (1.26 - Math.cos(pR) * 0.36) * b)
-      turn(rig, bones.spine, AX, 0.36 * b)
-      turn(rig, bones.lArm, AX, -1.24 * b)
-      turn(rig, bones.rArm, AX, -1.24 * b)
-      turn(rig, bones.lArm, AY, -0.06 * b)
-      turn(rig, bones.rArm, AY, 0.06 * b)
+      turn(rig, bones.lUp, AX, (-0.95 + Math.sin(pL) * 0.38) * b)
+      turn(rig, bones.rUp, AX, (-0.95 + Math.sin(pR) * 0.38) * b)
+      turn(rig, bones.lLeg, AX, (1.15 - Math.cos(pL) * 0.34) * b)
+      turn(rig, bones.rLeg, AX, (1.15 - Math.cos(pR) * 0.34) * b)
+      turn(rig, bones.spine, AX, 0.24 * b)
+      turn(rig, bones.lArm, AX, -1.58 * b)
+      turn(rig, bones.rArm, AX, -1.58 * b)
+      turn(rig, bones.lArm, AZ, 0.18 * b)
+      turn(rig, bones.rArm, AZ, -0.18 * b)
+      turn(rig, bones.lArm, AY, -0.14 * b)
+      turn(rig, bones.rArm, AY, 0.14 * b)
     } else {
       turn(rig, bones.lUp, AX, -1.45 * b)
       turn(rig, bones.rUp, AX, -1.45 * b)
@@ -229,16 +231,12 @@ export function applyPose(rig, pose, dt) {
     turn(rig, bones.lForeArm, AX, -0.22 * b)
     turn(rig, bones.rForeArm, AX, -0.22 * b)
   } else if (rig.kind === 'guard') {
-    // kulüp bodyguard duruşu: dik göğüs, eller önde kavuşturulmuş, ayaklar omuz hizasında hafif açık
+    // kulüp bodyguard duruşu: dik omuzlar, doğal yanlarda sabit kollar, hafif açık ayak duruşu
     model.position.z = 0
-    turn(rig, bones.spine, AX, -0.05 * b)
-    turn(rig, bones.lArm, AX, -0.42 * b)
-    turn(rig, bones.rArm, AX, -0.42 * b)
-    turn(rig, bones.lArm, AY, 0.34 * b)
-    turn(rig, bones.rArm, AY, -0.34 * b)
-    turn(rig, bones.lForeArm, AX, -0.38 * b)
-    turn(rig, bones.rForeArm, AX, -0.38 * b)
-    turn(rig, bones.lUp, AZ, -0.06 * b)
-    turn(rig, bones.rUp, AZ, 0.06 * b)
+    turn(rig, bones.spine, AX, -0.04 * b)
+    turn(rig, bones.lArm, AZ, 0.06 * b)
+    turn(rig, bones.rArm, AZ, -0.06 * b)
+    turn(rig, bones.lUp, AZ, -0.05 * b)
+    turn(rig, bones.rUp, AZ, 0.05 * b)
   }
 }

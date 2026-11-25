@@ -31,14 +31,17 @@ export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings, 
   const dot = status === 'online' ? 'bg-emerald-400' : status === 'connecting' ? 'bg-amber-400' : 'bg-rose-400'
   const label = status === 'online' ? `${online} çevrimiçi` : status === 'connecting' ? 'Bağlanıyor…' : 'Çevrimdışı (tek başına)'
   return (
-    <div className="pointer-events-none absolute left-0 right-0 top-0 z-20 flex items-start justify-between gap-2 px-3 py-3">
-      <div className="pointer-events-auto flex flex-col gap-2.5">
+    <div
+      className="pointer-events-none absolute left-0 right-0 top-0 z-20 flex items-start justify-between gap-2 px-2.5 pb-2 sm:px-3 sm:py-3"
+      style={{ paddingTop: 'max(0.65rem, env(safe-area-inset-top))' }}
+    >
+      <div className="pointer-events-auto flex flex-col gap-1.5 sm:gap-2.5">
         <button
           onClick={onExit}
           aria-label="Karakter seçimine dön"
-          className={`grid h-14 w-14 place-items-center rounded-full text-2xl font-black text-[#4a3b5c] transition hover:bg-white active:scale-95 ${glass}`}
+          className={`grid h-11 w-11 place-items-center rounded-full text-xl font-black text-[#4a3b5c] transition hover:bg-white active:scale-95 sm:h-14 sm:w-14 sm:text-2xl ${glass}`}
         >
-          <Ico name="back" size={36} />
+          <Ico name="back" size={28} />
         </button>
         {extraButtons.map((b) => (
           <button
@@ -46,41 +49,41 @@ export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings, 
             onClick={b.onClick}
             aria-label={b.label}
             title={b.label}
-            className={`relative grid h-14 w-14 place-items-center rounded-full text-3xl transition hover:bg-white active:scale-95 ${glass} ${b.highlight ? 'ring-2 ring-[#fdb252] shadow-[0_0_14px_rgba(253,178,82,0.55)]' : ''}`}
+            className={`relative grid h-11 w-11 place-items-center rounded-full text-2xl transition hover:bg-white active:scale-95 sm:h-14 sm:w-14 sm:text-3xl ${glass} ${b.highlight ? 'ring-2 ring-[#fdb252] shadow-[0_0_14px_rgba(253,178,82,0.55)]' : ''}`}
           >
-            {b.icon ? <Ico name={b.icon} size={36} /> : b.emoji}
+            {b.icon ? <Ico name={b.icon} size={28} /> : b.emoji}
             {b.badge ? <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full border-2 border-white bg-[#fdb252] px-1 text-[11px] font-black text-white">{b.badge}</span> : null}
             {!b.badge && b.highlight ? <span className="absolute -right-0.5 -top-0.5 h-3 w-3 animate-ping rounded-full bg-[#fdb252]" /> : null}
             {!b.badge && b.highlight ? <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-[#fdb252]" /> : null}
           </button>
         ))}
       </div>
-      <div className="flex flex-col items-center gap-2">
-        <div className={`flex max-w-[min(86vw,22rem)] flex-col items-center px-5 py-2 text-center transition-all ${showDesc ? 'rounded-3xl' : 'rounded-full'} ${glass}`}>
-          <div className="flex items-center gap-2">
-            <span className="text-lg">{zone.emoji}</span>
-            <span className="text-base font-extrabold text-[#4a3b5c]">{zone.name}</span>
+      <div className="flex min-w-0 flex-col items-center gap-1.5 sm:gap-2">
+        <div className={`flex max-w-[52vw] flex-col items-center px-3.5 py-1.5 text-center transition-all sm:max-w-[22rem] sm:px-5 sm:py-2 ${showDesc ? 'rounded-3xl' : 'rounded-full'} ${glass}`}>
+          <div className="flex max-w-full items-center gap-1.5 sm:gap-2">
+            <span className="shrink-0 text-base sm:text-lg">{zone.emoji}</span>
+            <span className="truncate text-sm font-extrabold text-[#4a3b5c] sm:text-base">{zone.name}</span>
           </div>
-          {showDesc && zone.desc && <p className="mt-0.5 text-xs font-semibold leading-snug text-[#8a7a9c]">{zone.desc}</p>}
+          {showDesc && zone.desc && <p className="mt-0.5 hidden text-xs font-semibold leading-snug text-[#8a7a9c] sm:block">{zone.desc}</p>}
         </div>
         {/* çevrimiçi sayısı yalnızca giriş ekranında; burada yalnızca bağlantı sorunu ya da rahatsız etme açıkken bilgi çıkar */}
         {(status !== 'online' || dnd) && (
-          <div className={`flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-extrabold text-[#8a7a9c] ${glass}`}>
+          <div className={`flex items-center gap-1.5 rounded-full px-3 py-0.5 text-[11px] font-extrabold text-[#8a7a9c] sm:px-3.5 sm:py-1 sm:text-xs ${glass}`}>
             {status !== 'online' && <span className={`h-2 w-2 rounded-full ${dot}`} />}
             {status !== 'online' && label}
             {dnd && <span title="Rahatsız etme açık">{status !== 'online' ? ' · ' : ''}🌙 Rahatsız etme</span>}
           </div>
         )}
       </div>
-      <div className="pointer-events-auto relative flex gap-2" ref={menuRef}>
+      <div className="pointer-events-auto relative flex gap-1.5 sm:gap-2" ref={menuRef}>
         {extraNodes}
         <button
           onClick={() => setMenu((m) => !m)}
           aria-label="Menü"
           aria-expanded={menu}
-          className={`relative grid h-14 w-14 place-items-center rounded-full text-2xl transition hover:bg-white active:scale-95 ${glass}`}
+          className={`relative grid h-11 w-11 place-items-center rounded-full text-xl transition hover:bg-white active:scale-95 sm:h-14 sm:w-14 sm:text-2xl ${glass}`}
         >
-          <Ico name="settings" size={36} />
+          <Ico name="settings" size={28} />
           {menuBadge > 0 && <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full border-2 border-white bg-[#fdb252] px-1 text-[10px] font-black text-white">{menuBadge}</span>}
         </button>
         {menu && (
@@ -297,7 +300,7 @@ export function Minimap({ focusRef, remotes, compact }) {
       window.removeEventListener('keydown', onKey)
     }
   }, [big])
-  const S = big ? Math.max(290, Math.min(compact ? 360 : 580, Math.round(Math.min(winSize.w * 0.86, winSize.h * 0.62)))) : compact ? 136 : 204 // ekranda CSS boyutu (px)
+  const S = big ? Math.max(260, Math.min(compact ? 340 : 580, Math.round(Math.min(winSize.w * 0.86, winSize.h * 0.56)))) : compact ? 96 : 204 // ekranda CSS boyutu (px)
   useEffect(() => {
     const cv = canvas.current
     if (!cv) return
@@ -367,7 +370,11 @@ export function Minimap({ focusRef, remotes, compact }) {
   }
 
   return (
-    <div className="pointer-events-auto absolute right-3 top-[5rem] z-10" aria-label="Harita">
+    <div
+      className="pointer-events-auto absolute right-2.5 z-10 sm:right-3"
+      style={{ top: compact ? 'calc(max(0.65rem, env(safe-area-inset-top)) + 3.4rem)' : '5rem' }}
+      aria-label="Harita"
+    >
       <div className={`overflow-hidden rounded-full p-1.5 ${glass}`}>
         <button onClick={() => setBig(true)} title="Büyüt ve ışınlan" aria-label="Haritayı büyüt" className="relative block active:scale-95 transition-transform">
           <canvas ref={canvas} className="block rounded-full" style={{ width: S, height: S }} />
@@ -838,23 +845,23 @@ export function StartGuide({ touch, ready = true, inCity, inAirport = false, onD
   }[stage]
 
   return (
-    <div className={`pointer-events-auto absolute left-1/2 top-[6rem] z-10 flex w-[min(23rem,calc(100vw-1.5rem))] -translate-x-1/2 animate-pop items-center gap-2.5 rounded-2xl py-2.5 pl-3.5 pr-7 ${glass}`} role="status" key={stage}>
-      <span className="shrink-0 text-2xl">{content.icon}</span>
+    <div className={`pointer-events-auto absolute left-1/2 top-[5.75rem] z-10 flex w-[min(28rem,calc(100vw-1.5rem))] -translate-x-1/2 animate-pop items-center gap-3 rounded-3xl py-3.5 pl-4 pr-10 ${glass}`} role="status" key={stage}>
+      <span className="shrink-0 text-3xl">{content.icon}</span>
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-extrabold leading-snug text-[#4a3b5c]">{content.text}</p>
-        <div className="mt-1 flex items-center gap-1.5">
-          <span className="text-[10px] font-black text-[#8a7a9c]">{stepIdx}/{visibleSteps.length}</span>
+        <p className="text-sm font-extrabold leading-snug text-[#4a3b5c]">{content.text}</p>
+        <div className="mt-2 flex items-center gap-2">
+          <span className="text-xs font-black text-[#8a7a9c]">{stepIdx}/{visibleSteps.length}</span>
           {content.action && (
-            <button onClick={content.action.fn} className={`rounded-full px-2.5 py-0.5 text-[10px] font-black shadow-sm active:scale-95 ${content.action.cls}`}>
+            <button onClick={content.action.fn} className={`rounded-full px-3 py-1 text-xs font-black shadow-sm active:scale-95 ${content.action.cls}`}>
               {content.action.label}
             </button>
           )}
-          <button onClick={advance} className="rounded-full bg-[#f6f0ff] px-2 py-0.5 text-[10px] font-black text-[#6b4fc0] hover:bg-[#ede4ff] active:scale-95">
+          <button onClick={advance} className="rounded-full bg-[#f6f0ff] px-3 py-1 text-xs font-black text-[#6b4fc0] hover:bg-[#ede4ff] active:scale-95">
             {stepIdx === visibleSteps.length ? 'Bitir ✓' : 'İleri ›'}
           </button>
         </div>
       </div>
-      <button onClick={onDone} aria-label="İpucunu kapat" className="absolute right-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full text-[10px] font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
+      <button onClick={onDone} aria-label="İpucunu kapat" className="absolute right-2.5 top-2.5 grid h-7 w-7 place-items-center rounded-full text-xs font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
         ✕
       </button>
     </div>

@@ -814,7 +814,7 @@ function WorldScene({ avatar }) {
   }
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-[#cfeaff]">
+    <div className="fixed inset-0 touch-none select-none overflow-hidden bg-[#cfeaff]">
       <WorldErrorBoundary>
       <Canvas
         shadows={PCFShadowMap}
@@ -899,6 +899,9 @@ function WorldScene({ avatar }) {
           makeDefault
           enabled={!introActive}
           enablePan={false}
+          enableDamping
+          dampingFactor={0.12}
+          rotateSpeed={touch ? 0.85 : 1}
           target={[start.x, 0.8, start.z]}
           minDistance={3.5}
           maxDistance={home ? 10 : 11}

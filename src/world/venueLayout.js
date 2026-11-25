@@ -339,14 +339,14 @@ function build(v) {
       counter(npc.x, 3.6, { top: '#4a3f7a' })
       add({ t: 'register', x: npc.x, z: counterZ, y: 1.0 })
       const cols = [th.accent, '#7fcdf3', '#ffd35e', '#8fdcb4', '#fdb15e', '#b79cff']
-      ;[-5.0, -3.8, -2.6, -1.4, -0.2, 1.0].forEach((x, i) => add({ t: 'cabinet', x, z: -hd + 0.6, ry: 0, w: 0.85, d: 0.8, c: cols[i % cols.length] }, true))
-      // orta ada: sırt sırta iki kabin sırası
-      ;[-4.2, -3.0, -1.8].forEach((x, i) => {
-        add({ t: 'cabinet', x, z: 0.5, ry: 0, w: 0.85, d: 0.8, c: cols[(i + 2) % cols.length] }, true)
-        add({ t: 'cabinet', x, z: 1.35, ry: Math.PI, w: 0.85, d: 0.8, c: cols[(i + 4) % cols.length] }, true)
+      ;[-5.2, -3.9, -2.6, -1.3, 0.0, 1.3].forEach((x, i) => add({ t: 'cabinet', x, z: -hd + 0.65, ry: 0, w: 0.85, d: 0.8, c: cols[i % cols.length] }, true))
+      // orta ada: gerçekten sırt sırta iki kabin sırası (ekranlar dışa bakar, joystick'ler çarpışmaz)
+      ;[-4.4, -3.0, -1.6].forEach((x, i) => {
+        add({ t: 'cabinet', x, z: 0.25, ry: Math.PI, w: 0.85, d: 0.8, c: cols[(i + 2) % cols.length] }, true)
+        add({ t: 'cabinet', x, z: 1.35, ry: 0, w: 0.85, d: 0.8, c: cols[(i + 4) % cols.length] }, true)
       })
-      add({ t: 'cabinet', x: 2.6, z: 2.4, ry: Math.PI / 2 }, { x: 2.6, z: 2.4, hw: 0.45, hd: 0.45, ry: 0 })
-      add({ t: 'cabinet', x: 3.8, z: 2.4, ry: -Math.PI / 2 }, { x: 3.8, z: 2.4, hw: 0.45, hd: 0.45, ry: 0 })
+      add({ t: 'cabinet', x: 2.55, z: 2.4, ry: -Math.PI / 2 }, { x: 2.55, z: 2.4, hw: 0.5, hd: 0.45, ry: 0 })
+      add({ t: 'cabinet', x: 3.65, z: 2.4, ry: Math.PI / 2 }, { x: 3.65, z: 2.4, hw: 0.5, hd: 0.45, ry: 0 })
       add({ t: 'claw', x: 5.2, z: -0.4, ry: -Math.PI / 2 }, { x: 5.2, z: -0.4, hw: 0.45, hd: 0.45, ry: 0 })
       sofaAt('sofaA', -hw + 0.7, 3.2, Math.PI / 2, 2.0, th.accent)
       add({ t: 'rug', x: 0, z: 1.2, w: 11, d: 0.5, c: '#5a4aa0', round: false })

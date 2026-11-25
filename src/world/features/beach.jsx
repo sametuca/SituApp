@@ -1,14 +1,10 @@
-// Plaj etkinlikleri (istemci): gün batımı buluşması bannerı + plaj halkası, voleybol (zamanlama) ve kum kalesi. Sunucu: server/features/beach.js.
+// Plaj etkinlikleri (istemci): gün batımı buluşması bannerı + plaj halkası ve voleybol (zamanlama). Sunucu: server/features/beach.js.
 import { useEffect, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { DoorPrompt } from '../Social'
 import { BEACH } from '../layout'
 
 const NET = { x: 14.5, z: 42, r: 5 }
-const CASTLES = [
-  { x: -7.8, z: 44.6, r: 4.2 },
-  { x: 8.4, z: 45.2, r: 4.2 },
-]
 const glass = 'border-2 border-white bg-white/90 shadow-soft backdrop-blur-md'
 const mmss = (ms) => {
   const s = Math.max(0, Math.ceil(ms / 1000))
@@ -32,7 +28,7 @@ function MeetupRing({ on }) {
   )
 }
 
-function Volley({ vb, me, onHit, onLeave }) {
+function Volley({ vb, me, touch, onHit, onLeave }) {
   const [, tick] = useState(0)
   const arrive = useRef(0)
   useEffect(() => {
@@ -74,11 +70,15 @@ function Volley({ vb, me, onHit, onLeave }) {
           </div>
           <p className="mt-2 text-center text-xs font-extrabold text-[#8a7a9c]">{mine ? (hot ? 'ŞİMDİ!' : 'Top gelirken turuncu alanda vur') : 'Rakibin vuruşu bekleniyor…'}</p>
           <button
-            onClick={onHit}
+            onPointerDown={(e) => {
+              if (!mine) return
+              e.preventDefault()
+              onHit()
+            }}
             disabled={!mine}
-            className={`mt-2 w-full rounded-2xl border-b-4 py-2 text-base font-black text-white transition active:translate-y-[2px] ${mine ? (hot ? 'border-[#c9731a] bg-[#ff9f43]' : 'border-[#d99a3d] bg-[#fdb252]') : 'border-[#cfc6de] bg-[#d9d2e6]'}`}
+            className={`mt-2 w-full select-none rounded-2xl border-b-4 py-3 text-base font-black text-white transition active:translate-y-[2px] ${mine ? (hot ? 'border-[#c9731a] bg-[#ff9f43]' : 'border-[#d99a3d] bg-[#fdb252]') : 'border-[#cfc6de] bg-[#d9d2e6]'}`}
           >
-            Vur! <span className="text-xs opacity-80">(Boşluk)</span>
+            Vur! {!touch && <span className="text-xs opacity-80">(Boşluk)</span>}
           </button>
           <button onClick={onLeave} className="mt-1 w-full text-center text-[0.6875rem] font-extrabold text-[#8a7a9c] hover:underline">Ayrıl</button>
         </>
@@ -87,58 +87,13 @@ function Volley({ vb, me, onHit, onLeave }) {
   )
 }
 
-function Castle({ sc, onTap, onClose }) {
-  const [left, setLeft] = useState(sc.ms ?? 0)
-  const end = useRef(performance.now() + (sc.ms ?? 0))
-  useEffect(() => {
-    if (!sc.ms) return undefined
-    end.current = performance.now() + sc.ms
-    const id = setInterval(() => setLeft(Math.max(0, end.current - performance.now())), 100)
-    return () => clearInterval(id)
-  }, [sc.ms])
-  useEffect(() => {
-    if (!sc.ms || sc.done) return undefined
-    const on = (e) => e.code === 'Space' && (e.preventDefault(), onTap())
-    window.addEventListener('keydown', on)
-    return () => window.removeEventListener('keydown', on)
-  }, [sc, onTap])
-  const h = Math.min(100, (sc.taps ?? 0) * 1.4)
-  return (
-    <div className={`pointer-events-auto absolute left-1/2 top-24 z-30 w-[min(92vw,22rem)] -translate-x-1/2 animate-pop rounded-3xl p-3 text-center ${glass}`}>
-      <p className="text-sm font-black text-[#4a3b5c]">🏰 Kum kalesi yarışı</p>
-      {sc.done ? (
-        <>
-          <p className="mt-2 text-lg font-black text-[#4a3b5c]">{sc.taps} vuruş · +{sc.coins} 🪙</p>
-          {sc.top?.length > 0 && (
-            <ol className="mt-1 text-xs font-bold text-[#8a7a9c]">
-              {sc.top.map((t, i) => (
-                <li key={i}>{i + 1}. {t.name} — {t.taps}</li>
-              ))}
-            </ol>
-          )}
-          <button onClick={onClose} className="mt-2 rounded-full bg-[#fdb252] px-5 py-1.5 text-sm font-black text-white">Tamam</button>
-        </>
-      ) : (
-        <>
-          <div className="mx-auto mt-2 flex h-24 w-24 items-end justify-center overflow-hidden rounded-2xl bg-[#fff1d9]">
-            <div className="w-16 rounded-t-3xl bg-[#f3d08a] transition-all" style={{ height: `${Math.max(8, h)}%` }} />
-          </div>
-          <p className="mt-1 text-xs font-extrabold text-[#8a7a9c]">Kalan {Math.ceil(left / 1000)} sn · hızlı dokun!</p>
-          <button onPointerDown={onTap} className="mt-2 w-full select-none rounded-2xl border-b-4 border-[#d99a3d] bg-[#fdb252] py-4 text-lg font-black text-white active:translate-y-[2px]">Kale yap! (Boşluk)</button>
-        </>
-      )}
-    </div>
-  )
-}
-
-export function useBeach({ net, focusRef, home, venue, touch, say }) {
+export function useBeach({ net, focusRef, home, venue, touch }) {
   const { on, send } = net
   const [meetup, setMeetup] = useState({ phase: 'idle', start: 0, end: 0, n: 0 })
   const [now, setNow] = useState(Date.now())
   const [vb, setVb] = useState(null)
   const [waiting, setWaiting] = useState(false)
-  const [sc, setSc] = useState(null)
-  const [near, setNear] = useState(null) // 'net' | 'castle' | null
+  const [near, setNear] = useState(null) // 'net' | null
   const [res, setRes] = useState(null)
   const myId = useRef(null)
 
@@ -161,11 +116,6 @@ export function useBeach({ net, focusRef, home, venue, touch, say }) {
         setVb(m)
         if (m.over) window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: m.over.winner === myId.current ? 'badge' : 'pop' }))
       }),
-      on('sc_go', (m) => setSc({ ms: m.ms, taps: 0 })),
-      on('sc_end', (m) => {
-        setSc({ done: true, taps: m.taps, coins: m.coins, top: m.top })
-        window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: m.coins ? 'quest' : 'pop' }))
-      }),
     ]
     return () => offs.forEach((off) => off())
   }, [on])
@@ -177,23 +127,14 @@ export function useBeach({ net, focusRef, home, venue, touch, say }) {
       const f = focusRef.current
       if (home || venue) return setNear(null)
       if (Math.hypot(f.x - NET.x, f.z - NET.z) <= NET.r - 0.5) setNear('net')
-      else if (CASTLES.some((c) => Math.hypot(f.x - c.x, f.z - c.z) <= c.r - 0.3)) setNear('castle')
       else setNear(null)
     }, 400)
     return () => clearInterval(id)
   }, [focusRef, home, venue])
 
-  const localScTimer = useRef(null)
   const localVbTimer = useRef(null)
-  const localTaps = useRef(0)
   const localVb = useRef(null)
-  useEffect(
-    () => () => {
-      clearTimeout(localScTimer.current)
-      clearTimeout(localVbTimer.current)
-    },
-    [],
-  )
+  useEffect(() => () => clearTimeout(localVbTimer.current), [])
 
   const runLocalVbTurn = (m) => {
     clearTimeout(localVbTimer.current)
@@ -242,19 +183,6 @@ export function useBeach({ net, focusRef, home, venue, touch, say }) {
     })
   }
 
-  const startCastle = () => {
-    if (send({ t: 'sc_start' })) return
-    clearTimeout(localScTimer.current)
-    localTaps.current = 0
-    setSc({ ms: 12000, taps: 0, local: true })
-    localScTimer.current = setTimeout(() => {
-      const taps = localTaps.current
-      const coins = Math.min(8, Math.floor(taps / 12))
-      setSc({ done: true, taps, coins, top: [{ name: 'Sen', taps }] })
-      window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: coins ? 'quest' : 'pop' }))
-    }, 12000)
-  }
-
   const hit = () => {
     if (vb?.local) {
       const cur = localVb.current
@@ -266,28 +194,18 @@ export function useBeach({ net, focusRef, home, venue, touch, say }) {
     }
     send({ t: 'vb_hit' })
   }
-  const tap = () => {
-    localTaps.current += 1
-    setSc((s) => (s && s.ms && !s.done ? { ...s, taps: s.taps + 1 } : s))
-    if (!sc?.local) send({ t: 'sc_tap' })
-  }
   const leaveVolley = () => {
     clearTimeout(localVbTimer.current)
     localVb.current = null
     if (!vb?.local) send({ t: 'vb_leave' })
     setVb(null)
   }
-  const closeCastle = () => {
-    clearTimeout(localScTimer.current)
-    setSc(null)
-  }
-  const busy = Boolean(vb || waiting || sc)
+  const busy = Boolean(vb || waiting)
   const triggerRef = useRef(null)
   useEffect(() => {
     triggerRef.current = () => {
-      if (busy || !near) return
-      if (near === 'net') startVolley()
-      else startCastle()
+      if (busy || near !== 'net') return
+      startVolley()
     }
   })
   useEffect(() => {
@@ -320,8 +238,8 @@ export function useBeach({ net, focusRef, home, venue, touch, say }) {
           <p className="text-xs font-bold text-[#8a7a9c]">{res.secs} sn kaldın{res.bonus ? ' · +10 🪙 bonus' : ''}</p>
         </div>
       )}
-      {near && !busy && !home && !venue && (
-        <DoorPrompt emoji={near === 'net' ? '🏐' : '🏰'} label={near === 'net' ? 'Voleybol' : 'Kum kalesi yarışı'} action={near === 'net' ? 'Oyna' : 'Başla'} touch={touch} raised onGo={() => (near === 'net' ? startVolley() : startCastle())} />
+      {near === 'net' && !busy && !home && !venue && (
+        <DoorPrompt emoji="🏐" label="Voleybol" action="Oyna" touch={touch} raised onGo={startVolley} />
       )}
       {waiting && !vb && (
         <div className={`pointer-events-auto absolute left-1/2 top-24 z-30 -translate-x-1/2 rounded-2xl px-4 py-2 text-center ${glass}`}>
@@ -329,8 +247,7 @@ export function useBeach({ net, focusRef, home, venue, touch, say }) {
           <button onClick={() => (send({ t: 'vb_leave' }), setWaiting(false))} className="text-xs font-extrabold text-[#8a7a9c] hover:underline">Vazgeç</button>
         </div>
       )}
-      {vb && <Volley vb={vb} me={myId.current} onHit={hit} onLeave={leaveVolley} />}
-      {sc && <Castle sc={sc} onTap={tap} onClose={closeCastle} />}
+      {vb && <Volley vb={vb} me={myId.current} touch={touch} onHit={hit} onLeave={leaveVolley} />}
     </>
   )
   return { overlays, worldEffects: !home && !venue && meetup.phase !== 'idle' ? <MeetupRing on={meetup.phase === 'on'} /> : null }

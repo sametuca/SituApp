@@ -197,7 +197,7 @@ function DeliveryBeacon({ target }) {
 }
 
 /** Balık tutma mini oyunu: balığın nadirliğine göre hızı artar ve yakalama alanı daralır. */
-function FishingCard({ spot, onCatch, onClose, result }) {
+function FishingCard({ spot, onCatch, onClose, result, touch }) {
   const [phase, setPhase] = useState('wait') // wait | bite | done
   const [hooked, setHooked] = useState(null)
   const [zoneStart, setZoneStart] = useState(0.35)
@@ -321,10 +321,13 @@ function FishingCard({ spot, onCatch, onClose, result }) {
           </div>
           <button
             type="button"
-            onClick={pull}
-            className="mt-3 w-full rounded-2xl border-b-4 border-[#d98a1c] bg-[#fdb252] py-2.5 text-sm font-black text-white active:translate-y-[2px] active:border-b-2"
+            onPointerDown={(e) => {
+              e.preventDefault()
+              pull()
+            }}
+            className="mt-3 w-full select-none rounded-2xl border-b-4 border-[#d98a1c] bg-[#fdb252] py-3.5 text-base font-black text-white active:translate-y-[2px] active:border-b-2"
           >
-            Çek! (Boşluk)
+            Çek! {touch ? '' : '(Boşluk)'}
           </button>
         </div>
       )}
@@ -571,7 +574,7 @@ export function useJobs({ net, focusRef, home, venue, atDoor, touch, say, panel 
         <DoorPrompt label="Lobi Posta Kutusu" action="Paket Al" touch={touch} raised onGo={startPost} />
       )}
 
-      {fishing && <FishingCard spot={fishing} result={fishRes} onCatch={onCatch} onClose={() => setFishing(null)} />}
+      {fishing && <FishingCard spot={fishing} result={fishRes} touch={touch} onCatch={onCatch} onClose={() => setFishing(null)} />}
     </>
   )
 

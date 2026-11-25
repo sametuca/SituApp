@@ -55,7 +55,7 @@ function Pedestal({ color }) {
  */
 export default function AvatarPreview({ slug = 'zeynep', className = '', rotatable = false, pedestal, look }) {
   return (
-    <div className={className}>
+    <div className={`${rotatable ? 'touch-none select-none ' : ''}${className}`}>
       <Canvas
         dpr={[1, 2]}
         camera={{ position: [0, 0.65, 2.9], fov: 32 }}

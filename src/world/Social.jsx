@@ -10,8 +10,8 @@ const glass = 'border-2 border-white bg-white/80 shadow-soft backdrop-blur-md'
 
 
 // ---------- sanal joystick (dokunmatik cihazlar) ----------
-const BASE = 132
-const KNOB = 56
+const BASE = 116
+const KNOB = 50
 const MAX = (BASE - KNOB) / 2 + 6
 
 /**
@@ -55,7 +55,7 @@ export function Joystick({ inputRef }) {
       role="application"
       aria-label="Hareket joystick'i"
       className={`absolute z-10 touch-none select-none rounded-full ${glass} ${running ? 'ring-4 ring-[#a9ddf5]' : ''}`}
-      style={{ width: BASE, height: BASE, left: 'max(1.25rem, env(safe-area-inset-left))', bottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
+      style={{ width: BASE, height: BASE, left: 'max(0.85rem, env(safe-area-inset-left))', bottom: 'max(1rem, env(safe-area-inset-bottom))' }}
       onPointerDown={(e) => {
         if (pointer.current !== null) return
         pointer.current = e.pointerId
@@ -93,7 +93,7 @@ export function Joystick({ inputRef }) {
 export function NearbyCard({ peer, touch, onChat, onInteract, onDismiss }) {
   return (
     <div
-      className={`pointer-events-auto absolute left-1/2 z-20 w-[min(94vw,24rem)] -translate-x-1/2 animate-pop ${touch ? 'bottom-[13rem]' : 'bottom-[7.75rem]'}`}
+      className={`pointer-events-auto absolute left-1/2 z-20 w-[min(94vw,24rem)] -translate-x-1/2 animate-pop ${touch ? 'bottom-[9.25rem]' : 'bottom-[9.5rem]'}`}
       role="status"
     >
       <div className={`flex items-center gap-3 rounded-3xl p-2.5 pr-3 ${glass}`}>
@@ -124,7 +124,7 @@ export function NearbyCard({ peer, touch, onChat, onInteract, onDismiss }) {
 export function DoorPrompt({ emoji, label, action, touch, raised, onGo }) {
   return (
     <div
-      className={`pointer-events-auto absolute left-1/2 z-20 w-[min(92vw,21rem)] -translate-x-1/2 animate-pop ${touch ? (raised ? 'bottom-[17.5rem]' : 'bottom-[13rem]') : raised ? 'bottom-[12.25rem]' : 'bottom-[7.75rem]'}`}
+      className={`pointer-events-auto absolute left-1/2 z-20 w-[min(92vw,21rem)] -translate-x-1/2 animate-pop ${touch ? (raised ? 'bottom-[13.5rem]' : 'bottom-[9.25rem]') : raised ? 'bottom-[14rem]' : 'bottom-[9.5rem]'}`}
       role="status"
     >
       <div className={`flex items-center gap-3 rounded-3xl p-2.5 pl-4 ${glass}`}>
@@ -150,7 +150,7 @@ export function ReactionBar({ onReact, touch }) {
   return (
     <div
       className="absolute z-10"
-      style={touch ? { right: 'calc(max(1rem, env(safe-area-inset-right)) + 4.6rem)', bottom: 'max(1.5rem, env(safe-area-inset-bottom))' } : { right: '0.75rem', bottom: '4rem' }}
+      style={touch ? { right: 'calc(max(0.85rem, env(safe-area-inset-right)) + 4rem)', bottom: 'max(1rem, env(safe-area-inset-bottom))' } : { right: '0.75rem', bottom: '4rem' }}
     >
       {open && (
         <div className={`absolute bottom-full right-0 mb-2 grid w-max animate-pop grid-cols-4 gap-1.5 rounded-3xl p-2 ${glass}`} role="menu" aria-label="Emoji tepkileri">
@@ -174,9 +174,9 @@ export function ReactionBar({ onReact, touch }) {
         onClick={() => setOpen((o) => !o)}
         aria-label="Emoji tepkisi gönder"
         aria-expanded={open}
-        className={`grid ${touch ? 'h-16 w-16 text-3xl' : 'h-14 w-14 text-2xl'} place-items-center rounded-full transition hover:bg-white ${glass}`}
+        className={`grid ${touch ? 'h-14 w-14 text-2xl' : 'h-14 w-14 text-2xl'} place-items-center rounded-full transition hover:bg-white active:scale-95 ${glass}`}
       >
-        <Ico name="smile" size={touch ? 34 : 32} />
+        <Ico name="smile" size={touch ? 30 : 32} />
       </button>
     </div>
   )
@@ -196,12 +196,69 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch }) {
   const lv = levelOf(xp)
   const pct = Math.min(100, Math.round((lv.into / (lv.span || 1)) * 100))
 
+  if (touch) {
+    return (
+      <div
+        className={`pointer-events-auto absolute z-10 flex flex-col gap-1.5 rounded-3xl p-2 ${glass}`}
+        style={{ right: 'max(0.85rem, env(safe-area-inset-right))', bottom: 'calc(max(1rem, env(safe-area-inset-bottom)) + 4.1rem)' }}
+        aria-label="Beceri ve deneyim çubuğu"
+      >
+        <div className="grid grid-cols-4 gap-1.5">
+          {SKILLS.map((sk) => {
+            const rem = Math.min(SKILL_COOLDOWN_MS, Math.max(0, (cooldowns[sk.id] ?? 0) - now))
+            const onCd = rem > 0
+            const fillPct = onCd ? Math.min(100, (rem / SKILL_COOLDOWN_MS) * 100) : 0
+            const secs = Math.ceil(rem / 1000)
+            return (
+              <button
+                key={sk.id}
+                type="button"
+                disabled={onCd}
+                onClick={() => onSkill(sk)}
+                aria-label={`${sk.label}${onCd ? ` (${secs} saniye bekle)` : ''}`}
+                className={`relative flex h-11 w-11 flex-col items-center justify-center overflow-hidden rounded-2xl border-2 transition ${
+                  onCd ? 'cursor-not-allowed border-white/70 bg-[#ede6fa]' : 'border-white bg-[#faf6ff] shadow-sm active:scale-95'
+                }`}
+              >
+                <span className={`text-xl leading-none ${onCd ? 'opacity-45 grayscale-[35%]' : ''}`}>{sk.emoji}</span>
+                {onCd && (
+                  <>
+                    <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-[#4a3b5c]/35 transition-[height] duration-100" style={{ height: `${fillPct}%` }} />
+                    <span className="pointer-events-none absolute inset-0 grid place-items-center text-xs font-black text-white drop-shadow-[0_1px_3px_rgba(74,59,92,0.85)] tabular-nums">
+                      {secs}
+                    </span>
+                  </>
+                )}
+              </button>
+            )
+          })}
+        </div>
+        <button
+          type="button"
+          onClick={onOpenExp}
+          title="Koleksiyon ve seviye ilerlemesini aç"
+          className="flex items-center gap-1.5 rounded-2xl bg-[#faf6ff]/90 px-2 py-1 text-left active:scale-[0.99]"
+        >
+          <span className="shrink-0 rounded-full bg-[#ffe48f] px-2 py-0.5 text-[10px] font-black text-[#7a5b00]">
+            Sv.{lv.level}
+          </span>
+          <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#eadfff]">
+            <div className="h-full rounded-full bg-gradient-to-r from-[#ffe48f] via-[#fdb252] to-[#ff9248] transition-[width] duration-500" style={{ width: `${pct}%` }} />
+          </div>
+          <span className="shrink-0 text-[10px] font-black tabular-nums text-[#6b4fc0]">
+            {lv.into}/{lv.span}
+          </span>
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div
-      className={`pointer-events-auto absolute left-1/2 z-10 flex w-[min(92vw,21rem)] -translate-x-1/2 flex-col gap-1.5 rounded-3xl px-2.5 py-2 ${glass} ${touch ? 'bottom-[6.25rem] sm:bottom-3' : 'bottom-3'}`}
+      className={`pointer-events-auto absolute bottom-3.5 left-1/2 z-10 flex w-[min(94vw,27rem)] -translate-x-1/2 flex-col gap-2 rounded-[1.75rem] px-3.5 py-2.5 ${glass}`}
       aria-label="Beceri ve deneyim çubuğu"
     >
-      <div className="grid grid-cols-4 gap-1.5">
+      <div className="grid grid-cols-4 gap-2">
         {SKILLS.map((sk) => {
           const rem = Math.min(SKILL_COOLDOWN_MS, Math.max(0, (cooldowns[sk.id] ?? 0) - now))
           const onCd = rem > 0
@@ -215,21 +272,21 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch }) {
               onClick={() => onSkill(sk)}
               title={`${sk.label} (${sk.key}) · 5 sn`}
               aria-label={`${sk.label}${onCd ? ` (${secs} saniye bekle)` : ''}`}
-              className={`relative flex h-12 flex-col items-center justify-center overflow-hidden rounded-2xl border-2 transition ${
+              className={`relative flex h-16 flex-col items-center justify-center overflow-hidden rounded-2xl border-2 transition ${
                 onCd ? 'cursor-not-allowed border-white/70 bg-[#ede6fa]' : 'border-white bg-[#faf6ff] shadow-sm hover:-translate-y-0.5 hover:bg-white active:scale-95'
               }`}
             >
               {!touch && (
-                <span className="absolute left-1.5 top-0.5 text-[9px] font-black text-[#8a7a9c]">
+                <span className="absolute left-2 top-1 text-xs font-black text-[#8a7a9c]">
                   {sk.key}
                 </span>
               )}
-              <span className={`text-xl leading-none ${onCd ? 'opacity-45 grayscale-[35%]' : ''}`}>{sk.emoji}</span>
-              <span className="mt-0.5 text-[10px] font-extrabold leading-none text-[#5b4a70]">{sk.label}</span>
+              <span className={`text-3xl leading-none ${onCd ? 'opacity-45 grayscale-[35%]' : ''}`}>{sk.emoji}</span>
+              <span className="mt-1 text-xs font-extrabold leading-none text-[#5b4a70]">{sk.label}</span>
               {onCd && (
                 <>
                   <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-[#4a3b5c]/35 transition-[height] duration-100" style={{ height: `${fillPct}%` }} />
-                  <span className="pointer-events-none absolute inset-0 grid place-items-center text-sm font-black text-white drop-shadow-[0_1px_3px_rgba(74,59,92,0.85)] tabular-nums">
+                  <span className="pointer-events-none absolute inset-0 grid place-items-center text-base font-black text-white drop-shadow-[0_1px_3px_rgba(74,59,92,0.85)] tabular-nums">
                     {secs}
                   </span>
                 </>
@@ -242,15 +299,15 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch }) {
         type="button"
         onClick={onOpenExp}
         title="Koleksiyon ve seviye ilerlemesini aç"
-        className="flex items-center gap-2 rounded-2xl bg-[#faf6ff]/90 px-2 py-1 text-left transition hover:bg-white active:scale-[0.99]"
+        className="flex items-center gap-2.5 rounded-2xl bg-[#faf6ff]/90 px-3 py-1.5 text-left transition hover:bg-white active:scale-[0.99]"
       >
-        <span className="shrink-0 rounded-full bg-[#ffe48f] px-2 py-0.5 text-[10px] font-black text-[#7a5b00]">
+        <span className="shrink-0 rounded-full bg-[#ffe48f] px-2.5 py-0.5 text-xs font-black text-[#7a5b00]">
           Sv. {lv.level}
         </span>
-        <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#eadfff]">
+        <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-[#eadfff]">
           <div className="h-full rounded-full bg-gradient-to-r from-[#ffe48f] via-[#fdb252] to-[#ff9248] transition-[width] duration-500" style={{ width: `${pct}%` }} />
         </div>
-        <span className="shrink-0 text-[10px] font-black tabular-nums text-[#6b4fc0]">
+        <span className="shrink-0 text-xs font-black tabular-nums text-[#6b4fc0]">
           EXP {lv.into}/{lv.span}
         </span>
       </button>
@@ -672,10 +729,10 @@ export function ChatFab({ onClick }) {
     <button
       onClick={onClick}
       aria-label="Sohbeti aç"
-      className={`absolute z-10 grid h-16 w-16 place-items-center rounded-full text-3xl ${glass}`}
-      style={{ right: 'max(1rem, env(safe-area-inset-right))', bottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
+      className={`absolute z-10 grid h-14 w-14 place-items-center rounded-full text-2xl transition active:scale-95 ${glass}`}
+      style={{ right: 'max(0.85rem, env(safe-area-inset-right))', bottom: 'max(1rem, env(safe-area-inset-bottom))' }}
     >
-      <Ico name="chat" size={32} />
+      <Ico name="chat" size={28} />
     </button>
   )
 }

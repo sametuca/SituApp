@@ -1,25 +1,18 @@
-// Plaj etkinlikleri: (1) Gün batımı buluşması, (2) voleybol (2 kişilik zamanlama), (3) kum kalesi yarışı. Sunucu otoriter.
+// Plaj etkinlikleri: (1) Gün batımı buluşması, (2) voleybol (2 kişilik zamanlama). Sunucu otoriter.
 // (1) Her CYCLE_MS'de bir (tam saat ve :30), ANNOUNCE_MS öncesinden duyurulur, ACTIVE_MS sürer. Plajda (BEACH yarıçapı) bulunanlar
 //     her 30 sn'de +2 🪙, bitişte ≥ 120 sn kalanlar +10 🪙. Test: SITUAPP_MEETUP_CYCLE_MS=120000 ile 2 dk'lık döngü.
 //     sunucu → istemci: { t:'meetup', phase:'idle'|'soon'|'on', start, end, n }  (welcome.meetup da)   { t:'meetup_end', coins, secs }
 // (2) { t:'vb_join' } (net yakınında ≤ 5 m) / { t:'vb_leave' } / { t:'vb_hit' }; sunucu → { t:'vb', ... } durum.
 //     Top sırayla oyunculara "gelir"; arrive zamanından ±HIT_WINDOW içinde vb_hit gelmezse rakip puan alır. 5 puana ilk ulaşan kazanır (+15 🪙, kaybeden +3).
-// (3) { t:'sc_start' } → 12 sn { t:'sc_tap' } (≤ 12/sn); sonuç { t:'sc_end', taps, coins, top[] }. Bekleme 90 sn, ödül ≤ 8 🪙.
 import { BEACH } from '../../src/world/layout.js'
 
 const CYCLE_MS = Number(process.env.SITUAPP_MEETUP_CYCLE_MS) || 30 * 60 * 1000
 const ANNOUNCE_MS = Math.min(3 * 60 * 1000, CYCLE_MS / 3)
 const ACTIVE_MS = Math.min(3 * 60 * 1000, CYCLE_MS / 4)
 const NET = { x: 14.5, z: 42, r: 5 } // voleybol filesi (layout.js volleyball prop'u)
-const CASTLES = [
-  { x: -7.8, z: 44.6, r: 4.5 },
-  { x: 8.4, z: 45.2, r: 4.5 },
-]
-const nearCastle = (p) => p.room === 'city' && CASTLES.some((c) => Math.hypot(p.x - c.x, p.z - c.z) <= c.r)
 const WIN_SCORE = 5
 const HIT_WINDOW = 420 // ms
 const TURN_MS = [1700, 1500, 1350, 1200, 1100]
-const SC_MS = 12000
 
 export default function beach(ctx) {
   const { players, send, broadcast } = ctx
@@ -131,33 +124,14 @@ export default function beach(ctx) {
   }, 1500)
   vbWatch.unref?.()
 
-  // ---------------- (3) kum kalesi ----------------
-  const castles = new Map() // oyuncu id → { start, taps, last }
-  const board = [] // günün en iyileri { name, taps }
-  const lastBuild = new Map() // key → ts
-  const finishCastle = (p) => {
-    const c = castles.get(p.id)
-    if (!c) return
-    castles.delete(p.id)
-    const coins = Math.min(8, Math.floor(c.taps / 12))
-    if (coins) ctx.addCoins?.(p, coins, 'kale')
-    board.push({ name: p.name, taps: c.taps })
-    board.sort((x, y) => y.taps - x.taps)
-    board.length = Math.min(board.length, 5)
-    send(p.ws, { t: 'sc_end', taps: c.taps, coins, top: board })
-    ctx.emitEvent?.(p, 'beach_castle', 1)
-  }
-
   return {
     welcome: () => ({ meetup: state() }),
     onLeave(me) {
       leave(me)
-      castles.delete(me.id)
       present.delete(me.id)
     },
     onRoomChange(me) {
       leave(me)
-      castles.delete(me.id)
     },
     handlers: {
       vb_join(me) {
@@ -183,23 +157,6 @@ export default function beach(ctx) {
         m.arrive = Date.now() + TURN_MS[Math.min(m.rally, TURN_MS.length - 1)]
         armMiss(m)
         vbSend(m)
-      },
-      sc_start(me) {
-        if (!nearCastle(me) || castles.has(me.id)) return
-        const last = lastBuild.get(me.key) ?? 0
-        if (Date.now() - last < 90_000) return send(me.ws, { t: 'info', text: '🏰 Biraz dinlen, kum kalesi için 90 sn beklemelisin.' })
-        lastBuild.set(me.key, Date.now())
-        castles.set(me.id, { start: Date.now(), taps: 0, last: 0 })
-        send(me.ws, { t: 'sc_go', ms: SC_MS })
-        setTimeout(() => finishCastle(me), SC_MS + 300)
-      },
-      sc_tap(me) {
-        const c = castles.get(me.id)
-        if (!c || Date.now() - c.start > SC_MS + 200) return
-        const now = Date.now()
-        if (now - c.last < 80) return // ≤ 12/sn
-        c.last = now
-        c.taps++
       },
     },
   }

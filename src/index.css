@@ -49,15 +49,31 @@
   color-scheme: light;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Büyük/geniş ekranlarda (1080p+, 1440p, 4K) tüm rem tabanlı HUD öğeleri orantılı ve tutarlı büyür */
+  font-size: clamp(16px, min(1.05vw, 1.85vh), 24px);
 }
 
 body {
   margin: 0;
   overscroll-behavior: none; /* oyunda sürüklerken sayfa yenileme/kaydırma olmasın */
   -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
   font-family: var(--font-sans);
   color: var(--color-ink);
   background: var(--color-cream);
+}
+
+input, textarea, select {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* iOS Safari odaklanınca otomatik yakınlaştırmasın */
+@media (pointer: coarse) {
+  input, textarea, select {
+    font-size: max(16px, 1rem);
+  }
 }
 
 #root {

@@ -39,14 +39,14 @@ export function ToyButton({ children, loading, tone = 'pink', className = '', ..
   )
 }
 
-export function Field({ id, label, icon, error, right, ...props }) {
+export function Field({ id, label, icon, error, right, compact = false, ...props }) {
   return (
     <div>
-      <label htmlFor={id} className="mb-1.5 block text-sm font-bold text-ink">
+      <label htmlFor={id} className={`block font-bold text-ink ${compact ? 'mb-1 text-xs' : 'mb-1.5 text-sm'}`}>
         {label}
       </label>
       <div className="relative">
-        <span aria-hidden className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-lg">
+        <span aria-hidden className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 ${compact ? 'text-base' : 'left-3.5 text-lg'}`}>
           {icon}
         </span>
         <input
@@ -54,7 +54,7 @@ export function Field({ id, label, icon, error, right, ...props }) {
           aria-invalid={Boolean(error)}
           aria-describedby={error ? `${id}-error` : undefined}
           {...props}
-          className={`w-full rounded-2xl border-2 bg-white/80 py-3 pl-11 ${right ? 'pr-12' : 'pr-4'} font-semibold text-ink
+          className={`w-full rounded-2xl border-2 bg-white/80 ${compact ? 'py-2 pl-9 text-sm' : 'py-3 pl-11'} ${right ? 'pr-11' : 'pr-4'} font-semibold text-ink
             placeholder:font-normal placeholder:text-ink-soft/60 outline-none transition
             focus:bg-white focus:ring-4 focus:ring-candy-lilac/50
             ${error ? 'border-candy-pink-dark' : 'border-candy-lilac/60 focus:border-candy-lilac-deep'}`}
@@ -62,7 +62,7 @@ export function Field({ id, label, icon, error, right, ...props }) {
         {right && <div className="absolute right-2 top-1/2 -translate-y-1/2">{right}</div>}
       </div>
       {error && (
-        <p id={`${id}-error`} role="alert" className="mt-1.5 text-xs font-bold text-candy-pink-dark">
+        <p id={`${id}-error`} role="alert" className="mt-1 text-xs font-bold text-candy-pink-dark">
           {error}
         </p>
       )}
