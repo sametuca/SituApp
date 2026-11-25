@@ -85,7 +85,7 @@ const b = (x, z, w, d, h, color, facing, label, extra = {}) => ({ x, z, w, d, h,
 
 export const BUILDINGS = [
   // lobi meydanındaki dört önemli yapı
-  b(17, -17, 8, 8, 6, 'blue', 's', '🧭 Tripadvisör'),
+  b(17.4, -18, 7.6, 8, 6, 'blue', 's', '🧭 Tripadvisör'),
   b(-17, -17, 8, 8, 6, 'pink', 's', '💇 Toni & Güy'),
   b(17, 17, 8, 8, 6, 'lilac', 's', '📸 Kodakk Foto'),
   b(-17, 17, 8, 8, 6, 'peach', 'n', '🍰 Hafız Mustafam'),
