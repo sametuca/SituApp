@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { TopDock } from '../../components/Dock'
 import { Modal } from '../Hud'
 import Portrait from '../Portrait'
 import { Ico } from '../../components/Icon'
@@ -341,7 +342,7 @@ function FriendsPanel({ data, inbox, fresh, roster, onClose, api, startTab }) {
 function Cards({ cards, onDismiss, onAnswer, onOpen }) {
   if (!cards.length) return null
   return (
-    <div className="pointer-events-none absolute left-1/2 top-44 z-20 flex w-[min(92vw,22rem)] -translate-x-1/2 flex-col gap-2" aria-live="polite">
+    <TopDock><div className="relative pointer-events-none flex w-[min(92vw,22rem)] flex-col gap-2" aria-live="polite">
       {cards.map((c) => (
         <div key={c.id} className={`pointer-events-auto animate-pop rounded-3xl p-2.5 pl-4 ${glass}`} role="status">
           <div className="flex items-center gap-3">
@@ -379,7 +380,7 @@ function Cards({ cards, onDismiss, onAnswer, onOpen }) {
           )}
         </div>
       ))}
-    </div>
+    </div></TopDock>
   )
 }
 

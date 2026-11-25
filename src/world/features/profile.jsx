@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { TopDock } from '../../components/Dock'
 import { Dock } from '../../components/Dock'
 import { Modal } from '../Hud'
 import { PhotoSection } from './photoUpload'
@@ -374,7 +375,7 @@ export function useProfile({ net, say, panel, setPanel, home }) {
         </div></Dock>
       )}
       {first && (
-        <div className={`absolute left-1/2 top-24 z-20 flex w-[min(92vw,22rem)] -translate-x-1/2 animate-pop flex-col gap-2 rounded-3xl p-4 ${glass}`} role="dialog" aria-label="Buz kırıcı">
+        <TopDock><div className={`relative flex w-[min(92vw,22rem)] animate-pop flex-col gap-2 rounded-3xl p-4 ${glass}`} role="dialog" aria-label="Buz kırıcı">
           <p className="text-xs font-extrabold text-[#5fb0d8]">🧊 {first.name} sana bir soru gönderdi</p>
           <p className="text-base font-black text-[#4a3b5c]">{first.q}</p>
           <div className="grid grid-cols-2 gap-2">
@@ -394,10 +395,10 @@ export function useProfile({ net, say, panel, setPanel, home }) {
           <button onClick={() => setIncoming((l) => l.slice(1))} className="self-center text-xs font-extrabold text-[#8a7a9c] hover:underline">
             Şimdi değil
           </button>
-        </div>
+        </div></TopDock>
       )}
       {answers.length > 0 && (
-        <div className="absolute left-1/2 top-48 z-20 flex w-[min(92vw,22rem)] -translate-x-1/2 flex-col gap-2">
+        <TopDock><div className="relative flex w-[min(92vw,22rem)] flex-col gap-2">
           {answers.map((a) => (
             <div key={a.k} className={`animate-pop rounded-3xl p-3 pl-4 ${glass}`} role="status">
               <p className="text-sm font-extrabold text-[#4a3b5c]">
@@ -408,7 +409,7 @@ export function useProfile({ net, say, panel, setPanel, home }) {
               </p>
             </div>
           ))}
-        </div>
+        </div></TopDock>
       )}
     </>
   )

@@ -1,4 +1,5 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { TopDock } from '../../components/Dock'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import LookPicker from '../../components/LookPicker'
@@ -567,7 +568,7 @@ function GiftPicker({ peer, onPick, onClose }) {
 function OfferCard({ offer, onAccept, onDecline }) {
   const g = GIFT_BY_ID[offer.kind]
   return (
-    <div className={`absolute left-1/2 top-24 z-20 w-[min(92vw,22rem)] -translate-x-1/2 animate-pop rounded-3xl bg-white/80 p-3 backdrop-blur-md ${chip}`} role="alert">
+    <TopDock><div className={`relative w-[min(92vw,22rem)] animate-pop rounded-3xl bg-white/80 p-3 backdrop-blur-md ${chip}`} role="alert">
       <div className="flex items-center gap-3">
         <span className="text-3xl" aria-hidden>
           {g?.emoji ?? '🎁'}
@@ -584,7 +585,7 @@ function OfferCard({ offer, onAccept, onDecline }) {
           🎁 Kabul et
         </ToyButton>
       </div>
-    </div>
+    </div></TopDock>
   )
 }
 

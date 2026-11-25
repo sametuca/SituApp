@@ -1,4 +1,5 @@
 // Plaj etkinlikleri (istemci): gün batımı buluşması bannerı + plaj halkası ve voleybol (zamanlama). Sunucu: server/features/beach.js.
+import { TopDock } from '../../components/Dock'
 import { useEffect, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { DoorPrompt } from '../Social'
@@ -52,7 +53,7 @@ function Volley({ vb, me, touch, onHit, onLeave }) {
   const oppScore = vb.a.id === me ? vb.sb : vb.sa
   const opp = vb.a.id === me ? vb.b.name : vb.a.name
   return (
-    <div className={`pointer-events-auto absolute left-1/2 top-24 z-30 w-[min(92vw,24rem)] -translate-x-1/2 animate-pop rounded-3xl p-3 ${glass}`}>
+    <TopDock><div className={`relative pointer-events-auto w-[min(92vw,24rem)] animate-pop rounded-3xl p-3 ${glass}`}>
       <div className="flex items-center justify-between text-sm font-black text-[#4a3b5c]">
         <span>🏐 Voleybol · {opp}</span>
         <span className="rounded-full bg-[#ffe3b8] px-3 py-0.5">{mineScore} – {oppScore}</span>
@@ -83,7 +84,7 @@ function Volley({ vb, me, touch, onHit, onLeave }) {
           <button onClick={onLeave} className="mt-1 w-full text-center text-[0.6875rem] font-extrabold text-[#8a7a9c] hover:underline">Ayrıl</button>
         </>
       )}
-    </div>
+    </div></TopDock>
   )
 }
 
@@ -223,29 +224,29 @@ export function useBeach({ net, focusRef, home, venue, touch }) {
   const overlays = (
     <>
       {showMeetup && (
-        <div className={`pointer-events-none absolute left-1/2 top-[4.4rem] z-10 -translate-x-1/2 rounded-2xl px-4 py-1.5 text-center ${glass}`}>
+        <TopDock><div className={`relative pointer-events-none rounded-2xl px-4 py-1.5 text-center ${glass}`}>
           <p className="text-xs font-black text-[#c9731a]">
             🌅 Gün batımı buluşması · {meetup.phase === 'soon' ? `${mmss(meetup.start - now)} sonra` : `${mmss(meetup.end - now)} kaldı`}
           </p>
           <p className="text-[0.6875rem] font-bold text-[#8a7a9c]">
             {meetup.phase === 'soon' ? 'Plajın ortasına gel, altın kazan!' : dist <= BEACH.r + 4 ? `Plajdasın 🪙 · ${meetup.n} kişi burada` : `Plaja gel (${dist} m) · ${meetup.n} kişi bekliyor`}
           </p>
-        </div>
+        </div></TopDock>
       )}
       {res && (
-        <div className={`pointer-events-none absolute left-1/2 top-28 z-30 -translate-x-1/2 animate-pop rounded-2xl px-5 py-2 text-center ${glass}`}>
+        <TopDock><div className={`relative pointer-events-none animate-pop rounded-2xl px-5 py-2 text-center ${glass}`}>
           <p className="text-sm font-black text-[#c9731a]">🌅 Buluşma bitti!</p>
           <p className="text-xs font-bold text-[#8a7a9c]">{res.secs} sn kaldın{res.bonus ? ' · +10 🪙 bonus' : ''}</p>
-        </div>
+        </div></TopDock>
       )}
       {near === 'net' && !busy && !home && !venue && (
         <DoorPrompt emoji="🏐" label="Voleybol" action="Oyna" touch={touch} raised onGo={startVolley} />
       )}
       {waiting && !vb && (
-        <div className={`pointer-events-auto absolute left-1/2 top-24 z-30 -translate-x-1/2 rounded-2xl px-4 py-2 text-center ${glass}`}>
+        <TopDock><div className={`relative pointer-events-auto rounded-2xl px-4 py-2 text-center ${glass}`}>
           <p className="text-sm font-black text-[#4a3b5c]">🏐 Rakip bekleniyor…</p>
           <button onClick={() => (send({ t: 'vb_leave' }), setWaiting(false))} className="text-xs font-extrabold text-[#8a7a9c] hover:underline">Vazgeç</button>
-        </div>
+        </div></TopDock>
       )}
       {vb && <Volley vb={vb} me={myId.current} touch={touch} onHit={hit} onLeave={leaveVolley} />}
     </>

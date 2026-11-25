@@ -1,4 +1,5 @@
 // Serbest meslekler (istemci): meslek seçme yok — herkes istediği zaman sahil iskelesinde/gölette balık tutabilir veya lobiden posta dağıtabilir.
+import { TopDock } from '../../components/Dock'
 import { Dock } from '../../components/Dock'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
@@ -292,7 +293,7 @@ function FishingCard({ spot, onCatch, onClose, onPhase, result, touch }) {
   const shownFish = result ? (FISH_BY_ID[result.id] ?? hooked ?? result) : hooked
 
   return (
-    <div className={`pointer-events-auto absolute left-1/2 top-24 z-30 w-[min(92vw,22.5rem)] -translate-x-1/2 animate-pop rounded-[2rem] p-4 text-center ${glass}`} role="dialog" aria-label="Balık Tutma">
+    <TopDock><div className={`relative pointer-events-auto w-[min(92vw,22.5rem)] animate-pop rounded-[2rem] p-4 text-center ${glass}`} role="dialog" aria-label="Balık Tutma">
       <div className="flex items-center justify-between">
         <span className="inline-flex items-center gap-1.5 text-sm font-black text-[#4a3b5c]">
           <Ico name="fish" size={18} /> Balıkçılık
@@ -370,7 +371,7 @@ function FishingCard({ spot, onCatch, onClose, onPhase, result, touch }) {
           </div>
         </div>
       )}
-    </div>
+    </div></TopDock>
   )
 }
 
@@ -602,13 +603,13 @@ export function useJobs({ net, focusRef, home, venue, atDoor, touch, say, panel 
     <>
       {/* Aktif posta teslimatı göstergesi (istenirse tek tıkla bırakılır) */}
       {inCity && targetVenue && (
-        <div className={`pointer-events-auto absolute left-1/2 top-16 z-20 flex -translate-x-1/2 items-center gap-2.5 rounded-full px-4 py-1.5 text-xs font-extrabold text-[#4a3b5c] ${glass}`}>
+        <TopDock><div className={`relative pointer-events-auto flex items-center gap-2.5 rounded-full px-4 py-1.5 text-xs font-extrabold text-[#4a3b5c] ${glass}`}>
           <Ico name="parcel" size={16} />
           <span>Teslimat: <b>{targetVenue.name}</b> · {postDist} m</span>
           <button type="button" onClick={() => setPostTarget(null)} className="rounded-full bg-[#f6f0ff] px-2 py-0.5 text-[11px] font-black text-[#8a7a9c] hover:bg-[#ffedd6]">
             Bırak
           </button>
-        </div>
+        </div></TopDock>
       )}
 
       {/* Nazik, zorlamayan sahil balıkçılık daveti — ortada, SkillBar'ın tam üstünde */}

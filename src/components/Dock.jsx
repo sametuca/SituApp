@@ -15,3 +15,16 @@ export function Dock({ children }) {
   }, [el])
   return el ? createPortal(children, el) : null
 }
+
+// ---- Üst orta HUD yığını: bölge başlığı, etkinlik/davet bannerları, bekleme kartları, ipuçları vb. yukarıdan aşağı SIRALI akar ----
+export function TopDockSlot() {
+  return <div id="hud-top" className="pointer-events-none absolute inset-x-0 top-[4.6rem] z-20 flex flex-col items-center gap-2 px-3" />
+}
+
+export function TopDock({ children }) {
+  const [el, setEl] = useState(() => (typeof document === 'undefined' ? null : document.getElementById('hud-top')))
+  useEffect(() => {
+    if (!el) setEl(document.getElementById('hud-top'))
+  }, [el])
+  return el ? createPortal(children, el) : null
+}

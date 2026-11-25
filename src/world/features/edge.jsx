@@ -1,4 +1,5 @@
 // Dünya sınırı ipucu: oyuncu sınıra (şamandıra halatı) yaklaşınca tatlı, kısa bir bilgi kartı. Sunucu da sınırı zorlar (hile denetimi).
+import { TopDock } from '../../components/Dock'
 import { useEffect, useState } from 'react'
 import { PLAY_BOUNDS } from '../layout'
 
@@ -19,10 +20,10 @@ export function useEdge({ focusRef, home, venue }) {
     return () => clearInterval(id)
   }, [focusRef, home, venue])
   const overlays = show ? (
-    <div className="pointer-events-none absolute left-1/2 top-24 z-20 -translate-x-1/2 animate-pop rounded-2xl border-2 border-white bg-white/90 px-4 py-2 text-center shadow-soft backdrop-blur-md">
+    <TopDock><div className="relative pointer-events-none animate-pop rounded-2xl border-2 border-white bg-white/90 px-4 py-2 text-center shadow-soft backdrop-blur-md">
       <p className="text-sm font-black text-[#4a3b5c]">🌊 Adanın kıyısına geldin</p>
       <p className="text-xs font-bold text-[#8a7a9c]">Şamandıraların ötesi açık deniz, daha ileri gidemezsin.</p>
-    </div>
+    </div></TopDock>
   ) : null
   return { overlays }
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { TopDock } from '../components/Dock'
 import { ToyButton } from '../components/ui'
 import { emojiSrc } from '../components/emoji'
 import { Ico } from '../components/Icon'
@@ -116,14 +117,14 @@ export function ZoneToast({ zone }) {
   }, [zone])
   if (!shown || !shown.desc) return null
   return (
-    <div className="pointer-events-none absolute left-1/2 top-28 z-10 w-[min(92vw,22rem)] -translate-x-1/2 animate-pop">
+    <TopDock><div className="relative pointer-events-none w-[min(92vw,22rem)] animate-pop">
       <div className={`rounded-3xl px-5 py-3 text-center ${glass}`}>
         <p className="text-base font-black text-[#4a3b5c]">
           {shown.emoji} {shown.name}
         </p>
         <p className="text-sm font-semibold text-[#8a7a9c]">{shown.desc}</p>
       </div>
-    </div>
+    </div></TopDock>
   )
 }
 
@@ -850,7 +851,7 @@ export function StartGuide({ touch, ready = true, inCity, inAirport = false, onD
   }[stage]
 
   return (
-    <div className={`pointer-events-auto absolute left-1/2 top-[5.75rem] z-10 flex w-[min(28rem,calc(100vw-1.5rem))] -translate-x-1/2 animate-pop items-center gap-3 rounded-3xl py-3.5 pl-4 pr-10 ${glass}`} role="status" key={stage}>
+    <TopDock><div className={`relative pointer-events-auto flex w-[min(28rem,calc(100vw-1.5rem))] animate-pop items-center gap-3 rounded-3xl py-3.5 pl-4 pr-10 ${glass}`} role="status" key={stage}>
       <span className="shrink-0 text-3xl">{content.icon}</span>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-extrabold leading-snug text-[#4a3b5c]">{content.text}</p>
@@ -869,6 +870,6 @@ export function StartGuide({ touch, ready = true, inCity, inAirport = false, onD
       <button onClick={onDone} aria-label="İpucunu kapat" className="absolute right-2.5 top-2.5 grid h-7 w-7 place-items-center rounded-full text-xs font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
         ✕
       </button>
-    </div>
+    </div></TopDock>
   )
 }

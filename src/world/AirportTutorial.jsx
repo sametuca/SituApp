@@ -1,4 +1,5 @@
 import { Suspense, useRef, useState } from 'react'
+import { TopDock } from '../components/Dock'
 import { useFrame } from '@react-three/fiber'
 import { Html, useGLTF } from '@react-three/drei'
 import { screenK } from './screenK'
@@ -119,7 +120,7 @@ export function AirportTutorialHud({ step, near, touch, celebrate, onCollect, on
   return (
     <>
       {/* sadeleştirilmiş görev kartı */}
-      <div className="pointer-events-auto absolute left-1/2 top-[5rem] z-10 w-[min(92vw,28rem)] -translate-x-1/2 animate-pop rounded-[1.75rem] border-2 border-white bg-white/95 px-5 py-4 shadow-toy backdrop-blur-md sm:top-[5.75rem]">
+      <TopDock><div className="relative pointer-events-auto w-[min(92vw,28rem)] animate-pop rounded-[1.75rem] border-2 border-white bg-white/95 px-5 py-4 shadow-toy backdrop-blur-md sm:">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="rounded-full bg-[#fff3c8] px-3 py-0.5 text-xs font-black text-[#8a5a00]">
@@ -153,7 +154,7 @@ export function AirportTutorialHud({ step, near, touch, celebrate, onCollect, on
             </button>
           ) : null}
         </div>
-      </div>
+      </div></TopDock>
 
       {/* adım tamamlanınca mini konfeti kutlaması */}
       {celebrate && (

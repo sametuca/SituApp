@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { TopDock } from '../components/Dock'
 import { Dock } from '../components/Dock'
 import { Ico } from '../components/Icon'
 import { ToyButton } from '../components/ui'
@@ -433,7 +434,7 @@ export function GestureChip({ from, onBack, onChat, onClose }) {
     return () => clearTimeout(t)
   }, [from, onClose])
   return (
-    <div className={`absolute left-1/2 top-24 z-20 w-[min(92vw,22rem)] -translate-x-1/2 animate-pop rounded-3xl p-2.5 pl-4 ${glass}`} role="status">
+    <TopDock><div className={`relative w-[min(92vw,22rem)] animate-pop rounded-3xl p-2.5 pl-4 ${glass}`} role="status">
       <div className="flex items-center gap-3">
         <span className="text-3xl" aria-hidden>
           {from.emoji}
@@ -453,7 +454,7 @@ export function GestureChip({ from, onBack, onChat, onClose }) {
           💬 Yaz
         </button>
       </div>
-    </div>
+    </div></TopDock>
   )
 }
 
@@ -513,7 +514,7 @@ export function InviteChip({ from, onGo, onClose }) {
     return () => clearTimeout(t)
   }, [from, onClose])
   return (
-    <div className={`absolute left-1/2 top-24 z-20 flex w-[min(92vw,22rem)] -translate-x-1/2 animate-pop items-center gap-3 rounded-3xl p-2.5 pl-4 ${glass}`} role="status">
+    <TopDock><div className={`relative flex w-[min(92vw,22rem)] animate-pop items-center gap-3 rounded-3xl p-2.5 pl-4 ${glass}`} role="status">
       <span className="text-2xl" aria-hidden>
         🏠
       </span>
@@ -528,7 +529,7 @@ export function InviteChip({ from, onGo, onClose }) {
       <button onClick={onClose} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
         ✕
       </button>
-    </div>
+    </div></TopDock>
   )
 }
 
@@ -539,13 +540,13 @@ export function IncomingChip({ from, onOpen, onClose }) {
     return () => clearTimeout(t)
   }, [from, onClose])
   return (
-    <button
+    <TopDock><button
       onClick={onOpen}
-      className={`absolute left-1/2 top-24 z-20 w-[min(92vw,20rem)] -translate-x-1/2 animate-pop rounded-3xl px-4 py-2.5 text-left ${glass}`}
+      className={`relative w-[min(92vw,20rem)] animate-pop rounded-3xl px-4 py-2.5 text-left ${glass}`}
     >
       <p className="text-xs font-extrabold text-[#fdb252]">{from.whisper ? `🤫 ${from.name} sana fısıldadı` : `💌 ${from.name} sana yazdı`}</p>
       <p className="truncate text-sm font-semibold text-[#4a3b5c]">{from.text}</p>
-    </button>
+    </button></TopDock>
   )
 }
 
