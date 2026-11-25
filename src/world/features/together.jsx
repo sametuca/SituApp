@@ -104,7 +104,7 @@ function SunsetVeil() {
 
 function PhotoPrompt({ touch, raised, onShoot, onAlbum }) {
   return (
-    <div className={`absolute left-1/2 z-10 w-[min(92vw,20rem)] -translate-x-1/2 animate-pop ${touch ? (raised ? 'bottom-64' : 'bottom-44') : raised ? 'bottom-24' : 'bottom-4'}`} role="status">
+    <div className={`pointer-events-auto absolute left-1/2 z-20 w-[min(92vw,21rem)] -translate-x-1/2 animate-pop ${touch ? (raised ? 'bottom-[17.5rem]' : 'bottom-[13rem]') : raised ? 'bottom-[12.25rem]' : 'bottom-[7.75rem]'}`} role="status">
       <div className={`flex items-center gap-2 rounded-3xl p-2.5 pl-4 ${glass}`}>
         <span className="text-2xl" aria-hidden>
           📸
@@ -125,7 +125,7 @@ function PhotoPrompt({ touch, raised, onShoot, onAlbum }) {
 
 // ---------- ana hook ----------
 export function useTogether(ctx) {
-  const { net, say, touch, roster, focusRef, home, venue, panel, setPanel, openChat, closeInteract } = ctx
+  const { net, say, touch, roster, focusRef, home, venue, atDoor, panel, setPanel, openChat, closeInteract } = ctx
   const { on, send } = net
   const who = net.homeKey
 
@@ -386,12 +386,13 @@ export function useTogether(ctx) {
     }
   }, [seatOpt, send, focusRef])
 
-  // E tuşu: kalk > otur > fotoğraf çek
+  // E tuşu: kalk > (kapı önündeysen kapı öncelikli) > otur > fotoğraf çek
   const keyRef = useRef(null)
   useEffect(() => {
     keyRef.current = () => {
       if (shoot || photo) return
       if (together.self.current) return stand(false)
+      if (atDoor) return
       if (seatOpt) return sit()
       if (photoNear) return startShoot()
     }
@@ -477,8 +478,8 @@ export function useTogether(ctx) {
       {!busy && selfPose?.kind === 'sit' && (
         <DoorPrompt emoji="🪑" label={selfPose.style === 'lounger' ? 'Uzanıyorsun' : 'Oturuyorsun'} action="Kalk" touch={touch} raised={nearAny} onGo={() => stand(false)} />
       )}
-      {!busy && !selfPose && seatOpt && <DoorPrompt emoji="🪑" label={SEAT_LABEL[seatOpt.kind]} action="Otur" touch={touch} raised={nearAny} onGo={sit} />}
-      {!busy && !selfPose && !seatOpt && photoNear && <PhotoPrompt touch={touch} raised={nearAny} onShoot={startShoot} onAlbum={() => setPanel('photos')} />}
+      {!busy && !atDoor && !selfPose && seatOpt && <DoorPrompt emoji="🪑" label={SEAT_LABEL[seatOpt.kind]} action="Otur" touch={touch} raised={nearAny} onGo={sit} />}
+      {!busy && !atDoor && !selfPose && !seatOpt && photoNear && <PhotoPrompt touch={touch} raised={nearAny} onShoot={startShoot} onAlbum={() => setPanel('photos')} />}
 
       {shoot && shoot.n > 0 && <Countdown n={shoot.n} />}
       {flash && <div aria-hidden className="pointer-events-none absolute inset-0 z-40 bg-white [animation:together-flash_0.45s_ease-out_forwards]" />}

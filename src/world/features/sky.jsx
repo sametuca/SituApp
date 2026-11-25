@@ -4,10 +4,9 @@
 // Test/geliştirme URL parametreleri: ?hour=21 (saati sabitler), ?daylen=3 (bir günü 3 dk'da döndürür; ?hour başlangıç saati),
 // ?weather=rain (sunucu havasını yok sayar).
 // Her saniye worldClock'a yayımlanır (publishWorld): hour, phase, night, sunset, weather.
-import { Ico } from '../../components/Icon'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import WeatherFx from '../WeatherFx'
-import { currentHour, fmtHour, nightAt, phaseOf, publishWorld, realHour, setHourSource, sunsetAt } from '../worldClock'
+import { currentHour, nightAt, phaseOf, publishWorld, realHour, setHourSource, sunsetAt } from '../worldClock'
 
 const MODE_KEY = 'situapp_time_mode'
 const FX_KEY = 'situapp_weather_fx'
@@ -19,7 +18,6 @@ const MODES = [
   { id: 'dusk', emoji: '🌇', label: 'Hep gün batımı', hour: 19.2 },
   { id: 'night', emoji: '🌙', label: 'Hep gece', hour: 23 },
 ]
-const PHASE_EMOJI = { dawn: '🌅', day: '☀️', dusk: '🌇', night: '🌙' }
 const WEATHER_EMOJI = { clear: '', rain: '🌧️', snow: '❄️', leaves: '🍂', petals: '🌸', fog: '🌫️' }
 const WEATHER_NAME = { clear: 'Açık', rain: 'Yağmurlu', snow: 'Karlı', leaves: 'Yaprak savruluyor', petals: 'Çiçek yaprakları', fog: 'Sisli' }
 const WEATHERS = Object.keys(WEATHER_NAME)
@@ -59,11 +57,10 @@ export function useSky({ net, touch, home, venue, focusRef }) {
   const dayLen = Number(q.get('daylen')) > 0 ? Number(q.get('daylen')) : null // dakika
   const urlWeather = WEATHERS.includes(q.get('weather')) ? q.get('weather') : null
 
-  const [mode, setMode] = useState(() => (MODES.some((m) => m.id === read(MODE_KEY, 'real')) ? read(MODE_KEY, 'real') : 'real'))
+  const [mode] = useState(() => (MODES.some((m) => m.id === read(MODE_KEY, 'real')) ? read(MODE_KEY, 'real') : 'real'))
   const [fxOn, setFxOn] = useState(() => read(FX_KEY, '1') !== '0')
   const [srvWeather, setSrvWeather] = useState('clear')
   const [eventOn, setEventOn] = useState(false)
-  const [now, setNow] = useState({ hour: 12, phase: 'day' })
   const weather = urlWeather ?? srvWeather
 
   // sunucudan hava + etkinlik bilgisi
@@ -88,28 +85,19 @@ export function useSky({ net, touch, home, venue, focusRef }) {
     return () => setHourSource(null)
   }, [dayLen, urlHour])
 
-  // her saniye dünya saatini yayımla
-  const modeRef = useRef(mode)
-  modeRef.current = mode
-  const weatherRef = useRef(weather)
-  weatherRef.current = weather
+  // her saniye dünya saatini yayımla (yalnızca worldClock'a yazar, gereksiz React yeniden çizimi yapmaz)
   useEffect(() => {
     const tick = () => {
-      const m = MODES.find((x) => x.id === modeRef.current)
+      const m = MODES.find((x) => x.id === mode)
       const hour = urlHour != null && !dayLen ? urlHour : DAY_ONLY ? 12.5 : m?.hour != null ? m.hour : currentHour()
       const phase = phaseOf(hour)
-      publishWorld({ hour, phase, night: nightAt(hour), sunset: sunsetAt(hour), weather: weatherRef.current })
-      setNow((p) => (fmtHour(p.hour) === fmtHour(hour) && p.phase === phase ? p : { hour, phase }))
+      publishWorld({ hour, phase, night: nightAt(hour), sunset: sunsetAt(hour), weather })
     }
     tick()
     const id = setInterval(tick, 1000)
     return () => clearInterval(id)
   }, [urlHour, dayLen, mode, weather])
 
-  const pickMode = (id) => {
-    setMode(id)
-    write(MODE_KEY, id)
-  }
   const toggleFx = () => {
     const v = !fxOn
     setFxOn(v)

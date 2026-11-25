@@ -10,6 +10,8 @@ export const ISLAND = { x0: -100, x1: 100, z0: -100, z1: 50 }
 export const RIM = 3.5 // kıyı kum şeridi genişliği
 export const PLAY_BOUNDS = { x0: ISLAND.x0 - RIM + 1, x1: ISLAND.x1 + RIM - 1, z0: ISLAND.z0 - RIM + 1, z1: ISLAND.z1 + RIM - 1 }
 export const PLAY_LIMIT = 102 // (eski ad) kabaca en uzak kenar
+export const PIER = { x: 0, z0: 49.4, z1: 58.6, hw: 1.55, top: 0.37 }
+export const groundY = (x, z) => (Math.abs(x - PIER.x) <= PIER.hw && z >= PIER.z0 && z <= PIER.z1 ? PIER.top : 0)
 export const ROAD_HALF = 4.3 // yolların yarı genişliği (8,6 m asfalt + her yanda 1,4 m kaldırım)
 // Meydan çevresinde dönel kavşak: çeşmeli meydan (PLAZA_R) → iç kaldırım → asfalt halka (RING.r0…r1) → dış kaldırım. Ana yollar halkaya bağlanır.
 export const PLAZA_R = 8.4
@@ -63,7 +65,7 @@ export const TELEPORTS = {
   golet: 'pond', 'gölet': 'pond', mahalle: 'hills', hills: 'hills', liman: 'harbor', harbor: 'harbor',
 }
 
-export const SPAWN = { x: -22, z: 0 } // eski hesaplar parkta başlar
+export const SPAWN = { x: 0, z: 37 } // tüm oyuncular sahilde (plaj meydanında) başlar
 export const BEACH = { x: 0, z: 37, r: 17 } // yuvarlak, sıcak plaj meydanı (adanın güneyinde; yol buraya açılır)
 export const BEACH_START = { x: 0, z: 37, ry: Math.PI } // yeni hesap havalimanından çıkınca plajın tam ortasında doğar, kuzeye (şehre) bakar // yeni hesap havalimanından çıkınca kumsalda doğar, kuzeye (şehre) bakar
 
@@ -171,13 +173,16 @@ const p = (model, x, z, scale, r = 0, ry = 0) => ({ model: M[model], x, z, scale
 export const PROPS = []
 // sokak lambaları: ana yolların kaldırım şeridinde (ROAD_HALF + 0,75), çiftler karşılıklı simetrik, 10 m arayla
 const LAMP = ROAD_HALF + 0.75
+// mekan kapılarının tam önüne gelen lambaları kapıdan uzağa kaydır (bar, fastfood, dondurma, surf)
 for (let t = 20; t <= 90; t += 10) {
   PROPS.push(p('lamp', LAMP, -t, 3, 0.35), p('lamp', -LAMP, -t, 3, 0.35)) // kuzey uzantısı
-  PROPS.push(p('lamp', t, LAMP, 3, 0.35), p('lamp', t, -LAMP, 3, 0.35)) // doğu uzantısı
-  if (t <= 20) PROPS.push(p('lamp', LAMP, t, 3, 0.35), p('lamp', -LAMP, t, 3, 0.35)) // güney (plaja kadar)
+  const eSouth = t === 30 ? 25.5 : t // Burger Kral kapısından (x=31.6) uzak
+  const eNorth = t === 40 ? 35.5 : t // Hard Rök kapısından (x=40.45) uzak
+  PROPS.push(p('lamp', eSouth, LAMP, 3, 0.35), p('lamp', eNorth, -LAMP, 3, 0.35)) // doğu uzantısı
+  if (t <= 20) PROPS.push(p('lamp', LAMP, 23.2, 3, 0.35), p('lamp', -LAMP, 23.2, 3, 0.35)) // güney: Baskın Robin & Quicksörf kapılarından uzak
 }
-// dönel kavşak lambaları: halkanın dış kaldırımında, yol bağlantılarından uzakta (45° çaprazlar)
-for (const a of [Math.PI / 4, (3 * Math.PI) / 4, (5 * Math.PI) / 4, (7 * Math.PI) / 4]) PROPS.push(p('lamp', Math.cos(a) * 16.5, Math.sin(a) * 16.5, 3, 0.35))
+// dönel kavşak lambaları: halkanın dış kaldırımında, yol bağlantılarından ve Evim binasından uzakta
+for (const a of [Math.PI / 4, (3 * Math.PI) / 4 + 0.38, (5 * Math.PI) / 4, (7 * Math.PI) / 4]) PROPS.push(p('lamp', Math.cos(a) * 15.8, Math.sin(a) * 15.8, 3, 0.35))
 // lobi: çeşmenin çevresinde banklar ve ağaçlar
 for (let i = 0; i < 6; i++) {
   const a = (i / 6) * Math.PI * 2 + Math.PI / 6
@@ -186,15 +191,14 @@ for (let i = 0; i < 6; i++) {
 PROPS.push(p('fountain', 0, 0, 5.4))
 for (const [fx, fz] of [[3.5, 3.5], [-3.5, 3.5], [3.5, -3.5], [-3.5, -3.5]]) PROPS.push(p('flowerbed', fx, fz, 1.5))
 PROPS.push(p('tree', 5.2, 5.2, 3.0, 0.7), p('tree', 5.2, -5.2, 3.0, 0.7), p('tree', -5.2, -5.2, 3.0, 0.7))
-// kafe sokağı: kaldırımda bitkiler ve açık hava kafe masaları
+// kafe sokağı: kaldırımda bitkiler ve açık hava kafe masaları (mekân kapılarından ve lambalardan uzak, bina aralarında)
 for (const side of [-1, 1]) {
-  for (const z of [-14, -23, -31.5, -41.5]) PROPS.push(p('plant', side * 5.2, z, 1.4, 0.4))
-  for (const z of [-18.5, -27.5]) {
-    PROPS.push(p('cafetable', side * 6.4, z, 1.1, 0.45), p('cafechair', side * 6.4, z + 0.85, 1.0, 0, Math.PI))
-  }
+  for (const z of [-13.4, -31.2, -41.5]) PROPS.push(p('plant', side * 5.05, z, 1.4, 0.4))
+  PROPS.push(p('cafetable', side * 5.1, -22.2, 1.1, 0.45), p('cafechair', side * 5.1, -21.3, 1.0, 0, Math.PI))
+  PROPS.push(p('cafetable', side * 5.1, -33.2, 1.1, 0.45), p('cafechair', side * 5.1, -32.3, 1.0, 0, Math.PI))
 }
-// gece kulübü: girişin önünde hoparlörler (DJ standı içeride)
-PROPS.push(p('speaker', 20.2, -5.3, 2, 0.6), p('speaker', 31.5, -5.3, 2, 0.6))
+// gece kulübü: girişin önünde hoparlörler (sokak lambalarından uzak; DJ standı içeride)
+PROPS.push(p('speaker', 21.8, -5.1, 2, 0.6), p('speaker', 31.6, -5.1, 2, 0.6))
 PROPS.push(p('speaker', 38, 5.3, 1.8, 0.5))
 // park: ağaçlar, banklar
 for (const [x, z] of [[-18, -9], [-24, -10], [-36, -10], [-44, -8], [-20, 9], [-26, 10], [-37, 9], [-44, 6], [-42, -1], [-16, 7]]) PROPS.push(p('tree', x, z, 3.6, 0.7))
@@ -215,12 +219,12 @@ for (const x of [-19.5, -24.5]) PROPS.push(p('lamp', x, 2.6, 3, 0.35), p('lamp',
     PROPS.push(p('umbrella', px + Math.sin(ry) * -1.6, pz + Math.cos(ry) * -1.6, 2.6, 0.3))
     PROPS.push(p('lounger', px + nx * 0.8, pz + nz * 0.8, 1.7, 0, ry), p('lounger', px - nx * 0.8, pz - nz * 0.8, 1.7, 0, ry))
   }
-  for (const a of [-2.75, -0.4, 0.5, 2.0, 2.65]) PROPS.push(p('palm', BEACH.x + Math.cos(a) * 15.2, BEACH.z + Math.sin(a) * 12.5, 4.6, 0.5))
+  for (const a of [-2.75, -0.4, 0.72, 2.22, 2.52]) PROPS.push(p('palm', BEACH.x + Math.cos(a) * 16.2, BEACH.z + Math.sin(a) * 13.5, 4.6, 0.5))
 }
 // plaj ortamı (yeni oyuncuların doğduğu yer): cankurtaran kulesi, voleybol, kum kaleleri, havalimanı terminali + park etmiş uçak
-PROPS.push(p('lifeguard', -15.2, 44, 3.4, 1.0, 0.5), p('volleyball', 14.5, 42, 4.6, 0, Math.PI / 2), p('sandcastle', -3.5, 46, 1.5, 0.5), p('sandcastle', 4.5, 46.8, 1.2, 0.4, 0.8))
+PROPS.push(p('lifeguard', -15.2, 44, 3.4, 1.0, 0.5), p('volleyball', 14.5, 42, 4.6, 0, Math.PI / 2), p('sandcastle', -7.8, 44.6, 1.5, 0.5), p('sandcastle', 8.4, 45.2, 1.2, 0.4, 0.8))
 BUILDINGS.push(b(-23, 44, 10, 7, 6, 'blue', 's', '🛬 Terminal'))
-PROPS.push(p('plane', -23, 48.6, 4.4, 1.4, 0.3))
+PROPS.push(p('plane', -23, 49.4, 4.4, 1.4, 0.3))
 // plaj havluları (yere serili küçük renkli dikdörtgenler; City.jsx çizer)
 export const TOWELS = [
   { x: -3.2, z: 35.4, ry: 0.2, c: '#ffd35e' }, { x: 3.4, z: 36.2, ry: -0.3, c: '#7fcdf3' }, { x: -1, z: 40.6, ry: 0.1, c: '#b79cff' },
@@ -247,12 +251,13 @@ function scatterProps(model, rect, n, scale, r, minD) {
     PROPS.push(p(model, x, z, scale * (0.85 + rnd() * 0.35), r, rnd() * 6.28))
   }
 }
+// dış alan bankları ağaç dağıtımından önce eklenir ki ağaçlar bankların üstüne düşmesin
+for (const [x, z] of [[-30, -40], [-26, -70], [-40, -84], [-72, 0], [-80, -30], [-64, 20], [66, 34], [86, 36], [-24, 28], [-36, 26]]) PROPS.push(p('bench', x, z, 1.7, 0, (x * 7) % 6))
 scatterProps('tree', { x0: -98, x1: -50, z0: -98, z1: 48 }, 70, 3.6, 0.7, 5) // Orman Parkı
 scatterProps('tree', { x0: -46, x1: -16, z0: -98, z1: -16 }, 26, 3.5, 0.7, 7) // Çiçek Bahçesi
 scatterProps('tree', { x0: -46, x1: -16, z0: 16, z1: 48 }, 12, 3.5, 0.7, 7) // Gölet çevresi
 scatterProps('tree', { x0: 16, x1: 98, z0: -98, z1: -16 }, 22, 3.5, 0.7, 8) // Kuzeydoğu
 scatterProps('palm', { x0: 16, x1: 98, z0: 36, z1: 48 }, 10, 4.6, 0.5, 8) // Liman palmiyeleri
-for (const [x, z] of [[-30, -40], [-26, -70], [-40, -84], [-72, 0], [-80, -30], [-64, 20], [66, 34], [86, 36], [-24, 28], [-36, 26]]) PROPS.push(p('bench', x, z, 1.7, 0, (x * 7) % 6))
 
 // ---------- oturma noktaları (birlikte yapılan şeyler: server/features/together.js de okur) ----------
 // Banklar 2, şezlonglar ve sandalyeler 1 kişilik. face: oturanın bakışı = prop.ry + face (modelin önü).
@@ -311,10 +316,16 @@ export const COLLIDERS = [
 
 export const PLAYER_RADIUS = 0.4
 
-/** (x,z) konumunu çarpışmalardan ve dünya sınırından çıkarır. */
+/** (x,z) konumunu çarpışmalardan ve dünya sınırından çıkarır (iskele uzantısı dahil). */
 export function resolveCollisions(x, z) {
   x = Math.max(PLAY_BOUNDS.x0, Math.min(PLAY_BOUNDS.x1, x))
-  z = Math.max(PLAY_BOUNDS.z0, Math.min(PLAY_BOUNDS.z1, z))
+  const inPierLane = Math.abs(x - PIER.x) <= PIER.hw - 0.2 && z > PLAY_BOUNDS.z1 - 0.8
+  if (inPierLane) {
+    x = Math.max(PIER.x - PIER.hw + 0.3, Math.min(PIER.x + PIER.hw - 0.3, x))
+    z = Math.max(PLAY_BOUNDS.z0, Math.min(PIER.z1 - 0.3, z))
+  } else {
+    z = Math.max(PLAY_BOUNDS.z0, Math.min(PLAY_BOUNDS.z1, z))
+  }
   for (const c of COLLIDERS) {
     if (c.type === 'circle') {
       const dx = x - c.x
@@ -356,8 +367,8 @@ export function resolveCollisions(x, z) {
   return [x, z]
 }
 
-// Rehber NPC: lobi meydanında, Rehber Merkezi'nin önünde
-export const GUIDE = { x: 10.5, z: -8, ry: -2.3, avatar: 'mira', name: 'Rehber', radius: 5 }
+// Rehber NPC: plajdan ana sokağa girişte (sokağın başında, oyuncuyu karşılar)
+export const GUIDE = { x: -3.8, z: 30.2, ry: 0.3, avatar: 'mira', name: 'Rehber', radius: 5 }
 
 // ---------- ev kapısı ve iç mekan ----------
 // Kapının önündeki nokta (şehirde): buraya gelince "Eve gir" çıkar, dışarı çıkınca buraya dönülür.

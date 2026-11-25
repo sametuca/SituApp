@@ -22,6 +22,24 @@ export default function npcs(ctx) {
         me.npcTimes.push(now)
         ctx.emitEvent?.(me, 'npc_talk', 1, npc.id)
       },
+      npc_buy(me, msg) {
+        const npc = typeof msg.npcId === 'string' ? NPC_BY_ID[msg.npcId] : null
+        if (!npc?.shop?.length) return
+        const item = npc.shop.find((s) => s.id === msg.itemId)
+        if (!item) return
+        const room = npc.where === 'city' ? 'city' : `venue:${npc.where}`
+        if (me.room !== room) return
+        const now = Date.now()
+        if (now - (me.lastNpcBuy ?? 0) < 800) return
+        const p = posAt(npc, now)
+        if (Math.hypot(me.x - p.x, me.z - p.z) > SERVER_RADIUS) return
+        me.lastNpcBuy = now
+        if (item.price > 0 && !ctx.spendCoins?.(me, item.price, 'npc_buy')) {
+          return send(me.ws, { t: 'npc_buy_res', ok: false, reason: 'coins', npcId: npc.id, itemId: item.id, price: item.price })
+        }
+        ctx.emitEvent?.(me, 'npc_talk', 1, npc.id)
+        send(me.ws, { t: 'npc_buy_res', ok: true, npcId: npc.id, itemId: item.id })
+      },
     },
   }
 }

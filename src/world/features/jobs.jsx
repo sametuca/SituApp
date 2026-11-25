@@ -1,536 +1,579 @@
-// Meslekler (istemci): Bahçıvan / Balıkçı / Postacı. Sunucu: server/features/jobs.js. Veri: src/world/jobsData.js.
-// Parçalar: meslek paneli (seçim, görevler, çanta + pazar, rehber), balık tutma HUD'u (at → bekle → ÇEK!), kargo HUD'u, kapı istemleri.
-// 3B: JobsWorld (iskeleler, Posta Merkezi, kapı ışıkları), WorkProp (elde olta/paket; AvatarRig içinde), duruşlar avatarPose.js.
+// Serbest meslekler (istemci): meslek seçme yok — herkes istediği zaman sahil iskelesinde/gölette balık tutabilir veya lobiden posta dağıtabilir.
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ToyButton } from '../../components/ui'
-import { Em } from '../../components/emoji'
-import { Modal } from '../Hud'
+import { useFrame } from '@react-three/fiber'
+import { RoundedBox } from '@react-three/drei'
 import { DoorPrompt } from '../Social'
-import JobsWorld from '../JobsWorld'
-import { CROP_META, CROP_PRICE, FISH_BY_ID, FISH_SPOTS, JOBS, JOB_IDS, PARCEL_DELIVER_R, PARCEL_KINDS, PERK, POST_CENTER, QUEST_TEMPLATES, RARITY, jobLevel } from '../jobsData'
+import { Ico } from '../../components/Icon'
+import { VENUE_BY_ID } from '../venues'
 import { VENUE_DOORS } from '../venueDoors'
-import { mkPose, work } from './jobStore'
 
-const isTyping = (e) => e.target instanceof HTMLElement && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)
-const sfx = (name) => window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: name }))
-const glass = 'border-2 border-white bg-white/80 shadow-soft backdrop-blur-md'
-
-function Bar({ value, max, tone = '#fdb252', h = 'h-2.5' }) {
-  return (
-    <div className={`${h} w-full overflow-hidden rounded-full bg-[#f1e6ff]`}>
-      <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${Math.round((Math.min(value, max) / (max || 1)) * 100)}%`, background: tone }} />
-    </div>
-  )
+const FISH_SPOTS = [
+  { id: 'pier', label: 'Sahil İskelesi · Balık Tut', x: 0, z: 51.2, wx: 0, wz: 58.6, r: 6.5 },
+  { id: 'pond', label: 'Park Göleti · Balık Tut', x: -30, z: 23.0, wx: -30, wz: 28.2, r: 5.5 },
+]
+const SHORE_SPOT = { id: 'shore', label: 'Deniz Kenarı · Balık Tut', wx: 0, wz: 58.6 }
+function fishSpotAt(x, z) {
+  const fixed = FISH_SPOTS.find((s) => Math.hypot(x - s.x, z - s.z) < s.r)
+  if (fixed) return fixed
+  if (z >= 48.5 && Math.abs(x) <= 26) return SHORE_SPOT
+  return null
 }
-
-const unitPrice = (kind, id, st) => {
-  const base = kind === 'crop' ? CROP_PRICE[id] : FISH_BY_ID[id]?.price
-  const mult = st.market?.[kind]?.[id] ?? 1
-  const lv = jobLevel(st.xp?.[kind === 'crop' ? 'gardener' : 'fisher'] ?? 0).level
-  return { unit: Math.max(1, Math.round((base ?? 1) * mult * PERK.sell(lv))), mult }
+const MAILBOX = { x: 6.6, z: -6.2, r: 3.0 }
+const POST_VENUES = ['kafe', 'kitapkafe', 'firin', 'cayevi', 'tatli', 'kuafor', 'foto', 'dondurma', 'plajbar'].filter((id) => VENUE_DOORS[id])
+const FISH_CATALOG = [
+  { id: 'sardalya', name: 'Sardalya', rarity: 'Yaygın', coins: 6, speed: 1.15, zone: 0.32, w: 30, body: '#8ecae6', fin: '#5b9bd5', belly: '#e8f6ff', badge: 'bg-[#e8f6ff] text-[#2b6b94]' },
+  { id: 'istavrit', name: 'İstavrit', rarity: 'Yaygın', coins: 8, speed: 1.32, zone: 0.27, w: 24, body: '#8fdcb4', fin: '#4fa87b', belly: '#effcf4', badge: 'bg-[#e6f9ef] text-[#2b7a52]' },
+  { id: 'cipura', name: 'Çipura', rarity: 'Orta', coins: 11, speed: 1.58, zone: 0.22, w: 18, body: '#c7b8f5', fin: '#8d74d6', belly: '#f4f0ff', stripe: '#ffe48f', badge: 'bg-[#f1ebff] text-[#5e42a8]' },
+  { id: 'palyaco', name: 'Palyaço Balığı', rarity: 'Nadir', coins: 15, speed: 1.88, zone: 0.17, w: 12, body: '#ff8a4c', fin: '#e85d24', belly: '#fff8f0', stripe: '#ffffff', badge: 'bg-[#fff0e2] text-[#b84c14]' },
+  { id: 'kalamar', name: 'Kalamar', rarity: 'Nadir', coins: 18, speed: 2.08, zone: 0.15, w: 9, body: '#f4a2c4', fin: '#d96b96', belly: '#fff0f6', kind: 'squid', badge: 'bg-[#ffe8f2] text-[#a83868]' },
+  { id: 'altin', name: 'Altın Balık', rarity: 'Efsanevi', coins: 28, speed: 2.38, zone: 0.12, w: 4, body: '#ffd35e', fin: '#f59e0b', belly: '#fffbe6', crown: true, badge: 'bg-[#fff3c4] text-[#8a5a00]' },
+  { id: 'ahtapot', name: 'Kral Ahtapot', rarity: 'Efsanevi', coins: 32, speed: 2.58, zone: 0.11, w: 3, body: '#a87ce8', fin: '#7649bd', belly: '#f3e8ff', kind: 'octo', crown: true, badge: 'bg-[#efe6ff] text-[#5b2fa8]' },
+]
+const FISH_BY_ID = Object.fromEntries(FISH_CATALOG.map((f) => [f.id, f]))
+const FISH_TOTAL_W = FISH_CATALOG.reduce((s, f) => s + f.w, 0)
+function pickFish() {
+  let r = Math.random() * FISH_TOTAL_W
+  for (const f of FISH_CATALOG) {
+    r -= f.w
+    if (r <= 0) return f
+  }
+  return FISH_CATALOG[0]
 }
+const glass = 'border-2 border-white bg-white/92 shadow-toy backdrop-blur-md'
 
-// ---------- panel ----------
-function JobCard({ job, current, onPick, locked, cost }) {
-  const j = JOBS[job]
-  return (
-    <div className="rounded-3xl border-2 border-white p-3.5 shadow-soft" style={{ background: `${j.color}55` }}>
-      <div className="flex items-center gap-3">
-        <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/80 shadow-soft">
-          <Em e={j.emoji} size={38} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-lg font-black text-[#4a3b5c]">{j.name}</p>
-          <p className="text-xs font-extrabold" style={{ color: j.deep }}>{j.tag}</p>
-        </div>
-      </div>
-      <p className="mt-2 text-[0.8125rem] font-semibold leading-snug text-[#5d4d70]">{j.desc}</p>
-      <ul className="mt-2 flex flex-col gap-0.5">
-        {j.perks.map((p) => (
-          <li key={p} className="text-[0.75rem] font-bold text-[#6f5f82]">✨ {p}</li>
-        ))}
-      </ul>
-      <ToyButton onClick={() => onPick(job)} disabled={current || locked} className="mt-3 !py-2.5 !text-sm">
-        {current ? 'Mesleğin bu' : locked ? locked : cost ? `Seç · ${cost} 🪙` : 'Bu mesleği seç'}
-      </ToyButton>
-    </div>
-  )
-}
-
-function Guide({ job }) {
-  const steps = {
-    gardener: ['Evine gir (🏠 Evim kapısı ya da /ev). Arka bahçede boş bir tarhı tıkla ve tohum seç.', 'Tarhı sula: olgunlaşma süresi yarıya iner. Hazır olunca tıkla ve hasat et.', 'Ürünler çantana girer. Bu paneldeki Çanta sekmesinde pazar fiyatından sat.', 'Her gün fiyatlar değişir: ↑ işaretli ürünler daha çok kazandırır.'],
-    fisher: ['Adanın güney kıyısındaki 🎣 iskelelerden birine git (plaj çevresindeki tahta yollar).', 'E ile olta at. Şamandıra suya düşünce sabırla bekle.', 'Şamandıra batınca ekranda ÇEK! çıkar: E / Boşluk / dokunma ile zamanında çek.', 'Erken çekersen yem kaçar, geç kalırsan balık kaçar. Çabuk çekmek bonus XP verir.'],
-    postman: ['Parktaki 📮 Posta Merkezi’ne git (çardağın hemen yanı).', 'E ile kargo al. Her kargonun gideceği mekân paneldeki listede ve kapısındaki turuncu ışıkta.', 'Kapıya varınca E ile teslim et. Süre dolmadan teslim edersen ⚡ ekspres bonus!', 'Bisikletle teslim ettikçe +%20 kazanırsın. Seviye atladıkça daha çok kargo taşırsın.'],
-  }[job]
-  return (
-    <ol className="mt-3 flex flex-col gap-2">
-      {steps.map((s, i) => (
-        <li key={i} className="flex gap-2.5 rounded-2xl bg-[#fbf7ff] p-2.5 text-[0.8125rem] font-semibold text-[#5d4d70]">
-          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#fdb252] text-xs font-black text-white">{i + 1}</span>
-          {s}
-        </li>
-      ))}
-    </ol>
-  )
-}
-
-function JobsPanel({ st, onPick, onSell, onClose }) {
-  const [tab, setTab] = useState('quests')
-  const [choosing, setChoosing] = useState(false)
-  const job = st?.job
-  const j = job ? JOBS[job] : null
-  const lv = job ? jobLevel(st.xp?.[job] ?? 0) : null
-  const left = st ? Math.max(0, (st.canSwitchAt ?? 0) - Date.now()) : 0
-  const lockMsg = job && left > 0 ? `⏳ ${Math.ceil(left / 60000)} dk sonra` : null
-
-  if (!st) {
+/** Her balık türüne özel sevimli pastel vektör çizimi. */
+function FishArt({ fish, silhouette = false, size = 86 }) {
+  if (!fish) return null
+  const body = silhouette ? '#c6bcd8' : fish.body
+  const fin = silhouette ? '#aba0c0' : fish.fin
+  const belly = silhouette ? '#d8d0e6' : fish.belly
+  if (fish.kind === 'octo') {
     return (
-      <Modal onClose={onClose} label="Meslekler">
-        <p className="py-8 text-center text-sm font-semibold text-[#8a7a9c]">Yükleniyor… (çevrimdışıysan meslekler çalışmaz)</p>
-        <ToyButton onClick={onClose} className="!py-3">Tamam</ToyButton>
-      </Modal>
+      <svg width={size} height={size * 0.78} viewBox="0 0 120 94" className="mx-auto drop-shadow-sm" aria-hidden>
+        {[24, 42, 60, 78, 96].map((x, i) => (
+          <path key={i} d={`M${x} 54 Q${x + (i - 2) * 5} 78 ${x + (i % 2 ? 7 : -7)} 84`} stroke={fin} strokeWidth="9" strokeLinecap="round" fill="none" />
+        ))}
+        <ellipse cx="60" cy="40" rx="30" ry="26" fill={body} />
+        <ellipse cx="60" cy="46" rx="20" ry="13" fill={belly} opacity="0.55" />
+        {!silhouette && (
+          <>
+            <circle cx="49" cy="39" r="4.5" fill="#3a2d4c" />
+            <circle cx="71" cy="39" r="4.5" fill="#3a2d4c" />
+            <circle cx="47.5" cy="37.5" r="1.6" fill="#fff" />
+            <circle cx="69.5" cy="37.5" r="1.6" fill="#fff" />
+            <path d="M54 49 Q60 54 66 49" stroke="#3a2d4c" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+            {fish.crown && <path d="M47 16 L51 6 L60 12 L69 6 L73 16 Z" fill="#ffd35e" stroke="#e8952c" strokeWidth="2" />}
+          </>
+        )}
+      </svg>
     )
   }
-  if (!job || choosing) {
+  if (fish.kind === 'squid') {
     return (
-      <Modal onClose={onClose} label="Meslek seç">
-        <h2 className="text-2xl font-black text-[#4a3b5c]">{job ? 'Mesleği değiştir' : 'Bir meslek seç'} 💼</h2>
-        <p className="mt-1 text-sm font-semibold text-[#8a7a9c]">
-          {job ? `Değiştirmek ${st.switchCost} 🪙. Her mesleğin seviyesi ayrı tutulur, geri dönünce kaldığın yerden devam edersin.` : 'İlk seçim ücretsiz. Mesleğine göre görevler alırsın, kazanırsın, seviye atlarsın.'}
-        </p>
-        <div className="mt-3 flex flex-col gap-3">
-          {JOB_IDS.map((id) => (
-            <JobCard
-              key={id}
-              job={id}
-              current={id === job}
-              locked={id !== job && lockMsg}
-              cost={job && id !== job ? st.switchCost : 0}
-              onPick={(x) => {
-                onPick(x)
-                setChoosing(false)
-              }}
-            />
-          ))}
-        </div>
-        <ToyButton onClick={() => (job ? setChoosing(false) : onClose())} className="mt-4 !bg-[#e9ddff] !text-[#4a3b5c] !py-3">
-          {job ? 'Vazgeç' : 'Şimdi değil'}
-        </ToyButton>
-      </Modal>
+      <svg width={size} height={size * 0.78} viewBox="0 0 120 94" className="mx-auto drop-shadow-sm" aria-hidden>
+        {[40, 52, 68, 80].map((x, i) => (
+          <path key={i} d={`M${x} 58 Q${x + (i < 2 ? -6 : 6)} 76 ${x + (i < 2 ? -2 : 2)} 85`} stroke={fin} strokeWidth="7" strokeLinecap="round" fill="none" />
+        ))}
+        <path d="M36 28 L60 8 L84 28 Z" fill={fin} />
+        <rect x="38" y="24" width="44" height="40" rx="20" fill={body} />
+        <ellipse cx="60" cy="44" rx="14" ry="11" fill={belly} opacity="0.55" />
+        {!silhouette && (
+          <>
+            <circle cx="50" cy="44" r="4.2" fill="#3a2d4c" />
+            <circle cx="70" cy="44" r="4.2" fill="#3a2d4c" />
+            <circle cx="48.6" cy="42.6" r="1.5" fill="#fff" />
+            <circle cx="68.6" cy="42.6" r="1.5" fill="#fff" />
+          </>
+        )}
+      </svg>
     )
   }
-
-  const qs = st.quests ?? []
-  const doneN = qs.filter((q) => q.done).length
-  const cropItems = Object.entries(st.inv?.crop ?? {})
-  const fishItems = Object.entries(st.inv?.fish ?? {})
-  const worth = (kind, items) => items.reduce((s, [id, n]) => s + unitPrice(kind, id, st).unit * n, 0)
-
   return (
-    <Modal onClose={onClose} label="Meslek">
-      <div className="flex items-center gap-3">
-        <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl shadow-soft" style={{ background: j.color }}>
-          <Em e={j.emoji} size={38} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-xl font-black text-[#4a3b5c]">{j.name}</p>
-          <p className="text-xs font-extrabold" style={{ color: j.deep }}>
-            Seviye {lv.level}{lv.max ? ' · en yüksek' : ''}
-          </p>
-        </div>
-        <button onClick={() => setChoosing(true)} className="rounded-xl bg-[#f6f0ff] px-2.5 py-1.5 text-xs font-extrabold text-[#6b4fc0] active:scale-95">Değiştir</button>
-      </div>
-      <div className="mt-2.5 flex items-center gap-2">
-        <Bar value={lv.into} max={lv.need || 1} tone={j.deep} h="h-3" />
-        <span className="shrink-0 text-[0.6875rem] font-extrabold tabular-nums text-[#8a7a9c]">{lv.max ? 'MAX' : `${lv.into}/${lv.need} XP`}</span>
-      </div>
-      <p className="mt-1.5 text-[0.75rem] font-bold text-[#6f5f82]">
-        {job === 'gardener' && `Satış +%${Math.round((PERK.sell(lv.level) - 1) * 100)} · çifte hasat %${Math.round(PERK.double(lv.level) * 100)}`}
-        {job === 'fisher' && `Satış +%${Math.round((PERK.sell(lv.level) - 1) * 100)} · çekme süresi ${(PERK.window(lv.level) / 1000).toFixed(1)} sn · nadir şansı ×${PERK.luck(lv.level).toFixed(2)}`}
-        {job === 'postman' && `Kargo kapasitesi ${PERK.cap(lv.level)} · kazanç +%${Math.round((PERK.pay(lv.level) - 1) * 100)}`}
-      </p>
-
-      <div className="mt-3 flex gap-2" role="tablist">
-        {[['quests', `✅ Görevler ${doneN}/${qs.length}`], ['bag', '🎒 Çanta'], ['guide', '❓ Rehber']].map(([id, label]) => (
-          <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)} className={`flex-1 rounded-2xl px-2 py-2.5 text-[0.8125rem] font-extrabold transition active:scale-95 ${tab === id ? 'bg-[#fdb252] text-white shadow-soft' : 'bg-[#f6f0ff] text-[#4a3b5c]'}`}>
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {tab === 'quests' && (
-        <ul className="mt-3 flex flex-col gap-2.5">
-          {qs.map((q) => {
-            const t = QUEST_TEMPLATES[job].find((x) => x.id === q.id)
-            return (
-              <li key={q.id} className={`rounded-2xl border-2 px-3 py-2.5 shadow-soft ${q.done ? 'border-[#bfe8cf] bg-[#f1fbf5]' : 'border-white bg-[#fbf7ff]'}`}>
-                <div className="flex items-center gap-2">
-                  <p className="min-w-0 flex-1 text-sm font-extrabold text-[#4a3b5c]">{q.done ? '✅ ' : ''}{t?.text(q.goal)}</p>
-                  <span className="shrink-0 rounded-full bg-[#fff3c8] px-2 py-0.5 text-[0.6875rem] font-black text-[#8a5a00]">+{t?.coins} 🪙</span>
-                </div>
-                <div className="mt-1.5 flex items-center gap-2">
-                  <Bar value={q.n} max={q.goal} tone={q.done ? '#43b97f' : j.deep} />
-                  <span className="shrink-0 text-xs font-extrabold tabular-nums text-[#8a7a9c]">{q.n}/{q.goal}</span>
-                </div>
-              </li>
-            )
-          })}
-          <p className="text-center text-[0.6875rem] font-bold text-[#8a7a9c]">Görevler her gün (Türkiye saatiyle gece yarısı) yenilenir.</p>
-        </ul>
+    <svg width={size} height={size * 0.72} viewBox="0 0 120 86" className="mx-auto drop-shadow-sm" aria-hidden>
+      {/* kuyruk */}
+      <path d="M28 43 L6 23 Q13 43 6 63 Z" fill={fin} />
+      {/* sırt ve alt yüzgeç */}
+      <path d="M54 20 Q68 6 82 22 Z" fill={fin} />
+      <path d="M56 64 Q66 76 76 64 Z" fill={fin} />
+      {/* gövde */}
+      <ellipse cx="68" cy="43" rx="38" ry="24" fill={body} />
+      <ellipse cx="70" cy="52" rx="26" ry="10" fill={belly} opacity="0.65" />
+      {!silhouette && fish.stripe && (
+        <>
+          <rect x="52" y="21" width="9" height="44" rx="4.5" fill={fish.stripe} opacity="0.92" />
+          <rect x="72" y="20" width="8" height="46" rx="4" fill={fish.stripe} opacity="0.92" />
+        </>
       )}
-
-      {tab === 'bag' && (
-        <div className="mt-3 flex flex-col gap-3">
-          {[
-            ['crop', '🧺 Ürünler', cropItems, (id) => CROP_META[id]],
-            ['fish', '🐟 Balıklar', fishItems, (id) => FISH_BY_ID[id]],
-          ].map(([kind, title, items, meta]) => (
-            <div key={kind}>
-              <div className="flex items-center gap-2">
-                <p className="flex-1 text-sm font-black text-[#4a3b5c]">{title}</p>
-                {items.length > 0 && (
-                  <button onClick={() => onSell(kind, 'all')} className="rounded-xl bg-[#fdb252] px-2.5 py-1.5 text-xs font-extrabold text-white active:scale-95">
-                    Hepsini sat · {worth(kind, items)} 🪙
-                  </button>
-                )}
-              </div>
-              {items.length === 0 ? (
-                <p className="mt-1 rounded-2xl bg-[#fbf7ff] p-3 text-center text-xs font-semibold text-[#8a7a9c]">
-                  {kind === 'crop' ? 'Bahçeden hasat ettiğin ürünler burada.' : 'Tuttuğun balıklar burada.'}
-                </p>
-              ) : (
-                <ul className="mt-1.5 flex flex-col gap-1.5">
-                  {items.map(([id, n]) => {
-                    const m = meta(id)
-                    const { unit, mult } = unitPrice(kind, id, st)
-                    const r = RARITY[m?.rar]
-                    return (
-                      <li key={id} className="flex items-center gap-2.5 rounded-2xl bg-[#fbf7ff] px-2.5 py-2 shadow-soft">
-                        <Em e={m?.emoji ?? '❔'} size={30} />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-extrabold text-[#4a3b5c]">
-                            {m?.name} <span className="text-[#8a7a9c]">×{n}</span>
-                          </p>
-                          <p className="text-[0.6875rem] font-bold text-[#8a7a9c]">
-                            {unit} 🪙 / adet{' '}
-                            <span className={mult >= 1.15 ? 'text-[#2f9a6a]' : mult <= 0.9 ? 'text-[#d9604a]' : ''}>{mult >= 1.15 ? '↑ talep yüksek' : mult <= 0.9 ? '↓ düşük' : ''}</span>
-                            {r && kind === 'fish' && <span style={{ color: r.color }}> · {r.name}</span>}
-                          </p>
-                        </div>
-                        <button onClick={() => onSell(kind, id)} className="rounded-xl bg-[#e9ddff] px-2.5 py-1.5 text-xs font-extrabold text-[#4a3b5c] active:scale-95">Sat</button>
-                      </li>
-                    )
-                  })}
-                </ul>
-              )}
-            </div>
-          ))}
-          <p className="text-center text-[0.6875rem] font-bold text-[#8a7a9c]">Pazar fiyatları her gün değişir. Günlük satış kazancının üst sınırı vardır.</p>
-        </div>
+      {!silhouette && (
+        <>
+          <circle cx="88" cy="38" r="5" fill="#ffffff" />
+          <circle cx="89.5" cy="38" r="3" fill="#3a2d4c" />
+          <circle cx="88.5" cy="36.8" r="1.1" fill="#ffffff" />
+          <path d="M97 47 Q102 49 104 46" stroke="#3a2d4c" strokeWidth="2.4" strokeLinecap="round" fill="none" />
+          {fish.crown && <path d="M62 19 L65 10 L72 15 L79 10 L82 19 Z" fill="#fff3c4" stroke="#e8952c" strokeWidth="2" />}
+        </>
       )}
-
-      {tab === 'guide' && <Guide job={job} />}
-
-      <ToyButton onClick={onClose} className="mt-5 !py-3 !text-base">Tamam</ToyButton>
-    </Modal>
+    </svg>
   )
 }
 
-// ---------- küçük kartlar ----------
-function Toast({ children, tone = '#fff3c8', className = '' }) {
-  return <div className={`pointer-events-none animate-pop rounded-3xl border-2 border-white px-4 py-2.5 text-center shadow-soft ${className}`} style={{ background: tone }}>{children}</div>
+/** Su yüzeyinde hafif parlayan balık halkaları + ara sıra zıplayan minik balık. */
+function FishSpotFx({ spot }) {
+  const ring = useRef()
+  const fish = useRef()
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime
+    const p = (t * 0.55) % 1
+    if (ring.current) {
+      ring.current.scale.setScalar(0.5 + p * 1.4)
+      ring.current.material.opacity = (1 - p) * 0.55
+    }
+    if (fish.current) {
+      const jp = (t * 0.42) % 3.2
+      const vis = jp < 0.75
+      fish.current.visible = vis
+      if (vis) {
+        const u = jp / 0.75
+        fish.current.position.set(spot.wx + (u - 0.5) * 0.9, 0.05 + Math.sin(u * Math.PI) * 0.65, spot.wz)
+        fish.current.rotation.z = (0.5 - u) * 1.4
+      }
+    }
+  })
+  return (
+    <group>
+      <mesh ref={ring} position={[spot.wx, 0.08, spot.wz]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.45, 0.62, 24]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.4} depthWrite={false} />
+      </mesh>
+      <mesh ref={fish} position={[spot.wx, 0.1, spot.wz]} visible={false}>
+        <capsuleGeometry args={[0.07, 0.16, 4, 8]} />
+        <meshStandardMaterial color="#ffb48c" roughness={0.35} />
+      </mesh>
+    </group>
+  )
 }
 
-function CatchCard({ res, onDone }) {
+/** Lobideki 3B pastel posta kutusu. */
+function MailboxProp() {
+  return (
+    <group position={[MAILBOX.x, 0, MAILBOX.z]} rotation={[0, -Math.PI / 4, 0]}>
+      <mesh position={[0, 0.5, 0]} castShadow>
+        <cylinderGeometry args={[0.08, 0.1, 1.0, 10]} />
+        <meshStandardMaterial color="#8a7a9c" roughness={0.6} />
+      </mesh>
+      <RoundedBox args={[0.52, 0.42, 0.68]} radius={0.1} smoothness={2} position={[0, 1.12, 0]} castShadow>
+        <meshStandardMaterial color="#f2746b" roughness={0.45} />
+      </RoundedBox>
+      <mesh position={[0, 1.18, 0.35]}>
+        <boxGeometry args={[0.34, 0.06, 0.04]} />
+        <meshStandardMaterial color="#fff8f0" roughness={0.5} />
+      </mesh>
+      {/* sarı posta bayrağı */}
+      <mesh position={[0.28, 1.24, 0.08]}>
+        <boxGeometry args={[0.04, 0.26, 0.14]} />
+        <meshStandardMaterial color="#ffd35e" roughness={0.4} />
+      </mesh>
+    </group>
+  )
+}
+
+/** Aktif posta teslimatında hedef mekânın önünde parlayan halka. */
+function DeliveryBeacon({ target }) {
+  const door = VENUE_DOORS[target]
+  const ref = useRef()
+  useFrame(({ clock }) => {
+    if (!ref.current) return
+    const p = (clock.elapsedTime * 0.9) % 1
+    ref.current.scale.setScalar(0.85 + p * 0.65)
+    ref.current.material.opacity = (1 - p) * 0.7
+  })
+  if (!door) return null
+  return (
+    <mesh ref={ref} position={[door.x, 0.14, door.z]} rotation={[-Math.PI / 2, 0, 0]}>
+      <ringGeometry args={[0.85, 1.15, 28]} />
+      <meshBasicMaterial color="#fdb252" transparent opacity={0.65} depthWrite={false} />
+    </mesh>
+  )
+}
+
+/** Balık tutma mini oyunu: balığın nadirliğine göre hızı artar ve yakalama alanı daralır. */
+function FishingCard({ spot, onCatch, onClose, result }) {
+  const [phase, setPhase] = useState('wait') // wait | bite | done
+  const [hooked, setHooked] = useState(null)
+  const [zoneStart, setZoneStart] = useState(0.35)
+  const [pos, setPos] = useState(0.1)
+  const [missed, setMissed] = useState(false)
+  const dir = useRef(1)
+  const posRef = useRef(0.1)
+
   useEffect(() => {
-    const t = setTimeout(onDone, 3400)
+    if (phase !== 'wait') return undefined
+    const ms = 1200 + Math.random() * 1400
+    const t = setTimeout(() => {
+      const f = pickFish()
+      const maxStart = Math.max(0.12, 0.88 - f.zone)
+      const start = 0.12 + Math.random() * (maxStart - 0.12)
+      setHooked(f)
+      setZoneStart(start)
+      posRef.current = 0.05
+      dir.current = 1
+      setPos(0.05)
+      window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'pop' }))
+      setPhase('bite')
+    }, ms)
     return () => clearTimeout(t)
-  }, [onDone])
-  const f = FISH_BY_ID[res.fish]
-  const r = RARITY[f?.rar] ?? RARITY.common
-  return (
-    <div className="pointer-events-none absolute left-1/2 top-[22%] z-20 w-[min(88vw,19rem)] -translate-x-1/2 animate-pop">
-      <div className={`rounded-[2rem] p-4 text-center ${glass}`} style={{ boxShadow: `0 10px 30px ${r.color}55` }}>
-        <p className="text-[0.6875rem] font-black uppercase tracking-wide" style={{ color: r.color }}>{r.name}{res.quick ? ' · ⚡ çabuk çektin' : ''}</p>
-        <div className="mx-auto mt-1 grid h-20 w-20 place-items-center rounded-full" style={{ background: `${r.color}22` }}>
-          <Em e={f?.emoji ?? '🐟'} size={52} />
-        </div>
-        <p className="mt-1 text-xl font-black text-[#4a3b5c]">{f?.name}</p>
-        <p className="text-xs font-extrabold text-[#8a7a9c]">+{res.xp} XP · ≈ {f?.price} 🪙</p>
-      </div>
-    </div>
-  )
-}
+  }, [phase])
 
-// ---------- ana hook ----------
-export function useJobs(ctx) {
-  const { net, touch, focusRef, home, venue, panel, setPanel } = ctx
-  const { on, send } = net
-  const where = home ? null : venue ? `venue:${venue}` : 'city'
-  const [st, setSt] = useState(null)
-  const [near, setNear] = useState({ spot: null, post: false, deliver: null })
-  const [fish, setFish] = useState({ phase: 'idle' }) // idle | cast | wait | bite
-  const [catchRes, setCatchRes] = useState(null)
-  const [toast, setToast] = useState(null)
-  const [tick, setTick] = useState(0)
-  const stRef = useRef(null)
-  stRef.current = st
-  const fishRef = useRef(fish)
-  fishRef.current = fish
-  const castPos = useRef(null)
-
-  // ----- ağ -----
   useEffect(() => {
-    const showToast = (node, ms = 3000) => {
-      const k = Math.random()
-      setToast({ k, node })
-      setTimeout(() => setToast((t) => (t?.k === k ? null : t)), ms)
-    }
-    const setWorkFor = (m) => {
-      const prevPose = m.id === net.selfId.current ? work.self.current : work.poses.get(m.id)
-      let pose = null
-      if (m.style) {
-        const same = prevPose && prevPose.style === m.style && prevPose.phase === (m.phase ?? null)
-        pose = same && prevPose.fish === m.fish && prevPose.pk === m.pk ? prevPose : mkPose(m.style, m.phase ?? null, { fish: m.fish, pk: m.pk })
+    if (phase !== 'bite' || !hooked) return undefined
+    let raf
+    let last = performance.now()
+    const spd = hooked.speed
+    const loop = (now) => {
+      const dt = Math.min(0.05, (now - last) / 1000)
+      last = now
+      let next = posRef.current + dir.current * dt * spd
+      if (next >= 1) {
+        next = 1
+        dir.current = -1
+      } else if (next <= 0) {
+        next = 0
+        dir.current = 1
       }
-      if (m.id === net.selfId.current) work.self.current = pose
-      else if (pose) work.poses.set(m.id, pose)
-      else work.poses.delete(m.id)
+      posRef.current = next
+      setPos(next)
+      raf = requestAnimationFrame(loop)
     }
-    const offs = [
-      on('welcome', () => {
-        work.poses.clear()
-        work.self.current = null
-        send({ t: 'job_get' })
-        send({ t: 'work_get' })
-      }),
-      on('room', () => {
-        work.poses.clear()
-        setFish({ phase: 'idle' })
-        send({ t: 'work_get' })
-      }),
-      on('works', (m) => {
-        work.poses.clear()
-        for (const w of m.list ?? []) work.poses.set(w.id, mkPose(w.style, w.phase ?? null, { fish: w.fish, pk: w.pk }))
-      }),
-      on('work', setWorkFor),
-      on('job_state', (m) => {
-        setSt(m)
-        work.job = m.job
-        work.parcels = (m.parcels ?? []).map((p) => ({ ...p, name: p.name }))
-        work.emit()
-      }),
-      on('job_level', (m) => {
-        sfx('badge')
-        showToast(
-          <span className="text-sm font-black text-[#7a5b00]">
-            {JOBS[m.job].emoji} {JOBS[m.job].name} · Seviye {m.level}!
-          </span>,
-          3200,
-        )
-      }),
-      on('fish_state', (m) => {
-        if (m.phase === 'cast') {
-          castPos.current = { x: focusRef.current.x, z: focusRef.current.z }
-          setFish({ phase: 'cast', spot: m.spot, t0: performance.now() })
-          setTimeout(() => setFish((f) => (f.phase === 'cast' ? { ...f, phase: 'wait' } : f)), 800)
-          sfx('move')
-        } else if (m.phase === 'bite') {
-          setFish({ phase: 'bite', spot: m.spot, t0: performance.now(), win: m.win })
-          sfx('bell')
-        } else if (m.phase === 'miss') {
-          setFish({ phase: 'idle' })
-          sfx('error')
-          showToast(<span className="text-sm font-black text-[#7a4a4a]">🐟 Balık kaçtı… biraz geç kaldın!</span>, 2200)
-        } else if (m.phase === 'early') {
-          setFish({ phase: 'idle' })
-          sfx('error')
-          showToast(<span className="text-sm font-black text-[#7a4a4a]">🪝 Erken çektin, yem kaçtı. Şamandıra batınca çek!</span>, 2400)
-        } else setFish({ phase: 'idle' })
-      }),
-      on('fish_caught', (m) => {
-        setCatchRes({ ...m, k: Math.random() })
-        sfx(m.rare ? 'badge' : 'quest')
-      }),
-      on('post_done', (m) => {
-        sfx('gift')
-        showToast(
-          <span className="text-sm font-black text-[#7a5b00]">
-            📮 Teslim edildi! +{m.coins} 🪙 {m.express ? '⚡ Ekspres' : ''} {m.bike ? '🚲' : ''}
-          </span>,
-          2800,
-        )
-      }),
-      on('sfx', (m) => sfx(m.n)),
-    ]
-    return () => offs.forEach((off) => off())
-  }, [on, send, net.selfId, focusRef])
+    raf = requestAnimationFrame(loop)
+    return () => cancelAnimationFrame(raf)
+  }, [phase, hooked])
 
-  // ----- yakınlık + kargo süresi -----
-  useEffect(() => {
-    if (where !== 'city') {
-      setNear({ spot: null, post: false, deliver: null })
-      return
+  const pull = useCallback(() => {
+    if (phase !== 'bite' || !hooked) return
+    const ok = posRef.current >= zoneStart && posRef.current <= zoneStart + hooked.zone
+    setPhase('done')
+    if (ok) {
+      setMissed(false)
+      onCatch(spot.id, hooked)
+    } else {
+      setMissed(true)
+      window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'pop' }))
     }
-    const id = setInterval(() => {
-      const f = focusRef.current
-      const spot = FISH_SPOTS.find((s) => Math.hypot(f.x - s.x, f.z - s.z) < s.radius + 0.9) ?? null
-      const post = Math.hypot(f.x - POST_CENTER.x, f.z - POST_CENTER.z) < POST_CENTER.radius
-      let deliver = null
-      for (const p of work.parcels) {
-        const d = VENUE_DOORS[p.to]
-        if (d && Math.hypot(f.x - d.x, f.z - d.z) < PARCEL_DELIVER_R) {
-          deliver = p
-          break
-        }
-      }
-      setNear((o) => (o.spot?.id === spot?.id && o.post === post && o.deliver?.id === deliver?.id ? o : { spot, post, deliver }))
-      // olta atılmışken yerinden ayrılırsan olta toplanır
-      const fs = fishRef.current
-      if (fs.phase !== 'idle' && castPos.current && Math.hypot(f.x - castPos.current.x, f.z - castPos.current.z) > 0.9) {
-        send({ t: 'fish_cancel' })
-        setFish({ phase: 'idle' })
-      }
-    }, 180)
-    return () => clearInterval(id)
-  }, [where, focusRef, send])
-  useEffect(() => {
-    if (!st?.parcels?.length) return
-    const id = setInterval(() => setTick((t) => t + 1), 1000)
-    return () => clearInterval(id)
-  }, [st?.parcels?.length])
-
-  // ----- eylemler -----
-  const job = st?.job ?? null
-  const openJobs = useCallback(() => {
-    send({ t: 'job_get' })
-    setPanel('jobs')
-  }, [send, setPanel])
-  const cast = useCallback(() => {
-    if (!near.spot) return
-    if (job !== 'fisher') return openJobs()
-    send({ t: 'fish_cast', spot: near.spot.id })
-  }, [near.spot, job, send, openJobs])
-  const reel = useCallback(() => send({ t: 'fish_reel' }), [send])
-  const pickup = useCallback(() => (job === 'postman' ? send({ t: 'post_pickup' }) : openJobs()), [job, send, openJobs])
-  const deliver = useCallback(() => near.deliver && send({ t: 'post_deliver', id: near.deliver.id }), [near.deliver, send])
+  }, [phase, hooked, zoneStart, onCatch, spot.id])
 
   useEffect(() => {
     const onKey = (e) => {
-      if (isTyping(e) || e.ctrlKey || e.metaKey || e.altKey || panel) return
-      const k = e.code
-      if (fish.phase === 'bite' && (k === 'KeyE' || k === 'Space')) {
+      if (e.code === 'Space' && phase === 'bite') {
         e.preventDefault()
-        return reel()
+        pull()
+      } else if (e.key === 'Escape') {
+        onClose()
       }
-      if (k !== 'KeyE') return
-      if (near.deliver) return deliver()
-      if (fish.phase === 'idle' && near.spot) return cast()
-      if (near.post) return pickup()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [fish.phase, near, panel, reel, cast, deliver, pickup])
+  }, [phase, pull, onClose])
 
-  // ----- çizim -----
-  const parcels = st?.parcels ?? []
-  const f0 = focusRef.current
-  void tick
-  const chips = parcels.map((p) => {
-    const d = VENUE_DOORS[p.to]
-    const dist = d ? Math.round(Math.hypot(f0.x - d.x, f0.z - d.z)) : 0
-    const left = Math.max(0, Math.ceil((p.exp - Date.now()) / 1000))
-    return { p, dist, left }
-  })
-
-  const prompt = (() => {
-    if (panel || fish.phase !== 'idle') return null
-    if (near.deliver) {
-      const k = PARCEL_KINDS.find((x) => x.id === near.deliver.kind)
-      return <DoorPrompt emoji={k?.emoji ?? '📦'} label={`${near.deliver.name}`} action="Teslim et" touch={touch} raised onGo={deliver} />
-    }
-    if (near.spot)
-      return job === 'fisher' ? (
-        <DoorPrompt emoji="🎣" label="Balıkçı İskelesi" action="Olta at" touch={touch} raised onGo={cast} />
-      ) : (
-        <DoorPrompt emoji="🎣" label="Balık tutmak için Balıkçı ol" action="Meslek seç" touch={touch} raised onGo={openJobs} />
-      )
-    if (near.post)
-      return job === 'postman' ? (
-        <DoorPrompt emoji="📮" label={`Posta Merkezi${parcels.length ? ` · ${parcels.length}/${st.cap}` : ''}`} action="Kargo al" touch={touch} raised onGo={pickup} />
-      ) : (
-        <DoorPrompt emoji="📮" label="Kargo taşımak için Postacı ol" action="Meslek seç" touch={touch} raised onGo={openJobs} />
-      )
-    return null
-  })()
-
-  const fishHud =
-    fish.phase !== 'idle' && !panel ? (
-      <div className={`pointer-events-auto absolute left-1/2 z-10 w-[min(92vw,20rem)] -translate-x-1/2 ${touch ? 'bottom-52' : 'bottom-16'}`}>
-        {fish.phase === 'bite' ? (
-          <button onClick={reel} className="relative w-full animate-pop overflow-hidden rounded-3xl border-b-4 border-[#d9604a] bg-[#ff7a66] px-4 py-4 text-2xl font-black text-white shadow-toy active:translate-y-[3px] active:border-b-[1px]">
-            <span className="relative z-10">ÇEK! {touch ? '' : '(E / Boşluk)'}</span>
-            <span key={fish.t0} className="absolute inset-y-0 left-0 bg-white/30" style={{ width: '100%', animation: `shrink-w ${fish.win ?? 1500}ms linear forwards` }} />
-          </button>
-        ) : (
-          <div className={`flex animate-pop items-center gap-3 rounded-3xl p-3 pl-4 ${glass}`}>
-            <span className="text-2xl" aria-hidden>🪝</span>
-            <p className="min-w-0 flex-1 text-sm font-black text-[#4a3b5c]">
-              {fish.phase === 'cast' ? 'Olta atılıyor…' : 'Şamandıra suda… sabırla bekle'}
-              <span className="ml-1 inline-flex gap-0.5 align-middle">
-                {[0, 1, 2].map((i) => (
-                  <span key={i} className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#7fb9e8]" style={{ animationDelay: `${i * 0.15}s` }} />
-                ))}
-              </span>
-            </p>
-            <button onClick={() => send({ t: 'fish_cancel' })} className="rounded-xl bg-[#f6f0ff] px-3 py-2 text-xs font-extrabold text-[#6b4fc0] active:scale-95">Vazgeç</button>
-          </div>
-        )}
-      </div>
-    ) : null
-
-  const parcelHud =
-    chips.length > 0 && where === 'city' ? (
-      <div className="pointer-events-none absolute left-1/2 top-[4.6rem] z-10 flex max-w-[94vw] -translate-x-1/2 flex-wrap justify-center gap-1.5">
-        {chips.map(({ p, dist, left }) => {
-          const k = PARCEL_KINDS.find((x) => x.id === p.kind)
-          return (
-            <div key={p.id} className={`flex animate-pop items-center gap-1.5 rounded-full py-1 pl-1.5 pr-3 text-xs font-black text-[#4a3b5c] ${glass}`}>
-              <span className="grid h-7 w-7 place-items-center rounded-full bg-[#fff3c8]"><Em e={k?.emoji ?? '📦'} size={20} /></span>
-              <span className="max-w-[8rem] truncate">{p.name}</span>
-              <span className="tabular-nums text-[#8a7a9c]">{dist} m</span>
-              <span className={`tabular-nums ${left > 0 ? 'text-[#d98a1c]' : 'text-[#b5a9c4]'}`}>{left > 0 ? `⚡ ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}` : ''}</span>
-            </div>
-          )
-        })}
-      </div>
-    ) : null
-
-  return {
-    extraButtons: [{ key: 'jobs', icon: 'job', label: 'Meslek', onClick: openJobs }],
-    sceneNodes: <JobsWorld where={where} />,
-    overlays: (
-      <>
-        {prompt}
-        {fishHud}
-        {parcelHud}
-        {catchRes && <CatchCard key={catchRes.k} res={catchRes} onDone={() => setCatchRes(null)} />}
-        {toast && (
-          <div className="pointer-events-none absolute left-1/2 top-[30%] z-20 -translate-x-1/2">
-            <Toast>{toast.node}</Toast>
-          </div>
-        )}
-        {panel === 'jobs' && (
-          <JobsPanel
-            st={st}
-            onClose={() => setPanel(null)}
-            onPick={(id) => send({ t: 'job_choose', id })}
-            onSell={(kind, id) => send({ t: 'job_sell', kind, id })}
-          />
-        )}
-      </>
-    ),
+  const retry = () => {
+    setMissed(false)
+    setHooked(null)
+    posRef.current = 0.05
+    dir.current = 1
+    setPhase('wait')
   }
+
+  const shownFish = result ? (FISH_BY_ID[result.id] ?? hooked ?? result) : hooked
+
+  return (
+    <div className={`pointer-events-auto absolute left-1/2 top-24 z-30 w-[min(92vw,22.5rem)] -translate-x-1/2 animate-pop rounded-[2rem] p-4 text-center ${glass}`} role="dialog" aria-label="Balık Tutma">
+      <div className="flex items-center justify-between">
+        <span className="inline-flex items-center gap-1.5 text-sm font-black text-[#4a3b5c]">
+          <Ico name="fish" size={18} /> Balıkçılık
+        </span>
+        <button type="button" onClick={onClose} aria-label="Kapat" className="grid h-7 w-7 place-items-center rounded-full bg-[#f6f0ff] text-xs font-black text-[#8a7a9c]">
+          ✕
+        </button>
+      </div>
+
+      {phase === 'wait' && (
+        <div className="mt-3 py-3">
+          <div className="mx-auto grid h-10 w-10 animate-bounce place-items-center rounded-full bg-[#dff3ff]">
+            <Ico name="fish" size={22} />
+          </div>
+          <p className="mt-2 text-sm font-extrabold text-[#4a3b5c]">Olta suda, balık bekleniyor…</p>
+          <p className="text-xs font-semibold text-[#8a7a9c]">Nadir balıklar daha hızlı gelir!</p>
+        </div>
+      )}
+
+      {phase === 'bite' && hooked && (
+        <div className="mt-2">
+          <div className="mb-1 flex items-center justify-center gap-2">
+            <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-black ${hooked.badge}`}>{hooked.rarity}</span>
+            <p className="text-sm font-black text-[#e8952c]">Balık vurdu! Şimdi çek!</p>
+          </div>
+          <FishArt fish={hooked} silhouette size={68} />
+          <div className="relative mt-2 h-7 overflow-hidden rounded-full bg-[#eef4ff] ring-2 ring-white">
+            <div
+              className="absolute inset-y-0 rounded-full bg-[#ffd35e]/85"
+              style={{ left: `${zoneStart * 100}%`, width: `${hooked.zone * 100}%` }}
+            />
+            <div className="absolute top-1/2 h-5 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#4a3b5c] shadow" style={{ left: `${pos * 100}%` }} />
+          </div>
+          <button
+            type="button"
+            onClick={pull}
+            className="mt-3 w-full rounded-2xl border-b-4 border-[#d98a1c] bg-[#fdb252] py-2.5 text-sm font-black text-white active:translate-y-[2px] active:border-b-2"
+          >
+            Çek! (Boşluk)
+          </button>
+        </div>
+      )}
+
+      {phase === 'done' && (
+        <div className="mt-2">
+          {missed ? (
+            <>
+              <FishArt fish={hooked} silhouette size={72} />
+              <p className="mt-1 text-base font-black text-[#8a7a9c]">{hooked?.rarity === 'Efsanevi' ? 'Efsanevi balık kaçtı!' : 'Kaçtı! Sarı alanda yakala.'}</p>
+            </>
+          ) : result ? (
+            <>
+              <FishArt fish={shownFish} size={96} />
+              <div className="mt-1 flex items-center justify-center gap-1.5">
+                {shownFish?.badge && <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${shownFish.badge}`}>{shownFish.rarity}</span>}
+                <p className="text-lg font-black text-[#4a3b5c]">{result.name}!</p>
+              </div>
+              <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-[#fff3c4] px-3 py-0.5 text-xs font-black text-[#8a5a00]">
+                <Ico name="coins" size={14} /> +{result.coins} altın
+              </p>
+            </>
+          ) : (
+            <p className="py-4 text-sm font-bold text-[#8a7a9c]">Çekiliyor…</p>
+          )}
+          <div className="mt-3 flex gap-2">
+            <button type="button" onClick={retry} className="flex-1 rounded-2xl border-b-4 border-[#3282b8] bg-[#5fc0ea] py-2 text-xs font-extrabold text-white active:translate-y-[2px]">
+              Tekrar At
+            </button>
+            <button type="button" onClick={onClose} className="flex-1 rounded-2xl border-b-4 border-[#c9bde6] bg-[#ece4ff] py-2 text-xs font-extrabold text-[#6b4fc0] active:translate-y-[2px]">
+              Bitir
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
+export function useJobs({ net, focusRef, home, venue, atDoor, touch, say, panel }) {
+  const { on, send } = net
+  const inCity = !home && !venue
+  const [nearFish, setNearFish] = useState(null)
+  const [nearMailbox, setNearMailbox] = useState(false)
+  const [fishing, setFishing] = useState(null) // spot | null
+  const [fishRes, setFishRes] = useState(null)
+  const [postTarget, setPostTarget] = useState(null) // venueId | null
+  const [postDist, setPostDist] = useState(0)
+  const [nudge, setNudge] = useState(false)
+  const nudgedOnce = useRef(false)
+  const fishedOnce = useRef(false)
+
+  // Nazik, zorlamayan sahil balıkçılık daveti (oturumda en fazla 1 kez)
+  useEffect(() => {
+    if (!inCity || nudgedOnce.current || fishedOnce.current) return undefined
+    const t = setTimeout(() => {
+      if (nudgedOnce.current || fishedOnce.current) return
+      const f = focusRef.current
+      if (f.z > 30) return // zaten plajda
+      nudgedOnce.current = true
+      setNudge(true)
+    }, 22000)
+    return () => clearTimeout(t)
+  }, [inCity, focusRef])
+
+  useEffect(() => {
+    const offs = [
+      on('job_fish_res', (m) => {
+        if (!m.fish) return
+        setFishRes(m.fish)
+        window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: m.fish.coins >= 14 ? 'badge' : 'collect' }))
+        say(`Balıkçılık: ${m.fish.name} yakaladın (+${m.fish.coins} altın)`)
+      }),
+      on('job_post_state', (m) => {
+        if (!m.target) return
+        setPostTarget(m.target)
+        const v = VENUE_BY_ID[m.target]
+        window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'pop' }))
+        say(`Posta paketi alındı: ${v?.name ?? m.target} kapısına teslim et.`)
+      }),
+      on('job_post_done', (m) => {
+        const v = VENUE_BY_ID[m.target]
+        setPostTarget(null)
+        window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'quest' }))
+        say(`Posta teslim edildi (${v?.name ?? m.target}): +${m.coins ?? 12} altın!`)
+      }),
+    ]
+    return () => offs.forEach((off) => off())
+  }, [on, say])
+
+  useEffect(() => {
+    if (!inCity) {
+      setNearFish(null)
+      setNearMailbox(false)
+      setFishing(null)
+      return undefined
+    }
+    const id = setInterval(() => {
+      const f = focusRef.current
+      const spot = fishSpotAt(f.x, f.z)
+      setNearFish(spot)
+      // sahilden/göletten uzaklaşınca balık tutma penceresini otomatik kapat
+      if (!spot) {
+        setFishing((cur) => {
+          if (cur) say('Kıyıdan uzaklaştığın için olta toplandı.')
+          return null
+        })
+      }
+      setNearMailbox(Math.hypot(f.x - MAILBOX.x, f.z - MAILBOX.z) < MAILBOX.r)
+      if (postTarget && VENUE_DOORS[postTarget]) {
+        const d = VENUE_DOORS[postTarget]
+        setPostDist(Math.round(Math.hypot(f.x - d.x, f.z - d.z)))
+      }
+    }, 250)
+    return () => clearInterval(id)
+  }, [inCity, focusRef, postTarget])
+
+  const startFishing = useCallback((spot) => {
+    if (!spot) return
+    fishedOnce.current = true
+    setNudge(false)
+    setFishRes(null)
+    setFishing(spot)
+  }, [])
+
+  const onCatch = useCallback(
+    (spotId, hookedFish) => {
+      if (!send({ t: 'job_fish', spot: spotId, fishId: hookedFish?.id })) {
+        // çevrimdışı modda yerel balık ödülü
+        const pick = hookedFish ?? pickFish()
+        setFishRes(pick)
+        window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: pick.coins >= 15 ? 'badge' : 'collect' }))
+        say(`Balıkçılık: ${pick.name} yakaladın (+${pick.coins} altın)`)
+      }
+    },
+    [send, say],
+  )
+
+  const startPost = useCallback(() => {
+    if (!send({ t: 'job_post_start' })) {
+      const target = POST_VENUES[Math.floor(Math.random() * POST_VENUES.length)]
+      setPostTarget(target)
+      const v = VENUE_BY_ID[target]
+      window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'pop' }))
+      say(`Posta paketi alındı: ${v?.name ?? target} kapısına teslim et.`)
+    }
+  }, [send, say])
+
+  const deliverPost = useCallback(() => {
+    if (!postTarget) return
+    if (!send({ t: 'job_post_deliver' })) {
+      const v = VENUE_BY_ID[postTarget]
+      setPostTarget(null)
+      window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'quest' }))
+      say(`Posta teslim edildi (${v?.name ?? postTarget}): +12 altın!`)
+    }
+  }, [postTarget, send, say])
+
+  const nearDeliver = Boolean(inCity && postTarget && VENUE_DOORS[postTarget] && postDist <= 4)
+
+  const goPier = () => {
+    setNudge(false)
+    window.dispatchEvent(new CustomEvent('situapp:tp', { detail: 'beach' }))
+    focusRef.current.teleport = [0, 52.5, 0]
+  }
+
+  // E tuşu: teslimat > balık tutma > posta kutusu (kapı önünde ve pencere açıkken devre dışı)
+  const actRef = useRef(null)
+  useEffect(() => {
+    actRef.current = () => {
+      if (!inCity || panel || fishing) return
+      if (nearDeliver) return deliverPost()
+      if (atDoor) return
+      if (nearFish) return startFishing(nearFish)
+      if (nearMailbox && !postTarget) return startPost()
+    }
+  })
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.code !== 'KeyE' && e.key !== 'e' && e.key !== 'E') || e.ctrlKey || e.metaKey || e.altKey) return
+      const typing = e.target instanceof HTMLElement && ['INPUT', 'TEXTAREA'].includes(e.target.tagName)
+      if (typing) return
+      actRef.current?.()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  const sceneNodes = inCity ? (
+    <>
+      {FISH_SPOTS.map((s) => (
+        <FishSpotFx key={s.id} spot={s} />
+      ))}
+      <MailboxProp />
+      {postTarget && <DeliveryBeacon target={postTarget} />}
+    </>
+  ) : null
+
+  const targetVenue = postTarget ? VENUE_BY_ID[postTarget] : null
+
+  const overlays = (
+    <>
+      {/* Aktif posta teslimatı göstergesi (istenirse tek tıkla bırakılır) */}
+      {inCity && targetVenue && (
+        <div className={`pointer-events-auto absolute left-1/2 top-16 z-20 flex -translate-x-1/2 items-center gap-2.5 rounded-full px-4 py-1.5 text-xs font-extrabold text-[#4a3b5c] ${glass}`}>
+          <Ico name="parcel" size={16} />
+          <span>Teslimat: <b>{targetVenue.name}</b> · {postDist} m</span>
+          <button type="button" onClick={() => setPostTarget(null)} className="rounded-full bg-[#f6f0ff] px-2 py-0.5 text-[11px] font-black text-[#8a7a9c] hover:bg-[#ffedd6]">
+            Bırak
+          </button>
+        </div>
+      )}
+
+      {/* Nazik, zorlamayan sahil balıkçılık daveti */}
+      {inCity && nudge && !panel && !fishing && (
+        <div className={`pointer-events-auto absolute right-3 bottom-24 z-20 flex w-[min(92vw,19.5rem)] animate-pop flex-col gap-2 rounded-3xl p-3.5 ${glass}`}>
+          <div className="flex items-start gap-2.5">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-[#dff3ff]">
+              <Ico name="fish" size={20} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-black text-[#4a3b5c]">Sahilde balıklar zıplıyor</p>
+              <p className="text-[11px] font-semibold text-[#8a7a9c]">İstersen plaj iskelesine uğrayıp birkaç olta atabilirsin.</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={goPier} className="flex-1 rounded-xl border-b-2 border-[#3282b8] bg-[#5fc0ea] py-1.5 text-xs font-extrabold text-white active:translate-y-[1px]">
+              İskeleye Git
+            </button>
+            <button type="button" onClick={() => setNudge(false)} className="rounded-xl bg-[#f6f0ff] px-3 py-1.5 text-xs font-extrabold text-[#7c6d91]">
+              Şimdi değil
+            </button>
+          </div>
+        </div>
+      )}
+
+      {inCity && nearDeliver && !panel && !fishing && (
+        <DoorPrompt label={`Paket Teslim · ${targetVenue?.name ?? ''}`} action="Teslim Et" touch={touch} raised onGo={deliverPost} />
+      )}
+      {inCity && !nearDeliver && !atDoor && nearFish && !panel && !fishing && (
+        <DoorPrompt label={nearFish.label} action="Olta At" touch={touch} raised onGo={() => startFishing(nearFish)} />
+      )}
+      {inCity && !nearDeliver && !atDoor && !nearFish && nearMailbox && !postTarget && !panel && !fishing && (
+        <DoorPrompt label="Lobi Posta Kutusu" action="Paket Al" touch={touch} raised onGo={startPost} />
+      )}
+
+      {fishing && <FishingCard spot={fishing} result={fishRes} onCatch={onCatch} onClose={() => setFishing(null)} />}
+    </>
+  )
+
+  return { sceneNodes, overlays }
+}

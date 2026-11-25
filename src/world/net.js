@@ -209,9 +209,15 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
             }
             break
           }
-          case 'react':
-            reactions.current.set(m.id, { e: m.e, key: `${m.id}-${Date.now()}-${Math.random()}`, until: Date.now() + REACT_MS })
+          case 'react': {
+            const now = Date.now()
+            const list = (reactions.current.get(m.id) ?? []).filter((r) => r.until > now)
+            // yerel iyimser eklemenin sunucu yankısını yineleme
+            if (m.id === selfId.current && list.some((r) => r.local && r.e === m.e && now - r.ts < 900)) break
+            list.push({ e: m.e, key: `${m.id}-${now}-${Math.random()}`, until: now + REACT_MS, ts: now })
+            reactions.current.set(m.id, list.slice(-3))
             break
+          }
           case 'whisper':
             onChatRef.current?.({ id: m.id, name: m.name, text: m.text, ts: m.ts, to: m.to, toName: m.toName, whisper: true, self: m.id === selfId.current })
             break
@@ -326,10 +332,12 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
   }, [])
   const sendReact = useCallback(
     (e) => {
-      if (send({ t: 'react', e })) return true
-      // çevrimdışı (tek başına) modda da kendi başının üstünde emoji uçur
+      const now = Date.now()
       const id = selfId.current ?? 'self'
-      reactions.current.set(id, { e, key: `${id}-${Date.now()}-${Math.random()}`, until: Date.now() + REACT_MS })
+      const list = (reactions.current.get(id) ?? []).filter((r) => r.until > now)
+      list.push({ e, key: `${id}-${now}-${Math.random()}`, until: now + REACT_MS, ts: now, local: true })
+      reactions.current.set(id, list.slice(-3))
+      send({ t: 'react', e })
       return true
     },
     [send],

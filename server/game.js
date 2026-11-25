@@ -71,7 +71,7 @@
 import { WebSocketServer } from 'ws'
 import crypto from 'node:crypto'
 import * as guardLib from './guard.js'
-import { PLAY_BOUNDS, ZONES } from '../src/world/layout.js'
+import { PIER, PLAY_BOUNDS, ZONES } from '../src/world/layout.js'
 import { getHome, getTier, homeExists, saveItems, setOpen } from './homes.js'
 import { moderate } from './profanity.js'
 import { FEATURE_FACTORIES } from './features/index.js'
@@ -394,7 +394,8 @@ export function attachGameServer(httpServer) {
         // mesafe bütçesi (token bucket): zamanla MAX_SPEED m/sn birikir (en çok 7 m); her hareket bütçeden düşer. Ortalama hız sınırı böyle zorlanır
         me.budget = Math.min(7, (me.budget ?? 7) + (MAX_SPEED * Math.min(3000, nowMs - vp.t)) / 1000)
         const free = nowMs < (me.graceUntil ?? 0)
-        const outside = me.room === 'city' && (mx < PLAY_BOUNDS.x0 - 2 || mx > PLAY_BOUNDS.x1 + 2 || mz < PLAY_BOUNDS.z0 - 2 || mz > PLAY_BOUNDS.z1 + 2)
+        const onPier = Math.abs(mx - PIER.x) <= PIER.hw + 1.2 && mz >= PIER.z0 - 1 && mz <= PIER.z1 + 1.5
+        const outside = me.room === 'city' && !onPier && (mx < PLAY_BOUNDS.x0 - 2 || mx > PLAY_BOUNDS.x1 + 2 || mz < PLAY_BOUNDS.z0 - 2 || mz > PLAY_BOUNDS.z1 + 2)
         if (free || first) me.budget = 7
         else if (jump > me.budget || outside) {
           guard.strike(outside ? 'sınır dışı konum' : `hız ihlali (${jump.toFixed(1)} m)`, 2, who())
@@ -448,7 +449,7 @@ export function attachGameServer(httpServer) {
         emitEvent(me, 'invite', 1, target)
       } else if (msg.t === 'react') {
         const now = Date.now()
-        if (!REACTIONS.has(msg.e) || now - (me.lastReact ?? 0) < 500) return
+        if (!REACTIONS.has(msg.e) || now - (me.lastReact ?? 0) < 200) return
         me.lastReact = now
         broadcast({ t: 'react', id: me.id, e: msg.e }, undefined, me.room, me)
         emitEvent(me, 'react')

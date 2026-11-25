@@ -1,5 +1,5 @@
 // PvP: eşleşme düğmesi (sol sütun), bekleyenler penceresi, üç düello. Sunucu: server/features/pvp.js.
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Modal } from '../Hud'
 
 const GAMES = {

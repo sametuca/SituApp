@@ -2,7 +2,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { MathUtils, Vector3 } from 'three'
 import AvatarRig from './AvatarRig'
-import { resolveCollisions } from './layout'
+import { groundY, resolveCollisions } from './layout'
 import { together } from './features/togetherStore'
 import { work } from './features/jobStore'
 import { playerPos } from './cull'
@@ -27,7 +27,7 @@ const isTyping = (e) => e.target instanceof HTMLElement && (e.target.tagName ===
  * focusRef.current = { x, z, ry, anim, teleport } paylaşılan durumdur (HUD, güneş ışığı, minimap okur).
  * focusRef.current.teleport = [x, z, ry?] atanırsa bir sonraki karede oyuncu oraya ışınlanır.
  */
-export default function LocalPlayer({ slug, start, focusRef, controlsRef, joystickRef, onMove, collide = resolveCollisions, camOffset = [4.2, 8], children }) {
+export default function LocalPlayer({ slug, start, focusRef, controlsRef, joystickRef, onMove, collide = resolveCollisions, camOffset = [4.2, 8], locked = false, children }) {
   const camera = useThree((s) => s.camera)
   const group = useRef()
   const keys = useRef({})
@@ -111,7 +111,7 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
       analog = Math.max(0.5, Math.min(1, mag))
       running = mag > 0.85
     }
-    let moving = Boolean(fwdIn || rightIn)
+    let moving = !locked && Boolean(fwdIn || rightIn)
 
     // oturuyor / dans ediyor: hareket girdisi duruşu bitirir (sunucuya haber verilir), aksi halde konum kilitli
     if (together.self.current && moving) together.onBreak?.(true)
@@ -166,6 +166,9 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
       animRef.current = next
       setAnim(next === 'ride' ? 'idle' : next) // bisiklette klip idle, duruş procedural
     }
+    const targetY = groundY(g.position.x, g.position.z)
+    g.position.y = MathUtils.lerp(g.position.y, targetY, Math.min(1, dt * 16))
+    controlsRef.current?.target.set(g.position.x, g.position.y + 0.8, g.position.z)
     f.x = g.position.x
     f.z = g.position.z
     playerPos.x = f.x

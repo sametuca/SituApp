@@ -8,6 +8,18 @@ const API = process.env.API_PORT || 3001
 
 export default defineConfig({
   plugins: [emoji(), react(), tailwindcss()],
+  build: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            { name: 'three-vendor', test: /node_modules[\\/]three/ },
+            { name: 'r3f-vendor', test: /node_modules[\\/]@react-three/ },
+          ],
+        },
+      },
+    },
+  },
   server: {
     proxy: {
       // çok oyunculu WebSocket ve API (npm run server → :3001, ya da API_PORT)

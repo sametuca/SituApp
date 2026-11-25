@@ -6,7 +6,7 @@ export const REACTIONS = ['❤️', '😘', '😍', '🥰', '😂', '😳', '�
 /** Alt beceri çubuğu (Skill 1-4): her biri 5 sn bekleme süreli hızlı ifade/eylem. */
 export const SKILLS = [
   { id: 'wave', key: '1', emoji: '👋', label: 'Selam', sfx: 'pop' },
-  { id: 'dance', key: '2', emoji: '💃', label: 'Dans', sfx: 'dance', pose: 'dance' },
+  { id: 'dance', key: '2', emoji: '💃', label: 'Dans', sfx: 'dance', pose: 'dance', dur: 2600 },
   { id: 'heart', key: '3', emoji: '❤️', label: 'Kalp', sfx: 'heart' },
   { id: 'party', key: '4', emoji: '🎉', label: 'Kutla', sfx: 'collect' },
 ]

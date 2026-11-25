@@ -105,9 +105,9 @@ export function EditToggle({ onClick, touch }) {
   return (
     <button
       onClick={onClick}
-      className={`absolute right-3 z-10 flex items-center gap-2 rounded-full px-5 py-2.5 text-base font-extrabold text-[#4a3b5c] transition hover:bg-white ${glass} ${touch ? 'top-[4.5rem]' : 'top-[4.5rem]'}`}
+      className={`absolute right-3 z-10 flex items-center gap-2 rounded-full px-5 py-2.5 text-base font-extrabold text-[#4a3b5c] transition hover:bg-white ${glass} ${touch ? 'top-[5rem]' : 'top-[5rem]'}`}
     >
-      <Ico name="sofa" size={24} /> Döşe
+      <Ico name="sofa" size={26} /> Döşe
     </button>
   )
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Modal } from '../Hud'
 import { PhotoSection } from './photoUpload'
+import { Ico, TagIcon } from '../../components/Icon'
 
 const NUDGE_KEY = 'situapp_profile_nudge'
 const MAX_TAGS = 6
@@ -10,17 +11,19 @@ const isEmpty = (p) => !p || (!p.bio && !p.age && !p.birthDate && !p.city && !p.
 
 function SocialValue({ icon, value, locked }) {
   return (
-    <p className="truncate">
-      {icon}{' '}
-      {value ? (
-        `@${value}`
-      ) : locked ? (
-        <span title="Sadece arkadaşlara açık" className="font-bold text-[#8a7a9c]">
-          🔒 Sadece arkadaşlar
-        </span>
-      ) : (
-        <span className="font-semibold text-[#8a7a9c]/75">—</span>
-      )}
+    <p className="flex items-center gap-1.5 truncate">
+      <Ico name={icon} size={14} />
+      <span className="truncate">
+        {value ? (
+          `@${value}`
+        ) : locked ? (
+          <span title="Sadece arkadaşlara açık" className="inline-flex items-center gap-1 font-bold text-[#8a7a9c]">
+            <Ico name="lock" size={12} /> Sadece arkadaşlar
+          </span>
+        ) : (
+          <span className="font-semibold text-[#8a7a9c]/75">—</span>
+        )}
+      </span>
     </p>
   )
 }
@@ -58,12 +61,12 @@ const safeStore = {
 }
 
 function Chip({ tag, on, common, onClick, small }) {
-  const cls = `inline-flex items-center gap-1 rounded-full border-2 font-extrabold transition ${small ? 'px-2 py-0.5 text-[0.6875rem]' : 'px-3 py-1.5 text-sm'} ${
+  const cls = `inline-flex items-center gap-1.5 rounded-full border-2 font-extrabold transition ${small ? 'px-2.5 py-0.5 text-[11px]' : 'px-3 py-1.5 text-sm'} ${
     on ? 'border-[#fdb252] bg-[#ffead0] text-[#926021]' : common ? 'border-[#ffb703] bg-[#fff3c4] text-[#8a5a00]' : 'border-white bg-[#f6f0ff] text-[#5b4a70]'
   }`
   const body = (
     <>
-      <span>{tag.emoji}</span>
+      <TagIcon id={tag.id} label={tag.label} size={small ? 13 : 15} />
       {tag.label}
     </>
   )
@@ -94,23 +97,29 @@ function ProfileCard({ peer, profile, mine, catalog, request, onIce }) {
       {loading ? (
         <p className="text-xs font-bold text-[#8a7a9c]">Profil yükleniyor…</p>
       ) : !has ? (
-        <div className="grid grid-cols-2 gap-1.5 text-[0.6875rem] font-bold text-[#8a7a9c]">
-          <p>🎂 Doğum: <span className="font-semibold opacity-70">Belirtilmedi</span></p>
-          <p>📍 Şehir: <span className="font-semibold opacity-70">Belirtilmedi</span></p>
-          <p>📸 Instagram: <span className="font-semibold opacity-70">—</span></p>
-          <p>𝕏 X: <span className="font-semibold opacity-70">—</span></p>
+        <div className="grid grid-cols-2 gap-1.5 text-[11px] font-bold text-[#8a7a9c]">
+          <p className="flex items-center gap-1.5"><Ico name="cake" size={14} /> Doğum: <span className="font-semibold opacity-70">Belirtilmedi</span></p>
+          <p className="flex items-center gap-1.5"><Ico name="pin" size={14} /> Şehir: <span className="font-semibold opacity-70">Belirtilmedi</span></p>
+          <p className="flex items-center gap-1.5"><Ico name="instagram" size={14} /> Instagram: <span className="font-semibold opacity-70">—</span></p>
+          <p className="flex items-center gap-1.5"><Ico name="x" size={14} /> X: <span className="font-semibold opacity-70">—</span></p>
         </div>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-1.5 text-xs font-extrabold text-[#6b4fc0]">
-            <p className="truncate">
-              🎂 {profile.birthDate ? `${fmtBirth(profile.birthDate)}${profile.age ? ` (${profile.age})` : ''}` : profile.age ? `${profile.age} yaş` : <span className="font-semibold text-[#8a7a9c]/75">Belirtilmedi</span>}
+            <p className="flex items-center gap-1.5 truncate">
+              <Ico name="cake" size={14} />
+              <span className="truncate">
+                {profile.birthDate ? `${fmtBirth(profile.birthDate)}${profile.age ? ` (${profile.age})` : ''}` : profile.age ? `${profile.age} yaş` : <span className="font-semibold text-[#8a7a9c]/75">Belirtilmedi</span>}
+              </span>
             </p>
-            <p className="truncate">
-              📍 {profile.city ? profile.city : <span className="font-semibold text-[#8a7a9c]/75">Belirtilmedi</span>}
+            <p className="flex items-center gap-1.5 truncate">
+              <Ico name="pin" size={14} />
+              <span className="truncate">
+                {profile.city ? profile.city : <span className="font-semibold text-[#8a7a9c]/75">Belirtilmedi</span>}
+              </span>
             </p>
-            <SocialValue icon="📸" value={profile.instagram} locked={profile.instagramLocked} />
-            <SocialValue icon="𝕏" value={profile.x} locked={profile.xLocked} />
+            <SocialValue icon="instagram" value={profile.instagram} locked={profile.instagramLocked} />
+            <SocialValue icon="x" value={profile.x} locked={profile.xLocked} />
           </div>
           {profile.bio && <p className="text-sm font-semibold italic text-[#4a3b5c]">“{profile.bio}”</p>}
           {tags.length > 0 && (
@@ -121,17 +130,17 @@ function ProfileCard({ peer, profile, mine, catalog, request, onIce }) {
             </div>
           )}
           {common.length > 0 && (
-            <p className="text-xs font-extrabold text-[#b07a00]">
-              ✨ {common.length} ortak ilgi: {common.map((t) => t.emoji).join(' ')}
+            <p className="flex items-center gap-1 text-xs font-extrabold text-[#b07a00]">
+              <Ico name="sparkles" size={14} /> {common.length} ortak ilgi: {common.map((t) => t.label).join(', ')}
             </p>
           )}
         </>
       )}
       <button
         onClick={onIce}
-        className="rounded-2xl border-b-4 border-[#5fb0d8] bg-[#9bdcf7] py-2 text-sm font-extrabold text-[#1f5d7a] active:translate-y-[2px] active:border-b-2"
+        className="flex items-center justify-center gap-1.5 rounded-2xl border-b-4 border-[#5fb0d8] bg-[#9bdcf7] py-2 text-sm font-extrabold text-[#1f5d7a] active:translate-y-[2px] active:border-b-2"
       >
-        🧊 Buz kırıcı
+        <Ico name="ice" size={16} color="#1f5d7a" /> Buz kırıcı
       </button>
     </div>
   )
@@ -152,7 +161,7 @@ function ProfileEditor({ initial, catalog, onSave, onClose, net, photoEnabled, p
 
   return (
     <Modal onClose={onClose} label="Profilim">
-      <h2 className="text-2xl font-black text-[#4a3b5c]">Profilim 💗</h2>
+      <h2 className="flex items-center gap-2 text-2xl font-black text-[#4a3b5c]"><Ico name="user" size={26} /> Profilim</h2>
       <div className="mt-3">
         <PhotoSection net={net} enabled={photoEnabled} privacy={privacy} setPrivacy={setPrivacy} />
       </div>
@@ -177,25 +186,25 @@ function ProfileEditor({ initial, catalog, onSave, onClose, net, photoEnabled, p
         <label className="flex flex-col gap-1">
           <span className="text-sm font-black text-[#4a3b5c]">Hakkında</span>
           <textarea value={bio} onChange={(e) => setBio(e.target.value)} maxLength={120} rows={2} placeholder="Kendinden kısaca bahset…" className={`${field} resize-none`} />
-          <span className="self-end text-[0.6875rem] font-bold text-[#8a7a9c]">{bio.length}/120</span>
+          <span className="self-end text-[11px] font-bold text-[#8a7a9c]">{bio.length}/120</span>
         </label>
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1">
             <span className="flex items-center justify-between text-sm font-black text-[#4a3b5c]">
-              <span>🎂 Doğum Tarihi</span>
-              {ageNum !== null && !ageBad && <span className="rounded-full bg-[#efe6ff] px-2 py-0.5 text-[0.625rem] text-[#6b4fc0]">{ageNum} yaş</span>}
+              <span className="inline-flex items-center gap-1.5"><Ico name="cake" size={16} /> Doğum Tarihi</span>
+              {ageNum !== null && !ageBad && <span className="rounded-full bg-[#efe6ff] px-2 py-0.5 text-[10px] text-[#6b4fc0]">{ageNum} yaş</span>}
             </span>
             <input type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} aria-invalid={ageBad} className={field} />
-            {ageBad && <span className="text-[0.6875rem] font-bold text-rose-400">18–99 yaş arasında olmalı.</span>}
+            {ageBad && <span className="text-[11px] font-bold text-rose-400">18–99 yaş arasında olmalı.</span>}
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-black text-[#4a3b5c]">📍 Şehir</span>
+            <span className="inline-flex items-center gap-1.5 text-sm font-black text-[#4a3b5c]"><Ico name="pin" size={16} /> Şehir</span>
             <input value={city} onChange={(e) => setCity(e.target.value)} maxLength={20} placeholder="İstanbul" className={field} />
           </label>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-black text-[#4a3b5c]">📸 Instagram</span>
+            <span className="inline-flex items-center gap-1.5 text-sm font-black text-[#4a3b5c]"><Ico name="instagram" size={16} /> Instagram</span>
             <input value={instagram} onChange={(e) => setInstagram(e.target.value.replace(/\s/g, ''))} maxLength={30} placeholder="@kullaniciadi" className={field} />
           </label>
           <label className="flex flex-col gap-1">
@@ -393,7 +402,7 @@ export function useProfile({ net, say, panel, setPanel, home }) {
               <p className="text-sm font-extrabold text-[#4a3b5c]">
                 🧊 {a.name} şunu seçti: <span className="text-[#fda533]">{a.choice}</span>
               </p>
-              <p className="text-[0.6875rem] font-semibold text-[#8a7a9c]">
+              <p className="text-[11px] font-semibold text-[#8a7a9c]">
                 {a.a} · {a.b}
               </p>
             </div>

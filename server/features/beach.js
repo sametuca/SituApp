@@ -11,7 +11,11 @@ const CYCLE_MS = Number(process.env.SITUAPP_MEETUP_CYCLE_MS) || 30 * 60 * 1000
 const ANNOUNCE_MS = Math.min(3 * 60 * 1000, CYCLE_MS / 3)
 const ACTIVE_MS = Math.min(3 * 60 * 1000, CYCLE_MS / 4)
 const NET = { x: 14.5, z: 42, r: 5 } // voleybol filesi (layout.js volleyball prop'u)
-const CASTLE = { x: -3.5, z: 46, r: 4 }
+const CASTLES = [
+  { x: -7.8, z: 44.6, r: 4.5 },
+  { x: 8.4, z: 45.2, r: 4.5 },
+]
+const nearCastle = (p) => p.room === 'city' && CASTLES.some((c) => Math.hypot(p.x - c.x, p.z - c.z) <= c.r)
 const WIN_SCORE = 5
 const HIT_WINDOW = 420 // ms
 const TURN_MS = [1700, 1500, 1350, 1200, 1100]
@@ -181,7 +185,7 @@ export default function beach(ctx) {
         vbSend(m)
       },
       sc_start(me) {
-        if (!near(me, CASTLE) || castles.has(me.id)) return
+        if (!nearCastle(me) || castles.has(me.id)) return
         const last = lastBuild.get(me.key) ?? 0
         if (Date.now() - last < 90_000) return send(me.ws, { t: 'info', text: '🏰 Biraz dinlen, kum kalesi için 90 sn beklemelisin.' })
         lastBuild.set(me.key, Date.now())
