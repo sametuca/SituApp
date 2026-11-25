@@ -93,7 +93,7 @@ export function Joystick({ inputRef }) {
 export function NearbyCard({ peer, touch, onChat, onInteract, onDismiss }) {
   return (
     <div
-      className={`absolute left-1/2 z-10 w-[min(94vw,24rem)] -translate-x-1/2 animate-pop ${touch ? 'bottom-44' : 'bottom-[6.75rem]'}`}
+      className={`pointer-events-auto absolute left-1/2 z-20 w-[min(94vw,24rem)] -translate-x-1/2 animate-pop ${touch ? 'bottom-[13rem]' : 'bottom-[7.75rem]'}`}
       role="status"
     >
       <div className={`flex items-center gap-3 rounded-3xl p-2.5 pr-3 ${glass}`}>
@@ -120,11 +120,11 @@ export function NearbyCard({ peer, touch, onChat, onInteract, onDismiss }) {
   )
 }
 
-// ---------- kapı ("Eve gir" / "Dışarı çık") ----------
+// ---------- kapı ("Eve gir" / "Dışarı çık" / etkileşim istemi — SkillBar'ın hemen üstünde) ----------
 export function DoorPrompt({ emoji, label, action, touch, raised, onGo }) {
   return (
     <div
-      className={`pointer-events-auto absolute left-1/2 z-10 w-[min(92vw,20rem)] -translate-x-1/2 animate-pop ${touch ? (raised ? 'bottom-64' : 'bottom-44') : raised ? 'bottom-[11rem]' : 'bottom-[6.75rem]'}`}
+      className={`pointer-events-auto absolute left-1/2 z-20 w-[min(92vw,21rem)] -translate-x-1/2 animate-pop ${touch ? (raised ? 'bottom-[17.5rem]' : 'bottom-[13rem]') : raised ? 'bottom-[12.25rem]' : 'bottom-[7.75rem]'}`}
       role="status"
     >
       <div className={`flex items-center gap-3 rounded-3xl p-2.5 pl-4 ${glass}`}>

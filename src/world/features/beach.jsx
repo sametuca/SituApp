@@ -5,7 +5,10 @@ import { DoorPrompt } from '../Social'
 import { BEACH } from '../layout'
 
 const NET = { x: 14.5, z: 42, r: 5 }
-const CASTLE = { x: -3.5, z: 46, r: 4 }
+const CASTLES = [
+  { x: -7.8, z: 44.6, r: 4.2 },
+  { x: 8.4, z: 45.2, r: 4.2 },
+]
 const glass = 'border-2 border-white bg-white/90 shadow-soft backdrop-blur-md'
 const mmss = (ms) => {
   const s = Math.max(0, Math.ceil(ms / 1000))
@@ -174,27 +177,128 @@ export function useBeach({ net, focusRef, home, venue, touch, say }) {
       const f = focusRef.current
       if (home || venue) return setNear(null)
       if (Math.hypot(f.x - NET.x, f.z - NET.z) <= NET.r - 0.5) setNear('net')
-      else if (Math.hypot(f.x - CASTLE.x, f.z - CASTLE.z) <= CASTLE.r - 0.5) setNear('castle')
+      else if (CASTLES.some((c) => Math.hypot(f.x - c.x, f.z - c.z) <= c.r - 0.3)) setNear('castle')
       else setNear(null)
     }, 400)
     return () => clearInterval(id)
   }, [focusRef, home, venue])
 
-  const hit = () => send({ t: 'vb_hit' })
+  const localScTimer = useRef(null)
+  const localVbTimer = useRef(null)
+  const localTaps = useRef(0)
+  const localVb = useRef(null)
+  useEffect(
+    () => () => {
+      clearTimeout(localScTimer.current)
+      clearTimeout(localVbTimer.current)
+    },
+    [],
+  )
+
+  const runLocalVbTurn = (m) => {
+    clearTimeout(localVbTimer.current)
+    localVb.current = m
+    setVb({ ...m })
+    if (m.over) {
+      window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: m.over.winner === 'local' ? 'badge' : 'pop' }))
+      return
+    }
+    if (m.turn === 'local') {
+      localVbTimer.current = setTimeout(() => {
+        const cur = localVb.current
+        if (!cur || cur.over || cur.turn !== 'local') return
+        const sb = cur.sb + 1
+        const over = sb >= 5 ? { winner: 'bot' } : null
+        runLocalVbTurn({ ...cur, sb, turn: over ? null : 'bot', in: 1100, over })
+      }, (m.in ?? 1600) + 420)
+    } else {
+      localVbTimer.current = setTimeout(() => {
+        const cur = localVb.current
+        if (!cur || cur.over || cur.turn !== 'bot') return
+        if (Math.random() < 0.28) {
+          const sa = cur.sa + 1
+          const over = sa >= 5 ? { winner: 'local' } : null
+          runLocalVbTurn({ ...cur, sa, turn: over ? null : 'local', in: 1650, over })
+        } else {
+          runLocalVbTurn({ ...cur, turn: 'local', in: 1550 })
+        }
+      }, 1050)
+    }
+  }
+
+  const startVolley = () => {
+    if (send({ t: 'vb_join' })) return
+    myId.current = 'local'
+    runLocalVbTurn({
+      local: true,
+      a: { id: 'local', name: 'Sen' },
+      b: { id: 'bot', name: 'Plaj Botu' },
+      sa: 0,
+      sb: 0,
+      turn: 'local',
+      in: 1700,
+      arriveAt: performance.now() + 1700,
+      over: null,
+    })
+  }
+
+  const startCastle = () => {
+    if (send({ t: 'sc_start' })) return
+    clearTimeout(localScTimer.current)
+    localTaps.current = 0
+    setSc({ ms: 12000, taps: 0, local: true })
+    localScTimer.current = setTimeout(() => {
+      const taps = localTaps.current
+      const coins = Math.min(8, Math.floor(taps / 12))
+      setSc({ done: true, taps, coins, top: [{ name: 'Sen', taps }] })
+      window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: coins ? 'quest' : 'pop' }))
+    }, 12000)
+  }
+
+  const hit = () => {
+    if (vb?.local) {
+      const cur = localVb.current
+      if (!cur || cur.over || cur.turn !== 'local') return
+      clearTimeout(localVbTimer.current)
+      window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'pop' }))
+      runLocalVbTurn({ ...cur, turn: 'bot', in: 1050 })
+      return
+    }
+    send({ t: 'vb_hit' })
+  }
   const tap = () => {
+    localTaps.current += 1
     setSc((s) => (s && s.ms && !s.done ? { ...s, taps: s.taps + 1 } : s))
-    send({ t: 'sc_tap' })
+    if (!sc?.local) send({ t: 'sc_tap' })
+  }
+  const leaveVolley = () => {
+    clearTimeout(localVbTimer.current)
+    localVb.current = null
+    if (!vb?.local) send({ t: 'vb_leave' })
+    setVb(null)
+  }
+  const closeCastle = () => {
+    clearTimeout(localScTimer.current)
+    setSc(null)
   }
   const busy = Boolean(vb || waiting || sc)
+  const triggerRef = useRef(null)
+  useEffect(() => {
+    triggerRef.current = () => {
+      if (busy || !near) return
+      if (near === 'net') startVolley()
+      else startCastle()
+    }
+  })
   useEffect(() => {
     const onKey = (e) => {
-      if ((e.code !== 'KeyE' && e.key !== 'e' && e.key !== 'E') || busy || !near) return
+      if ((e.code !== 'KeyE' && e.key !== 'e' && e.key !== 'E') || e.ctrlKey || e.metaKey || e.altKey) return
       if (e.target instanceof HTMLElement && ['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return
-      send(near === 'net' ? { t: 'vb_join' } : { t: 'sc_start' })
+      triggerRef.current?.()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [near, busy, send])
+  }, [])
 
   const dist = Math.round(Math.hypot(focusRef.current.x - BEACH.x, focusRef.current.z - BEACH.z))
   const showMeetup = !home && !venue && meetup.phase !== 'idle'
@@ -217,7 +321,7 @@ export function useBeach({ net, focusRef, home, venue, touch, say }) {
         </div>
       )}
       {near && !busy && !home && !venue && (
-        <DoorPrompt emoji={near === 'net' ? '🏐' : '🏰'} label={near === 'net' ? 'Voleybol' : 'Kum kalesi yarışı'} action={near === 'net' ? 'Oyna' : 'Başla'} touch={touch} raised onGo={() => send(near === 'net' ? { t: 'vb_join' } : { t: 'sc_start' })} />
+        <DoorPrompt emoji={near === 'net' ? '🏐' : '🏰'} label={near === 'net' ? 'Voleybol' : 'Kum kalesi yarışı'} action={near === 'net' ? 'Oyna' : 'Başla'} touch={touch} raised onGo={() => (near === 'net' ? startVolley() : startCastle())} />
       )}
       {waiting && !vb && (
         <div className={`pointer-events-auto absolute left-1/2 top-24 z-30 -translate-x-1/2 rounded-2xl px-4 py-2 text-center ${glass}`}>
@@ -225,8 +329,8 @@ export function useBeach({ net, focusRef, home, venue, touch, say }) {
           <button onClick={() => (send({ t: 'vb_leave' }), setWaiting(false))} className="text-xs font-extrabold text-[#8a7a9c] hover:underline">Vazgeç</button>
         </div>
       )}
-      {vb && <Volley vb={vb} me={myId.current} onHit={hit} onLeave={() => (send({ t: 'vb_leave' }), setVb(null))} />}
-      {sc && <Castle sc={sc} onTap={tap} onClose={() => setSc(null)} />}
+      {vb && <Volley vb={vb} me={myId.current} onHit={hit} onLeave={leaveVolley} />}
+      {sc && <Castle sc={sc} onTap={tap} onClose={closeCastle} />}
     </>
   )
   return { overlays, worldEffects: !home && !venue && meetup.phase !== 'idle' ? <MeetupRing on={meetup.phase === 'on'} /> : null }

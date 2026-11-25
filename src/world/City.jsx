@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { screenK } from './screenK'
 import { useFrame, useLoader } from '@react-three/fiber'
-import { CanvasTexture, Color, DataTexture, Object3D, ExtrudeGeometry, Shape, LinearFilter, RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
+import { CanvasTexture, Color, DataTexture, MeshStandardMaterial, Object3D, ExtrudeGeometry, Shape, LinearFilter, RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
 import { Html, RoundedBox } from '@react-three/drei'
-import { BEACH, BLANKETS, BUILDINGS, GAZEBO, ISLAND, PLAY_BOUNDS, PLAZA_R, PROPS, RIM, RING, ROAD_END, ROAD_HALF, ROAD_START, TOWELS } from './layout'
-import { useCull } from './cull'
+import { BEACH, BLANKETS, BUILDINGS, GAZEBO, ISLAND, PIER, PLAY_BOUNDS, PLAZA_R, PROPS, RIM, RING, ROAD_END, ROAD_HALF, ROAD_START, TOWELS } from './layout'
+import { CULL_R, playerPos, useCull } from './cull'
 import Facade from './Facade'
 import { facadeOf } from './facadeData'
-import Prop from './Prop'
+import Prop, { InstancedPropGroup } from './Prop'
 import Plants from './Plants'
 import { Em } from '../components/emoji'
 import { SKY_MATS, skyLive } from './Sky'
 import { worldClock } from './worldClock'
+import { getPuffySandPair, getPuffyShinglePair, getWallPair } from './pastelTex'
 
 const FACING = { s: 0, n: Math.PI, e: Math.PI / 2, w: -Math.PI / 2 }
 
@@ -27,18 +28,154 @@ function sharedTexture(base, key, setup) {
     t = base.clone()
     t.wrapS = t.wrapT = RepeatWrapping
     t.colorSpace = SRGBColorSpace
-    t.anisotropy = 8
+    t.anisotropy = 4
     setup(t)
     t.needsUpdate = true
     texCache.set(k, t)
   }
   return t
 }
+const matCache = new Map()
+function stdMat(color, roughness = 0.6) {
+  const k = `${color}|${roughness}`
+  let m = matCache.get(k)
+  if (!m) {
+    m = new MeshStandardMaterial({ color, roughness })
+    matCache.set(k, m)
+  }
+  return m
+}
 const q = (v, s = 0.25) => Math.max(s, Math.round(v / s) * s) // tekrar sayısını yuvarla (önbellek isabeti)
 
 // Yer dokuları (Meshy ile üretilen üstten bakış desenler, scripts/make-tileable.py ile döşenebilir yapıldı): public/textures/<ad>.webp
-export const GROUND_TEX = { grass: 4.5, asphalt: 5, cobble: 3.2, sand: 4 } // doku adı → bir kiremitin kapladığı metre
+export const GROUND_TEX = { grass: 4.5, asphalt: 4.8, cobble: 3.2, sand: 4 } // doku adı → bir kiremitin kapladığı metre
 export const GROUND_URLS = Object.keys(GROUND_TEX).map((n) => `/textures/${n}.webp`)
+
+// Zenginleştirilmiş asfalt dokusu + kabartma haritası (düz leylak şerit yerine tanecikli, güneşle tepki veren pastel asfalt)
+let asphaltPair = null
+function getAsphaltPair() {
+  if (asphaltPair) return asphaltPair
+  const N = 512
+  const cv = document.createElement('canvas')
+  cv.width = cv.height = N
+  const g = cv.getContext('2d')
+  const bcv = document.createElement('canvas')
+  bcv.width = bcv.height = N
+  const bg = bcv.getContext('2d')
+
+  // temel ton: sıcak pastel arduvaz-leylak (binalar ve kaldırımlarla uyumlu, belirgin kontrast)
+  g.fillStyle = '#8b8399'
+  g.fillRect(0, 0, N, N)
+  bg.fillStyle = '#808080'
+  bg.fillRect(0, 0, N, N)
+
+  let seed = 4219
+  const rand = () => {
+    seed = (seed * 1664525 + 1013904223) >>> 0
+    return seed / 4294967296
+  }
+  const wrapDot = (ctx, x, y, r, fill) => {
+    ctx.fillStyle = fill
+    for (const ox of [-N, 0, N]) {
+      if (x + ox + r < 0 || x + ox - r > N) continue
+      for (const oy of [-N, 0, N]) {
+        if (y + oy + r < 0 || y + oy - r > N) continue
+        ctx.beginPath()
+        ctx.arc(x + ox, y + oy, r, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
+  }
+
+  // yumuşak organik asfalt ton geçişleri
+  for (let i = 0; i < 42; i++) {
+    const x = rand() * N
+    const y = rand() * N
+    const r = 28 + rand() * 58
+    const dark = rand() > 0.45
+    wrapDot(g, x, y, r, dark ? 'rgba(92,84,110,0.12)' : 'rgba(182,175,198,0.10)')
+  }
+
+  // ince agrega / çakıl tanecikleri (hem renk hem kabartma haritası)
+  for (let i = 0; i < 4800; i++) {
+    const x = rand() * N
+    const y = rand() * N
+    const sz = 1 + rand() * 2.2
+    const v = rand()
+    if (v < 0.48) {
+      g.fillStyle = 'rgba(72,66,86,0.34)'
+      bg.fillStyle = 'rgba(60,60,60,0.45)'
+    } else if (v < 0.86) {
+      g.fillStyle = 'rgba(218,212,230,0.30)'
+      bg.fillStyle = 'rgba(205,205,205,0.42)'
+    } else {
+      g.fillStyle = 'rgba(246,238,228,0.38)'
+      bg.fillStyle = 'rgba(240,240,240,0.5)'
+    }
+    g.fillRect(x, y, sz, sz)
+    bg.fillRect(x, y, sz, sz)
+  }
+
+  // çok ince kılcal yüzey dokusu çizgileri
+  g.strokeStyle = 'rgba(72,66,88,0.14)'
+  g.lineWidth = 1.2
+  for (let i = 0; i < 6; i++) {
+    let x = rand() * N
+    let y = rand() * N
+    g.beginPath()
+    g.moveTo(x, y)
+    for (let s = 0; s < 5; s++) {
+      x += (rand() - 0.5) * 44
+      y += (rand() - 0.5) * 44
+      g.lineTo(x, y)
+    }
+    g.stroke()
+  }
+
+  const map = new CanvasTexture(cv)
+  map.wrapS = map.wrapT = RepeatWrapping
+  map.colorSpace = SRGBColorSpace
+  map.anisotropy = 4
+  const bump = new CanvasTexture(bcv)
+  bump.wrapS = bump.wrapT = RepeatWrapping
+  bump.anisotropy = 4
+  asphaltPair = { map, bump }
+  return asphaltPair
+}
+
+let manholeTex = null
+function getManholeTex() {
+  if (manholeTex) return manholeTex
+  const cv = document.createElement('canvas')
+  cv.width = cv.height = 128
+  const g = cv.getContext('2d')
+  g.fillStyle = '#6c657c'
+  g.fillRect(0, 0, 128, 128)
+  g.strokeStyle = '#534c63'
+  g.lineWidth = 5
+  g.beginPath()
+  g.arc(64, 64, 56, 0, Math.PI * 2)
+  g.stroke()
+  g.lineWidth = 2.5
+  g.strokeStyle = '#8d869e'
+  g.beginPath()
+  g.arc(64, 64, 42, 0, Math.PI * 2)
+  g.stroke()
+  g.beginPath()
+  g.arc(64, 64, 20, 0, Math.PI * 2)
+  g.stroke()
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2
+    g.beginPath()
+    g.moveTo(64 + Math.cos(a) * 20, 64 + Math.sin(a) * 20)
+    g.lineTo(64 + Math.cos(a) * 52, 64 + Math.sin(a) * 52)
+    g.stroke()
+  }
+  const t = new CanvasTexture(cv)
+  t.colorSpace = SRGBColorSpace
+  manholeTex = t
+  return t
+}
 
 // Yumuşak kenar: alt zeminle karışsın diye alfa haritası (kenara `feather` m kala saydamlaşır). Keskin geçişler "2006 oyunu" gibi duruyordu.
 const featherCache = new Map()
@@ -71,40 +208,55 @@ function featherTexture(w, d, f, round) {
 
 /** tex: GROUND_TEX adı. Doku dünya ölçüsünde döşenir (kiremit boyu metre), renk tonu `color` ile çarpılır (pastel ton). feather: kenar yumuşatma (m). */
 function Flat({ x = 0, z = 0, w, d, y, color = '#ffffff', round, tex, feather = 0 }) {
-  const base = useLoader(TextureLoader, `/textures/${tex ?? 'grass'}.webp`)
-  const map = useMemo(() => {
-    if (!tex) return null
+  const loaded = useLoader(TextureLoader, `/textures/${tex ?? 'grass'}.webp`)
+  const isAsphalt = tex === 'asphalt'
+  const isSand = tex === 'sand'
+  const pair = isAsphalt ? getAsphaltPair() : isSand ? getPuffySandPair() : null
+  const base = pair ? pair.map : loaded
+  const { map, bumpMap } = useMemo(() => {
+    if (!tex) return { map: null, bumpMap: null }
     const m = GROUND_TEX[tex]
     const rx = Math.round(((round ? round * 2 : w) / m) * 20) / 20
     const ry = Math.round(((round ? round * 2 : d) / m) * 20) / 20
     const ox = Math.round((((x / m) % 1) + 1) * 20) / 20 % 1
     const oy = Math.round((((-z / m) % 1) + 1) * 20) / 20 % 1
-    return sharedTexture(base, `f${rx}|${ry}|${ox}|${oy}`, (t) => {
+    const key = `f${rx}|${ry}|${ox}|${oy}`
+    const setup = (t) => {
       t.repeat.set(rx, ry)
       t.offset.set(ox, oy) // komşu parçalarda desen aynı hizadan devam etsin
-    })
-  }, [base, tex, w, d, round, x, z])
+    }
+    return {
+      map: sharedTexture(base, key, setup),
+      bumpMap: pair ? sharedTexture(pair.bump, `b${key}`, setup) : null,
+    }
+  }, [base, pair, tex, w, d, round, x, z])
   const alpha = useMemo(() => (feather > 0 ? featherTexture(round ? round * 2 : w, round ? round * 2 : d, feather, round ? round * 2 : 0) : null), [feather, w, d, round])
   return (
     <mesh position={[x, y, z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow renderOrder={alpha ? 1 : 0}>
       {round ? <circleGeometry args={[round, 64]} /> : <planeGeometry args={[w, d]} />}
-      <meshStandardMaterial color={color} map={map} alphaMap={alpha} transparent={Boolean(alpha)} depthWrite={!alpha} roughness={0.95} />
+      <meshStandardMaterial color={color} map={map} bumpMap={bumpMap} bumpScale={isAsphalt ? 0.032 : isSand ? 0.025 : 0} alphaMap={alpha} transparent={Boolean(alpha)} depthWrite={!alpha} roughness={isAsphalt ? 0.84 : isSand ? 0.78 : 0.92} />
     </mesh>
   )
 }
 
 /** Dokulu halka (dönel kavşak asfaltı / kaldırımı): ringGeometry UV'si tüm halkaya tek kez sarılır → tekrar sayısı çapa göre. */
 function TexRing({ r0, r1, y, tex, color = '#ffffff' }) {
-  const base = useLoader(TextureLoader, `/textures/${tex}.webp`)
-  const map = useMemo(() => {
+  const loaded = useLoader(TextureLoader, `/textures/${tex}.webp`)
+  const isAsphalt = tex === 'asphalt'
+  const base = isAsphalt ? getAsphaltPair().map : loaded
+  const { map, bumpMap } = useMemo(() => {
     const m = GROUND_TEX[tex]
     const rep = Math.round(((r1 * 2) / m) * 10) / 10
-    return sharedTexture(base, `ring${rep}`, (t) => t.repeat.set(rep, rep))
-  }, [base, tex, r1])
+    const setup = (t) => t.repeat.set(rep, rep)
+    return {
+      map: sharedTexture(base, `ring${rep}`, setup),
+      bumpMap: isAsphalt ? sharedTexture(getAsphaltPair().bump, `bring${rep}`, setup) : null,
+    }
+  }, [base, isAsphalt, tex, r1])
   return (
     <mesh position={[0, y, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
       <ringGeometry args={[r0, r1, 96]} />
-      <meshStandardMaterial color={color} map={map} roughness={0.95} />
+      <meshStandardMaterial color={color} map={map} bumpMap={bumpMap} bumpScale={bumpMap ? 0.032 : 0} roughness={isAsphalt ? 0.84 : 0.95} />
     </mesh>
   )
 }
@@ -179,49 +331,23 @@ const STYLES = [
 ]
 const lighten = (hex, t) => `#${new Color(hex).lerp(new Color('#ffffff'), t).getHexString()}`
 
-let stuccoBase = null
-function getStuccoBase() {
-  if (stuccoBase) return stuccoBase
-  const cv = document.createElement('canvas')
-  cv.width = 256
-  cv.height = 256
-  const g = cv.getContext('2d')
-  g.fillStyle = '#fbf8f4'
-  g.fillRect(0, 0, 256, 256)
-  // yumuşak pastel sıva tanecikleri + ince yatay taş çizgileri (ek yeri görünmez)
-  for (let i = 0; i < 4; i++) {
-    g.fillStyle = i % 2 ? 'rgba(255,255,255,0.45)' : 'rgba(235,222,212,0.28)'
-    g.fillRect(0, i * 64, 256, 62)
-    g.fillStyle = 'rgba(210,195,185,0.22)'
-    g.fillRect(0, i * 64 + 62, 256, 2)
-  }
-  for (let i = 0; i < 180; i++) {
-    const x = (i * 73) % 256
-    const y = (i * 137) % 256
-    g.fillStyle = i % 3 ? 'rgba(255,255,255,0.35)' : 'rgba(220,208,198,0.2)'
-    g.fillRect(x, y, 4, 3)
-  }
-  const tex = new CanvasTexture(cv)
-  tex.wrapS = tex.wrapT = RepeatWrapping
-  tex.colorSpace = SRGBColorSpace
-  stuccoBase = tex
-  return tex
-}
-
-/** Dokulu düz yüzey (duvar/çatı paneli): doku dünya ölçüsünde döşenir, renk tonu çarpılır. */
+/** Balonsu pasterize cephe/duvar paneli: renk + yumuşak kabartma haritasıyla pofuduk kil görünümü. */
 function Panel({ tex, w, h, color, position, rotation, repeat }) {
-  const loaded = useLoader(TextureLoader, `/textures/${tex === 'stucco' ? 'plaster' : tex}.webp`)
-  const base = tex === 'stucco' ? getStuccoBase() : loaded
-  const map = useMemo(() => {
+  const pair = useMemo(() => getWallPair(tex), [tex])
+  const { map, bumpMap } = useMemo(() => {
     const m = WALL_TEX[tex] ?? 2.4
     const rx = q(repeat?.[0] ?? w / m)
     const ry = q(repeat?.[1] ?? h / m)
-    return sharedTexture(base, `${tex}|${rx}|${ry}`, (t) => t.repeat.set(rx, ry))
-  }, [base, tex, w, h, repeat])
+    const setup = (t) => t.repeat.set(rx, ry)
+    return {
+      map: sharedTexture(pair.map, `${tex}|${rx}|${ry}`, setup),
+      bumpMap: sharedTexture(pair.bump, `b${tex}|${rx}|${ry}`, setup),
+    }
+  }, [pair, tex, w, h, repeat])
   return (
     <mesh position={position} rotation={rotation} receiveShadow>
       <planeGeometry args={[w, h]} />
-      <meshStandardMaterial color={color} map={map} roughness={0.7} />
+      <meshStandardMaterial color={color} map={map} bumpMap={bumpMap} bumpScale={0.042} roughness={0.56} />
     </mesh>
   )
 }
@@ -248,9 +374,15 @@ function GableRoof({ w, d, h, mat }) {
 
 function Roof({ w, d, h, color, type }) {
   const tint = lighten(color, 0.35)
-  const shingle = useLoader(TextureLoader, '/textures/shingle.webp')
-  const map = useMemo(() => sharedTexture(shingle, 'roof', (t) => t.repeat.set(3, 2)), [shingle])
-  const mat = <meshStandardMaterial color={color} map={map} roughness={0.55} />
+  const shingle = useMemo(() => getPuffyShinglePair(), [])
+  const { map, bumpMap } = useMemo(() => {
+    const setup = (t) => t.repeat.set(3, 2)
+    return {
+      map: sharedTexture(shingle.map, 'roof_puffy', setup),
+      bumpMap: sharedTexture(shingle.bump, 'broof_puffy', setup),
+    }
+  }, [shingle])
+  const mat = <meshStandardMaterial color={color} map={map} bumpMap={bumpMap} bumpScale={0.055} roughness={0.48} />
   if (type === 'gable') {
     return <GableRoof w={w} d={d} h={h} mat={mat} />
   }
@@ -272,17 +404,18 @@ function Roof({ w, d, h, color, type }) {
 
 function Window({ kind, x, y, z, w, accent, shutters, flowerbox }) {
   const glass = <primitive object={SKY_MATS.window} attach="material" />
-  const trim = <meshStandardMaterial color="#fffaf2" roughness={0.5} />
+  const trim = <primitive object={stdMat('#fffaf2', 0.5)} attach="material" />
+  const accentMat = <primitive object={stdMat(accent, 0.6)} attach="material" />
   return (
     <group position={[x, y, z]}>
       {kind === 'round' ? (
         <>
           <mesh>
-            <circleGeometry args={[0.62, 24]} />
+            <circleGeometry args={[0.62, 20]} />
             {glass}
           </mesh>
           <mesh position={[0, 0, -0.01]}>
-            <circleGeometry args={[0.78, 24]} />
+            <circleGeometry args={[0.78, 20]} />
             {trim}
           </mesh>
         </>
@@ -294,7 +427,7 @@ function Window({ kind, x, y, z, w, accent, shutters, flowerbox }) {
           </mesh>
           {kind === 'arch' && (
             <mesh position={[0, 0.55, 0]} rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[w / 2, w / 2, 0.12, 20]} />
+              <cylinderGeometry args={[w / 2, w / 2, 0.12, 16]} />
               {glass}
             </mesh>
           )}
@@ -316,19 +449,19 @@ function Window({ kind, x, y, z, w, accent, shutters, flowerbox }) {
         [-1, 1].map((sd) => (
           <mesh key={sd} position={[sd * (w / 2 + 0.28), 0.1, 0.02]}>
             <boxGeometry args={[0.4, 1.3, 0.08]} />
-            <meshStandardMaterial color={accent} roughness={0.6} />
+            {accentMat}
           </mesh>
         ))}
       {flowerbox && (
         <group position={[0, -0.78, 0.2]}>
           <mesh>
             <boxGeometry args={[w + 0.3, 0.25, 0.34]} />
-            <meshStandardMaterial color={accent} roughness={0.6} />
+            {accentMat}
           </mesh>
           {[-0.4, 0, 0.4].map((fx) => (
             <mesh key={fx} position={[fx * (w / 1.6), 0.24, 0]}>
-              <sphereGeometry args={[0.17, 10, 8]} />
-              <meshStandardMaterial color={fx === 0 ? '#ffd35e' : '#fdb252'} roughness={0.6} />
+              <sphereGeometry args={[0.17, 8, 6]} />
+              <primitive object={stdMat(fx === 0 ? '#ffd35e' : '#fdb252', 0.6)} attach="material" />
             </mesh>
           ))}
         </group>
@@ -340,7 +473,7 @@ function Window({ kind, x, y, z, w, accent, shutters, flowerbox }) {
 function Building({ b, i, focusRef }) {
   const { w, d, h, color, roof, facing, label, shop, neon } = b
   const grp = useRef()
-  useCull(grp, b.x, b.z)
+  useCull(grp, b.x, b.z, CULL_R, 30)
   const st = neon ? { ...STYLES[3], balcony: false } : STYLES[(i * 5 + (i >> 2)) % STYLES.length]
   const roofType = h > 8 || neon ? 'flat' : st.roofType
   const count = Math.max(1, Math.floor(w / 3))
@@ -352,8 +485,9 @@ function Building({ b, i, focusRef }) {
   const ww = Math.min(1.5, w / count - 0.8)
   return (
     <group ref={grp} position={[b.x, 0, b.z]} rotation={[0, FACING[facing], 0]}>
-      <RoundedBox args={[w, h, d]} radius={0.35} smoothness={3} position={[0, h / 2, 0]} castShadow receiveShadow>
-        <meshStandardMaterial color={color} roughness={0.55} />
+      <Flat x={0} z={d / 2 + 1.6} w={w + 1.4} d={3.4} y={0.038} tex="cobble" color="#f6efe6" />
+      <RoundedBox args={[w, h, d]} radius={0.35} smoothness={2} position={[0, h / 2, 0]} castShadow receiveShadow>
+        <primitive object={stdMat(color, 0.55)} attach="material" />
       </RoundedBox>
       {/* Meshy cephe dokusu: dört yüzeyde ince paneller (köşeler yuvarlak ve düz renkli kalır) */}
       <Panel tex={st.wall} w={w - 0.5} h={h - 0.4} color={wallColor} position={[0, h / 2, d / 2 + 0.012]} />
@@ -369,25 +503,24 @@ function Building({ b, i, focusRef }) {
 
       {fac ? (
         <>
-          <Facade F={fac} w={w} h={h} roof={roof} z={d / 2} />
+          <Facade F={fac} w={w} h={h} roof={roof} z={d / 2} label={label} venueId={b.venue ?? (b.homeDoor ? 'evim' : null)} />
           {!fac.noUpper && h >= 5.5 &&
             Array.from({ length: Math.max(1, Math.floor(w / 3.2)) }, (_, ci) => (
-              <Window key={ci} kind={st.win === 'round' ? 'rect' : st.win} x={(ci - (Math.max(1, Math.floor(w / 3.2)) - 1) / 2) * (w / Math.max(1, Math.floor(w / 3.2)))} y={Math.min(h - 1.2, 4.2)} z={d / 2 + 0.06} w={ww} accent={roof} />
+              <Window key={ci} kind={st.win === 'round' ? 'rect' : st.win} x={(ci - (Math.max(1, Math.floor(w / 3.2)) - 1) / 2) * (w / Math.max(1, Math.floor(w / 3.2)))} y={Math.min(h - 1.2, 4.9)} z={d / 2 + 0.06} w={ww} accent={roof} />
             ))}
         </>
       ) : (
         <>
-          {/* kapı: normal boy (1,2 × 2,2 m), cephede ortada ya da kayık */}
-          <RoundedBox args={[1.45, 2.35, 0.16]} radius={0.06} position={[doorShift, 1.17, d / 2 + 0.04]}>
-            <meshStandardMaterial color="#fffaf2" roughness={0.5} />
+          {/* kapı: yumuşak yuvarlatılmış balonsu kapı */}
+          <RoundedBox args={[1.48, 2.38, 0.18]} radius={0.09} smoothness={2} position={[doorShift, 1.19, d / 2 + 0.04]}>
+            <primitive object={stdMat('#fffaf2', 0.45)} attach="material" />
           </RoundedBox>
-          <mesh position={[doorShift, 1.12, d / 2 + 0.13]}>
-            <boxGeometry args={[1.2, 2.15, 0.05]} />
-            <meshStandardMaterial color={st.door} roughness={0.4} />
-          </mesh>
-          <mesh position={[doorShift + 0.4, 1.1, d / 2 + 0.17]}>
-            <circleGeometry args={[0.06, 12]} />
-            <meshStandardMaterial color="#ffd35e" roughness={0.3} />
+          <RoundedBox args={[1.22, 2.16, 0.08]} radius={0.05} smoothness={2} position={[doorShift, 1.12, d / 2 + 0.13]}>
+            <primitive object={stdMat(st.door, 0.38)} attach="material" />
+          </RoundedBox>
+          <mesh position={[doorShift + 0.4, 1.1, d / 2 + 0.18]}>
+            <sphereGeometry args={[0.075, 10, 8]} />
+            <primitive object={stdMat('#ffd35e', 0.25)} attach="material" />
           </mesh>
           {/* pencereler */}
           {rows.map((y, ri) =>
@@ -442,45 +575,62 @@ function Building({ b, i, focusRef }) {
   )
 }
 
-/** Cephe önü: bina girişinin önünde taş döşeme (çimen değil). Kaldırımın altında kalır, yola taşan kısım gizlenir. */
-function Apron({ b }) {
-  const side = b.facing === 'e' || b.facing === 'w'
-  const A = 3.4
-  const sgn = b.facing === 's' || b.facing === 'e' ? 1 : -1
-  const half = (side ? b.w : b.d) / 2 // cepheye dik yarı boyut: e/w'de x ekseni = d
-  const depthHalf = side ? b.d / 2 : b.d / 2
-  const wide = (side ? b.w : b.w) + 1.4
-  const cx = side ? b.x + sgn * (depthHalf + A / 2 - 0.1) : b.x
-  const cz = side ? b.z : b.z + sgn * (depthHalf + A / 2 - 0.1)
-  void half
-  return <Flat x={cx} z={cz} w={side ? A : wide} d={side ? wide : A} y={0.038} tex="cobble" color="#f6efe6" />
-}
-
+/** Balonsu pasterize park çardağı: yuvarlak yastıksı taban, şişkin sütun başlıkları, pofuduk kiremit kubbe ve saçak halkası. */
 function Gazebo() {
   const posts = Array.from({ length: 6 }, (_, i) => (i / 6) * Math.PI * 2)
+  const shingle = useMemo(() => getPuffyShinglePair(), [])
+  const { map, bumpMap } = useMemo(() => {
+    const setup = (t) => t.repeat.set(5, 2.5)
+    return {
+      map: sharedTexture(shingle.map, 'gazebo_roof', setup),
+      bumpMap: sharedTexture(shingle.bump, 'bgazebo_roof', setup),
+    }
+  }, [shingle])
   return (
     <group position={[GAZEBO.x, 0, GAZEBO.z]}>
-      <mesh position={[0, 0.15, 0]} receiveShadow>
-        <cylinderGeometry args={[3.2, 3.3, 0.3, 32]} />
-        <meshStandardMaterial color="#fff2e3" roughness={0.6} />
+      <mesh position={[0, 0.14, 0]} receiveShadow>
+        <cylinderGeometry args={[3.35, 3.55, 0.28, 32]} />
+        <primitive object={stdMat('#fff2e3', 0.55)} attach="material" />
       </mesh>
-      {posts.map((a, i) => (
-        <mesh key={i} position={[Math.cos(a) * 2.7, 1.8, Math.sin(a) * 2.7]} castShadow>
-          <cylinderGeometry args={[0.18, 0.18, 3.2, 12]} />
-          <meshStandardMaterial color="#ffffff" roughness={0.4} />
-        </mesh>
-      ))}
-      <mesh position={[0, 4.2, 0]} castShadow>
-        <coneGeometry args={[3.8, 1.8, 6]} />
-        <meshStandardMaterial color="#b79cff" roughness={0.5} />
+      <mesh position={[0, 0.29, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[3.28, 0.09, 10, 32]} />
+        <primitive object={stdMat('#f4d8bc', 0.5)} attach="material" />
+      </mesh>
+      {posts.map((a, i) => {
+        const px = Math.cos(a) * 2.7
+        const pz = Math.sin(a) * 2.7
+        return (
+          <group key={i} position={[px, 0, pz]}>
+            <mesh position={[0, 0.34, 0]}>
+              <cylinderGeometry args={[0.25, 0.29, 0.22, 14]} />
+              <primitive object={stdMat('#f7e8dc', 0.45)} attach="material" />
+            </mesh>
+            <mesh position={[0, 1.85, 0]} castShadow>
+              <cylinderGeometry args={[0.17, 0.2, 3.0, 14]} />
+              <primitive object={stdMat('#fffaf4', 0.42)} attach="material" />
+            </mesh>
+            <mesh position={[0, 3.35, 0]}>
+              <sphereGeometry args={[0.24, 12, 10]} />
+              <primitive object={stdMat('#ffe3c6', 0.42)} attach="material" />
+            </mesh>
+          </group>
+        )
+      })}
+      {/* pofuduk kubbemsi kiremit çatı + yumuşak saçak halkası + tepe topuzu */}
+      <mesh position={[0, 3.45, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+        <torusGeometry args={[3.55, 0.2, 12, 36]} />
+        <primitive object={stdMat('#d8c4ff', 0.45)} attach="material" />
+      </mesh>
+      <mesh position={[0, 4.35, 0]} castShadow>
+        <coneGeometry args={[3.72, 1.95, 24]} />
+        <meshStandardMaterial color="#bfa4ff" map={map} bumpMap={bumpMap} bumpScale={0.06} roughness={0.46} />
+      </mesh>
+      <mesh position={[0, 5.4, 0]} castShadow>
+        <sphereGeometry args={[0.28, 14, 12]} />
+        <primitive object={stdMat('#ffd35e', 0.3)} attach="material" />
       </mesh>
     </group>
   )
-}
-
-/** Park piknik battaniyeleri: Meshy GLB (sepetli, pastel kareli), 2 kişilik (oturma noktaları layout.js SEATS'te). */
-function Blanket({ b }) {
-  return <Prop model="/models/venues/picnic-blanket.glb" x={b.x} z={b.z} scale={2.0} ry={b.ry} />
 }
 
 const towelTexCache = new Map()
@@ -509,14 +659,13 @@ function getTowelTex(baseHex) {
   return tex
 }
 
-/** Plaj havlusu: pastel çizgili kumaş dokusu (tek mesh, hafif). */
+/** Plaj havlusu: yumuşak yuvarlatılmış yastıksı pastel havlu. */
 function Towel({ t }) {
   const map = useMemo(() => getTowelTex(t.c), [t.c])
   return (
-    <mesh position={[t.x, 0.055, t.z]} rotation={[0, t.ry, 0]} receiveShadow>
-      <boxGeometry args={[0.96, 0.024, 1.9]} />
-      <meshStandardMaterial map={map} roughness={0.95} />
-    </mesh>
+    <RoundedBox args={[0.98, 0.055, 1.92]} radius={0.024} smoothness={2} position={[t.x, 0.06, t.z]} rotation={[0, t.ry, 0]} receiveShadow>
+      <meshStandardMaterial map={map} roughness={0.78} />
+    </RoundedBox>
   )
 }
 
@@ -568,18 +717,20 @@ function ClubMusicNotes() {
   )
 }
 
-/** Gölge kamerası oyuncuyu takip eden güneş. */
+/** Gölge kamerası oyuncuyu takip eden güneş (0,5 m ızgaraya oturtulur: yürürken gölge titreşmez). */
 function Sun({ focusRef }) {
   const light = useRef()
   useFrame(() => {
     const l = light.current
     if (!l) return
     const f = focusRef.current
+    const sx = Math.round(f.x * 2) / 2
+    const sz = Math.round(f.z * 2) / 2
     // güneş/ay yönü ve rengi gün-gece döngüsünden (Sky.jsx)
-    l.position.set(f.x + skyLive.dir.x * 28, skyLive.dir.y * 28, f.z + skyLive.dir.z * 28)
+    l.position.set(sx + skyLive.dir.x * 28, skyLive.dir.y * 28, sz + skyLive.dir.z * 28)
     l.color.copy(skyLive.color)
     l.intensity = skyLive.intensity
-    l.target.position.set(f.x, 0, f.z)
+    l.target.position.set(sx, 0, sz)
     l.target.updateMatrixWorld()
   })
   return (
@@ -607,11 +758,15 @@ const WATER_NIGHT = new Color('#3f5a9c')
 const BUOY_OFF = 3.2 // oynanabilir sınırın ötesinde (m)
 function Buoys() {
   const ref = useRef()
+  const inited = useRef(false)
   const pts = useMemo(() => {
     const b = { x0: PLAY_BOUNDS.x0 - BUOY_OFF, x1: PLAY_BOUNDS.x1 + BUOY_OFF, z0: PLAY_BOUNDS.z0 - BUOY_OFF, z1: PLAY_BOUNDS.z1 + BUOY_OFF }
     const out = []
     const step = 7
-    for (let x = b.x0; x <= b.x1; x += step) out.push([x, b.z0], [x, b.z1])
+    for (let x = b.x0; x <= b.x1; x += step) {
+      out.push([x, b.z0])
+      if (Math.abs(x - PIER.x) > PIER.hw + 1.8) out.push([x, b.z1]) // iskele üstünde şamandıra çıkmasın
+    }
     for (let z = b.z0 + step; z < b.z1; z += step) out.push([b.x0, z], [b.x1, z])
     return { list: out, b }
   }, [])
@@ -623,6 +778,9 @@ function Buoys() {
   }, [colors])
   const dummy = useMemo(() => new Object3D(), [])
   useFrame(({ clock }) => {
+    if (!ref.current) return
+    if (inited.current && Math.abs(playerPos.x) < 52 && Math.abs(playerPos.z) < 42) return
+    inited.current = true
     const t = clock.elapsedTime
     pts.list.forEach(([x, z], i) => {
       dummy.position.set(x, 0.18 + Math.sin(t * 1.3 + i * 0.9) * 0.08, z)
@@ -638,17 +796,18 @@ function Buoys() {
   const rope = (cx, cz, w, d, k) => (
     <mesh key={k} position={[cx, 0.08, cz]}>
       <boxGeometry args={[w, 0.05, d]} />
-      <meshStandardMaterial color="#fff3e0" roughness={0.9} />
+      <primitive object={stdMat('#fff3e0', 0.9)} attach="material" />
     </mesh>
   )
   return (
     <group>
-      <instancedMesh ref={ref} args={[undefined, undefined, pts.list.length]} frustumCulled={false} castShadow>
-        <sphereGeometry args={[0.42, 14, 10]} />
+      <instancedMesh ref={ref} args={[undefined, undefined, pts.list.length]} frustumCulled={false}>
+        <sphereGeometry args={[0.42, 12, 8]} />
         <meshStandardMaterial roughness={0.5} />
       </instancedMesh>
       {rope((b.x0 + b.x1) / 2, b.z0, W, 0.06, 'n')}
-      {rope((b.x0 + b.x1) / 2, b.z1, W, 0.06, 's')}
+      {rope((b.x0 + (PIER.x - PIER.hw - 0.4)) / 2, b.z1, (PIER.x - PIER.hw - 0.4) - b.x0, 0.06, 'sw')}
+      {rope(((PIER.x + PIER.hw + 0.4) + b.x1) / 2, b.z1, b.x1 - (PIER.x + PIER.hw + 0.4), 0.06, 'se')}
       {rope(b.x0, (b.z0 + b.z1) / 2, 0.06, D, 'w')}
       {rope(b.x1, (b.z0 + b.z1) / 2, 0.06, D, 'e')}
     </group>
@@ -663,7 +822,7 @@ function Sea() {
       const t = src.clone()
       t.wrapS = t.wrapT = RepeatWrapping
       t.colorSpace = SRGBColorSpace
-      t.anisotropy = 8
+      t.anisotropy = 4
       t.repeat.set(size / m, size / m)
       t.needsUpdate = true
       return t
@@ -960,6 +1119,187 @@ function SpeedRings() {
   )
 }
 
+/** Tüm yol çizgileri (sıcak sarı orta kesikler, kenar şeritleri, dönel kavşak kesikleri ve yaya geçitleri) tek InstancedMesh'te. */
+function RoadMarkings() {
+  const ref = useRef()
+  const items = useMemo(() => {
+    const list = []
+    const d = new Object3D()
+    const push = (x, z, w, len, ry = 0, color = '#fffaf2') => {
+      d.position.set(x, Y.mark, z)
+      d.rotation.set(-Math.PI / 2, 0, ry)
+      d.scale.set(w, len, 1)
+      d.updateMatrix()
+      list.push({ mat: d.matrix.clone(), color })
+    }
+    const YELLOW = '#ffe89e'
+    const EDGE = '#f2edf9'
+    const WHITE = '#fffdf8'
+    for (const a of RING_DASHES) {
+      const r = (RING.r0 + RING.r1) / 2
+      push(Math.cos(a) * r, Math.sin(a) * r, 0.24, 1.45, -a - Math.PI / 2, YELLOW)
+    }
+    for (const t of DASHES) {
+      if (t <= ROAD_END.south && t >= ROAD_END.north) push(0, t, 0.24, 1.85, 0, YELLOW)
+      if (t > PARK_X && t <= ROAD_END.east) push(t, 0, 1.85, 0.24, 0, YELLOW)
+    }
+    // yol kenar çizgileri (kaldırım bordürünün 0,42 m içi)
+    const edgeOff = ROAD_HALF - 0.42
+    const nLen = -15.4 - ROAD_END.north
+    const sLen = ROAD_END.south - 15.4
+    const eLen = ROAD_END.east - 15.4
+    for (const s of [-1, 1]) {
+      push(s * edgeOff, (-15.4 + ROAD_END.north) / 2, 0.13, nLen, 0, EDGE)
+      push(s * edgeOff, (15.4 + ROAD_END.south) / 2, 0.13, sLen, 0, EDGE)
+      push((15.4 + ROAD_END.east) / 2, s * edgeOff, eLen, 0.13, 0, EDGE)
+    }
+    // yaya geçitleri
+    for (const ox of [-1.8, -0.9, 0, 0.9, 1.8]) {
+      push(ox, -17.2, 0.44, 2.25, 0, WHITE)
+      push(ox, 17.2, 0.44, 2.25, 0, WHITE)
+      push(ox, 26.4, 0.44, 2.25, 0, WHITE)
+      push(17.2, ox, 2.25, 0.44, 0, WHITE)
+    }
+    return list
+  }, [])
+  useEffect(() => {
+    const im = ref.current
+    if (!im) return
+    const c = new Color()
+    for (let i = 0; i < items.length; i++) {
+      im.setMatrixAt(i, items[i].mat)
+      im.setColorAt(i, c.set(items[i].color))
+    }
+    im.instanceMatrix.needsUpdate = true
+    if (im.instanceColor) im.instanceColor.needsUpdate = true
+  }, [items])
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, items.length]} receiveShadow frustumCulled={false}>
+      <planeGeometry args={[1, 1]} />
+      <meshStandardMaterial roughness={0.85} />
+    </instancedMesh>
+  )
+}
+
+/** Kaldırım bordür taşları: asfalt ile kaldırım arasında yükseltilmiş 3B krem taş kenarlıklar (tek InstancedMesh). */
+function RoadCurbs() {
+  const ref = useRef()
+  const blocks = useMemo(() => {
+    const list = []
+    const d = new Object3D()
+    const push = (x, z, len, ry, idx) => {
+      d.position.set(x, 0.068, z)
+      d.rotation.set(0, ry, 0)
+      d.scale.set(0.24, 0.135, len)
+      d.updateMatrix()
+      list.push({ mat: d.matrix.clone(), alt: idx % 2 === 0 })
+    }
+    const cx = ROAD_HALF + 0.12
+    const step = 2.05
+    let k = 0
+    for (let z = -15.6; z >= ROAD_END.north + 0.5; z -= step) {
+      push(-cx, z - step / 2, step - 0.08, 0, k++)
+      push(cx, z - step / 2, step - 0.08, 0, k++)
+    }
+    for (let z = 15.6; z <= ROAD_END.south - 0.5; z += step) {
+      push(-cx, z + step / 2, step - 0.08, 0, k++)
+      push(cx, z + step / 2, step - 0.08, 0, k++)
+    }
+    for (let x = 15.6; x <= ROAD_END.east - 0.5; x += step) {
+      push(x + step / 2, -cx, step - 0.08, Math.PI / 2, k++)
+      push(x + step / 2, cx, step - 0.08, Math.PI / 2, k++)
+    }
+    // dönel kavşak iç ve dış bordürü
+    const inN = 32
+    for (let i = 0; i < inN; i++) {
+      const a = (i / inN) * Math.PI * 2
+      push(Math.cos(a) * (RING.r0 - 0.1), Math.sin(a) * (RING.r0 - 0.1), 1.72, -a, k++)
+    }
+    const outN = 48
+    for (let i = 0; i < outN; i++) {
+      const a = (i / outN) * Math.PI * 2
+      const blocked = [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2].some((c) => Math.abs(Math.atan2(Math.sin(a - c), Math.cos(a - c))) < 0.31)
+      if (blocked) continue
+      push(Math.cos(a) * (RING.r1 + 0.1), Math.sin(a) * (RING.r1 + 0.1), 1.88, -a, k++)
+    }
+    return list
+  }, [])
+  useEffect(() => {
+    const im = ref.current
+    if (!im) return
+    const c1 = new Color('#f6eee4')
+    const c2 = new Color('#e8ddd0')
+    for (let i = 0; i < blocks.length; i++) {
+      im.setMatrixAt(i, blocks[i].mat)
+      im.setColorAt(i, blocks[i].alt ? c1 : c2)
+    }
+    im.instanceMatrix.needsUpdate = true
+    if (im.instanceColor) im.instanceColor.needsUpdate = true
+  }, [blocks])
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, blocks.length]} receiveShadow frustumCulled={false}>
+      <boxGeometry args={[1, 1, 1]} />
+      <meshStandardMaterial roughness={0.78} />
+    </instancedMesh>
+  )
+}
+
+/** Yol detayları: pastel döküm rögar kapakları (tek InstancedMesh). */
+function RoadDetails() {
+  const ref = useRef()
+  const tex = useMemo(() => getManholeTex(), [])
+  const pts = useMemo(() => {
+    const list = []
+    for (let z = -22; z >= -86; z -= 18) list.push([z % 36 === 0 ? 2.1 : -2.1, z])
+    list.push([2.0, 21.5])
+    for (let x = 22; x <= 86; x += 18) list.push([x, x % 36 === 0 ? 2.1 : -2.1])
+    return list
+  }, [])
+  useEffect(() => {
+    const im = ref.current
+    if (!im) return
+    const d = new Object3D()
+    pts.forEach(([x, z], i) => {
+      d.position.set(x, Y.road + 0.012, z)
+      d.rotation.set(0, i * 0.7, 0)
+      d.scale.set(1, 1, 1)
+      d.updateMatrix()
+      im.setMatrixAt(i, d.matrix)
+    })
+    im.instanceMatrix.needsUpdate = true
+  }, [pts])
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, pts.length]} receiveShadow frustumCulled={false}>
+      <cylinderGeometry args={[0.42, 0.44, 0.016, 16]} />
+      <meshStandardMaterial map={tex} roughness={0.55} metalness={0.22} />
+    </instancedMesh>
+  )
+}
+
+// PROPS ve BLANKETS'i model adına göre grupla (≥ 2 örnek → InstancedPropGroup, tekil → Prop)
+const { INSTANCED_PROPS, SINGLE_PROPS } = (() => {
+  const byModel = new Map()
+  const all = [
+    ...PROPS,
+    ...BLANKETS.map((b) => ({ model: '/models/venues/picnic-blanket.glb', x: b.x, z: b.z, scale: 2.0, ry: b.ry })),
+  ]
+  for (const p of all) {
+    let arr = byModel.get(p.model)
+    if (!arr) {
+      arr = []
+      byModel.set(p.model, arr)
+    }
+    arr.push(p)
+  }
+  const inst = []
+  const single = []
+  for (const [model, items] of byModel) {
+    if (items.length >= 2) inst.push({ model, items })
+    else single.push(items[0])
+  }
+  return { INSTANCED_PROPS: inst, SINGLE_PROPS: single }
+})()
+
 export default function City({ focusRef }) {
   const road = ROAD_HALF * 2
   const W = ISLAND.x1 - ISLAND.x0
@@ -994,8 +1334,6 @@ export default function City({ focusRef }) {
       <Flat x={30} z={0} w={36} d={28} y={Y.floor} tex="cobble" color="#e3d6ff" feather={3} /> {/* kulüp */}
       <Flat x={BEACH.x} z={BEACH.z} round={BEACH.r + 4} y={Y.floor} tex="sand" feather={6} /> {/* yuvarlak plaj: yumuşak kenarlı */}
       <Flat x={BEACH.x} z={BEACH.z} round={BEACH.r - 2} y={Y.floor + 0.004} tex="sand" color="#fff6dc" feather={5} />
-      <Flat x={BEACH.x} z={BEACH.z + 0.5} round={3.4} y={Y.mark} color="#ffe4a8" feather={1.4} /> {/* ortada güneş motifi */}
-      <Flat x={BEACH.x} z={BEACH.z + 0.5} round={1.9} y={Y.mark + 0.004} color="#ffc66b" feather={0.8} />
       
       <mesh position={[-33, 0.04, -6]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[3.6, 40]} />
@@ -1013,27 +1351,9 @@ export default function City({ focusRef }) {
       <Flat x={0} z={nsS.cz} w={road} d={nsS.len} y={Y.road} tex="asphalt" />
       <Flat x={ewE.cx} z={0} w={ewE.len} d={road} y={Y.road} tex="asphalt" />
       <TexRing r0={RING.r0} r1={RING.r1} y={Y.road + 0.006} tex="asphalt" />
-      {RING_DASHES.map((a, i) => (
-        <mesh key={i} position={[Math.cos(a) * ((RING.r0 + RING.r1) / 2), Y.mark, Math.sin(a) * ((RING.r0 + RING.r1) / 2)]} rotation={[-Math.PI / 2, 0, -a - Math.PI / 2]}>
-          <planeGeometry args={[0.28, 1.5]} />
-          <meshStandardMaterial color="#ffffff" roughness={0.9} />
-        </mesh>
-      ))}
-      {DASHES.map((t) => (
-        <group key={t}>
-          {t <= ROAD_END.south && t >= ROAD_END.north && <Flat x={0} z={t} w={0.28} d={1.8} y={Y.mark} color="#ffffff" />}
-          {t > PARK_X && t <= ROAD_END.east && <Flat x={t} z={0} w={1.8} d={0.28} y={Y.mark} color="#ffffff" />}
-        </group>
-      ))}
-      {/* yaya geçitleri (dönel kavşak girişleri ve plaj önü) */}
-      {[-1.5, -0.5, 0.5, 1.5].map((ox) => (
-        <group key={ox}>
-          <Flat x={ox} z={-17.2} w={0.42} d={2.1} y={Y.mark} color="#ffffff" />
-          <Flat x={ox} z={17.2} w={0.42} d={2.1} y={Y.mark} color="#ffffff" />
-          <Flat x={ox} z={26.5} w={0.42} d={2.1} y={Y.mark} color="#ffffff" />
-          <Flat x={17.2} z={ox} w={2.1} d={0.42} y={Y.mark} color="#ffffff" />
-        </group>
-      ))}
+      <RoadMarkings />
+      <RoadCurbs />
+      <RoadDetails />
 
       {/* lobi meydanı */}
       <Flat round={PLAZA_R} y={Y.plaza} tex="cobble" color="#fff7ee" />
@@ -1042,20 +1362,17 @@ export default function City({ focusRef }) {
       <Gazebo />
 
       {BUILDINGS.filter((b) => !b.gazebo).map((b, i) => (
-        <Apron key={`ap${i}`} b={b} />
-      ))}
-      {BUILDINGS.filter((b) => !b.gazebo).map((b, i) => (
         <Building key={i} b={b} i={i} focusRef={focusRef} />
       ))}
-      {PROPS.map((p, i) => (
+      {INSTANCED_PROPS.map((g) => (
+        <InstancedPropGroup key={g.model} model={g.model} items={g.items} />
+      ))}
+      {SINGLE_PROPS.map((p, i) => (
         <Prop key={i} {...p} />
       ))}
       <Plants />
       {TOWELS.map((t, i) => (
         <Towel key={i} t={t} />
-      ))}
-      {BLANKETS.map((b, i) => (
-        <Blanket key={i} b={b} />
       ))}
     </group>
   )

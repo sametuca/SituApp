@@ -206,7 +206,7 @@ export function useCollect(ctx) {
     [focusRef, say, send],
   )
 
-  const nearCol = near ? COLLECTIBLE_BY_ID[near] : null
+  const nearCol = near && !ctx.atDoor ? COLLECTIBLE_BY_ID[near] : null
   useEffect(() => {
     if (!nearCol) return
     const onKey = (e) => {

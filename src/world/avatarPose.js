@@ -131,5 +131,53 @@ export function applyPose(rig, pose, dt) {
     // 6 sn'lik döngüde önce davet eden, sonra eşi bir tur döner
     const k = MathUtils.clamp(((t % 6) - (rig.lead ? 1.5 : 4.5)) / 1.1, 0, 1)
     model.rotation.y = ease(k) * Math.PI * 2 * b
+  } else if (rig.kind === 'eat') {
+    model.position.z = 0
+    const t = performance.now() / 1000 - rig.t0
+    if (rig.style === 'hold') {
+      // balon tutma: sağ el havada hafifçe sallanır
+      model.position.y = Math.abs(Math.sin(t * 3.5)) * 0.04 * b
+      turn(rig, bones.rArm, AX, -1.65 * b)
+      turn(rig, bones.rArm, AZ, -0.35 * b)
+      turn(rig, bones.head, AX, -0.18 * b)
+      turn(rig, bones.head, AZ, Math.sin(t * 3) * 0.1 * b)
+    } else if (rig.style === 'read') {
+      // gazete okuma: iki kol önde, baş hafifçe eğik
+      model.position.y = 0
+      turn(rig, bones.lArm, AX, -0.95 * b)
+      turn(rig, bones.rArm, AX, -0.95 * b)
+      turn(rig, bones.lArm, AY, 0.28 * b)
+      turn(rig, bones.rArm, AY, -0.28 * b)
+      turn(rig, bones.head, AX, 0.26 * b)
+    } else if (rig.style === 'smell') {
+      // çiçek koklama: sağ el yüze yaklaşır, baş hafifçe eğilir
+      const sway = Math.sin(t * 3.2)
+      model.position.y = Math.max(0, sway) * 0.02 * b
+      turn(rig, bones.rArm, AX, (-1.15 - sway * 0.12) * b)
+      turn(rig, bones.rArm, AY, -0.38 * b)
+      turn(rig, bones.rForeArm, AX, -0.55 * b)
+      turn(rig, bones.head, AX, (0.14 + sway * 0.08) * b)
+      turn(rig, bones.head, AZ, sway * 0.12 * b)
+    } else {
+      // dondurma yeme: sağ kol ağıza doğru ritmik yaklaşıp uzaklaşır, mutlu baş sallama
+      const bite = Math.sin(t * 7.2)
+      model.position.y = Math.abs(Math.sin(t * 3.6)) * 0.03 * b
+      turn(rig, bones.rArm, AX, (-1.2 - bite * 0.18) * b)
+      turn(rig, bones.rArm, AY, -0.42 * b)
+      turn(rig, bones.rForeArm, AX, (-0.55 - bite * 0.22) * b)
+      turn(rig, bones.lArm, AZ, -0.12 * b)
+      turn(rig, bones.head, AX, (0.12 + bite * 0.12) * b)
+      turn(rig, bones.head, AZ, Math.sin(t * 3.6) * 0.08 * b)
+    }
+  } else if (rig.kind === 'push') {
+    // dondurma arabası itme: iki kol öne uzanıp itme kolunu tutar (yürürken bacak animasyonu devam eder)
+    model.position.z = 0
+    turn(rig, bones.spine, AX, 0.14 * b)
+    turn(rig, bones.lArm, AX, -1.08 * b)
+    turn(rig, bones.rArm, AX, -1.08 * b)
+    turn(rig, bones.lArm, AY, 0.16 * b)
+    turn(rig, bones.rArm, AY, -0.16 * b)
+    turn(rig, bones.lForeArm, AX, -0.22 * b)
+    turn(rig, bones.rForeArm, AX, -0.22 * b)
   }
 }

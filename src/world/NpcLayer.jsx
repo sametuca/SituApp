@@ -4,9 +4,10 @@
 import { memo, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { screenK } from './screenK'
 import { useFrame } from '@react-three/fiber'
-import { Html } from '@react-three/drei'
+import { Html, RoundedBox } from '@react-three/drei'
 import { MathUtils } from 'three'
 import AvatarRig, { AVATAR_HEIGHT } from './AvatarRig'
+import { Ico } from '../components/Icon'
 import { PetModel } from './Pet'
 import { AFK_BOTS, CLICK_RADIUS, GREET_RADIUS, NPC_SCALE, TALK_RADIUS, displayName, npcAccessory, npcsFor, posAt } from './npcs'
 import { cosStore } from './cosStore'
@@ -65,31 +66,93 @@ function Flowers() {
   )
 }
 
+/** Balonsu pasterize dondurma arabası: Zeynep'in tam önünde (+Z), itme kolu, 4 teker, soğutucu kapak, 3B külah süsü ve çizgili şemsiye. */
 function IceCart() {
+  const stripes = 8
   return (
-    <group position={[0.95, 0, 0.1]}>
-      <mesh position={[0, 0.4, 0]} castShadow>
-        <boxGeometry args={[0.7, 0.55, 1.0]} />
-        <M color="#fed095" />
-      </mesh>
-      <mesh position={[0, 0.7, 0]}>
-        <boxGeometry args={[0.74, 0.06, 1.04]} />
-        <M color="#ffffff" />
-      </mesh>
-      <mesh position={[0, 1.45, 0]} castShadow>
-        <coneGeometry args={[0.85, 0.35, 8]} />
-        <M color="#fec172" />
-      </mesh>
-      <mesh position={[0, 1.07, 0]}>
-        <cylinderGeometry args={[0.025, 0.025, 0.75, 6]} />
-        <M color="#ffffff" />
-      </mesh>
-      {[-0.32, 0.32].map((z) => (
-        <mesh key={z} position={[0.4, 0.14, z]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.14, 0.14, 0.06, 12]} />
-          <M color="#8a7a9c" />
+    <group position={[0, 0, 0.92]}>
+      {/* pofuduk yuvarlatılmış araba gövdesi */}
+      <RoundedBox args={[0.78, 0.56, 0.94]} radius={0.09} smoothness={2} position={[0, 0.48, 0]} castShadow>
+        <meshStandardMaterial color="#fff1dc" roughness={0.45} />
+      </RoundedBox>
+      {/* çilek pembesi alt kuşak */}
+      <RoundedBox args={[0.8, 0.18, 0.96]} radius={0.05} smoothness={2} position={[0, 0.34, 0]}>
+        <meshStandardMaterial color="#ffb4cc" roughness={0.45} />
+      </RoundedBox>
+      {/* krem soğutucu üst kapak + iki kulplu bölme */}
+      <RoundedBox args={[0.84, 0.09, 1.0]} radius={0.04} smoothness={2} position={[0, 0.79, 0]} castShadow>
+        <meshStandardMaterial color="#ffffff" roughness={0.35} />
+      </RoundedBox>
+      {[-0.18, 0.18].map((x) => (
+        <RoundedBox key={x} args={[0.28, 0.04, 0.56]} radius={0.015} smoothness={2} position={[x, 0.85, 0.04]}>
+          <meshStandardMaterial color="#dff3ff" roughness={0.25} />
+        </RoundedBox>
+      ))}
+      {/* arka itme kolu (Zeynep'in ellerine uzanır) */}
+      {[-0.28, 0.28].map((x) => (
+        <mesh key={x} position={[x, 0.77, -0.56]} rotation={[0.35, 0, 0]}>
+          <cylinderGeometry args={[0.022, 0.022, 0.28, 8]} />
+          <meshStandardMaterial color="#e8952c" roughness={0.4} />
         </mesh>
       ))}
+      <mesh position={[0, 0.82, -0.64]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.028, 0.028, 0.62, 10]} />
+        <meshStandardMaterial color="#ffd35e" roughness={0.35} />
+      </mesh>
+      {/* 4 yuvarlak tekerlek (iki yanda, krem göbekli) */}
+      {[-0.41, 0.41].map((x) =>
+        [-0.28, 0.28].map((z) => (
+          <group key={`${x}|${z}`} position={[x, 0.16, z]} rotation={[0, 0, Math.PI / 2]}>
+            <mesh castShadow>
+              <cylinderGeometry args={[0.16, 0.16, 0.07, 16]} />
+              <meshStandardMaterial color="#6e5a85" roughness={0.55} />
+            </mesh>
+            <mesh>
+              <cylinderGeometry args={[0.08, 0.08, 0.08, 12]} />
+              <meshStandardMaterial color="#fff6ea" roughness={0.4} />
+            </mesh>
+          </group>
+        )),
+      )}
+      {/* ön köşede 3B dondurma külahı süsü */}
+      <group position={[0.26, 0.98, 0.36]} rotation={[0, 0, -0.1]}>
+        <mesh position={[0, -0.05, 0]} rotation={[Math.PI, 0, 0]}>
+          <coneGeometry args={[0.075, 0.2, 12]} />
+          <meshStandardMaterial color="#e8b36d" roughness={0.65} />
+        </mesh>
+        <mesh position={[0, 0.07, 0]}>
+          <sphereGeometry args={[0.085, 12, 10]} />
+          <meshStandardMaterial color="#ff9ec7" roughness={0.4} />
+        </mesh>
+        <mesh position={[0.02, 0.16, 0.01]}>
+          <sphereGeometry args={[0.065, 12, 10]} />
+          <meshStandardMaterial color="#fff3c8" roughness={0.4} />
+        </mesh>
+      </group>
+      {/* şemsiye direği + çizgili pofuduk şemsiye kubbesi + altın topuz */}
+      <mesh position={[0, 1.32, 0.06]}>
+        <cylinderGeometry args={[0.028, 0.032, 1.08, 10]} />
+        <meshStandardMaterial color="#fffaf2" roughness={0.4} />
+      </mesh>
+      <group position={[0, 1.82, 0.06]}>
+        {Array.from({ length: stripes }, (_, i) => {
+          const a = (i / stripes) * Math.PI * 2
+          return (
+            <mesh key={i} rotation={[0, a, 0]} castShadow>
+              <coneGeometry args={[0.88, 0.34, 4, 1, false, 0, (Math.PI * 2) / stripes]} />
+              <meshStandardMaterial color={i % 2 === 0 ? '#ffa3c4' : '#fff8ee'} roughness={0.45} />
+            </mesh>
+          )
+        })}
+        <mesh position={[0, -0.15, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.84, 0.045, 8, 24]} />
+          <meshStandardMaterial color="#ffd35e" roughness={0.4} />
+        </mesh>
+        <mesh position={[0, 0.2, 0]}>
+          <sphereGeometry args={[0.08, 12, 10]} />
+          <meshStandardMaterial color="#ffd35e" roughness={0.3} />
+        </mesh>
+      </group>
     </group>
   )
 }
@@ -118,22 +181,43 @@ function Companion({ npc }) {
   )
 }
 
-function NpcTag({ name, bubble, nearTalk }) {
-  const label = name
+/** "Cankurtaran Ege" → { role: "Cankurtaran", person: "Ege" } */
+function splitNpcName(full) {
+  const parts = String(full ?? '').trim().split(/\s+/)
+  if (parts.length < 2) return { role: '', person: full }
+  return { role: parts.slice(0, -1).join(' '), person: parts[parts.length - 1] }
+}
+
+function NpcTag({ name, bubble, nearTalk, isVendor }) {
+  const { role, person } = splitNpcName(name)
   return (
-    <Html position={[0, AVATAR_HEIGHT + 0.45, 0]} center distanceFactor={9 * screenK()} zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}>
+    <Html position={[0, AVATAR_HEIGHT + 0.5, 0]} center distanceFactor={9 * screenK()} zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}>
       <div className="relative flex flex-col items-center gap-1">
         {nearTalk && !bubble && (
-          <div className="rounded-full border border-white bg-[#fff3c4] px-2 py-0.5 text-[10px] font-black text-[#8a5a00] shadow">
-            💬 Konuş
+          <div className={`rounded-full border border-white px-2.5 py-0.5 text-[10px] font-black shadow ${isVendor ? 'bg-[#fff3c4] text-[#8a5a00]' : 'bg-[#f1ebff] text-[#5e42a8]'}`}>
+            {isVendor ? 'E · Göz At' : 'E · Konuş'}
           </div>
         )}
         {bubble && (
           <div className="w-max min-w-[160px] max-w-[340px] break-words rounded-2xl rounded-bl-md border-2 border-white bg-white px-3.5 py-1.5 text-center text-sm font-bold leading-snug text-[#4a3b5c] shadow-lg">{bubble}</div>
         )}
-        <div className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[#fffaf2] px-2.5 py-[3px] shadow-[0_4px_12px_rgba(253,178,82,0.35)] ring-2 ring-[#fdb252]">
-          <span className="rounded-full bg-[#fdb252] px-1.5 py-[1px] text-[9px] font-black tracking-wider text-white">NPC</span>
-          <span className="text-[13px] font-extrabold leading-none tracking-wide text-[#4a3b5c]">{label}</span>
+        {/* Oyun içi doğal karakter kartı: "NPC" yazısı yerine ünvan + isim + satıcı/sohbet rozeti */}
+        <div
+          className={`inline-flex items-center gap-2 whitespace-nowrap rounded-2xl border-2 border-white bg-[#fffdf9]/95 py-1 pl-1.5 pr-3 shadow-[0_5px_14px_rgba(74,59,92,0.18)] ${
+            isVendor ? 'ring-1 ring-[#fdb252]/70' : 'ring-1 ring-[#d6c7ff]/80'
+          }`}
+        >
+          <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-xl ${isVendor ? 'bg-[#fdb252]' : 'bg-[#9b7be8]'}`}>
+            <Ico name={isVendor ? 'shop' : 'chat'} size={14} color="#ffffff" weight="fill" />
+          </span>
+          <span className="flex flex-col leading-tight">
+            {role && (
+              <span className={`text-[9px] font-black uppercase tracking-wider ${isVendor ? 'text-[#d98a1c]' : 'text-[#8467c9]'}`}>
+                {role}
+              </span>
+            )}
+            <span className="text-[13px] font-black text-[#4a3b5c]">{person}</span>
+          </span>
         </div>
       </div>
     </Html>
@@ -243,21 +327,23 @@ const NpcView = memo(function NpcView({ npc, focusRef, onTalk }) {
             <group scale={NPC_SCALE}>
               <AvatarRig slug={npc.avatar} anim={anim} pose={pose} cosId={`npc:${npc.id}`} />
             </group>
-            {/* nefes alan çift katmanlı NPC etkileşim halkası + yüzen altın kristal */}
+            {/* yumuşak, zeminle çakışmayan (y=0.085) etkileşim halesi — satıcılar altın, şehir sakinleri lavanta */}
             <group ref={ringRef}>
-              <mesh position={[0, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                <ringGeometry args={[0.58, 0.74, 28]} />
-                <meshBasicMaterial color="#fdb252" transparent opacity={0.85} depthWrite={false} />
+              <mesh position={[0, 0.088, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                <ringGeometry args={[0.56, 0.68, 28]} />
+                <meshBasicMaterial color={npc.shop?.length ? '#fdb252' : '#b79cff'} transparent opacity={0.78} depthWrite={false} />
               </mesh>
-              <mesh position={[0, 0.035, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                <ringGeometry args={[0.42, 0.58, 28]} />
-                <meshBasicMaterial color="#fff3c4" transparent opacity={0.45} depthWrite={false} />
+              <mesh position={[0, 0.084, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                <ringGeometry args={[0.38, 0.56, 28]} />
+                <meshBasicMaterial color={npc.shop?.length ? '#fff3c4' : '#efe6ff'} transparent opacity={0.35} depthWrite={false} />
               </mesh>
             </group>
-            <mesh ref={orbRef} position={[0, AVATAR_HEIGHT + 0.88, 0]}>
-              <octahedronGeometry args={[0.11, 0]} />
-              <meshStandardMaterial color="#ffe066" emissive="#fdb252" emissiveIntensity={0.65} roughness={0.2} />
-            </mesh>
+            {npc.shop?.length > 0 && (
+              <mesh ref={orbRef} position={[0, AVATAR_HEIGHT + 0.92, 0]}>
+                <octahedronGeometry args={[0.09, 0]} />
+                <meshStandardMaterial color="#ffe066" emissive="#fdb252" emissiveIntensity={0.55} roughness={0.25} />
+              </mesh>
+            )}
             {Prop && <Prop />}
           </Suspense>
         )}
@@ -266,7 +352,7 @@ const NpcView = memo(function NpcView({ npc, focusRef, onTalk }) {
           <cylinderGeometry args={[0.55, 0.55, 1.8, 8]} />
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
-        {active && tag && ready && <NpcTag name={displayName(npc)} bubble={bubble} nearTalk={nearTalk} />}
+        {active && tag && ready && <NpcTag name={displayName(npc)} bubble={bubble} nearTalk={nearTalk} isVendor={Boolean(npc.shop?.length)} />}
       </group>
       {active && npc.companion && (
         <Suspense fallback={null}>

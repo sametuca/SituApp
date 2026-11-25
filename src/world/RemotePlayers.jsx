@@ -4,7 +4,8 @@ import { useFrame } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import { MathUtils } from 'three'
 import AvatarRig, { AVATAR_HEIGHT } from './AvatarRig'
-import { GUIDE } from './layout'
+import { Em } from '../components/emoji'
+import { GUIDE, groundY } from './layout'
 import { together } from './features/togetherStore'
 import { BIKE_POSE } from './bikeStore'
 import { playerPos } from './cull'
@@ -12,21 +13,54 @@ import { playerPos } from './cull'
 const NEAR_DRAW = 42 // m: bu mesafeden uzaktaki oyuncular çizilmez
 import BikeModel from './Bike'
 
+const REACT_BURSTS = {
+  '❤️': ['❤️', '💗', '💖', '❤️', '💕'],
+  '👋': ['👋', '✨', '👋', '😊', '✨'],
+  '🎉': ['🎉', '✨', '🎊', '⭐', '🎉'],
+  '💃': ['💃', '🎶', '✨', '🎵', '💃'],
+  '🍦': ['🍦', '😋', '✨', '🍓', '🍦'],
+  '🌷': ['🌷', '✨', '💐', '😊', '🌷'],
+  '🎈': ['🎈', '✨', '🎉', '🎈', '✨'],
+  '📰': ['📰', '✨', '☕', '📰', '✨'],
+}
+const BURST_SLOTS = [
+  { rx: 0, rot: -6, size: 84, delay: 0 },
+  { rx: -56, rot: -14, size: 60, delay: 0.08 },
+  { rx: 56, rot: 14, size: 64, delay: 0.16 },
+  { rx: -30, rot: 10, size: 52, delay: 0.25 },
+  { rx: 34, rot: -10, size: 56, delay: 0.33 },
+]
+
 /** Karakterin üstünde isim etiketi, konuşma balonu, uçan emoji tepkisi, AFK rozeti ve (fısıldıyorsa) 🤫. */
 function Tag({ name, bubble: rawBubble, accent, reaction, whisper, afk = false, showName = false }) {
   // bubble: metin ya da { text, big } (çıkartmalar büyük gösterilir)
   const bubble = typeof rawBubble === 'string' ? { text: rawBubble } : rawBubble
+  const reacts = Array.isArray(reaction) ? reaction : reaction ? [reaction] : []
   // oyuncuların kullanıcı adı ekranda yazmaz (kalabalık/okunaksız); isim, karaktere tıklayınca açılan profil penceresinde görünür.
   // Etiket yalnızca konuşma balonu, emoji tepkisi, AFK durumu ya da fısıltı varken çizilir. İsim göstermek gerekirse (Rehber NPC) `showName`.
-  if (!showName && !bubble && !reaction && !whisper && !afk) return null
+  if (!showName && !bubble && !reacts.length && !whisper && !afk) return null
   return (
     <Html position={[0, AVATAR_HEIGHT + 0.45, 0]} center distanceFactor={9 * screenK()} zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}>
       <div className="relative flex flex-col items-center gap-1">
-        {reaction && (
-          <span key={reaction.key} aria-hidden className="pointer-events-none absolute -top-2 left-1/2 text-4xl drop-shadow-md [animation:react-float_2.6s_ease-out_forwards]">
-            {reaction.e}
-          </span>
-        )}
+        {reacts.map((r) => {
+          const set = REACT_BURSTS[r.e] ?? [r.e, '✨', r.e]
+          return BURST_SLOTS.slice(0, set.length).map((slot, j) => (
+            <span
+              key={`${r.key}-${j}`}
+              aria-hidden
+              style={{
+                width: `${slot.size}px`,
+                height: `${slot.size}px`,
+                '--rx': `${slot.rx}px`,
+                '--rot': `${slot.rot}deg`,
+                animation: `react-float 2.3s ${slot.delay}s ease-out both`,
+              }}
+              className="pointer-events-none absolute -top-8 left-1/2 grid place-items-center drop-shadow-[0_6px_14px_rgba(74,59,92,0.35)]"
+            >
+              <Em e={set[j]} size={slot.size} className="!max-w-none shrink-0" />
+            </span>
+          ))
+        })}
         {bubble && (
           <div className={`break-words rounded-2xl rounded-bl-md border-2 border-white bg-white text-center font-bold text-[#4a3b5c] shadow-lg ${bubble.big ? 'px-4 py-1 text-6xl leading-tight' : 'w-max min-w-[120px] max-w-[340px] px-3.5 py-1.5 text-sm leading-snug'}`}>
             {bubble.text}
@@ -52,15 +86,16 @@ function Tag({ name, bubble: rawBubble, accent, reaction, whisper, afk = false, 
 
 /** Birinin tepki emojisini ve fısıldıyor durumunu ref'lerden okuyup state'e çevirir (render'ı yalnızca değişince tetikler). */
 function useLiveFlags(id, reactions, whispering) {
-  const [reaction, setReaction] = useState(null)
+  const [reaction, setReaction] = useState([])
   const [whisper, setWhisper] = useState(false)
-  const last = useRef({ key: null, whisper: false })
+  const last = useRef({ key: '', whisper: false })
   useFrame(() => {
     const now = Date.now()
-    const r = reactions?.current.get(id)
-    const live = r && r.until > now ? r : null
-    if ((live?.key ?? null) !== last.current.key) {
-      last.current.key = live?.key ?? null
+    const raw = reactions?.current.get(id)
+    const live = Array.isArray(raw) ? raw.filter((r) => r.until > now) : raw && raw.until > now ? [raw] : []
+    const sig = live.map((r) => r.key).join('|')
+    if (sig !== last.current.key) {
+      last.current.key = sig
       setReaction(live)
     }
     const w = Boolean(whispering && (whispering.current.get(id) ?? 0) > now)
@@ -108,7 +143,7 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
     const k = 1 - Math.exp(-dt * 12)
     r.x = MathUtils.lerp(r.x, r.tx, k)
     r.z = MathUtils.lerp(r.z, r.tz, k)
-    g.position.set(r.x, 0, r.z)
+    g.position.set(r.x, groundY(r.x, r.z), r.z)
     const d2 = (r.x - playerPos.x) ** 2 + (r.z - playerPos.z) ** 2
     // gölge kamerası ±20 m; uzaktaki oyuncular (frustumCulled=false) boşuna gölge geçişinde çizilmesin
     const sh = d2 < (shadowRef.current ? 26 * 26 : 22 * 22)
@@ -180,33 +215,35 @@ export default function RemotePlayers({ roster, remotes, bubbles, reactions, whi
 export function SelfTag({ name, bubbles, selfId, reactions }) {
   const [bubble, setBubble] = useState(null)
   const ref = useRef(null)
-  const [reaction, setReaction] = useState(null)
-  const reactKey = useRef(null)
+  const [reaction, setReaction] = useState([])
+  const reactKey = useRef('')
   const [ready, setReady] = useState(false) // drei <Html> ilk çizim turunda bağlanmasın (React 19 root uyarısı)
   useEffect(() => {
     const t = setTimeout(() => setReady(true), 800)
     return () => clearTimeout(t)
   }, [])
   useFrame(() => {
+    const now = Date.now()
     const b = selfId.current ? bubbles.current.get(selfId.current) : null
-    const liveBubble = b && b.until > Date.now() ? b : null
+    const liveBubble = b && b.until > now ? b : null
     if (liveBubble !== ref.current) {
       ref.current = liveBubble
       setBubble(liveBubble)
     }
     const rid = selfId.current ?? 'self'
-    const r = reactions?.current.get(rid) ?? null
-    const live = r && r.until > Date.now() ? r : null
-    if ((live?.key ?? null) !== reactKey.current) {
-      reactKey.current = live?.key ?? null
+    const raw = reactions?.current.get(rid)
+    const live = Array.isArray(raw) ? raw.filter((r) => r.until > now) : raw && raw.until > now ? [raw] : []
+    const sig = live.map((r) => r.key).join('|')
+    if (sig !== reactKey.current) {
+      reactKey.current = sig
       setReaction(live)
     }
   })
   return ready ? <Tag name={name} bubble={bubble} accent="bg-[#5fc0ea]" reaction={reaction} /> : null
 }
 
-/** Lobideki Rehber (NPC): yakına gelenlere ipucu balonu gösterir. */
-export function GuideNpc({ focusRef, tips }) {
+/** Lobideki Rehber (NPC): yakına gelenlere ipucu balonu gösterir; tıklayınca "Nasıl Oynanır" penceresini açar. */
+export function GuideNpc({ focusRef, tips, onOpen, onNear }) {
   const [bubble, setBubble] = useState(null)
   const state = useRef({ near: false, i: 0, t: 0 })
 
@@ -218,10 +255,12 @@ export function GuideNpc({ focusRef, tips }) {
       s.near = true
       s.t = 0
       setBubble(tips[s.i % tips.length])
+      onNear?.(true)
     } else if (!near && s.near) {
       s.near = false
       s.i += 1
       setBubble(null)
+      onNear?.(false)
     } else if (near) {
       // yakında kalırsan 7 saniyede bir sonraki ipucu
       s.t += dt
@@ -234,7 +273,16 @@ export function GuideNpc({ focusRef, tips }) {
   })
 
   return (
-    <group position={[GUIDE.x, 0, GUIDE.z]} rotation={[0, GUIDE.ry, 0]}>
+    <group
+      position={[GUIDE.x, 0, GUIDE.z]}
+      rotation={[0, GUIDE.ry, 0]}
+      onClick={(e) => {
+        e.stopPropagation()
+        onOpen?.()
+      }}
+      onPointerOver={() => (document.body.style.cursor = 'pointer')}
+      onPointerOut={() => (document.body.style.cursor = '')}
+    >
       <AvatarRig slug={GUIDE.avatar} anim="idle" />
       <Tag name="Rehber" bubble={bubble} accent="bg-[#ffa94d]" showName />
     </group>

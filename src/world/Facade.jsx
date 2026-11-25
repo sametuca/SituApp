@@ -1,11 +1,167 @@
-// Mekân ön cepheleri: her mekânın kapısı, camları, tentesi ve süsleri farklıdır (veri: facadeData.js). Bina yerel çerçevesi: cephe z = d/2, x genişlik.
+// Mekân ön cepheleri: her mekânın kapısı, camları, tentesi, 3B tabelası ve süsleri farklıdır (veri: facadeData.js). Bina yerel çerçevesi: cephe z = d/2, x genişlik.
+import { useEffect, useMemo } from 'react'
 import { RoundedBox } from '@react-three/drei'
+import { CanvasTexture, SRGBColorSpace } from 'three'
 import { SKY_MATS } from './Sky'
 import Prop from './Prop'
 
 const cream = '#fffaf2'
 const Glass = () => <primitive object={SKY_MATS.window} attach="material" />
 const Mat = ({ c, r = 0.5, e, ei }) => <meshStandardMaterial color={c} roughness={r} emissive={e} emissiveIntensity={ei} />
+
+// Mekân bazlı 3B tabela stilleri (eğlenceli fontlar + uyumlu renk paleti)
+const SIGN_THEMES = {
+  kafe: { bg: '#2c5e4b', border: '#ffd35e', text: '#fff8e6', shadow: '#19382c', font: '"Fredoka", "Nunito", sans-serif', weight: '700' },
+  kitapkafe: { bg: '#23594d', border: '#f4d99b', text: '#fffaf0', shadow: '#13352e', font: '"Lobster", "Nunito", cursive', weight: '400' },
+  firin: { bg: '#fff3d6', border: '#d98a3c', text: '#8c4218', shadow: '#f2cfa0', font: '"Fredoka", "Nunito", sans-serif', weight: '700' },
+  cayevi: { bg: '#7a3b26', border: '#f2cfa2', text: '#fff5e4', shadow: '#4a1f12', font: '"Lobster", "Nunito", cursive', weight: '400' },
+  tatli: { bg: '#ffe3ee', border: '#e87ca4', text: '#9c2d5c', shadow: '#ffc2dc', font: '"Lobster", "Nunito", cursive', weight: '400' },
+  kuafor: { bg: '#fff6ea', border: '#e8952c', text: '#5c3b1e', shadow: '#fed095', font: '"Lobster", "Nunito", cursive', weight: '400' },
+  kulup: { bg: '#22183b', border: '#d48cff', text: '#ffe6ff', shadow: '#ff5ec4', font: '"Righteous", "Nunito", sans-serif', weight: '400', neon: true },
+  bar: { bg: '#2b1e40', border: '#ff9f43', text: '#ffe8b8', shadow: '#ff6b35', font: '"Righteous", "Nunito", sans-serif', weight: '400', neon: true },
+  oyun: { bg: '#1e2554', border: '#5fc0ea', text: '#d8f6ff', shadow: '#5fc0ea', font: '"Righteous", "Nunito", sans-serif', weight: '400', neon: true },
+  fastfood: { bg: '#d93d26', border: '#ffd35e', text: '#fff6cf', shadow: '#8c1d0e', font: '"Fredoka", "Nunito", sans-serif', weight: '700' },
+  dondurma: { bg: '#fff2f8', border: '#7fcdf3', text: '#e05b8b', shadow: '#b9e3ff', font: '"Fredoka", "Nunito", sans-serif', weight: '700' },
+  surf: { bg: '#1e8a9c', border: '#ffe48f', text: '#fffaf0', shadow: '#0f5663', font: '"Righteous", "Nunito", sans-serif', weight: '400' },
+  plajbar: { bg: '#78502a', border: '#f5d28c', text: '#fff5d6', shadow: '#472d14', font: '"Fredoka", "Nunito", sans-serif', weight: '700' },
+  foto: { bg: '#4e3b82', border: '#ffd35e', text: '#fffaf2', shadow: '#2b1d52', font: '"Righteous", "Nunito", sans-serif', weight: '400' },
+  rehber: { bg: '#3278b8', border: '#fff3c8', text: '#ffffff', shadow: '#1c4d7a', font: '"Fredoka", "Nunito", sans-serif', weight: '700' },
+  evim: { bg: '#fff4e2', border: '#e8952c', text: '#6e451e', shadow: '#fed095', font: '"Fredoka", "Nunito", sans-serif', weight: '700' },
+}
+
+const signTexCache = new Map()
+function paintSignCanvas(cv, text, theme) {
+  const W = cv.width
+  const H = cv.height
+  const g = cv.getContext('2d')
+  g.clearRect(0, 0, W, H)
+
+  // yuvarlatılmış arka plan
+  const r = 34
+  const roundRect = (x, y, w, h, rad) => {
+    g.beginPath()
+    g.moveTo(x + rad, y)
+    g.arcTo(x + w, y, x + w, y + h, rad)
+    g.arcTo(x + w, y + h, x, y + h, rad)
+    g.arcTo(x, y + h, x, y, rad)
+    g.arcTo(x, y, x + w, y, rad)
+    g.closePath()
+  }
+
+  g.fillStyle = theme.bg
+  roundRect(0, 0, W, H, r)
+  g.fill()
+
+  // üst parlama şeridi (oyuncak / emaye tabela hissi)
+  const grad = g.createLinearGradient(0, 0, 0, H * 0.55)
+  grad.addColorStop(0, 'rgba(255,255,255,0.16)')
+  grad.addColorStop(1, 'rgba(255,255,255,0)')
+  g.fillStyle = grad
+  roundRect(10, 10, W - 20, H * 0.5, 24)
+  g.fill()
+
+  // iç dekoratif çerçeve
+  g.strokeStyle = theme.border
+  g.lineWidth = 10
+  roundRect(16, 16, W - 32, H - 32, 22)
+  g.stroke()
+
+  // köşe perçin noktaları
+  g.fillStyle = theme.border
+  for (const [cx, cy] of [[42, 42], [W - 42, 42], [42, H - 42], [W - 42, H - 42]]) {
+    g.beginPath()
+    g.arc(cx, cy, 7, 0, Math.PI * 2)
+    g.fill()
+  }
+
+  // metin (genişliğe otomatik sığdır)
+  let fontSize = 112
+  g.textAlign = 'center'
+  g.textBaseline = 'middle'
+  do {
+    g.font = `${theme.weight} ${fontSize}px ${theme.font}`
+    if (g.measureText(text).width <= W - 120) break
+    fontSize -= 6
+  } while (fontSize > 48)
+
+  if (theme.neon) {
+    g.shadowColor = theme.shadow
+    g.shadowBlur = 24
+    g.fillStyle = theme.text
+    g.fillText(text, W / 2, H / 2 + 4)
+    g.shadowBlur = 10
+    g.fillText(text, W / 2, H / 2 + 4)
+  } else {
+    g.shadowColor = 'transparent'
+    g.shadowBlur = 0
+    g.fillStyle = theme.shadow
+    g.fillText(text, W / 2 + 4, H / 2 + 10)
+    g.fillStyle = theme.text
+    g.fillText(text, W / 2, H / 2 + 4)
+  }
+}
+
+function getSignTexture(venueId, title) {
+  const key = `${venueId ?? 'def'}|${title}`
+  let entry = signTexCache.get(key)
+  if (entry) return entry
+  const theme = SIGN_THEMES[venueId] ?? SIGN_THEMES.kafe
+  const cv = document.createElement('canvas')
+  cv.width = 1024
+  cv.height = 256
+  paintSignCanvas(cv, title, theme)
+  const tex = new CanvasTexture(cv)
+  tex.colorSpace = SRGBColorSpace
+  tex.anisotropy = 4
+  entry = { tex, cv, theme, title }
+  signTexCache.set(key, entry)
+  return entry
+}
+
+// Web fontları (Fredoka / Lobster / Righteous) indirilince tüm tabelaları tek seferde yeniden boya
+let fontsHooked = false
+function hookFontsOnce() {
+  if (fontsHooked || typeof document === 'undefined' || !document.fonts?.ready) return
+  fontsHooked = true
+  document.fonts.ready.then(() => {
+    for (const entry of signTexCache.values()) {
+      paintSignCanvas(entry.cv, entry.title, entry.theme)
+      entry.tex.needsUpdate = true
+    }
+  })
+}
+
+function Signboard({ venueId, label, w, h, z, hasAwning }) {
+  const title = useMemo(() => String(label ?? '').replace(/^[\p{Extended_Pictographic}\uFE0F\u200D\s]+/gu, '').trim(), [label])
+  const entry = useMemo(() => (title ? getSignTexture(venueId, title) : null), [venueId, title])
+  useEffect(() => {
+    hookFontsOnce()
+  }, [])
+  if (!entry) return null
+  const sw = Math.min(Math.max(3.2, w * 0.78), 5.4)
+  const sh = sw * 0.25
+  const sy = Math.min(h - sh / 2 - 0.35, hasAwning ? 3.95 : 3.65)
+  const { tex, theme } = entry
+  return (
+    <group position={[0, sy, z + 0.14]}>
+      {/* 3B çerçeve gövdesi */}
+      <RoundedBox args={[sw + 0.16, sh + 0.14, 0.14]} radius={0.05} smoothness={2} castShadow>
+        <Mat c={theme.border} r={0.4} />
+      </RoundedBox>
+      {/* yazılı ön yüz */}
+      <mesh position={[0, 0, 0.076]}>
+        <planeGeometry args={[sw, sh]} />
+        <meshStandardMaterial
+          map={tex}
+          roughness={theme.neon ? 0.3 : 0.45}
+          emissive={theme.neon ? theme.text : '#ffffff'}
+          emissiveMap={tex}
+          emissiveIntensity={theme.neon ? 0.65 : 0.1}
+        />
+      </mesh>
+    </group>
+  )
+}
 
 function Door({ w, h, c, arch, style, open, z }) {
   if (open) {
@@ -138,7 +294,7 @@ function GlassPane({ k, x, w, W, z }) {
   )
 }
 
-function Awning({ w, d, c, stripe, z }) {
+function Awning({ w, c, stripe, z }) {
   const n = Math.max(4, Math.round(w / 1.1))
   const sw = (w * 0.9) / n
   return (
@@ -283,7 +439,7 @@ function Extra({ kind, W, h, z, doorX, accent }) {
       )
     case 'chalk':
       return (
-        <mesh position={[dx + 1.15, 0.55, z + 0.7]} rotation={[-0.12, 0, 0]}>
+        <mesh position={[Math.min(W / 2 - 0.55, dx + 2.15), 0.55, z + 0.55]} rotation={[-0.12, 0, 0]}>
           <boxGeometry args={[0.7, 1.0, 0.06]} />
           <Mat c="#3b3446" />
         </mesh>
@@ -307,8 +463,8 @@ function Extra({ kind, W, h, z, doorX, accent }) {
   }
 }
 
-/** Mekânın ön cephesi (kapı + camlar + tente + süsler). z = cephenin ön yüzü (d/2). */
-export default function Facade({ F, w, h, roof, z }) {
+/** Mekânın ön cephesi (kapı + camlar + tente + 3B tabela + süsler). z = cephenin ön yüzü (d/2). */
+export default function Facade({ F, w, h, roof, z, label, venueId }) {
   const doorX = F.door.x * w
   return (
     <group>
@@ -319,6 +475,7 @@ export default function Facade({ F, w, h, roof, z }) {
         <GlassPane key={i} {...g} W={w} z={z} />
       ))}
       {F.awning && <Awning w={w} c={F.awning.c} stripe={F.awning.stripe} z={z} />}
+      {label && <Signboard venueId={venueId} label={label} w={w} h={h} z={z} hasAwning={Boolean(F.awning)} />}
       {F.extra.map((k) => (
         <Extra key={k} kind={k} W={w} h={h} z={z} doorX={doorX} accent={roof} />
       ))}

@@ -52,8 +52,6 @@ function ensureHead(mesh) {
   g.setAttribute('aFoot', new Float32BufferAttribute(foot, 1))
 }
 
-const toSrgb = (c) => c / 255
-
 /** Dokudan bölge renklerini çıkarır: ten (eller), saç (baştaki ten dışı baskın renkler), kıyafet (gövdedeki ten dışı baskın renkler). */
 function findRefs(slug, mesh, px, w, h) {
   const key = `${slug}:refs`

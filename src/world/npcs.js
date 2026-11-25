@@ -21,6 +21,9 @@ const CITY = [
   {
     id: 'gazeteci', avatar: 'elif', name: 'Gazeteci Elif', role: '📰', x: -4.6, z: -4.4, ry: 0.9,
     lines: ['Günün haberi: lobide herkes birbirine selam veriyor! 📰', 'Şehirde ne var ne yok, ilk ben duyarım 🗞️', 'Selam göndermek için karaktere tıklaman yeter 👋', 'Bugünün manşeti: “Park bankları doldu taştı” 😄'],
+    shop: [
+      { id: 'newspaper', label: 'Günün Gazetesi', emoji: '📰', price: 3, style: 'read', color: '#fffaf2', reply: 'Sıcak sıcak günün manşetleri! 📰✨' },
+    ],
     options: [
       { label: 'Öneri iste', reply: ['Bu akşam Kafe Sokağı çok sakin, sohbet için birebir ☕', 'Gün batımında plaja git, manşet fotoğrafı orada çekiliyor 🌅'] },
       { label: 'Hikâye anlat', reply: ['Geçen gün iki yabancı aynı gazeteyi almak için uzandı, elleri değdi… Şimdi her sabah birlikte okuyorlar 💞', 'Bir kadın bana “şu mavi tişörtlü kim?” diye sordu. Dönüp baktım, mavi tişörtlü de aynısını soruyordu 😄'] },
@@ -30,13 +33,17 @@ const CITY = [
     id: 'balon', avatar: 'ege', name: 'Balon Satıcısı Ege', role: '🎈', x: 5, z: 0, ry: 0, prop: 'balloons',
     route: { pts: [[5, 0], [3.5, 3.5], [0, 5], [-3.5, 3.5], [-5, 0], [-3.5, -3.5], [0, -5], [3.5, -3.5]], mode: 'loop', speed: 0.9, pause: 3 },
     lines: ['Balon, balon! Rengârenk balon! 🎈', 'Kalp şeklinde olanı birine hediye edebilirsin 💗', 'Çeşmenin etrafında tur atıyorum, yorulmuyorum bile 😄', 'Pembe mi mavi mi? İkisi de olur 🎀'],
+    shop: [
+      { id: 'balloon_pink', label: 'Pembe Balon', emoji: '🎈', price: 5, style: 'hold', color: '#ff9ec7', reply: 'Uçup gitmesin, sıkı tut! 🎈😄' },
+      { id: 'balloon_blue', label: 'Mavi Balon', emoji: '🎈', price: 5, style: 'hold', color: '#7fcdf3', reply: 'Gökyüzü rengi balonun hazır! 🎈✨' },
+    ],
     options: [
       { label: 'Öneri iste', reply: ['Çeşmenin başında buluşmak klasik ama hep işe yarar ⛲', 'Park çardağı akşamüstü çok romantik oluyor 🌳'] },
       { label: 'Hikâye anlat', reply: ['Bir balon uçup gitti, peşinden koşan çocuk bir de baktı ki yeni arkadaş edinmiş 🎈', 'Bir çift buluştuğunda iki balonun ipini birbirine bağlamıştı. Hâlâ birlikteler 💞'] },
     ],
   },
   {
-    id: 'muzisyen', avatar: 'deniz', name: 'Sokak Müzisyeni Deniz', role: '🎸', x: 4.4, z: -16.5, ry: 0.5, pose: SIT, prop: 'stool',
+    id: 'muzisyen', avatar: 'deniz', name: 'Sokak Müzisyeni Deniz', role: '🎸', x: 4.4, z: -20.8, ry: 0.5, pose: SIT, prop: 'stool',
     lines: ['Bu şarkıyı sana çalıyorum 🎶', 'Kafe Sokağı’nın sesi benim 🎸', 'Müzik, sohbetin en tatlı başlangıcı 😉', 'Dinleyene bir kahve ısmarlarım… yarın 😄'],
     options: [
       { label: 'Öneri iste', reply: ['Müzik dinleyerek kahve içmek için Starbucket’in pencere kenarı ideal ☕', 'Dans etmek istersen Gece Kulübü’ne uğra, pist hiç boş kalmıyor 🪩'] },
@@ -44,8 +51,11 @@ const CITY = [
     ],
   },
   {
-    id: 'cicekci', avatar: 'zeynep', name: 'Çiçekçi Zeynep', role: '🌷', x: -4.9, z: -25.5, ry: -0.9, prop: 'flowers',
+    id: 'cicekci', avatar: 'zeynep', name: 'Çiçekçi Zeynep', role: '🌷', x: -4.6, z: -22.4, ry: -0.9, prop: 'flowers',
     lines: ['Taze laleler geldi! 🌷', 'Çiçek, “seni düşündüm”ün en kibar hali 💐', 'Kalp mi papatya mı? Ben papatyaya bayılıyorum 🌼', 'Birine çiçek jesti göndermeyi dene 😉'],
+    shop: [
+      { id: 'flower_tulip', label: 'Taze Lale', emoji: '🌷', price: 5, style: 'smell', color: '#ff8fb8', reply: 'Mis gibi taze laleler, keyfini çıkar 🌷✨' },
+    ],
     options: [
       { label: 'Öneri iste', reply: ['Çiçek göndermek için en iyi yer Park, hem bahar kokusu hem sakinlik 🌳', 'Hafız Mustafam’dan bir şey alıp çiçekle birlikte sürpriz yap 🍰'] },
       { label: 'Hikâye anlat', reply: ['Her sabah aynı kişi bir papatya alırdı. Bir gün sebebini sordum: “Birine ‘sevmiyor’ dedirtmemek için” dedi 🌼', 'Bir gün iki kişi aynı buketi almak istedi, buketi ikiye bölüp birlikte yürüdüler 💐'] },
@@ -78,9 +88,13 @@ const CITY = [
     ],
   },
   {
-    id: 'dondurmaci', avatar: 'zeynep', name: 'Dondurmacı Zeynep', role: '🍦', x: -5.6, z: 32, ry: 0.2, prop: 'icecart',
+    id: 'dondurmaci', avatar: 'zeynep', name: 'Dondurmacı Zeynep', role: '🍦', x: -5.6, z: 32, ry: 0.2, prop: 'icecart', pose: { kind: 'push' },
     route: { pts: [[-5.6, 32], [-5.6, 39]], mode: 'pingpong', speed: 0.8, pause: 5 },
     lines: ['Dondurmaaa! Çilekli, vanilyalı, çikolatalı! 🍦', 'İki top alana üçüncüsü benden 😉', 'Arabamın zili çalınca herkes koşuyor 🔔', 'Dondurma paylaşmak flörtün en tatlı yolu 🍓'],
+    shop: [
+      { id: 'ice_strawberry', label: 'Çilekli Dondurma', emoji: '🍦', price: 5, style: 'eat', color: '#ff9ec7', color2: '#fff3c8', reply: 'Afiyet olsun! Çilekli külahın hazır 🍦🍓' },
+      { id: 'ice_choco', label: 'Çikolatalı Dondurma', emoji: '🍦', price: 5, style: 'eat', color: '#7a4b32', color2: '#f5d7b0', reply: 'Bol çikolatalı dondurman hazır, afiyet olsun! 🍫🍦' },
+    ],
     options: [
       { label: 'Öneri iste', reply: ['Dondurmanı al, kıyıya otur, dalga sesi eşlik etsin 🌊', 'Baskın Robin’e da uğra, külahlar özel 🍦'] },
       { label: 'Hikâye anlat', reply: ['İki kişi aynı anda son çilekli külahı istedi. Birbirlerine uzatınca külah kırıldı, kahkaha koptu 🍓😄', 'Bir kız “eksik para” çıkardı, arkasındaki çocuk “ben ısmarlayayım” dedi. İkisi de şimdi kuyrukta bekler 🍦'] },
@@ -187,8 +201,8 @@ export const AFK_BOTS = [
       socialPrivacy: 'friends',
       instagramLocked: true,
       xLocked: true,
-      bio: 'Kahve kokusu ve gün batımı yürüyüşleri ☕🌅',
-      tags: ['☕ Kahve', '🏖️ Plaj', '📸 Fotoğraf', '🍰 Tatlı'],
+      bio: 'Kahve kokusu ve gün batımı yürüyüşleri',
+      tags: ['Kahve', 'Plaj', 'Fotoğraf', 'Tatlı'],
     },
   },
   {
@@ -207,8 +221,8 @@ export const AFK_BOTS = [
       socialPrivacy: 'friends',
       instagramLocked: true,
       xLocked: true,
-      bio: 'Akşamları kulüpte müzik dinlemeyi severim 🎧',
-      tags: ['🎵 Müzik', '🍷 Gece hayatı', '🏋️ Spor', '🎮 Oyun'],
+      bio: 'Akşamları kulüpte müzik dinlemeyi severim',
+      tags: ['Müzik', 'Gece hayatı', 'Spor', 'Oyun'],
     },
   },
   {
@@ -227,8 +241,8 @@ export const AFK_BOTS = [
       socialPrivacy: 'friends',
       instagramLocked: true,
       xLocked: false,
-      bio: 'Resim, kediler ve sakin kafeler 🎨🐈',
-      tags: ['🎨 Sanat', '🐶 Hayvanlar', '☕ Kahve', '🌸 Bahçe'],
+      bio: 'Resim, kediler ve sakin kafeler',
+      tags: ['Sanat', 'Hayvanlar', 'Kahve', 'Bahçe'],
     },
   },
   {
@@ -248,7 +262,7 @@ export const AFK_BOTS = [
       instagramLocked: false,
       xLocked: true,
       bio: 'Yeni geldim, şehir turundayım.',
-      tags: ['📚 Kitap', '🎬 Film'],
+      tags: ['Kitap', 'Film'],
     },
   },
   {

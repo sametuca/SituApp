@@ -1,7 +1,8 @@
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Component, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, useProgress } from '@react-three/drei'
+import { PCFShadowMap } from 'three'
 import { useAuth } from '../lib/AuthContext'
 import City from '../world/City'
 import HomeRoom from '../world/HomeRoom'
@@ -17,8 +18,9 @@ import { preloadCritical, preloadLater } from '../world/preload'
 import TogetherScene from '../world/features/TogetherScene'
 import Sky, { skyBase } from '../world/Sky'
 import { AirportTutorialHud, AirportTutorialScene } from '../world/AirportTutorial'
+import { IntroCutsceneCamera, IntroCutsceneOverlay } from '../world/IntroCutscene'
 import { GIFT_BY_ID } from '../world/cosmeticsData'
-import { MAX_ITEMS, findFreeSpot, furnitureColliders, isValid, loadHome, newUid, saveHome } from '../world/homeLayout'
+import { findFreeSpot, furnitureColliders, isValid, loadHome, newUid, saveHome } from '../world/homeLayout'
 import LocalPlayer from '../world/LocalPlayer'
 import RemotePlayers, { GuideNpc, SelfTag } from '../world/RemotePlayers'
 import { useMultiplayer } from '../world/net'
@@ -27,7 +29,7 @@ import { ChatFab, ChatSheet, DoorPrompt, GestureChip, IncomingChip, InteractShee
 import { GESTURE_BY_KIND, REACTIONS, SKILL_COOLDOWN_MS, SKILLS, WHISPER_RANGE } from '../world/interact'
 import { useIsTouch } from '../world/useIsTouch'
 import { HOME_TIERS, applyHomeTier } from '../world/homeTiers'
-import { bike, useRiding } from '../world/bikeStore'
+import { bike } from '../world/bikeStore'
 import { BEACH_START, HOME_DOOR, HOME_ROOM, HOME_ZONE, SPAWN, TELEPORTS, ZONES, resolveCollisions, resolveRoom, zoneAt } from '../world/layout'
 
 const NO_ITEMS = []
@@ -37,13 +39,12 @@ const NEAR_LEAVE = 6.5 // m: bu mesafeyi aşınca kart kaybolur (titremesin diye
 
 const AVATARS = ['zeynep', 'deniz', 'elif', 'kaan', 'mira', 'ege']
 const GUIDE_TIPS = [
-  'Selam! Ben Rehber 🧭 Takıldığın yer olursa sağ üstteki ? düğmesine bas.',
-  'Soldaki 👗 Gardırop ile saç, kıyafet rengi, taç/kanat ve dostunu değiştirebilirsin ✨',
-  'Sağ üstteki haritaya basarak Kafe, Kulüp, Park, Plaj ve Toni & Güy’e tek tıkla ışınlan 🗺️',
-  'Lobinin güneybatısındaki 🏠 Evim kapısından (veya /ev yazarak) evine girip döşeyebilirsin.',
-  'Enter’a basıp yazarsan mesajın başının üstünde balon olur 💬',
-  'Birinin yanına gidip 💗 düğmesine bas: kalp, çiçek gönder ya da kulağına fısılda 🤫',
-  'Aşağıdaki 😊 ile (ya da 1-9 tuşlarıyla) kafanın üstünde emoji uçur!',
+  'Selam! Ben Rehber. Nasıl oynanır penceresi için bana tıkla ya da E / H tuşuna bas.',
+  'Soldaki Gardırop düğmesiyle saç, aksesuar ve dostunu dilediğin gibi değiştirebilirsin.',
+  'Sağ üstteki yuvarlak haritaya basarak Kafe, Kulüp, Park ve Plaj’a tek tıkla ışınlan.',
+  'Lobinin güneybatısındaki Evim kapısından (veya /ev yazarak) evine girip döşeyebilirsin.',
+  'Enter’a basıp yazarsan mesajın başının üstünde balon olur.',
+  'Alttaki 1–4 tuşlarıyla selam, dans, kalp ve kutlama tepkilerini kullanabilirsin.',
 ]
 
 function readAvatar() {
@@ -56,6 +57,29 @@ function readAvatar() {
 
 // "Işınlan" gibi komutlardaki Türkçe karakterleri sadeleştir
 const normalize = (s) => s.toLowerCase().replaceAll('ı', 'i').replaceAll('ş', 's').replaceAll('ğ', 'g').replaceAll('ü', 'u').replaceAll('ö', 'o').replaceAll('ç', 'c')
+
+/** 3B sahne çökerse boş ekran yerine kurtarma kartı gösterir. */
+class WorldErrorBoundary extends Component {
+  state = { error: null }
+  static getDerivedStateFromError(error) {
+    return { error }
+  }
+  render() {
+    if (!this.state.error) return this.props.children
+    return (
+      <div className="fixed inset-0 z-50 grid place-items-center bg-gradient-to-br from-[#fff2e3] via-[#f1e6ff] to-[#dff3ff] p-5">
+        <div className="w-full max-w-sm rounded-[2rem] border-2 border-white bg-white/95 p-6 text-center shadow-toy">
+          <div className="text-5xl">🛠️</div>
+          <h2 className="mt-2 text-xl font-black text-[#4a3b5c]">Sahne yüklenirken bir sorun oluştu</h2>
+          <p className="mt-1 text-sm font-semibold text-[#8a7a9c]">Sayfayı yenileyerek kaldığın yerden devam edebilirsin.</p>
+          <button type="button" onClick={() => location.reload()} className="mt-4 rounded-2xl border-b-4 border-[#e8952c] bg-[#fdb252] px-5 py-2.5 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2">
+            Sayfayı yenile
+          </button>
+        </div>
+      </div>
+    )
+  }
+}
 
 /** Ana sahne (şehir/oda + oyuncu) çizime hazır olunca onReady çağrılır; yalnızca ilk yüklemede kullanılır. */
 function SceneReady({ onReady }) {
@@ -216,6 +240,17 @@ function WorldScene({ avatar }) {
   const [tutStep, setTutStep] = useState('collect') // collect | door | wardrobe | exit | done
   const [tutNear, setTutNear] = useState(null)
   const [tutCelebrate, setTutCelebrate] = useState(null)
+  const [introActive, setIntroActive] = useState(false)
+  const finishIntro = useCallback(() => {
+    setIntroActive(false)
+    const c = controlsRef.current
+    const f = focusRef.current
+    if (c) {
+      c.object.position.set(f.x, 6.4, f.z + 9.4)
+      c.target.set(f.x, 0.8, f.z)
+      c.update()
+    }
+  }, [])
   const tutOpenedWardrobe = useRef(false)
   const tutCelebTimer = useRef(null)
   const flashTutCelebrate = useCallback((msg) => {
@@ -247,7 +282,8 @@ function WorldScene({ avatar }) {
   const [panel, setPanel] = useState(null) // açık panel: 'settings' | özellik panelleri
   const synced = useRef(null) // sunucuyla en son eşleşen düzen (JSON); değişmediyse tekrar yollama
   const [help, setHelp] = useState(false)
-  const riding = useRiding()
+  const [nearGuide, setNearGuide] = useState(false)
+  const nearGuideRef = useRef(false)
   const tipsKey = `situapp_tips_seen_${user?.id ?? 'guest'}`
   const [showTips, setShowTips] = useState(() => !localStorage.getItem(tipsKey))
   const [feed, setFeed] = useState(() => [
@@ -275,6 +311,7 @@ function WorldScene({ avatar }) {
         focusRef.current.teleport = [HOME_DOOR.x, HOME_DOOR.z, Math.PI / 2] // evden çıkınca lobideki Evim kapısına dön
       } else {
         setHome(target)
+        if (target?.isOwn) setEditing(true)
         focusRef.current.teleport = [HOME_ROOM.spawn[0], HOME_ROOM.spawn[1], Math.PI]
       }
       setTimeout(() => setFade(false), 120)
@@ -299,6 +336,7 @@ function WorldScene({ avatar }) {
           } catch {
             /* önemli değil */
           }
+          setIntroActive(true)
         }
         const d = from && venueDoor(from)
         focusRef.current.teleport = d ? d.exit : from === START_VENUE ? [BEACH_START.x, BEACH_START.z, BEACH_START.ry] : [SPAWN.x, SPAWN.z, Math.PI] // havalimanından çıkış: kumsal
@@ -403,7 +441,7 @@ function WorldScene({ avatar }) {
       }),
     [net, enterVenue, leaveVenue],
   )
-  const ownHome = useCallback(() => ({ owner: net.homeKey ?? undefined, ownerName: name }), [net.homeKey, name])
+  const ownHome = useCallback(() => ({ owner: net.homeKey ?? undefined, ownerName: name, isOwn: true }), [net.homeKey, name])
   const doorGo = useCallback(() => (venue ? leaveVenue() : goTo(home ? 'city' : ownHome())), [goTo, home, ownHome, venue, leaveVenue])
 
   const isOwnHome = Boolean(home) && (!home.owner || home.owner === net.homeKey)
@@ -513,6 +551,7 @@ function WorldScene({ avatar }) {
     home,
     homeItems: isOwnHome ? furn : null,
     venue,
+    atDoor: Boolean(nearDoor || (!home && !venue && nearVenue)),
     panel,
     setPanel,
     chatTarget,
@@ -559,12 +598,12 @@ function WorldScene({ avatar }) {
       setSkillCd(next)
       react(sk.emoji)
       window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: sk.sfx }))
-      if (sk.pose === 'dance' && !together.self.current && !bike.on) {
-        together.self.current = { kind: 'dance', lead: true, ry: focusRef.current.ry, t0: performance.now() / 1000, solo: true }
+      if (sk.pose && !bike.on && (!together.self.current || together.self.current.solo)) {
+        together.self.current = { kind: sk.pose, lead: true, ry: focusRef.current.ry, t0: performance.now() / 1000, solo: true }
         clearTimeout(soloDanceTimer.current)
         soloDanceTimer.current = setTimeout(() => {
           if (together.self.current?.solo) together.self.current = null
-        }, 2600)
+        }, sk.dur ?? 2400)
       }
     },
     [react],
@@ -634,8 +673,9 @@ function WorldScene({ avatar }) {
     doorGoRef.current = doorGo
     nearVenueRef.current = !fade && !home && !venue && !nearDoor ? nearVenue : null
     enterVenueRef.current = enterVenue
+    nearGuideRef.current = !fade && !home && !venue && !nearDoor && !nearVenue && nearGuide
     tutActionRef.current = inTutorial && !fade ? (tutNear === 'collect' && tutStep === 'collect' ? onTutCollect : tutNear === 'door' && tutStep === 'door' ? onTutDoor : null) : null
-  }, [nearDoor, fade, doorGo, nearVenue, home, venue, enterVenue, inTutorial, tutNear, tutStep, onTutCollect, onTutDoor])
+  }, [nearDoor, fade, doorGo, nearVenue, home, venue, enterVenue, nearGuide, inTutorial, tutNear, tutStep, onTutCollect, onTutDoor])
 
   // H tuşu: yardım (E: kapı / eğitim etkileşimi)
   useEffect(() => {
@@ -645,6 +685,7 @@ function WorldScene({ avatar }) {
       if (e.code === 'KeyE' && !typing && tutActionRef.current) tutActionRef.current()
       else if (e.code === 'KeyE' && !typing && nearDoorRef.current) doorGoRef.current()
       else if (e.code === 'KeyE' && !typing && nearVenueRef.current && !together.self.current) enterVenueRef.current(nearVenueRef.current)
+      else if (e.code === 'KeyE' && !typing && nearGuideRef.current) setHelp(true)
       if (!typing && /^Digit[0-9]$/.test(e.code) && !e.ctrlKey && !e.metaKey && !e.altKey) {
         const n = Number(e.code.slice(5))
         if (n >= 1 && n <= SKILLS.length) {
@@ -738,6 +779,12 @@ function WorldScene({ avatar }) {
       net.setHomeOpen(open)
       return
     }
+    if (['intro', 'arasahne'].includes(cmd)) {
+      if (home || venue) return say('Ara sahneyi izlemek için önce şehirde olmalısın: /dışarı')
+      focusRef.current.teleport = [BEACH_START.x, BEACH_START.z, BEACH_START.ry]
+      setIntroActive(true)
+      return
+    }
     if (['isinlan', 'tp', 'git'].includes(cmd)) {
       if (home || venue) return say('Işınlanmak için önce dışarı çık: /dışarı')
       const id = TELEPORTS[normalize(args[0] ?? '')] ?? TELEPORTS[(args[0] ?? '').toLowerCase()]
@@ -762,7 +809,19 @@ function WorldScene({ avatar }) {
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-[#cfeaff]">
-      <Canvas shadows dpr={[1, 1.15]} gl={{ powerPreference: 'high-performance' }} camera={{ fov: 55, near: 0.3, far: 300, position: [start.x, 6.4, start.z + 9.4] }}>
+      <WorldErrorBoundary>
+      <Canvas
+        shadows={PCFShadowMap}
+        dpr={[1, 1.15]}
+        gl={{ powerPreference: 'high-performance' }}
+        camera={{ fov: 55, near: 0.3, far: 300, position: [start.x, 6.4, start.z + 9.4] }}
+        onCreated={({ gl }) => {
+          gl.domElement.addEventListener('webglcontextlost', (e) => {
+            e.preventDefault()
+            say('⚠️ Grafik bağlantısı kesildi, sahne toparlanıyor…')
+          })
+        }}
+      >
         <color attach="background" args={[sceneBase.bg]} />
         <fog attach="fog" args={sceneBase.fog} />
         <Sky home={Boolean(home)} interior={venueTh ? { bg: venueTh.bg, fog: sceneBase.fog, dim: venueDim } : null} focusRef={focusRef} />
@@ -797,6 +856,7 @@ function WorldScene({ avatar }) {
             joystickRef={joystickRef}
             onMove={net.sendMove}
             camOffset={[6.4, 9.4]}
+            locked={introActive}
             collide={venue ? venueCollide : home ? (x, z) => resolveRoom(x, z, furnColliders) : resolveCollisions}
           >
             <SelfTag name={name} bubbles={net.bubbles} selfId={net.selfId} reactions={net.reactions} />
@@ -809,12 +869,13 @@ function WorldScene({ avatar }) {
         </Suspense>
         {!home && !venue && (
           <Suspense fallback={null}>
-            <GuideNpc focusRef={focusRef} tips={GUIDE_TIPS} />
+            <GuideNpc focusRef={focusRef} tips={GUIDE_TIPS} onOpen={() => setHelp(true)} onNear={setNearGuide} />
           </Suspense>
         )}
         {feat.sceneNodes}
         {feat.worldEffects}
         {inTutorial && <AirportTutorialScene step={tutStep} focusRef={focusRef} onNear={setTutNear} />}
+        <IntroCutsceneCamera active={introActive} focusRef={focusRef} controlsRef={controlsRef} camOffset={[6.4, 9.4]} onDone={finishIntro} />
 
         <ZoneWatcher key={home ? 'home' : venue ? `v-${venue}` : 'city'} focusRef={focusRef} onChange={setZone} fixed={home ? HOME_ZONE : venueZone} />
         <DoorWatcher key={`door-${home ? `home${roomTier}` : venue ? 'venue' : 'city'}`} focusRef={focusRef} door={home ? HOME_ROOM.exit : venue ? VENUE_ROOM.exit : HOME_DOOR} onChange={setNearDoor} />
@@ -830,6 +891,7 @@ function WorldScene({ avatar }) {
         <OrbitControls
           ref={controlsRef}
           makeDefault
+          enabled={!introActive}
           enablePan={false}
           target={[start.x, 0.8, start.z]}
           minDistance={3.5}
@@ -838,6 +900,7 @@ function WorldScene({ avatar }) {
           maxPolarAngle={Math.PI / 2.15}
         />
       </Canvas>
+      </WorldErrorBoundary>
 
       {(net.status === 'noguard') && (
         <div className="fixed inset-0 z-[90] grid place-items-center bg-white px-5" role="alertdialog">
@@ -870,27 +933,29 @@ function WorldScene({ avatar }) {
           </div>
         </div>
       )}
-      <TopBar
-        zone={zone}
-        online={net.online}
-        status={net.status}
-        dnd={net.dnd}
-        onSettings={() => setPanel('settings')}
-        extraButtons={
-          inTutorial
-            ? tutStep === 'wardrobe' || tutStep === 'exit'
-              ? feat.extraButtons.filter((b) => b.key === 'wardrobe').map((b) => ({ ...b, highlight: tutStep === 'wardrobe' }))
-              : []
-            : feat.extraButtons
-        }
-        extraNodes={feat.extraNodes}
-        menuNodes={feat.menuNodes}
-        menuBadge={feat.menuBadge}
-        onExit={() => navigate('/avatar')}
-        onHelp={() => setHelp(true)}
-      />
-      {!home && !venue && <Minimap focusRef={focusRef} remotes={net.remotes} compact={touch} />}
-      {touch ? (
+      {!introActive && (
+        <TopBar
+          zone={zone}
+          online={net.online}
+          status={net.status}
+          dnd={net.dnd}
+          onSettings={() => setPanel('settings')}
+          extraButtons={
+            inTutorial
+              ? tutStep === 'wardrobe' || tutStep === 'exit'
+                ? feat.extraButtons.filter((b) => b.key === 'wardrobe').map((b) => ({ ...b, highlight: tutStep === 'wardrobe' }))
+                : []
+              : feat.extraButtons
+          }
+          extraNodes={feat.extraNodes}
+          menuNodes={feat.menuNodes}
+          menuBadge={feat.menuBadge}
+          onExit={() => navigate('/avatar')}
+          onHelp={() => setHelp(true)}
+        />
+      )}
+      {!introActive && !home && !venue && <Minimap focusRef={focusRef} remotes={net.remotes} compact={touch} />}
+      {!introActive && (touch ? (
         <>
           <Joystick inputRef={joystickRef} />
           {!chatTarget && !editing && <ChatFab onClick={() => openChat('public')} />}
@@ -900,8 +965,8 @@ function WorldScene({ avatar }) {
           {chatTarget !== 'public' && !sheetPeer && !editing && <ChatPanel feed={feed} onSend={onSend} status={net.status} />}
           <HintBar />
         </>
-      )}
-      {!editing && !chatTarget && !interactPeer && (
+      ))}
+      {!introActive && !editing && !chatTarget && !interactPeer && (
         <>
           <SkillBar xp={feat.xp} cooldowns={skillCd} onSkill={triggerSkill} onOpenExp={() => setPanel('collection')} touch={touch} />
           <ReactionBar onReact={react} touch={touch} />
@@ -958,11 +1023,14 @@ function WorldScene({ avatar }) {
           onClose={stopEditing}
         />
       )}
-      {nearDoor && !chatTarget && !fade && !editing && (
-        <DoorPrompt emoji={home || venue ? '🚪' : '🏠'} label={home || venue ? 'Dışarı çık' : 'Evine gir'} action={home || venue ? 'Çık' : 'Gir'} touch={touch} raised={Boolean(nearPeer)} onGo={doorGo} />
+      {nearDoor && !chatTarget && !fade && (
+        <DoorPrompt emoji={home || venue ? '🚪' : '🏠'} label={home || venue ? 'Dışarı çık' : 'Evine gir'} action={home || venue ? 'Çık' : 'Gir'} touch={touch} raised={Boolean(nearPeer || editing)} onGo={doorGo} />
       )}
       {!home && !venue && !nearDoor && nearVenue && !chatTarget && !fade && !editing && (
         <DoorPrompt emoji={VENUE_BY_ID[nearVenue].emoji} label={VENUE_BY_ID[nearVenue].name} action="Gir" touch={touch} raised={Boolean(nearPeer)} onGo={() => enterVenue(nearVenue)} />
+      )}
+      {!home && !venue && !nearDoor && !nearVenue && nearGuide && !help && !chatTarget && !fade && !editing && (
+        <DoorPrompt label="Rehber · Nasıl Oynanır" action="Aç" touch={touch} raised={Boolean(nearPeer)} onGo={() => setHelp(true)} />
       )}
       {invite && !chatTarget && !editing && <InviteChip from={invite} onGo={() => visit(invite.owner)} onClose={() => setInvite(null)} />}
       {incoming && !chatTarget && !interactPeer && !gestureIn && peerOf(incoming.id) && (
@@ -1015,7 +1083,7 @@ function WorldScene({ avatar }) {
           onOpenMap={() => { setHelp(false); window.dispatchEvent(new CustomEvent('situapp:open-map')) }}
         />
       )}
-      {showTips && !help && (
+      {showTips && !help && !introActive && (
         <StartGuide
           touch={touch}
           ready={sceneReady}
@@ -1026,6 +1094,7 @@ function WorldScene({ avatar }) {
           onOpenMap={() => window.dispatchEvent(new CustomEvent('situapp:open-map'))}
         />
       )}
+      <IntroCutsceneOverlay active={introActive} onSkip={finishIntro} />
       <div
         aria-hidden
         className={`pointer-events-none absolute inset-0 z-30 bg-gradient-to-br from-[#fff2e3] via-[#f1e6ff] to-[#dff3ff] transition-opacity duration-200 ${fade ? 'opacity-100' : 'opacity-0'}`}

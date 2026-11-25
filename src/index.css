@@ -76,10 +76,10 @@ body {
 /* Etkileşim animasyonları: @theme dışında olmalı (Tailwind yalnızca tema değişkenine bağlı keyframe'leri alır) */
 /* emoji tepkisi: büyüyüp süzülerek kaybolur */
 @keyframes react-float {
-  0% { opacity: 0; transform: translate(-50%, 10px) scale(0.4); }
-  12% { opacity: 1; transform: translate(-50%, -6px) scale(1.35); }
-  30% { transform: translate(-50%, -18px) scale(1); }
-  100% { opacity: 0; transform: translate(-50%, -78px) scale(1.1); }
+  0% { opacity: 0; transform: translate(calc(-50% + var(--rx, 0px) * 0.25), 16px) scale(0.35) rotate(0deg); }
+  16% { opacity: 1; transform: translate(calc(-50% + var(--rx, 0px) * 0.55), -16px) scale(1.22) rotate(var(--rot, 0deg)); }
+  40% { opacity: 1; transform: translate(calc(-50% + var(--rx, 0px) * 0.8), -54px) scale(1) rotate(calc(var(--rot, 0deg) * -0.5)); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--rx, 0px)), -145px) scale(0.88) rotate(var(--rot, 0deg)); }
 }
 /* eşleşme ekranındaki yükselen kalpler */
 @keyframes heart-rise {

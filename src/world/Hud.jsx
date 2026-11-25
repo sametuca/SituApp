@@ -36,9 +36,9 @@ export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings, 
         <button
           onClick={onExit}
           aria-label="Karakter seçimine dön"
-          className={`grid h-12 w-12 place-items-center rounded-full text-xl font-black text-[#4a3b5c] transition hover:bg-white active:scale-95 ${glass}`}
+          className={`grid h-14 w-14 place-items-center rounded-full text-2xl font-black text-[#4a3b5c] transition hover:bg-white active:scale-95 ${glass}`}
         >
-          <Ico name="back" size={26} />
+          <Ico name="back" size={36} />
         </button>
         {extraButtons.map((b) => (
           <button
@@ -46,9 +46,9 @@ export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings, 
             onClick={b.onClick}
             aria-label={b.label}
             title={b.label}
-            className={`relative grid h-12 w-12 place-items-center rounded-full text-xl transition hover:bg-white active:scale-95 ${glass} ${b.highlight ? 'ring-2 ring-[#fdb252] shadow-[0_0_14px_rgba(253,178,82,0.55)]' : ''}`}
+            className={`relative grid h-14 w-14 place-items-center rounded-full text-3xl transition hover:bg-white active:scale-95 ${glass} ${b.highlight ? 'ring-2 ring-[#fdb252] shadow-[0_0_14px_rgba(253,178,82,0.55)]' : ''}`}
           >
-            {b.icon ? <Ico name={b.icon} size={26} /> : b.emoji}
+            {b.icon ? <Ico name={b.icon} size={36} /> : b.emoji}
             {b.badge ? <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full border-2 border-white bg-[#fdb252] px-1 text-[11px] font-black text-white">{b.badge}</span> : null}
             {!b.badge && b.highlight ? <span className="absolute -right-0.5 -top-0.5 h-3 w-3 animate-ping rounded-full bg-[#fdb252]" /> : null}
             {!b.badge && b.highlight ? <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-[#fdb252]" /> : null}
@@ -78,9 +78,9 @@ export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings, 
           onClick={() => setMenu((m) => !m)}
           aria-label="Menü"
           aria-expanded={menu}
-          className={`relative grid h-12 w-12 place-items-center rounded-full text-xl transition hover:bg-white active:scale-95 ${glass}`}
+          className={`relative grid h-14 w-14 place-items-center rounded-full text-2xl transition hover:bg-white active:scale-95 ${glass}`}
         >
-          <Ico name="settings" size={26} />
+          <Ico name="settings" size={36} />
           {menuBadge > 0 && <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full border-2 border-white bg-[#fdb252] px-1 text-[10px] font-black text-white">{menuBadge}</span>}
         </button>
         {menu && (
@@ -343,7 +343,7 @@ export function Minimap({ focusRef, remotes, compact }) {
         >
           <div className="flex w-full items-center justify-between gap-2 px-1">
             <div>
-              <h2 className="text-lg font-black text-[#4a3b5c]">🗺️ Şehir Haritası</h2>
+              <h2 className="flex items-center gap-2 text-lg font-black text-[#4a3b5c]"><Ico name="map" size={20} /> Şehir Haritası</h2>
               <p className="text-xs font-bold text-[#8a7a9c]">Gitmek istediğin bölgeye tıkla</p>
             </div>
             <button onClick={() => setBig(false)} aria-label="Haritayı kapat" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f0ff] text-sm font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
@@ -351,13 +351,15 @@ export function Minimap({ focusRef, remotes, compact }) {
             </button>
           </div>
           <canvas ref={canvas} className="block rounded-2xl border-2 border-white shadow-soft" style={{ width: S, height: S }} />
-          <div className="flex w-full flex-wrap justify-center gap-1.5 pb-0.5">
-            {ZONES.map((z) => (
-              <button key={z.id} onClick={() => travel(z)} className="flex items-center gap-1.5 rounded-full border border-white bg-[#f6f0ff] px-3 py-1.5 text-xs font-extrabold text-[#4a3b5c] shadow-sm transition hover:bg-[#ffedd6] active:scale-95">
-                <span>{z.emoji}</span>
-                {z.name.replace(' Meydanı', '').replace(' Sokağı', '').replace('Gece ', '')}
-              </button>
-            ))}
+          <div className="flex w-full flex-col items-center gap-2 pb-0.5">
+            <p className="text-[11px] font-black uppercase tracking-wider text-[#8a7a9c]">Hızlı Işınlan</p>
+            <div className="flex w-full flex-wrap justify-center gap-1.5">
+              {ZONES.map((z) => (
+                <button key={z.id} onClick={() => travel(z)} className="rounded-full border border-white bg-[#f6f0ff] px-3.5 py-1.5 text-xs font-extrabold text-[#4a3b5c] shadow-sm transition hover:bg-[#ffedd6] active:scale-95">
+                  {z.name.replace(' Meydanı', '').replace(' Sokağı', '').replace('Gece Kulübü', 'Kulüp')}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -365,7 +367,7 @@ export function Minimap({ focusRef, remotes, compact }) {
   }
 
   return (
-    <div className="pointer-events-auto absolute right-3 top-[4.5rem] z-10" aria-label="Harita">
+    <div className="pointer-events-auto absolute right-3 top-[5rem] z-10" aria-label="Harita">
       <div className={`overflow-hidden rounded-full p-1.5 ${glass}`}>
         <button onClick={() => setBig(true)} title="Büyüt ve ışınlan" aria-label="Haritayı büyüt" className="relative block active:scale-95 transition-transform">
           <canvas ref={canvas} className="block rounded-full" style={{ width: S, height: S }} />
@@ -498,111 +500,206 @@ export function Modal({ children, onClose, label, wide = false }) {
   )
 }
 
-// ---------- yardım ----------
-function Row ({ k, children }) {
+// ---------- yardım (yan sekmeli "Nasıl Oynanır" penceresi) ----------
+function Row({ k, children }) {
   return (
-  <li className="flex items-start gap-3 text-sm font-semibold text-[#4a3b5c]">
-    <kbd className="shrink-0 rounded-lg border-2 border-[#d6c7ff] bg-[#f6f0ff] px-2 py-0.5 text-xs font-extrabold text-[#7a5fd0]">{k}</kbd>
-    <span>{children}</span>
-  </li>
+    <li className="flex items-start gap-3 text-sm font-semibold text-[#4a3b5c]">
+      <kbd className="shrink-0 rounded-lg border-2 border-[#d6c7ff] bg-[#f6f0ff] px-2 py-0.5 text-xs font-extrabold text-[#7a5fd0]">{k}</kbd>
+      <span>{children}</span>
+    </li>
   )
 }
+
+const GUIDE_TABS = [
+  { id: 'start', label: 'Başlangıç', ico: 'compass' },
+  { id: 'world', label: 'Şehir & Mekanlar', ico: 'map' },
+  { id: 'home', label: 'Evim & Döşeme', ico: 'home' },
+  { id: 'social', label: 'Sosyal & Sohbet', ico: 'friends' },
+  { id: 'progress', label: 'Görev & Altın', ico: 'quests' },
+]
+
 export function HelpModal({ onClose, inCity = false, onOpenWardrobe, onGoHome, onOpenMap }) {
+  const [tab, setTab] = useState('start')
   return (
-    <Modal onClose={onClose} label="Yardım">
-      <h2 className="text-2xl font-black text-[#4a3b5c]">Yardım 🧭</h2>
+    <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#4a3b5c]/30 p-3 backdrop-blur-[2px]" onClick={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Nasıl Oynanır"
+        onClick={(e) => e.stopPropagation()}
+        className="relative flex max-h-[88svh] w-full max-w-2xl animate-pop flex-col overflow-hidden rounded-[2rem] border-2 border-white bg-white/95 shadow-toy"
+      >
+        {/* üst başlık */}
+        <div className="flex items-center justify-between border-b border-[#efe6ff] px-5 py-4">
+          <div className="flex items-center gap-2.5">
+            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[#fff3e0]">
+              <Ico name="compass" size={24} />
+            </span>
+            <div>
+              <h2 className="text-lg font-black text-[#4a3b5c]">Nasıl Oynanır?</h2>
+              <p className="text-xs font-bold text-[#8a7a9c]">Merak ettiğin konuyu soldaki sekmelerden seç</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Kapat"
+            className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f0ff] text-sm font-black text-[#8a7a9c] transition hover:bg-[#ffedd6] active:scale-95"
+          >
+            ✕
+          </button>
+        </div>
 
-      <h3 className="mt-4 text-sm font-extrabold uppercase tracking-wide text-[#fdb252]">Nasıl Gidilir? · Hızlı Erişim</h3>
-      <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <div className="flex items-center justify-between gap-2 rounded-2xl border-2 border-white bg-[#faf6ff] p-2.5 shadow-soft">
-          <div className="min-w-0">
-            <p className="text-xs font-black text-[#4a3b5c]">👗 Gardırop & Stil</p>
-            <p className="text-[11px] font-semibold text-[#8a7a9c]">Soldaki 👗 · Toni & Güy · /gardırop</p>
-          </div>
-          {onOpenWardrobe && (
-            <button onClick={onOpenWardrobe} className="shrink-0 rounded-xl bg-[#a88bff] px-2.5 py-1.5 text-xs font-extrabold text-white active:scale-95">
-              Aç
-            </button>
-          )}
-        </div>
-        <div className="flex items-center justify-between gap-2 rounded-2xl border-2 border-white bg-[#fff8f0] p-2.5 shadow-soft">
-          <div className="min-w-0">
-            <p className="text-xs font-black text-[#4a3b5c]">🏠 Kendi Evin</p>
-            <p className="text-[11px] font-semibold text-[#8a7a9c]">Lobi güneybatısı · /ev · 🪑 Döşe</p>
-          </div>
-          {inCity && onGoHome && (
-            <button onClick={onGoHome} className="shrink-0 rounded-xl bg-[#fdb252] px-2.5 py-1.5 text-xs font-extrabold text-white active:scale-95">
-              Git
-            </button>
-          )}
-        </div>
-        <div className="flex items-center justify-between gap-2 rounded-2xl border-2 border-white bg-[#f0f9ff] p-2.5 shadow-soft">
-          <div className="min-w-0">
-            <p className="text-xs font-black text-[#4a3b5c]">🗺️ Şehir Haritası</p>
-            <p className="text-[11px] font-semibold text-[#8a7a9c]">Sağ üst daireye bas → ışınlan</p>
-          </div>
-          {inCity && onOpenMap && (
-            <button onClick={onOpenMap} className="shrink-0 rounded-xl bg-[#5fc0ea] px-2.5 py-1.5 text-xs font-extrabold text-white active:scale-95">
-              Aç
-            </button>
-          )}
-        </div>
-        <div className="flex items-center justify-between gap-2 rounded-2xl border-2 border-white bg-[#effcf4] p-2.5 shadow-soft">
-          <div className="min-w-0">
-            <p className="text-xs font-black text-[#4a3b5c]">💇 Toni & Güy & Mekanlar</p>
-            <p className="text-[11px] font-semibold text-[#8a7a9c]">Kapı önünde E ile gir/çık</p>
+        {/* gövde: solda sekmeler, sağda içerik */}
+        <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
+          <nav aria-label="Rehber sekmeleri" className="flex shrink-0 gap-1.5 overflow-x-auto border-b border-[#efe6ff] bg-[#faf6ff]/80 p-3 sm:w-48 sm:flex-col sm:overflow-x-visible sm:border-b-0 sm:border-r">
+            {GUIDE_TABS.map((t) => {
+              const active = tab === t.id
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setTab(t.id)}
+                  className={`flex shrink-0 items-center gap-2 rounded-2xl px-3 py-2.5 text-left text-xs font-extrabold transition active:scale-95 ${
+                    active ? 'bg-white text-[#4a3b5c] shadow-soft ring-2 ring-[#fdb252]/70' : 'text-[#7c6d91] hover:bg-white/60'
+                  }`}
+                >
+                  <Ico name={t.ico} size={18} />
+                  <span className="whitespace-nowrap">{t.label}</span>
+                </button>
+              )
+            })}
+          </nav>
+
+          <div className="min-h-0 flex-1 overflow-y-auto p-5">
+            {tab === 'start' && (
+              <div className="flex flex-col gap-4">
+                <div>
+                  <h3 className="text-xs font-extrabold uppercase tracking-wide text-[#e8952c]">Temel Kontroller</h3>
+                  <ul className="mt-2.5 flex flex-col gap-2">
+                    <Row k="W A S D">veya ok tuşlarıyla yürü</Row>
+                    <Row k="Shift">basılı tutarak koş</Row>
+                    <Row k="E">mekân kapısına gir, otur, topla ya da NPC ile konuş</Row>
+                    <Row k="Fare">sürükle: kamerayı çevir · tekerlek: yakınlaştır</Row>
+                    <Row k="1 – 4">alt beceri çubuğundaki tepki ve dansları kullan</Row>
+                    <Row k="H">bu rehberi dilediğin zaman aç / kapat</Row>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-xs font-extrabold uppercase tracking-wide text-[#e8952c]">Hızlı Erişim</h3>
+                  <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <div className="flex items-center justify-between gap-2 rounded-2xl border-2 border-white bg-[#faf6ff] p-3 shadow-soft">
+                      <div className="min-w-0">
+                        <p className="flex items-center gap-1.5 text-xs font-black text-[#4a3b5c]"><Ico name="wardrobe" size={16} /> Gardırop & Stil</p>
+                        <p className="text-[11px] font-semibold text-[#8a7a9c]">Saç, aksesuar, dost seçimi</p>
+                      </div>
+                      {onOpenWardrobe && (
+                        <button type="button" onClick={onOpenWardrobe} className="shrink-0 rounded-xl bg-[#a88bff] px-2.5 py-1.5 text-xs font-extrabold text-white active:scale-95">
+                          Aç
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between gap-2 rounded-2xl border-2 border-white bg-[#fff8f0] p-3 shadow-soft">
+                      <div className="min-w-0">
+                        <p className="flex items-center gap-1.5 text-xs font-black text-[#4a3b5c]"><Ico name="home" size={16} /> Kendi Evin</p>
+                        <p className="text-[11px] font-semibold text-[#8a7a9c]">Lobi güneybatısı veya /ev</p>
+                      </div>
+                      {inCity && onGoHome && (
+                        <button type="button" onClick={onGoHome} className="shrink-0 rounded-xl bg-[#fdb252] px-2.5 py-1.5 text-xs font-extrabold text-white active:scale-95">
+                          Git
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between gap-2 rounded-2xl border-2 border-white bg-[#f0f9ff] p-3 shadow-soft sm:col-span-2">
+                      <div className="min-w-0">
+                        <p className="flex items-center gap-1.5 text-xs font-black text-[#4a3b5c]"><Ico name="map" size={16} /> Şehir Haritası</p>
+                        <p className="text-[11px] font-semibold text-[#8a7a9c]">Sağ üstteki yuvarlak haritaya basıp tek tıkla ışınlan</p>
+                      </div>
+                      {inCity && onOpenMap && (
+                        <button type="button" onClick={onOpenMap} className="shrink-0 rounded-xl bg-[#5fc0ea] px-2.5 py-1.5 text-xs font-extrabold text-white active:scale-95">
+                          Aç
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {tab === 'world' && (
+              <div className="flex flex-col gap-3">
+                <p className="text-xs font-bold text-[#8a7a9c]">
+                  Şehirdeki tüm mekanların kapısına yaklaşıp <b>E</b> ile içeri girebilir, sokak satıcılarından (Dondurmacı, Çiçekçi, Baloncu) altınla ürün alabilirsin.
+                </p>
+                <ul className="flex flex-col gap-2">
+                  {ZONES.map((z) => (
+                    <li key={z.id} className="rounded-2xl bg-[#faf6ff] px-3.5 py-2.5 text-sm font-semibold text-[#4a3b5c]">
+                      <b className="font-black text-[#4a3b5c]">{z.name}</b>
+                      <span className="block text-xs font-semibold text-[#8a7a9c]">{z.desc}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {tab === 'home' && (
+              <div className="flex flex-col gap-3">
+                <p className="text-xs font-bold text-[#8a7a9c]">
+                  Evine girdiğinde döşeme çekmecesi otomatik açılır. Mobilyaları yerleştir, yönünü çevir ve arkadaşlarını davet et.
+                </p>
+                <ul className="flex flex-col gap-2">
+                  <Row k="/ev">veya lobideki Evim kapısından içeri gir</Row>
+                  <Row k="R">seçili mobilyayı 90° döndür</Row>
+                  <Row k="Delete">seçili mobilyayı odadan kaldır</Row>
+                  <Row k="/davet isim">çevrimiçi bir oyuncuyu evine çağır</Row>
+                  <Row k="/ziyaret isim">açık ya da davetli olduğun bir eve git</Row>
+                  <Row k="/kapı aç">evini herkese aç · /kapı kapat: yalnızca davetliler</Row>
+                </ul>
+              </div>
+            )}
+
+            {tab === 'social' && (
+              <div className="flex flex-col gap-4">
+                <div>
+                  <h3 className="text-xs font-extrabold uppercase tracking-wide text-[#e8952c]">Sohbet & Komutlar</h3>
+                  <ul className="mt-2 flex flex-col gap-2">
+                    <Row k="Enter">yazmaya başla / gönder · Esc: vazgeç</Row>
+                    <Row k="/f isim …">yakındaki birine fısılda (en fazla 7 m; çevre görmez)</Row>
+                    <Row k="/yakındakiler">yakınındaki oyuncuları listele</Row>
+                    <Row k="/ışınlan kafe">lobi, kafe, kulüp, park veya plaja ışınlan</Row>
+                    <Row k="/intro">giriş sahnesini tekrar izle</Row>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="text-xs font-extrabold uppercase tracking-wide text-[#e8952c]">Etkileşim & Eşleşme</h3>
+                  <ul className="mt-2 flex flex-col gap-2">
+                    <Row k="Karaktere tıkla">profilini gör, jest gönder, dansa veya düelloya davet et</Row>
+                    <Row k="Eşleşme">ikiniz de birbirine kalp gönderirseniz karşılıklı eşleşirsiniz</Row>
+                  </ul>
+                </div>
+                <p className="rounded-2xl bg-[#fff3e0]/80 px-3.5 py-2.5 text-xs font-bold text-[#6e5232]">
+                  Herkese saygılı ol. Rahatsız edici bir durumla karşılaşırsan oyuncunun profil kartından engelleyebilir veya bildirebilirsin.
+                </p>
+              </div>
+            )}
+
+            {tab === 'progress' && (
+              <div className="flex flex-col gap-3">
+                <ul className="flex flex-col gap-2">
+                  <Row k="Koleksiyon">şehirde parlayan yıldız, çiçek ve gizli sandıkları E ile topla</Row>
+                  <Row k="EXP & Seviye">topladığın her eşya alttaki EXP çubuğunu doldurur ve yeni ödüller açar</Row>
+                  <Row k="Balıkçılık">meslek seçmeden sahil iskelesinde veya park göletinde E ile olta at</Row>
+                  <Row k="Postacılık">lobideki kırmızı posta kutusundan paket alıp mekanlara teslim et (+12 altın)</Row>
+                  <Row k="Altın">balık tutarak, posta dağıtarak, kulüpte DJ olarak veya plaj etkinlikleriyle kazan</Row>
+                  <Row k="Bisiklet">sol çubuktaki bisiklet düğmesiyle şehirde çok daha hızlı gez</Row>
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       </div>
-
-      <h3 className="mt-4 text-sm font-extrabold uppercase tracking-wide text-[#fdb252]">Hareket</h3>
-      <ul className="mt-2 flex flex-col gap-2">
-        <Row k="W A S D">veya ok tuşlarıyla yürü</Row>
-        <Row k="Shift">basılı tut, koş</Row>
-        <Row k="E">kapının önündeyken içeri gir / dışarı çık</Row>
-        <Row k="Fare">sürükle: kamerayı döndür · tekerlek: yakınlaştır</Row>
-      </ul>
-
-      <h3 className="mt-4 text-sm font-extrabold uppercase tracking-wide text-[#fdb252]">Sohbet</h3>
-      <ul className="mt-2 flex flex-col gap-2">
-        <Row k="Enter">yazmaya başla / gönder · Esc: vazgeç</Row>
-        <Row k="/yakındakiler">yakınındaki oyuncuları listele</Row>
-        <Row k="/mekanlar">şehirdeki mekanlar</Row>
-        <Row k="/ışınlan kafe">lobi, kafe, kulüp, park veya plaja git</Row>
-        <Row k="/f Elif …">yakındaki birine fısılda 🤫 (en fazla 7 m; çevre yalnızca “fısıldıyor” görür)</Row>
-        <Row k="1-9, 0">kafanın üstünde emoji uçur ❤️😘😍 (ya da 😊 düğmesi)</Row>
-        <Row k="/ev">kendi evine gir (lobideki 🏠 kapıdan da girebilirsin)</Row>
-        <Row k="/dışarı">evden şehre dön</Row>
-        <Row k="/davet Elif">çevrimiçi birini evine çağır (yakınındaki oyuncu kartından 🏠 ile de olur)</Row>
-        <Row k="/ziyaret Elif">açık ya da davetli olduğun bir eve git</Row>
-        <Row k="/kapı aç">evini herkese aç · /kapı kapat: yalnızca davetliler</Row>
-        <Row k="/yardım">bu paneli aç</Row>
-      </ul>
-
-      <h3 className="mt-4 text-sm font-extrabold uppercase tracking-wide text-[#fdb252]">Flört 💗</h3>
-      <ul className="mt-2 flex flex-col gap-2">
-        <Row k="Karaktere tıkla">ya da yakındaki kartta 💗: kalp, çiçek, göz kırp, öpücük, selam, dans</Row>
-        <Row k="🤫 Fısılda">yalnızca o kişi duyar; etraftakiler yazdığını görmez</Row>
-        <Row k="💞 Eşleşme">ikiniz de birbirine kalp gönderirseniz (10 dk içinde) eşleşirsiniz</Row>
-      </ul>
-
-      <h3 className="mt-4 text-sm font-extrabold uppercase tracking-wide text-[#fdb252]">Mekanlar</h3>
-      <ul className="mt-2 flex flex-col gap-1 text-sm font-semibold text-[#4a3b5c]">
-        {ZONES.map((z) => (
-          <li key={z.id}>
-            {z.emoji} <b>{z.name}</b> <span className="text-[#8a7a9c]">— {z.desc}</span>
-          </li>
-        ))}
-      </ul>
-
-      <p className="mt-4 rounded-2xl bg-[#ffedd6]/60 px-4 py-3 text-xs font-bold text-[#4a3b5c]">
-        🤝 Herkese saygılı ol. Rahatsız edici biriyle karşılaşırsan konuşmayı bırak ve uzaklaş.
-      </p>
-
-      <div className="mt-5">
-        <ToyButton onClick={onClose}>Anladım</ToyButton>
-      </div>
-    </Modal>
+    </div>
   )
 }
 

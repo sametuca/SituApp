@@ -6,11 +6,21 @@
 import { memo, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Html, useGLTF } from '@react-three/drei'
-import { AdditiveBlending, Box3, CanvasTexture, Color, DoubleSide, MathUtils, Object3D, Vector3 } from 'three'
+import { AdditiveBlending, Box3, CanvasTexture, CircleGeometry, Color, CylinderGeometry, DoubleSide, MathUtils, Object3D, RingGeometry, SphereGeometry, Vector3 } from 'three'
 import { COLLECT_PROMPT, DRAW_RADIUS, GLINT_RADIUS, HIDDEN_GLINT, HIDDEN_SHOW, KINDS, collectiblesIn } from './collectibles'
 
 const LEAVE_MS = 480
 const MAX_GLINTS = 360
+
+const SHARED_GEO = {
+  aura: new CircleGeometry(0.78, 24),
+  pulse: new RingGeometry(0.38, 0.45, 24),
+  ripple: new RingGeometry(0.36, 0.44, 24),
+  beam: new CylinderGeometry(0.46, 0.34, 1.32, 16, 1, true),
+  hit: new SphereGeometry(1.0, 8, 6),
+}
+
+const fittedMatCache = new WeakMap()
 
 let cachedTex = null
 /** Aura, ışık sütunu ve 4 köşeli ışıltı yıldızı için tek seferlik prosedürel dokular. */
@@ -87,13 +97,22 @@ function useFitted(url, size, ground, glow) {
     clone.position.set(-c.x, ground ? -fit.min.y : -c.y, -c.z)
     clone.traverse((o) => {
       if (!o.isMesh || !o.material) return
-      const m = o.material.clone()
-      if (m.emissive) {
-        m.emissive.set(glow)
-        m.emissiveIntensity = 0.28
+      let byGlow = fittedMatCache.get(o.material)
+      if (!byGlow) {
+        byGlow = new Map()
+        fittedMatCache.set(o.material, byGlow)
       }
-      if (typeof m.roughness === 'number') m.roughness = Math.min(m.roughness, 0.32)
-      if (typeof m.metalness === 'number') m.metalness = Math.max(m.metalness, 0.14)
+      let m = byGlow.get(glow)
+      if (!m) {
+        m = o.material.clone()
+        if (m.emissive) {
+          m.emissive.set(glow)
+          m.emissiveIntensity = 0.28
+        }
+        if (typeof m.roughness === 'number') m.roughness = Math.min(m.roughness, 0.32)
+        if (typeof m.metalness === 'number') m.metalness = Math.max(m.metalness, 0.14)
+        byGlow.set(glow, m)
+      }
       o.material = m
     })
     return clone
@@ -169,27 +188,24 @@ const Item = memo(function Item({ col, phase, store, onPick }) {
         <primitive object={obj} />
       </group>
       {/* zeminde yumuşak radyal aura */}
-      <mesh position={[0, 0.028, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.78, 28]} />
+      <mesh geometry={SHARED_GEO.aura} position={[0, 0.028, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <meshBasicMaterial ref={glowMat} map={tex.glow} color={k.glow} transparent opacity={0.42} depthWrite={false} toneMapped={false} />
       </mesh>
       {/* nefes alan ince iç halka */}
-      <mesh ref={pulseRef} position={[0, 0.035, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.38, 0.45, 32]} />
+      <mesh ref={pulseRef} geometry={SHARED_GEO.pulse} position={[0, 0.035, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <meshBasicMaterial ref={pulseMat} color={k.glow} transparent opacity={0.55} depthWrite={false} toneMapped={false} />
       </mesh>
       {/* dışa yayılan zarif dalga halkası (toplarken patlama dalgasına dönüşür) */}
-      <mesh ref={rippleRef} position={[0, 0.032, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.36, 0.44, 32]} />
+      <mesh ref={rippleRef} geometry={SHARED_GEO.ripple} position={[0, 0.032, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <meshBasicMaterial ref={rippleMat} color="#ffffff" transparent opacity={0.4} depthWrite={false} toneMapped={false} />
       </mesh>
       {/* ince yükselen ışık tülü */}
-      <mesh ref={beamRef} position={[0, 0.68, 0]}>
-        <cylinderGeometry args={[0.46, 0.34, 1.32, 24, 1, true]} />
+      <mesh ref={beamRef} geometry={SHARED_GEO.beam} position={[0, 0.68, 0]}>
         <meshBasicMaterial ref={beamMat} map={tex.beam} color={k.glow} transparent opacity={0.2} side={DoubleSide} blending={AdditiveBlending} depthWrite={false} toneMapped={false} />
       </mesh>
       {/* dokunması kolay görünmez alan */}
       <mesh
+        geometry={SHARED_GEO.hit}
         position={[0, 0.8, 0]}
         onClick={(e) => {
           e.stopPropagation()
@@ -198,7 +214,6 @@ const Item = memo(function Item({ col, phase, store, onPick }) {
         onPointerOver={() => (document.body.style.cursor = 'pointer')}
         onPointerOut={() => (document.body.style.cursor = '')}
       >
-        <sphereGeometry args={[1.0, 8, 6]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
     </group>
