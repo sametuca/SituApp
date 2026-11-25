@@ -67,7 +67,7 @@ function NpcSheet({ npc, text, onOption, onBuy, onClose, touch }) {
             onClick={() => onOption(o)}
             className="min-h-11 flex-1 rounded-2xl border-b-4 border-[#e4b780] bg-[#ffeed9] px-3 py-2 text-[0.9em] font-extrabold text-[#8b5f2b] active:translate-y-[3px] active:border-b-[1px]"
           >
-            {o.label}
+            {o.label.replace(/^[\p{Extended_Pictographic}\uFE0F\u200d\s]+/u, '')}
           </button>
         ))}
         <button onClick={onClose} className="min-h-11 rounded-2xl border-b-4 border-[#c9bde6] bg-[#ece4ff] px-3 py-2 text-[0.9em] font-extrabold text-[#6b4fc0] active:translate-y-[3px] active:border-b-[1px]">
