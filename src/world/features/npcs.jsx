@@ -92,15 +92,6 @@ export function useNpcs(ctx) {
     return () => window.removeEventListener('situapp:bot-click', on)
   }, [])
 
-  // konuşma balonu NPC'nin başında görünür (NpcLayer 'situapp:npc-say' dinler); çekmece kapanınca silinir
-  const sayId = open?.id
-  const sayText = open ? talk.text : null
-  useEffect(() => {
-    if (!sayId) return
-    window.dispatchEvent(new CustomEvent('situapp:npc-say', { detail: { id: sayId, text: sayText } }))
-    return () => window.dispatchEvent(new CustomEvent('situapp:npc-say', { detail: { id: sayId, text: null } }))
-  }, [sayId, sayText])
-
   // E ile konuş, Esc ile kapat
   useEffect(() => {
     const onKey = (e) => {
@@ -126,6 +117,11 @@ export function useNpcs(ctx) {
   const onOption = (o) => {
     if (o.action === 'rent_bike') net.send({ t: 'rent', kind: 'bike' })
     else if (o.action === 'rent_car') net.send({ t: 'rent', kind: 'car' })
+    else if (o.action === 'open_wardrobe') {
+      setTalk(null)
+      ctx.setPanel('wardrobe')
+      return
+    }
     setTalk((t) => (t ? { ...t, text: pick(o.reply) } : t))
   }
 

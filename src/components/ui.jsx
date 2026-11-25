@@ -30,7 +30,7 @@ export function ToyButton({ children, loading, tone = 'pink', className = '', ..
       disabled={props.disabled || loading}
       className={`relative w-full rounded-2xl ${TONES[tone].button} px-6 py-3.5 text-lg font-extrabold text-white
         border-b-4 shadow-soft transition-all duration-150
-        hover:brightness-105 active:translate-y-[3px] active:border-b-[1px]
+        hover:brightness-105 active:translate-y-[3px] active:scale-[0.98] active:border-b-[1px]
         focus-visible:outline-none focus-visible:ring-4
         disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
     >

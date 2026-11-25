@@ -158,7 +158,7 @@ function EventCard({ event, fxOn, onToggleFx, onClose }) {
 function SuggestCard({ s, onHi, onClose }) {
   const tags = s.common?.length ? s.common.join(' ') : ''
   return (
-    <div className="absolute left-16 right-32 top-24 z-20 flex max-w-[22rem] animate-pop items-center gap-3 rounded-3xl border-2 border-white bg-white/90 p-3 shadow-toy backdrop-blur-md">
+    <div className="absolute left-[4.5rem] right-32 top-24 z-20 flex max-w-[22rem] animate-pop items-center gap-3 rounded-3xl border-2 border-white bg-white/90 p-3 shadow-toy backdrop-blur-md">
       <img src={`/avatars/${s.avatar}.png`} alt="" width="44" height="44" className="h-11 w-11 shrink-0 rounded-full border-2 border-white bg-white/60 object-cover object-top" />
       <div className="min-w-0 flex-1">
         <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#fdb252]">Bugünün önerisi</p>

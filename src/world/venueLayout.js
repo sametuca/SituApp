@@ -453,7 +453,9 @@ function build(v) {
       // havalimanı süsleri (Meshy): uçak maketi, bagaj arabası, valiz yığını
       add({ t: 'glb', m: 'plane', x: -0.5, z: 0.1, s: 2.0, ry: 0.5 }, { x: -0.5, z: 0.1, hw: 0.95, hd: 0.95, ry: 0 })
       add({ t: 'glb', m: 'cart', x: -2.9, z: 4.1, s: 1.4, ry: 0.2 }, { x: -2.9, z: 4.1, hw: 0.5, hd: 0.4, ry: 0 })
-      add({ t: 'glb', m: 'suitcases', x: -5.2, z: -0.9, s: 1.1, ry: 0.4 }, { x: -5.2, z: -0.9, hw: 0.45, hd: 0.45, ry: 0 })
+      add({ t: 'glb', m: 'suitcases', x: -6.4, z: -2.4, s: 1.1, ry: 0.4 }, { x: -6.4, z: -2.4, hw: 0.45, hd: 0.45, ry: 0 })
+      // eğitim holü örnek mekân kapısı (batı duvarı)
+      add({ t: 'demodoor', x: -hw + 0.04, z: -0.4 })
       // bekleme koltukları ve bitkiler
       sofaAt('sofaA', -4.0, 1.4, 0, 2.2, '#7fcdf3')
       sofaAt('sofaB', -4.0, 3.0, 0, 2.2, th.accent)

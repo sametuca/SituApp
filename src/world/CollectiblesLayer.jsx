@@ -10,10 +10,10 @@ import { Box3, Color, MathUtils, Object3D, Vector3 } from 'three'
 import { COLLECT_PROMPT, DRAW_RADIUS, GLINT_RADIUS, HIDDEN_GLINT, HIDDEN_SHOW, KINDS, collectiblesIn } from './collectibles'
 
 const LEAVE_MS = 480
-const MAX_GLINTS = 220
+const MAX_GLINTS = 320
 
-/** GLB'yi en büyük boyutu `size` olacak şekilde ölçekler; ground ise tabanı y=0'a, değilse merkezi y=0'a koyar. */
-function useFitted(url, size, ground) {
+/** GLB'yi en büyük boyutu `size` olacak şekilde ölçekler; parlak/ışıldayan malzeme uygular. */
+function useFitted(url, size, ground, glow) {
   const { scene } = useGLTF(url)
   return useMemo(() => {
     const clone = scene.clone(true)
@@ -23,13 +23,24 @@ function useFitted(url, size, ground) {
     const fit = new Box3().setFromObject(clone)
     const c = fit.getCenter(new Vector3())
     clone.position.set(-c.x, ground ? -fit.min.y : -c.y, -c.z)
+    clone.traverse((o) => {
+      if (!o.isMesh || !o.material) return
+      const m = o.material.clone()
+      if (m.emissive) {
+        m.emissive.set(glow)
+        m.emissiveIntensity = 0.28
+      }
+      if (typeof m.roughness === 'number') m.roughness = Math.min(m.roughness, 0.32)
+      if (typeof m.metalness === 'number') m.metalness = Math.max(m.metalness, 0.14)
+      o.material = m
+    })
     return clone
-  }, [scene, size, ground])
+  }, [scene, size, ground, glow])
 }
 
 const Item = memo(function Item({ col, phase, store, onPick }) {
   const k = KINDS[col.kind]
-  const obj = useFitted(k.model, k.size, k.ground)
+  const obj = useFitted(k.model, k.size, k.ground, k.glow)
   const g = useRef()
   useFrame(({ clock }) => {
     const grp = g.current
@@ -61,6 +72,11 @@ const Item = memo(function Item({ col, phase, store, onPick }) {
       <group ref={g}>
         <primitive object={obj} />
       </group>
+      {/* zeminde yumuşak parlak hale */}
+      <mesh position={[0, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.36, 0.56, 20]} />
+        <meshBasicMaterial color={k.glow} transparent opacity={0.42} depthWrite={false} toneMapped={false} />
+      </mesh>
       {/* dokunması kolay görünmez alan */}
       <mesh
         position={[0, 0.8, 0]}
@@ -105,16 +121,16 @@ function Glints({ visRef, focusRef }) {
       const k = KINDS[col.kind]
       const d = Math.hypot(f.x - col.x, f.z - col.z)
       if (d > (col.hidden ? HIDDEN_GLINT : GLINT_RADIUS)) continue
-      const count = col.hidden ? 7 : 3
+      const count = col.hidden ? 8 : 5
       const base = k.ground ? 0.5 : k.y
       const fade = col.hidden ? 1 : MathUtils.clamp((GLINT_RADIUS - d) / 3, 0.35, 1)
       for (let i = 0; i < count; i++) {
-        const a = t * (0.8 + (i % 3) * 0.25) + i * (Math.PI * 2 / count) + col.x
-        const r = 0.55 + (i % 3) * 0.18
-        const tw = 0.5 + 0.5 * Math.sin(t * 3 + i * 1.7 + col.z)
+        const a = t * (0.9 + (i % 3) * 0.25) + i * (Math.PI * 2 / count) + col.x
+        const r = 0.55 + (i % 3) * 0.2
+        const tw = 0.5 + 0.5 * Math.sin(t * 3.4 + i * 1.7 + col.z)
         dummy.position.set(col.x + Math.cos(a) * r, base + 0.25 + Math.sin(t * 1.4 + i * 2.1) * 0.35 + (i % 2) * 0.2, col.z + Math.sin(a) * r)
         dummy.rotation.set(t + i, t * 1.3, 0)
-        dummy.scale.setScalar((col.hidden ? 0.085 : 0.06) * (0.4 + tw) * fade)
+        dummy.scale.setScalar((col.hidden ? 0.11 : 0.085) * (0.4 + tw) * fade)
         dummy.updateMatrix()
         m.setMatrixAt(n, dummy.matrix)
         m.setColorAt(n, tmpColor.set(i % 2 ? '#ffffff' : k.glow))

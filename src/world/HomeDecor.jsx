@@ -64,6 +64,44 @@ export function wallTexture(pattern, hex, w, h) {
     })
     return repeated(base, `dots${hex}`, w / 0.8, h / 0.8)
   }
+  if (pattern === 'hearts') {
+    const base = canvasTexture(`hearts${hex}`, 128, 128, (g, W, H) => {
+      g.fillStyle = hex
+      g.fillRect(0, 0, W, H)
+      g.fillStyle = 'rgba(255,255,255,0.72)'
+      for (const [cx, cy] of [[32, 36], [96, 98]]) {
+        g.beginPath()
+        g.arc(cx - 7, cy - 4, 8, 0, Math.PI * 2)
+        g.arc(cx + 7, cy - 4, 8, 0, Math.PI * 2)
+        g.moveTo(cx - 14, cy)
+        g.lineTo(cx, cy + 15)
+        g.lineTo(cx + 14, cy)
+        g.fill()
+      }
+    })
+    return repeated(base, `hearts${hex}`, w / 0.9, h / 0.9)
+  }
+  if (pattern === 'stars') {
+    const base = canvasTexture(`stars${hex}`, 128, 128, (g, W, H) => {
+      g.fillStyle = hex
+      g.fillRect(0, 0, W, H)
+      g.fillStyle = 'rgba(255,255,255,0.82)'
+      for (const [cx, cy] of [[32, 32], [96, 96]]) {
+        g.beginPath()
+        for (let i = 0; i < 10; i++) {
+          const r = i % 2 === 0 ? 13 : 6
+          const a = (i * Math.PI) / 5 - Math.PI / 2
+          const px = cx + Math.cos(a) * r
+          const py = cy + Math.sin(a) * r
+          if (i === 0) g.moveTo(px, py)
+          else g.lineTo(px, py)
+        }
+        g.closePath()
+        g.fill()
+      }
+    })
+    return repeated(base, `stars${hex}`, w / 0.9, h / 0.9)
+  }
   return null
 }
 
@@ -89,6 +127,24 @@ export function DecorFloor({ floor }) {
         }
       })
       return repeated(base, 'wood', (hw * 2) / 3, (hd * 2) / 1.5)
+    }
+    if (floor === 'marble') {
+      const base = canvasTexture('marble', 256, 256, (g, W, H) => {
+        g.fillStyle = '#faf7ff'
+        g.fillRect(0, 0, W, H)
+        g.strokeStyle = 'rgba(185, 165, 215, 0.25)'
+        g.lineWidth = 3
+        for (let i = 0; i < 5; i++) {
+          g.beginPath()
+          g.moveTo(0, i * 56)
+          g.bezierCurveTo(90, i * 56 + 22, 170, i * 56 - 18, W, i * 56 + 10)
+          g.stroke()
+        }
+        g.strokeStyle = 'rgba(255, 255, 255, 0.85)'
+        g.lineWidth = 2
+        g.strokeRect(1, 1, W - 2, H - 2)
+      })
+      return repeated(base, 'marble', (hw * 2) / 2, (hd * 2) / 2)
     }
     if (floor === 'rug') {
       return canvasTexture('rugfloor', 512, 460, (g, W, H) => {

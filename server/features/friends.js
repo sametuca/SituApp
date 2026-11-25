@@ -258,6 +258,18 @@ export default function friends(ctx) {
         send(me.ws, { t: 'goto', x: target.x + 1.2, z: target.z + 1.2, name: target.name })
       },
 
+      home_invite(me, msg) {
+        const now = Date.now()
+        if (now - (me.lastHomeInvite ?? 0) < 2000) return
+        me.lastHomeInvite = now
+        const key = keyOf(msg.to)
+        if (!user(me.key).friends[key]) return
+        const target = onlineOf(key)
+        if (!target || mod().blockedPair(me, target)) return send(me.ws, { t: 'info', text: 'Arkadaşın şu an çevrimdışı.' })
+        if (target.dnd) return send(me.ws, { t: 'info', text: `🌙 ${target.name} şu an rahatsız edilmek istemiyor.` })
+        send(target.ws, { t: 'home_invite', key: me.homeKey, name: me.name })
+      },
+
       mail_send(me, msg) {
         const now = Date.now()
         if (now - (me.lastMail ?? 0) < 3000) return send(me.ws, { t: 'info', text: 'Biraz bekle, az önce mesaj bıraktın.' })

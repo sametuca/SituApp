@@ -188,7 +188,7 @@ export function useBeach({ net, focusRef, home, venue, touch, say }) {
   const busy = Boolean(vb || waiting || sc)
   useEffect(() => {
     const onKey = (e) => {
-      if (e.code !== 'KeyE' || busy || !near) return
+      if ((e.code !== 'KeyE' && e.key !== 'e' && e.key !== 'E') || busy || !near) return
       if (e.target instanceof HTMLElement && ['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return
       send(near === 'net' ? { t: 'vb_join' } : { t: 'sc_start' })
     }

@@ -11,8 +11,8 @@ const NAMES = {
   lArm: 'LeftArm', rArm: 'RightArm',
 }
 
-// Oturan avatar ayakta olduğu yüksekliğin bu kadar altına iner (m). Koltuk yüksekliğine göre ayarlı.
-export const SIT_DROP = { bench: 0.2, chair: 0.2, lounger: 0.3, floor: 0.42, bike: 0.2 }
+// Oturan avatar ayakta olduğu yüksekliğin bu kadar altına iner (m); negatif değer koltuk minderine çıkarır.
+export const SIT_DROP = { bench: -0.08, chair: -0.05, lounger: 0.12, floor: 0.42, bike: 0.05 }
 
 const q1 = new Quaternion()
 const q2 = new Quaternion()
@@ -22,12 +22,16 @@ const q4 = new Quaternion()
 /** model: klonlanmış, ölçeklenmiş avatar sahnesi. */
 export function makeRig(model) {
   const bones = {}
+  const rest = []
   const want = new Map(Object.entries(NAMES).map(([k, n]) => [n, k]))
   model.traverse((o) => {
-    const k = o.isBone && want.get(o.name)
-    if (k && !bones[k]) bones[k] = o
+    if (o.isBone) {
+      rest.push([o, o.quaternion.clone(), o.position.clone()])
+      const k = want.get(o.name)
+      if (k && !bones[k]) bones[k] = o
+    }
   })
-  return { model, bones, blend: 0, kind: null, style: 'bench', lead: false, dirty: false }
+  return { model, bones, rest, blend: 0, kind: null, style: 'bench', lead: false, dirty: false }
 }
 
 /** Kemiği, model eksenlerinde verilen eksen/açıyla döndürür (üst kemiğin dönüşü ne olursa olsun). */
@@ -43,6 +47,19 @@ function turn(rig, bone, axis, angle) {
 }
 
 const ease = (x) => x * x * (3 - 2 * x)
+
+/** Meshy idle klibi yerine dik, sakin ayakta duruş (başlangıç pozu + kollar yanda; kemik ölçeği korunur). */
+export function applyUprightIdle(rig) {
+  const { model, bones, rest } = rig
+  for (let i = 0; i < rest.length; i++) {
+    const [b, q, p] = rest[i]
+    b.quaternion.copy(q)
+    b.position.copy(p)
+  }
+  model.updateWorldMatrix(true, true)
+  turn(rig, bones.lArm, AZ, -1.25)
+  turn(rig, bones.rArm, AZ, 1.25)
+}
 
 /** Her karede (mixer.update'ten sonra) çağır. pose: together pose ya da null. */
 export function applyPose(rig, pose, dt) {
@@ -87,6 +104,8 @@ export function applyPose(rig, pose, dt) {
       turn(rig, bones.rUp, AX, -1.45 * b)
       turn(rig, bones.lLeg, AX, 1.5 * b)
       turn(rig, bones.rLeg, AX, 1.5 * b)
+      turn(rig, bones.lArm, AX, -0.35 * b)
+      turn(rig, bones.rArm, AX, -0.35 * b)
     }
   } else if (rig.kind === 'dance') {
     const t = performance.now() / 1000 - rig.t0

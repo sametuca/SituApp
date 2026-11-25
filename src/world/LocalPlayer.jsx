@@ -5,7 +5,7 @@ import AvatarRig from './AvatarRig'
 import { resolveCollisions } from './layout'
 import { together } from './features/togetherStore'
 import { playerPos } from './cull'
-import { BIKE_POSE, BIKE_SPEED, bike, useRiding } from './bikeStore'
+import { BIKE_POSE, BIKE_SPEED, bike, speedBoost, useRiding } from './bikeStore'
 import BikeModel from './Bike'
 
 const WALK_SPEED = 3.2 // m/sn
@@ -110,6 +110,11 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
     const posed = together.self.current
     if (posed) {
       moving = false
+      if (posed.kind === 'sit' && posed.x != null && posed.z != null) {
+        const kLerp = Math.min(1, dt * 10)
+        g.position.x = MathUtils.lerp(g.position.x, posed.x, kLerp)
+        g.position.z = MathUtils.lerp(g.position.z, posed.z, kLerp)
+      }
       const diff = MathUtils.euclideanModulo(posed.ry - g.rotation.y + Math.PI, Math.PI * 2) - Math.PI
       g.rotation.y += diff * Math.min(1, dt * 8)
     }
@@ -122,7 +127,9 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
       right.crossVectors(fwd, up)
       dir.copy(fwd).multiplyScalar(fwdIn).addScaledVector(right, rightIn).normalize()
 
-      const speed = (bike.on ? BIKE_SPEED : running ? RUN_SPEED : WALK_SPEED) * (bike.on ? Math.max(0.6, analog) : analog) * Math.min(dt, 0.1)
+      const boost = Date.now() < speedBoost.until ? 1.55 : 1
+      const baseSpeed = bike.on ? (running ? 7.2 : BIKE_SPEED) : running ? RUN_SPEED : WALK_SPEED
+      const speed = baseSpeed * boost * (bike.on ? Math.max(0.65, analog) : analog) * Math.min(dt, 0.1)
       const [nx, nz] = collide(g.position.x + dir.x * speed, g.position.z + dir.z * speed)
       const dx = nx - g.position.x
       const dz = nz - g.position.z

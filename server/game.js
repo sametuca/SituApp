@@ -408,7 +408,7 @@ export function attachGameServer(httpServer) {
         me.z = mz
         me.ry = num(msg.ry, 10)
         me.anim = ANIMS.includes(msg.anim) ? msg.anim : 'idle'
-        if (me.anim === 'ride' && !((me.bikeUntil ?? 0) > Date.now())) me.anim = 'idle' // bisiklet kiralamayan binemez (kiralama: features/rental.js)
+        if (me.anim === 'ride' && isVenueRoom(me.room)) me.anim = 'idle' // mekân içinde bisiklete binilmez
         me.dirty = true
         emit('onMove', me)
       } else if (msg.t === 'room') {

@@ -105,9 +105,9 @@ export function EditToggle({ onClick, touch }) {
   return (
     <button
       onClick={onClick}
-      className={`absolute right-3 z-10 flex items-center gap-2 rounded-full px-4 py-2 text-sm font-extrabold text-[#4a3b5c] transition hover:bg-white ${glass} ${touch ? 'top-16' : 'top-16'}`}
+      className={`absolute right-3 z-10 flex items-center gap-2 rounded-full px-5 py-2.5 text-base font-extrabold text-[#4a3b5c] transition hover:bg-white ${glass} ${touch ? 'top-[4.5rem]' : 'top-[4.5rem]'}`}
     >
-      <Ico name="sofa" size={20} /> Döşe
+      <Ico name="sofa" size={24} /> Döşe
     </button>
   )
 }
@@ -119,38 +119,70 @@ export function EditToggle({ onClick, touch }) {
 export function FurnitureSheet({ count, max, selected, selectedName, onAdd, onRotate, onRemove, onClose, tabs = [], tabApi }) {
   const [tab, setTab] = useState('items')
   const [set, setSet] = useState('classic') // eşya teması (Klasik / Romantik / Bahar / Retro)
+  const [collapsed, setCollapsed] = useState(false)
+  const shelfRef = useRef(null)
   const extra = tabs.find((t) => t.key === tab)
+  const scrollShelf = (dir) => shelfRef.current?.scrollBy({ left: dir * 220, behavior: 'smooth' })
+
+  if (collapsed) {
+    return (
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 mx-auto flex w-full max-w-2xl justify-center px-2 pb-2" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
+        <div className={`pointer-events-auto flex items-center gap-2 rounded-full px-3.5 py-1.5 ${glass}`}>
+          <button
+            onClick={() => setCollapsed(false)}
+            aria-label="Döşeme panelini genişlet"
+            className="flex items-center gap-2 text-xs font-black text-[#4a3b5c] transition hover:text-[#7a5af8] active:scale-95"
+          >
+            <span className="grid h-6 w-6 place-items-center rounded-full bg-[#ede9fe] text-sm text-[#6d4aff]">▴</span>
+            <span>Döşeme modu</span>
+            <span className="text-[11px] font-bold text-[#8a7a9c]">{count}/{max}</span>
+          </button>
+          <button onClick={onClose} className="rounded-full bg-[#fdb252] px-3 py-1 text-xs font-extrabold text-white shadow-soft transition hover:brightness-105 active:scale-95">
+            Bitti
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="absolute inset-x-0 bottom-0 z-20 mx-auto w-full max-w-2xl animate-pop px-2 pb-2" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
-      <div className={`rounded-[1.75rem] p-3 ${glass}`}>
-        <div className="mb-2 flex items-center gap-2">
+      <div className={`rounded-[1.75rem] border-2 border-white bg-white/92 p-3.5 shadow-[0_12px_32px_rgba(74,59,92,0.14)]`}>
+        <div className="mb-2.5 flex items-center gap-2">
           <p className="min-w-0 flex-1 truncate text-sm font-black text-[#4a3b5c]">
-            {selected ? `${selectedName} seçili · sürükleyerek taşı` : '🛋️ Döşeme modu · bir eşyaya dokun'}
-            <span className="ml-2 text-xs font-bold text-[#8a7a9c]">
+            {selected ? `${selectedName} seçili · sürükleyerek taşı` : 'Döşeme modu · bir eşyaya dokun'}
+            <span className="ml-2 rounded-full bg-[#f3e8ff] px-2 py-0.5 text-[11px] font-extrabold text-[#6d4aff]">
               {count}/{max}
             </span>
           </p>
           {selected && (
             <>
-              <button onClick={onRotate} aria-label="Döndür" className="grid h-9 w-9 place-items-center rounded-full border-2 border-white bg-[#e9ddff] text-lg shadow-soft">
+              <button onClick={onRotate} aria-label="Döndür" className="grid h-8 w-8 place-items-center rounded-full border-2 border-white bg-[#e9ddff] text-base shadow-soft transition active:scale-95">
                 ↻
               </button>
-              <button onClick={onRemove} aria-label="Kaldır" className="grid h-9 w-9 place-items-center rounded-full border-2 border-white bg-[#ffecd0] text-lg shadow-soft">
-                🗑
+              <button onClick={onRemove} aria-label="Kaldır" className="grid h-8 w-8 place-items-center rounded-full border-2 border-white bg-[#ffe4e6] text-xs font-black text-[#be123c] shadow-soft transition active:scale-95">
+                Sil
               </button>
             </>
           )}
+          <button
+            onClick={() => setCollapsed(true)}
+            aria-label="Döşeme panelini gizle"
+            className="grid h-8 w-8 place-items-center rounded-full border-2 border-white bg-[#f3e8ff] text-sm font-black text-[#6d4aff] shadow-soft transition hover:bg-[#e9ddff] active:scale-95"
+          >
+            ▾
+          </button>
           <button onClick={onClose} className="rounded-full border-b-4 border-[#e8952c] bg-[#fdb252] px-4 py-1.5 text-sm font-extrabold text-white shadow-soft active:translate-y-[2px] active:border-b-2">
-            ✓ Bitti
+            Bitti
           </button>
         </div>
         {tabs.length > 0 && (
-          <div className="mb-2 flex gap-1.5 overflow-x-auto">
-            {[{ key: 'items', label: '🛋️ Eşyalar' }, ...tabs].map((t) => (
+          <div className="mb-2 flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {[{ key: 'items', label: 'Eşyalar' }, ...tabs].map((t) => (
               <button
                 key={t.key}
                 onClick={() => setTab(t.key)}
-                className={`shrink-0 rounded-full border-2 border-white px-3 py-1 text-xs font-extrabold transition ${tab === t.key ? 'bg-[#a88bff] text-white' : 'bg-white/70 text-[#4a3b5c] hover:bg-white'}`}
+                className={`shrink-0 rounded-full border-2 border-white px-3.5 py-1 text-xs font-extrabold transition active:scale-95 ${tab === t.key ? 'bg-[#a88bff] text-white shadow-sm' : 'bg-[#f6f0ff] text-[#4a3b5c] hover:bg-white'}`}
               >
                 {t.label}
               </button>
@@ -161,29 +193,47 @@ export function FurnitureSheet({ count, max, selected, selectedName, onAdd, onRo
           extra.render(tabApi)
         ) : (
         <>
-        <div className="mb-1.5 flex gap-1.5 overflow-x-auto">
+        <div className="mb-2 flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {FURNITURE_SETS.map((st) => (
             <button
               key={st.id}
               onClick={() => setSet(st.id)}
               aria-pressed={set === st.id}
-              className={`shrink-0 rounded-full border-2 border-white px-3 py-1 text-[11px] font-extrabold transition ${set === st.id ? 'bg-[#fdb252] text-white' : 'bg-white/70 text-[#4a3b5c] hover:bg-white'}`}
+              className={`shrink-0 rounded-full border-2 border-white px-3 py-1 text-[11px] font-extrabold transition active:scale-95 ${set === st.id ? 'bg-[#fdb252] text-white shadow-sm' : 'bg-[#fff6eb] text-[#4a3b5c] hover:bg-white'}`}
             >
-              {st.emoji} {st.name}
+              {st.name}
             </button>
           ))}
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {FURNITURE.filter((f) => f.set === set).map((f) => (
-            <button
-              key={f.id}
-              onClick={() => onAdd(f.id)}
-              className="flex w-20 shrink-0 flex-col items-center gap-1 rounded-2xl border-2 border-white bg-white/70 p-1.5 transition hover:bg-white active:scale-95"
-            >
-              <img src={`/models/furniture/${f.id}.webp`} alt="" width="56" height="56" className="h-14 w-14 rounded-xl object-contain" loading="lazy" />
-              <span className="w-full truncate text-center text-[11px] font-extrabold text-[#4a3b5c]">{f.name}</span>
-            </button>
-          ))}
+        <div className="relative flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => scrollShelf(-1)}
+            aria-label="Sola kaydır"
+            className="grid h-8 w-7 shrink-0 place-items-center rounded-full border border-white bg-[#f6f0ff] text-base font-black text-[#6d4aff] shadow-sm transition hover:bg-white active:scale-95"
+          >
+            ‹
+          </button>
+          <div ref={shelfRef} className="flex flex-1 gap-2 overflow-x-auto py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {FURNITURE.filter((f) => f.set === set).map((f) => (
+              <button
+                key={f.id}
+                onClick={() => onAdd(f.id)}
+                className="flex w-20 shrink-0 flex-col items-center gap-1 rounded-2xl border-2 border-white bg-white/90 p-1.5 shadow-sm transition hover:border-[#d8c8ff] hover:bg-white active:scale-95"
+              >
+                <img src={`/models/furniture/${f.id}.webp`} alt="" width="56" height="56" className="h-14 w-14 rounded-xl object-contain" loading="lazy" />
+                <span className="w-full truncate text-center text-[11px] font-extrabold text-[#4a3b5c]">{f.name}</span>
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => scrollShelf(1)}
+            aria-label="Sağa kaydır"
+            className="grid h-8 w-7 shrink-0 place-items-center rounded-full border border-white bg-[#f6f0ff] text-base font-black text-[#6d4aff] shadow-sm transition hover:bg-white active:scale-95"
+          >
+            ›
+          </button>
         </div>
         </>
         )}

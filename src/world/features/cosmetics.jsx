@@ -1,10 +1,23 @@
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { OrbitControls } from '@react-three/drei'
+import LookPicker from '../../components/LookPicker'
 import { ToyButton } from '../../components/ui'
 import { Modal } from '../Hud'
+import { DoorPrompt } from '../Social'
+import { HOME_ROOM } from '../layout'
 import AvatarRig from '../AvatarRig'
 import { PetLayer, PetModel } from '../Pet'
 import { cosStore } from '../cosStore'
+import {
+  EYE_COLORS,
+  HAIR_COLORS,
+  OUTFIT_COLORS,
+  OUTFIT_PRESETS,
+  emptyLook,
+  sameLook,
+  sanitizeLook,
+} from '../lookData'
 import {
   ACCESSORIES,
   DEFAULT_DECOR,
@@ -15,44 +28,110 @@ import {
   PASTELS,
   PETS,
   PET_RENEW_PRICE,
+  STYLE_ACCESSORIES,
   WALL_COLORS,
   WALL_PATTERNS,
 } from '../cosmeticsData'
 
-// Kişiselleştirme (istemci): gardırop (aksesuar + evcil hayvan), ev dekoru (Döşe → Dekor), hediyeleşme.
-// Sunucu tarafı: server/features/cosmetics.js. Seçimler cosStore'a yazılır; AvatarRig aksesuarı, PetLayer evcil hayvanı oradan okur.
+// Kişiselleştirme (istemci): gardırop (kombinler, saç/göz/kıyafet rengi, çift slot aksesuar + evcil hayvan), ev dekoru, hediyeleşme.
+// Sunucu tarafı: server/features/cosmetics.js. Seçimler cosStore'a yazılır; AvatarRig aksesuar/görünümü, PetLayer evcil hayvanı oradan okur.
 
 const OFFER_TTL_MS = 90_000
+const FAV_KEY = 'situapp_fav_looks_v1'
+const SEEN_KEY = 'situapp_wardrobe_seen'
 
 const chip = 'border-2 border-white shadow-soft'
 const pillBase = 'shrink-0 rounded-full border-2 border-white px-3 py-1.5 text-xs font-extrabold transition active:scale-95'
 
+function readSavedLook() {
+  try {
+    const raw = JSON.parse(localStorage.getItem('situapp_avatar'))
+    return raw?.look ? sanitizeLook(raw.look) : emptyLook()
+  } catch {
+    return emptyLook()
+  }
+}
+
+function writeSavedLook(look) {
+  try {
+    const raw = JSON.parse(localStorage.getItem('situapp_avatar'))
+    if (raw) localStorage.setItem('situapp_avatar', JSON.stringify({ ...raw, look }))
+  } catch {
+    /* önemli değil */
+  }
+}
+
+function readFavorites() {
+  try {
+    const arr = JSON.parse(localStorage.getItem(FAV_KEY))
+    return Array.isArray(arr) ? arr.slice(0, 3) : [null, null, null]
+  } catch {
+    return [null, null, null]
+  }
+}
+
 // ---------- gardırop önizlemesi ----------
-function PreviewStage({ slug }) {
-  const group = useRef()
+function PreviewCam({ zoomMode, controlsRef }) {
+  const { camera } = useThree()
+  useEffect(() => {
+    if (import.meta.env.DEV && window.__previewCam) return
+    const close = zoomMode === 'close'
+    camera.position.set(0, close ? 1.18 : 1.02, close ? 1.48 : 2.75)
+    if (controlsRef.current) {
+      controlsRef.current.target.set(close ? -0.22 : 0, close ? 0.98 : 0.74, 0)
+      controlsRef.current.update()
+    } else {
+      camera.lookAt(close ? -0.22 : 0, close ? 0.98 : 0.74, 0)
+    }
+  }, [zoomMode, camera, controlsRef])
+  return null
+}
+
+function PreviewStage({ slug, poseMode, zoomMode }) {
   const pet = useRef()
+  const controls = useRef()
   const t = useRef(0)
+  const dancePose = useMemo(() => ({ current: poseMode === 'dance' ? { kind: 'dance', lead: true, t0: 0 } : null }), [poseMode])
+
   useFrame((_, dt) => {
     t.current += dt
-    const fixed = import.meta.env.DEV ? window.__previewAngle : undefined // geliştirme: test için sabit açı
-    if (group.current) group.current.rotation.y = fixed ?? Math.sin(t.current * 0.6) * 0.5
     if (pet.current) pet.current.position.y = Math.max(0, Math.sin(t.current * 2.2)) ** 6 * 0.1
   })
   return (
     <>
-      <ambientLight intensity={0.9} />
-      <hemisphereLight args={['#ffffff', '#ffedd6', 1.2]} />
-      <directionalLight position={[2, 4, 3]} intensity={1.4} />
-      <group ref={group} position={[-0.25, 0, 0]}>
+      <PreviewCam zoomMode={zoomMode} controlsRef={controls} />
+      <ambientLight intensity={0.95} />
+      <hemisphereLight args={['#ffffff', '#ffedd6', 1.25]} />
+      <directionalLight position={[2, 4, 3]} intensity={1.45} />
+      {/* stüdyo podyumu */}
+      <group position={[-0.22, -0.05, 0]}>
+        <mesh>
+          <cylinderGeometry args={[0.58, 0.64, 0.1, 40]} />
+          <meshStandardMaterial color="#f5e6ff" roughness={0.45} />
+        </mesh>
+        <mesh position={[0, 0.052, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.45, 0.5, 40]} />
+          <meshBasicMaterial color="#ffffff" transparent opacity={0.85} />
+        </mesh>
+      </group>
+      <group position={[-0.22, 0, 0]} rotation={[0, import.meta.env.DEV && window.__previewAngle !== undefined ? window.__previewAngle : 0, 0]}>
         <Suspense fallback={null}>
-          <AvatarRig slug={slug} anim="idle" cosId="preview" />
+          <AvatarRig slug={slug} anim={poseMode === 'walk' ? 'walk' : 'idle'} pose={poseMode === 'dance' ? dancePose : undefined} cosId="preview" />
         </Suspense>
       </group>
-      <group position={[0.75, 0, 0.25]} rotation={[0, -0.5, 0]}>
+      <group position={[0.72, 0, 0.2]} rotation={[0, -0.45, 0]}>
         <group ref={pet}>
           <PreviewPet />
         </group>
       </group>
+      <OrbitControls
+        ref={controls}
+        enablePan={false}
+        minDistance={1.1}
+        maxDistance={3.6}
+        minPolarAngle={0.6}
+        maxPolarAngle={Math.PI / 1.95}
+      />
     </>
   )
 }
@@ -102,87 +181,345 @@ function PetAdopt({ onPick, onLater }) {
 }
 
 function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
+  const initialLook = useMemo(() => sanitizeLook(cos?.look ?? readSavedLook()), [cos?.look])
   const [acc, setAcc] = useState(cos?.acc ?? null)
+  const [acc2, setAcc2] = useState(cos?.acc2 ?? null)
   const [pet, setPet] = useState(cos?.pet ?? null)
-  const [tab, setTab] = useState('acc')
-  const [color, setColor] = useState(cos?.acc?.color ?? 'pink')
+  const [look, setLook] = useState(initialLook)
+  const [tab, setTab] = useState('presets') // presets | look | acc | pet
+  const [colorSlot, setColorSlot] = useState('acc') // acc | acc2
+  const [color1, setColor1] = useState(cos?.acc?.color ?? 'pink')
+  const [color2, setColor2] = useState(cos?.acc2?.color ?? 'pearl')
+  const [poseMode, setPoseMode] = useState('idle') // idle | walk | dance
+  const [zoomMode, setZoomMode] = useState('full') // full | close
+  const [favs, setFavs] = useState(readFavorites)
   const petLeft = Math.max(0, Math.ceil((petUntil - Date.now()) / 3600000)) // kalan saat
 
   useEffect(() => {
-    cosStore.set('preview', { acc, pet })
-  }, [acc, pet])
+    cosStore.set('preview', { acc, acc2, pet, look })
+  }, [acc, acc2, pet, look])
   useEffect(() => () => cosStore.set('preview', null), [])
 
-  const pickAcc = (id) => setAcc(id ? { id, color } : null)
+  const pickAcc = (id) => {
+    setColorSlot('acc')
+    setAcc(id ? { id, color: color1 } : null)
+  }
+  const pickAcc2 = (id) => {
+    setColorSlot('acc2')
+    setAcc2(id ? { id, color: color2 } : null)
+  }
+  const activeColor = colorSlot === 'acc2' ? color2 : color1
   const pickColor = (c) => {
-    setColor(c)
-    if (acc) setAcc({ ...acc, color: c })
+    if (colorSlot === 'acc2') {
+      setColor2(c)
+      if (acc2) setAcc2({ ...acc2, color: c })
+    } else {
+      setColor1(c)
+      if (acc) setAcc({ ...acc, color: c })
+    }
+  }
+
+  const applyPreset = (p) => {
+    setLook(sanitizeLook(p.look))
+    if (p.acc) {
+      setColor1(p.acc.color)
+      setAcc(p.acc)
+    } else setAcc(null)
+    if (p.acc2) {
+      setColor2(p.acc2.color)
+      setAcc2(p.acc2)
+    } else setAcc2(null)
+    window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'pop' }))
+  }
+
+  const randomize = () => {
+    const r = (arr) => Math.floor(Math.random() * arr.length)
+    const c1 = PASTELS[r(PASTELS)].id
+    const c2 = PASTELS[r(PASTELS)].id
+    const a1 = ACCESSORIES[r(ACCESSORIES)].id
+    const a2 = Math.random() > 0.25 ? STYLE_ACCESSORIES[r(STYLE_ACCESSORIES)].id : null
+    setLook({ h: r(HAIR_COLORS), e: r(EYE_COLORS), o: r(OUTFIT_COLORS) })
+    setColor1(c1)
+    setColor2(c2)
+    setAcc({ id: a1, color: c1 })
+    setAcc2(a2 ? { id: a2, color: c2 } : null)
+    window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'pop' }))
+  }
+
+  const resetAll = () => {
+    setLook(emptyLook())
+    setAcc(null)
+    setAcc2(null)
+  }
+
+  const saveFav = (idx) => {
+    const next = [...favs]
+    next[idx] = { name: `Kombin ${idx + 1}`, look, acc, acc2 }
+    setFavs(next)
+    try {
+      localStorage.setItem(FAV_KEY, JSON.stringify(next))
+    } catch {
+      /* önemli değil */
+    }
+    window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'collect' }))
+  }
+
+  const clearFav = (idx, e) => {
+    e.stopPropagation()
+    const next = [...favs]
+    next[idx] = null
+    setFavs(next)
+    try {
+      localStorage.setItem(FAV_KEY, JSON.stringify(next))
+    } catch {
+      /* önemli değil */
+    }
   }
 
   return (
-    <Modal onClose={onClose} label="Gardırop">
-      <h2 className="text-2xl font-black text-[#4a3b5c]">Gardırop 👗</h2>
-      <div className="mt-3 h-48 overflow-hidden rounded-3xl border-2 border-white bg-gradient-to-b from-[#fff2e3] via-[#f1e6ff] to-[#dff3ff] shadow-soft">
-        <Canvas camera={{ position: [0, 1.0, 2.6], fov: 32 }} dpr={[1, 2]} onCreated={({ camera }) => camera.lookAt(0, 0.8, 0)}>
-          {import.meta.env.DEV && <DevCam />}
-          <PreviewStage slug={slug} />
-        </Canvas>
+    <Modal onClose={onClose} label="Gardırop" wide>
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <h2 className="text-2xl font-black text-[#4a3b5c]">Stüdyo & Gardırop 👗</h2>
+          <p className="text-xs font-bold text-[#8a7a9c]">Sürükleyip 360° çevir, kombinini oluştur</p>
+        </div>
+        <button onClick={onClose} aria-label="Gardırobu kapat" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f0ff] text-sm font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
+          ✕
+        </button>
       </div>
 
-      <div className="mt-3 flex gap-2">
-        {[['acc', '🎀 Aksesuar'], ['pet', '🐾 Evcil hayvan']].map(([k, label]) => (
-          <button key={k} onClick={() => setTab(k)} className={`${pillBase} flex-1 py-2 text-sm ${tab === k ? 'bg-[#a88bff] text-white' : 'bg-[#f6f0ff] text-[#4a3b5c]'}`}>
+      {/* 3D stüdyo önizleme */}
+      <div className="relative mt-3 h-56 overflow-hidden rounded-3xl border-2 border-white bg-gradient-to-b from-[#fff2e3] via-[#f1e6ff] to-[#dff3ff] shadow-soft sm:h-60">
+        <Canvas camera={{ position: [0, 1.02, 2.75], fov: 32 }} dpr={[1, 2]}>
+          {import.meta.env.DEV && <DevCam />}
+          <PreviewStage slug={slug} poseMode={poseMode} zoomMode={zoomMode} />
+        </Canvas>
+        {/* sol üst: yakınlaşma */}
+        <button
+          type="button"
+          onClick={() => setZoomMode((z) => (z === 'full' ? 'close' : 'full'))}
+          className="absolute left-2.5 top-2.5 rounded-full border border-white bg-white/85 px-2.5 py-1 text-[11px] font-black text-[#4a3b5c] shadow-sm backdrop-blur-sm transition hover:bg-white active:scale-95"
+        >
+          {zoomMode === 'full' ? '🔍 Yakınlaş' : '🧍 Tam Boy'}
+        </button>
+        {/* sağ üst: sürpriz + sıfırla */}
+        <div className="absolute right-2.5 top-2.5 flex gap-1.5">
+          <button
+            type="button"
+            onClick={randomize}
+            title="Sürpriz kombin yap"
+            className="rounded-full border border-white bg-white/85 px-2.5 py-1 text-[11px] font-black text-[#6b4fc0] shadow-sm backdrop-blur-sm transition hover:bg-white active:scale-95"
+          >
+            🎲 Sürpriz
+          </button>
+          <button
+            type="button"
+            onClick={resetAll}
+            title="Görünümü sıfırla"
+            className="grid h-7 w-7 place-items-center rounded-full border border-white bg-white/85 text-xs font-black text-[#8a7a9c] shadow-sm backdrop-blur-sm transition hover:bg-white active:scale-95"
+          >
+            ↺
+          </button>
+        </div>
+        {/* sol alt: duruş seçici */}
+        <div className="absolute bottom-2.5 left-2.5 flex gap-1 rounded-full border border-white bg-white/80 p-0.5 shadow-sm backdrop-blur-sm">
+          {[
+            ['idle', '🧍'],
+            ['walk', '🚶'],
+            ['dance', '💃'],
+          ].map(([k, ico]) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setPoseMode(k)}
+              aria-pressed={poseMode === k}
+              title={k === 'idle' ? 'Duruş' : k === 'walk' ? 'Yürüyüş' : 'Dans'}
+              className={`grid h-7 w-7 place-items-center rounded-full text-sm transition active:scale-90 ${poseMode === k ? 'bg-[#a88bff] text-white shadow-sm' : 'text-[#4a3b5c] hover:bg-white'}`}
+            >
+              {ico}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* sekmeler */}
+      <div className="mt-3 grid grid-cols-4 gap-1.5">
+        {[
+          ['presets', '✨ Kombin'],
+          ['look', '🎨 Saç·Kıyafet'],
+          ['acc', '👑 Aksesuar'],
+          ['pet', '🐾 Dostum'],
+        ].map(([k, label]) => (
+          <button
+            key={k}
+            onClick={() => setTab(k)}
+            className={`rounded-2xl border-2 border-white px-1.5 py-2 text-[11px] font-extrabold transition active:scale-95 sm:text-xs ${tab === k ? 'bg-[#a88bff] text-white shadow-soft' : 'bg-[#f6f0ff] text-[#4a3b5c] hover:bg-[#efe6ff]'}`}
+          >
             {label}
           </button>
         ))}
       </div>
 
-      {tab === 'acc' ? (
-        <>
-          <div className="mt-3 grid grid-cols-4 gap-2">
-            <ItemButton active={!acc} emoji="🚫" label="Yok" onClick={() => pickAcc(null)} />
-            {ACCESSORIES.map((a) => (
-              <ItemButton key={a.id} active={acc?.id === a.id} emoji={a.emoji} label={a.name} onClick={() => pickAcc(a.id)} />
-            ))}
+      {/* sekme içeriği */}
+      <div className="mt-3 max-h-[34svh] overflow-y-auto pr-0.5">
+        {tab === 'presets' && (
+          <div className="flex flex-col gap-3">
+            <div>
+              <p className="mb-1.5 text-[11px] font-black uppercase tracking-wide text-[#8a7a9c]">💖 Favori Kombinlerim (Kaydet & Tek Tıkla Giy)</p>
+              <div className="grid grid-cols-3 gap-2">
+                {[0, 1, 2].map((i) => {
+                  const f = favs[i]
+                  return f ? (
+                    <div key={i} className="relative">
+                      <button
+                        type="button"
+                        onClick={() => applyPreset(f)}
+                        className="flex w-full flex-col items-center gap-0.5 rounded-2xl border-2 border-white bg-gradient-to-b from-[#fff6eb] to-white px-2 py-2 text-center shadow-soft transition hover:border-[#fdb252] active:scale-95"
+                      >
+                        <span className="text-lg">👗</span>
+                        <span className="text-[11px] font-black text-[#4a3b5c]">{f.name}</span>
+                        <span className="text-[10px] font-bold text-[#fdb252]">Giy</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => clearFav(i, e)}
+                        aria-label={`${f.name} sil`}
+                        className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-white/90 text-[10px] font-black text-[#8a7a9c] hover:text-rose-500"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => saveFav(i)}
+                      className="flex flex-col items-center justify-center gap-0.5 rounded-2xl border-2 border-dashed border-[#d6c7ff] bg-[#faf6ff] px-2 py-2.5 text-center transition hover:border-[#a88bff] active:scale-95"
+                    >
+                      <span className="text-base font-black text-[#a88bff]">＋</span>
+                      <span className="text-[11px] font-extrabold text-[#6b4fc0]">Slot {i + 1}’e Kaydet</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-1.5 text-[11px] font-black uppercase tracking-wide text-[#8a7a9c]">✨ Hazır Stil Paketleri</p>
+              <div className="grid grid-cols-2 gap-2">
+                {OUTFIT_PRESETS.map((p) => {
+                  const active = sameLook(look, p.look) && acc?.id === p.acc?.id && acc2?.id === p.acc2?.id
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => applyPreset(p)}
+                      className={`flex items-center gap-2.5 rounded-2xl border-2 px-2.5 py-2 text-left transition active:scale-95 ${active ? 'border-[#a88bff] bg-[#efe6ff] shadow-soft' : 'border-white bg-[#faf6ff] hover:bg-[#f3ebff]'}`}
+                    >
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-2xl shadow-sm">{p.emoji}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-black text-[#4a3b5c]">{p.name}</p>
+                        <p className="truncate text-[10px] font-semibold text-[#8a7a9c]">{p.desc}</p>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
           </div>
-          <div className="mt-3 flex items-center justify-center gap-2.5" role="group" aria-label="Renk">
-            {PASTELS.map((c) => (
-              <button
-                key={c.id}
-                aria-label={c.name}
-                aria-pressed={color === c.id}
-                onClick={() => pickColor(c.id)}
-                style={{ background: c.hex }}
-                className={`h-10 w-10 rounded-full border-4 shadow-soft transition active:scale-90 ${color === c.id ? 'border-[#4a3b5c]' : 'border-white'}`}
-              />
-            ))}
+        )}
+
+        {tab === 'look' && (
+          <div className="rounded-2xl border-2 border-white bg-[#faf6ff] p-3">
+            <LookPicker value={look} onChange={setLook} compact />
           </div>
-        </>
-      ) : (
-        <>
-          <div className="mt-3 flex items-center justify-between gap-2 rounded-2xl bg-[#f3f0fa] px-3 py-2">
-            <p className="text-xs font-extrabold text-[#4a3b5c]">
-              {petLeft > 0 ? `🐾 Bakım süresi: ${petLeft >= 48 ? `${Math.ceil(petLeft / 24)} gün` : `${petLeft} saat`}` : '🐾 Evcil hayvan süresi bitti'}
-            </p>
-            <button onClick={onRenew} disabled={coins < PET_RENEW_PRICE} className="rounded-full bg-[#ffe48f] px-3 py-1 text-[11px] font-black text-[#8a5a00] shadow transition active:scale-95 disabled:opacity-50">
-              +1 hafta · {PET_RENEW_PRICE} 🪙
-            </button>
+        )}
+
+        {tab === 'acc' && (
+          <div className="flex flex-col gap-3">
+            <div>
+              <p className="mb-1.5 text-[11px] font-black uppercase tracking-wide text-[#8a7a9c]">👑 Baş & Saç</p>
+              <div className="grid grid-cols-4 gap-1.5">
+                <ItemButton active={!acc} emoji="🚫" label="Yok" onClick={() => pickAcc(null)} />
+                {ACCESSORIES.map((a) => (
+                  <ItemButton key={a.id} active={acc?.id === a.id} emoji={a.emoji} label={a.name} onClick={() => pickAcc(a.id)} />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-1.5 text-[11px] font-black uppercase tracking-wide text-[#8a7a9c]">✨ Yüz, Kanat & Çanta (Ekstra)</p>
+              <div className="grid grid-cols-4 gap-1.5">
+                <ItemButton active={!acc2} emoji="🚫" label="Yok" onClick={() => pickAcc2(null)} />
+                {STYLE_ACCESSORIES.map((a) => (
+                  <ItemButton key={a.id} active={acc2?.id === a.id} emoji={a.emoji} label={a.name} onClick={() => pickAcc2(a.id)} />
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border-2 border-white bg-[#faf6ff] p-2.5">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="text-[11px] font-black text-[#4a3b5c]">🎨 Aksesuar Rengi</span>
+                <div className="flex gap-1">
+                  {[
+                    ['acc', 'Baş'],
+                    ['acc2', 'Ekstra'],
+                  ].map(([s, lbl]) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setColorSlot(s)}
+                      className={`rounded-full px-2.5 py-0.5 text-[10px] font-black transition ${colorSlot === s ? 'bg-[#a88bff] text-white' : 'bg-white text-[#6b4fc0]'}`}
+                    >
+                      {lbl}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex flex-wrap justify-center gap-2" role="group" aria-label="Aksesuar rengi">
+                {PASTELS.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    title={c.name}
+                    aria-label={c.name}
+                    aria-pressed={activeColor === c.id}
+                    onClick={() => pickColor(c.id)}
+                    style={{ background: c.hex }}
+                    className={`h-8 w-8 rounded-full border-[3px] shadow-soft transition active:scale-90 ${activeColor === c.id ? 'scale-110 border-[#4a3b5c]' : 'border-white'}`}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
-          <div className="mt-3 grid grid-cols-4 gap-2">
-            <ItemButton active={!pet} emoji="🚫" label="Yok" onClick={() => setPet(null)} />
-            {PETS.map((p) => (
-              <ItemButton key={p.id} active={pet === p.id} emoji={p.emoji} label={p.name} onClick={() => (petLeft > 0 ? setPet(p.id) : onRenew())} />
-            ))}
-          </div>
-        </>
-      )}
+        )}
+
+        {tab === 'pet' && (
+          <>
+            <div className="flex items-center justify-between gap-2 rounded-2xl bg-[#f3f0fa] px-3 py-2">
+              <p className="text-xs font-extrabold text-[#4a3b5c]">
+                {petLeft > 0 ? `🐾 Bakım süresi: ${petLeft >= 48 ? `${Math.ceil(petLeft / 24)} gün` : `${petLeft} saat`}` : '🐾 Evcil hayvan süresi bitti'}
+              </p>
+              <button onClick={onRenew} disabled={coins < PET_RENEW_PRICE} className="rounded-full bg-[#ffe48f] px-3 py-1 text-[11px] font-black text-[#8a5a00] shadow transition active:scale-95 disabled:opacity-50">
+                +1 hafta · {PET_RENEW_PRICE} 🪙
+              </button>
+            </div>
+            <div className="mt-2.5 grid grid-cols-4 gap-2">
+              <ItemButton active={!pet} emoji="🚫" label="Yok" onClick={() => setPet(null)} />
+              {PETS.map((p) => (
+                <ItemButton key={p.id} active={pet === p.id} emoji={p.emoji} label={p.name} onClick={() => (petLeft > 0 ? setPet(p.id) : onRenew())} />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
 
       <div className="mt-4 flex gap-2">
         <button onClick={onClose} className="rounded-2xl px-4 py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#ffedd6]/60">
           Vazgeç
         </button>
-        <ToyButton className="!py-3 !text-base" onClick={() => onSave({ acc, pet })}>
-          ✓ Kaydet
+        <ToyButton className="!py-3 !text-base" onClick={() => onSave({ acc, acc2, pet, look })}>
+          ✓ Görünümü Kaydet
         </ToyButton>
       </div>
     </Modal>
@@ -194,12 +531,12 @@ function ItemButton({ active, emoji, label, onClick }) {
     <button
       onClick={onClick}
       aria-pressed={active}
-      className={`flex min-h-[4.5rem] flex-col items-center justify-center gap-0.5 rounded-2xl border-2 px-1 py-2 text-center transition active:scale-95 ${active ? 'border-[#a88bff] bg-[#efe6ff]' : 'border-white bg-[#f6f0ff] hover:bg-[#efe6ff]'}`}
+      className={`flex min-h-[4.1rem] flex-col items-center justify-center gap-0.5 rounded-2xl border-2 px-1 py-1.5 text-center transition active:scale-95 ${active ? 'border-[#a88bff] bg-[#efe6ff] shadow-sm' : 'border-white bg-[#f6f0ff] hover:bg-[#efe6ff]'}`}
     >
       <span className="text-2xl" aria-hidden>
         {emoji}
       </span>
-      <span className="w-full truncate text-[11px] font-extrabold leading-tight text-[#4a3b5c]">{label}</span>
+      <span className="w-full truncate text-[10px] font-extrabold leading-tight text-[#4a3b5c]">{label}</span>
     </button>
   )
 }
@@ -337,8 +674,8 @@ function GiftsTab({ gifts, furn, place }) {
  * Kişiselleştirme: gardırop paneli (panel === 'wardrobe'), evcil hayvan katmanı, ev dekoru ve hediyeleşme.
  * Döndürür: peerActions, settingsSections, overlays + (özel) homeDecor, editorTabs, sceneNodes.
  */
-export function useCosmetics({ net, say, home, venue, focusRef, panel, setPanel, closeInteract, slug }) {
-  const [self, setSelf] = useState(null) // { acc, pet }
+export function useCosmetics({ net, say, touch, home, homeItems, venue, focusRef, panel, setPanel, closeInteract, slug }) {
+  const [self, setSelf] = useState(null) // { acc, acc2, pet, look }
   const [petUntil, setPetUntil] = useState(0)
   const [petOffer, setPetOffer] = useState(false) // ilk girişte 1 haftalık ücretsiz evcil hayvan seçimi
   const [petOfferReady, setPetOfferReady] = useState(false)
@@ -347,7 +684,26 @@ export function useCosmetics({ net, say, home, venue, focusRef, panel, setPanel,
   const [decors, setDecors] = useState({}) // ev anahtarı → dekor
   const [offers, setOffers] = useState([])
   const [giftTo, setGiftTo] = useState(null)
+  const [nearWardrobe, setNearWardrobe] = useState(null) // { emoji, label, action }
+  const [wardrobeSeen, setWardrobeSeen] = useState(() => {
+    try {
+      return Boolean(localStorage.getItem(SEEN_KEY))
+    } catch {
+      return false
+    }
+  })
   const decorTimer = useRef(null)
+
+  useEffect(() => {
+    if (panel !== 'wardrobe' || wardrobeSeen) return
+    setWardrobeSeen(true)
+    try {
+      localStorage.setItem(SEEN_KEY, '1')
+    } catch {
+      /* önemli değil */
+    }
+  }, [panel, wardrobeSeen])
+
   useEffect(() => {
     if (!petOffer || venue || home) return undefined
     const t = setTimeout(() => setPetOfferReady(true), 1800) // şehre çıkınca kısa bir beklemeyle
@@ -358,6 +714,10 @@ export function useCosmetics({ net, say, home, venue, focusRef, panel, setPanel,
   const homeKey = net.homeKey
 
   useEffect(() => {
+    if (!cosStore.get('self')) {
+      const saved = readSavedLook()
+      if (!sameLook(saved, emptyLook())) cosStore.set('self', { look: saved })
+    }
     const setOthers = (players) => players?.forEach((p) => cosStore.set(p.id, p.cos))
     const offs = [
       on('welcome', (m) => {
@@ -405,6 +765,47 @@ export function useCosmetics({ net, say, home, venue, focusRef, panel, setPanel,
   const isOwn = Boolean(home) && (!home.owner || home.owner === homeKey)
   const decor = owner ? (decors[owner] ?? null) : null
   const ownDecor = (homeKey && decors[homeKey]) || DEFAULT_DECOR
+
+  // ---- mekân içi / ev içi gardırop noktası (Toni & Güy boy aynası + evdeki Gardırop / Kalpli ayna mobilyası) ----
+  const mirrors = useMemo(
+    () => (isOwn && Array.isArray(homeItems) ? homeItems.filter((i) => i.id === 'wardrobe' || i.id === 'heart-mirror') : []),
+    [isOwn, homeItems],
+  )
+  const canMirror = venue === 'kuafor' || mirrors.length > 0
+  useEffect(() => {
+    if (!canMirror) return undefined
+    const id = setInterval(() => {
+      const f = focusRef.current
+      let next = null
+      const atHomeExit = isOwn && Math.hypot(f.x - HOME_ROOM.exit.x, f.z - HOME_ROOM.exit.z) < HOME_ROOM.exit.radius
+      if (venue === 'kuafor' && Math.hypot(f.x - 7.1, f.z - -0.6) < 2.2) {
+        next = { emoji: '🪞', label: 'Stil Aynası', action: 'Gardırop' }
+      } else if (mirrors.length && !atHomeExit) {
+        for (const it of mirrors) {
+          if (Math.hypot(f.x - it.x, f.z - it.z) < 2.1) {
+            next = { emoji: it.id === 'heart-mirror' ? '🪞' : '👗', label: it.id === 'heart-mirror' ? 'Kalpli Ayna' : 'Gardırobun', action: 'Aç' }
+            break
+          }
+        }
+      }
+      setNearWardrobe((prev) => (prev?.label === next?.label ? prev : next))
+    }, 300)
+    return () => clearInterval(id)
+  }, [canMirror, venue, isOwn, mirrors, focusRef])
+  const activeMirror = canMirror ? nearWardrobe : null
+
+  useEffect(() => {
+    if (!activeMirror || panel) return undefined
+    const onKey = (e) => {
+      if ((e.code !== 'KeyE' && e.key !== 'e' && e.key !== 'E') || e.ctrlKey || e.metaKey || e.altKey) return
+      const typing = e.target instanceof HTMLElement && ['INPUT', 'TEXTAREA'].includes(e.target.tagName)
+      if (typing) return
+      setPanel('wardrobe')
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [activeMirror, panel, setPanel])
+
   const changeDecor = useCallback(
     (patch) => {
       if (!homeKey) return
@@ -430,11 +831,21 @@ export function useCosmetics({ net, say, home, venue, focusRef, panel, setPanel,
     },
   ]
 
+  const extraButtons = [
+    {
+      key: 'wardrobe',
+      icon: 'wardrobe',
+      label: 'Gardırop (Stil, Kıyafet & Aksesuar)',
+      highlight: !wardrobeSeen,
+      onClick: () => setPanel('wardrobe'),
+    },
+  ]
+
   const settingsSections = [
     <section key="wardrobe" className="flex items-center gap-3">
       <div className="min-w-0 flex-1">
         <p className="text-sm font-black text-[#4a3b5c]">👗 Gardırop</p>
-        <p className="text-xs font-semibold text-[#8a7a9c]">Aksesuar ve evcil hayvan seç; herkes görür. {gifts.length > 0 && `🎁 ${gifts.length} hediyen var (evinde Döşe → Hediyeler).`}</p>
+        <p className="text-xs font-semibold text-[#8a7a9c]">Kombinler, saç/kıyafet rengi, aksesuar ve evcil hayvan. {gifts.length > 0 && `🎁 ${gifts.length} hediyen var (evinde Döşe → Hediyeler).`}</p>
       </div>
       <button onClick={() => setPanel('wardrobe')} className="shrink-0 rounded-2xl bg-[#a88bff] px-4 py-2.5 text-sm font-extrabold text-white shadow-soft active:scale-95">
         Aç
@@ -444,8 +855,8 @@ export function useCosmetics({ net, say, home, venue, focusRef, panel, setPanel,
 
   const editorTabs = isOwn
     ? [
-        { key: 'decor', label: '🎨 Dekor', render: () => <DecorTab decor={ownDecor} onChange={changeDecor} /> },
-        { key: 'gifts', label: `🎁 Hediyeler${gifts.length ? ` (${gifts.length})` : ''}`, render: ({ furn, place }) => <GiftsTab gifts={gifts} furn={furn} place={place} /> },
+        { key: 'decor', label: 'Dekor', render: () => <DecorTab decor={ownDecor} onChange={changeDecor} /> },
+        { key: 'gifts', label: `Hediyeler${gifts.length ? ` (${gifts.length})` : ''}`, render: ({ furn, place }) => <GiftsTab gifts={gifts} furn={furn} place={place} /> },
       ]
     : []
 
@@ -457,6 +868,9 @@ export function useCosmetics({ net, say, home, venue, focusRef, panel, setPanel,
 
   const overlays = (
     <>
+      {activeMirror && !panel && (
+        <DoorPrompt emoji={activeMirror.emoji} label={activeMirror.label} action={activeMirror.action} touch={touch} raised onGo={() => setPanel('wardrobe')} />
+      )}
       {panel === 'wardrobe' && (
         <Wardrobe
           slug={slug}
@@ -466,7 +880,13 @@ export function useCosmetics({ net, say, home, venue, focusRef, panel, setPanel,
           onRenew={() => send({ t: 'pet_renew' })}
           onClose={() => setPanel(null)}
           onSave={(sel) => {
-            send({ t: 'cos_set', acc: sel.acc, pet: sel.pet })
+            const nextCos = { ...(self ?? {}), acc: sel.acc, acc2: sel.acc2, pet: sel.pet, look: sel.look }
+            cosStore.set('self', nextCos)
+            setSelf(nextCos)
+            writeSavedLook(sel.look)
+            send({ t: 'cos_set', acc: sel.acc, acc2: sel.acc2, pet: sel.pet })
+            if (!sameLook(self?.look, sel.look)) send({ t: 'look_set', look: sel.look })
+            window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'collect' }))
             setPanel(null)
             say('👗 Görünümün güncellendi!')
           }}
@@ -497,5 +917,5 @@ export function useCosmetics({ net, say, home, venue, focusRef, panel, setPanel,
 
   const sceneNodes = <PetLayer focusRef={focusRef} remotes={net.remotes} />
 
-  return { peerActions, settingsSections, overlays, homeDecor: decor, editorTabs, sceneNodes }
+  return { peerActions, extraButtons, settingsSections, overlays, homeDecor: decor, editorTabs, sceneNodes }
 }

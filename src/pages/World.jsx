@@ -16,6 +16,7 @@ import { useFeatures } from '../world/features'
 import { preloadCritical, preloadLater } from '../world/preload'
 import TogetherScene from '../world/features/TogetherScene'
 import Sky, { skyBase } from '../world/Sky'
+import { AirportTutorialHud, AirportTutorialScene } from '../world/AirportTutorial'
 import { GIFT_BY_ID } from '../world/cosmeticsData'
 import { MAX_ITEMS, findFreeSpot, furnitureColliders, isValid, loadHome, newUid, saveHome } from '../world/homeLayout'
 import LocalPlayer from '../world/LocalPlayer'
@@ -37,11 +38,12 @@ const NEAR_LEAVE = 6.5 // m: bu mesafeyi aşınca kart kaybolur (titremesin diye
 const AVATARS = ['zeynep', 'deniz', 'elif', 'kaan', 'mira', 'ege']
 const GUIDE_TIPS = [
   'Selam! Ben Rehber 🧭 Takıldığın yer olursa sağ üstteki ? düğmesine bas.',
+  'Soldaki 👗 Gardırop ile saç, kıyafet rengi, taç/kanat ve dostunu değiştirebilirsin ✨',
+  'Sağ üstteki haritaya basarak Kafe, Kulüp, Park, Plaj ve Toni & Güy’e tek tıkla ışınlan 🗺️',
+  'Lobinin güneybatısındaki 🏠 Evim kapısından (veya /ev yazarak) evine girip döşeyebilirsin.',
   'Enter’a basıp yazarsan mesajın başının üstünde balon olur 💬',
-  'Shift’e basılı tutarsan koşarsın 🏃',
   'Birinin yanına gidip 💗 düğmesine bas: kalp, çiçek gönder ya da kulağına fısılda 🤫',
   'Aşağıdaki 😊 ile (ya da 1-9 tuşlarıyla) kafanın üstünde emoji uçur!',
-  'Yollar lobiden dört yöne açılır: ☕ kuzey, 🪩 doğu, 🏖️ güney, 🌳 batı.',
 ]
 
 function readAvatar() {
@@ -210,18 +212,24 @@ function WorldScene({ avatar }) {
   const [fade, setFade] = useState(false)
   const [sceneReady, setSceneReady] = useState(false) // ilk yükleme bitti mi (yükleme ekranı için)
   const onSceneReady = useCallback(() => setSceneReady(true), [])
+  // Havalimanı başlangıç eğitim holü: yıldız topla → örnek kapı dene → gardırop → çıkış
+  const [tutStep, setTutStep] = useState('collect') // collect | door | wardrobe | exit | done
+  const [tutNear, setTutNear] = useState(null)
+  const [tutCelebrate, setTutCelebrate] = useState(null)
+  const tutOpenedWardrobe = useRef(false)
+  const tutCelebTimer = useRef(null)
+  const flashTutCelebrate = useCallback((msg) => {
+    setTutCelebrate(msg)
+    clearTimeout(tutCelebTimer.current)
+    tutCelebTimer.current = setTimeout(() => setTutCelebrate(null), 2600)
+  }, [])
   // sunucu konumu düzelttiyse (hız/sınır denetimi) oyuncuyu son geçerli konuma geri al
   useEffect(() => {
     const on = (e) => (focusRef.current.teleport = [e.detail.x, e.detail.z])
     window.addEventListener('situapp:snap', on)
     return () => window.removeEventListener('situapp:snap', on)
   }, [])
-  // havalimanında doğunca Kiralama Memuru konuşmaya başlar
-  useEffect(() => {
-    if (!sceneReady || venue !== START_VENUE) return
-    const t = setTimeout(() => window.dispatchEvent(new CustomEvent('situapp:npc-open', { detail: 'v:havalimani' })), 1200)
-    return () => clearTimeout(t)
-  }, [sceneReady, venue])
+  useEffect(() => () => clearTimeout(tutCelebTimer.current), [])
   useMemo(() => preloadCritical(slug), [slug]) // şehir + avatar modellerini sahne çizilmeden paralel indir (şelale yüklemeyi önler)
   useEffect(() => {
     if (sceneReady) preloadLater()
@@ -503,6 +511,7 @@ function WorldScene({ avatar }) {
     roster: net.roster,
     focusRef,
     home,
+    homeItems: isOwnHome ? furn : null,
     venue,
     panel,
     setPanel,
@@ -513,6 +522,11 @@ function WorldScene({ avatar }) {
     pushFeed: addFeed,
     enterHome: (owner) => (owner === net.homeKey ? goTo(ownHome()) : visit(owner)), // Konut Mahallesi kapıları
   })
+  useEffect(() => {
+    const onVisit = (e) => { if (e.detail) visit(e.detail) }
+    window.addEventListener('situapp:visit-home', onVisit)
+    return () => window.removeEventListener('situapp:visit-home', onVisit)
+  }, [visit])
   const venueTh = useMemo(() => (venue ? venueTheme(venue) : null), [venue])
   const venueDim = venueTh?.dim ?? 0
   const sceneBase = useMemo(
@@ -550,6 +564,37 @@ function WorldScene({ avatar }) {
     }
   }, [])
 
+  const inTutorial = venue === START_VENUE && tutStep !== 'done'
+  const onTutCollect = useCallback(() => {
+    if (tutStep !== 'collect') return
+    setTutNear(null)
+    window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'collect' }))
+    flashTutCelebrate('⭐ Süper! Eşyaları hep E ile toplarsın (1/4)')
+    setTutStep('door')
+  }, [tutStep, flashTutCelebrate])
+  const onTutDoor = useCallback(() => {
+    if (tutStep !== 'door' || fade) return
+    setTutNear(null)
+    setFade(true)
+    window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'quest' }))
+    setTimeout(() => {
+      setFade(false)
+      setTutStep('wardrobe')
+      flashTutCelebrate('🚪 Harika! Soldaki 👗 Gardırop açıldı! (2/4)')
+    }, 420)
+  }, [tutStep, fade, flashTutCelebrate])
+  useEffect(() => {
+    if (!inTutorial || tutStep !== 'wardrobe') return
+    if (panel === 'wardrobe') {
+      tutOpenedWardrobe.current = true
+    } else if (panel === null && tutOpenedWardrobe.current) {
+      tutOpenedWardrobe.current = false
+      window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'quest' }))
+      flashTutCelebrate('👗 Çok şık! Şimdi çıkış kapısından şehre çık (3/4)')
+      setTutStep('exit')
+    }
+  }, [inTutorial, tutStep, panel, flashTutCelebrate])
+
   const editKeysRef = useRef({ on: false, rotate: () => {}, remove: () => {} })
   useEffect(() => {
     editKeysRef.current = { on: editing && Boolean(selected), rotate: rotateFurn, remove: removeFurn }
@@ -558,19 +603,22 @@ function WorldScene({ avatar }) {
   const doorGoRef = useRef(() => {})
   const nearVenueRef = useRef(null)
   const enterVenueRef = useRef(() => {})
+  const tutActionRef = useRef(null)
   useEffect(() => {
     nearDoorRef.current = nearDoor && !fade
     doorGoRef.current = doorGo
     nearVenueRef.current = !fade && !home && !venue && !nearDoor ? nearVenue : null
     enterVenueRef.current = enterVenue
-  }, [nearDoor, fade, doorGo, nearVenue, home, venue, enterVenue])
+    tutActionRef.current = inTutorial && !fade ? (tutNear === 'collect' && tutStep === 'collect' ? onTutCollect : tutNear === 'door' && tutStep === 'door' ? onTutDoor : null) : null
+  }, [nearDoor, fade, doorGo, nearVenue, home, venue, enterVenue, inTutorial, tutNear, tutStep, onTutCollect, onTutDoor])
 
-  // H tuşu: yardım (E: kapı)
+  // H tuşu: yardım (E: kapı / eğitim etkileşimi)
   useEffect(() => {
     const onKey = (e) => {
       const typing = e.target instanceof HTMLElement && ['INPUT', 'TEXTAREA'].includes(e.target.tagName)
       if (e.code === 'KeyH' && !typing) setHelp((h) => !h)
-      if (e.code === 'KeyE' && !typing && nearDoorRef.current) doorGoRef.current()
+      if (e.code === 'KeyE' && !typing && tutActionRef.current) tutActionRef.current()
+      else if (e.code === 'KeyE' && !typing && nearDoorRef.current) doorGoRef.current()
       else if (e.code === 'KeyE' && !typing && nearVenueRef.current && !together.self.current) enterVenueRef.current(nearVenueRef.current)
       if (!typing && /^Digit[0-9]$/.test(e.code) && !e.ctrlKey && !e.metaKey && !e.altKey) {
         const n = Number(e.code.slice(5))
@@ -685,7 +733,7 @@ function WorldScene({ avatar }) {
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-[#cfeaff]">
-      <Canvas shadows camera={{ fov: 55, near: 0.3, far: 300, position: [start.x, 6.4, start.z + 9.4] }}>
+      <Canvas shadows dpr={[1, 1.15]} gl={{ powerPreference: 'high-performance' }} camera={{ fov: 55, near: 0.3, far: 300, position: [start.x, 6.4, start.z + 9.4] }}>
         <color attach="background" args={[sceneBase.bg]} />
         <fog attach="fog" args={sceneBase.fog} />
         <Sky home={Boolean(home)} interior={venueTh ? { bg: venueTh.bg, fog: sceneBase.fog, dim: venueDim } : null} focusRef={focusRef} />
@@ -695,7 +743,18 @@ function WorldScene({ avatar }) {
           {venue ? (
             <Venue id={venue} />
           ) : home ? (
-            <HomeRoom key={`room-${roomTier}`} tier={roomTier} ownerName={home.ownerName} decor={feat.homeDecor}>
+            <HomeRoom
+              key={`room-${roomTier}`}
+              tier={roomTier}
+              ownerName={home.ownerName}
+              decor={feat.homeDecor}
+              garden={feat.garden}
+              landTier={feat.landTier}
+              isOwnHome={isOwnHome}
+              onPlotClick={feat.onPlotClick}
+              onOpenHomeUpgrade={() => setPanel('housing')}
+              onOpenLand={feat.onOpenLand}
+            >
               <FurnitureLayer items={shownItems} setItems={setFurn} editing={editing && isOwnHome} selected={selected} setSelected={setSelected} controlsRef={controlsRef} />
             </HomeRoom>
           ) : (
@@ -726,6 +785,7 @@ function WorldScene({ avatar }) {
         )}
         {feat.sceneNodes}
         {feat.worldEffects}
+        {inTutorial && <AirportTutorialScene step={tutStep} focusRef={focusRef} onNear={setTutNear} />}
 
         <ZoneWatcher key={home ? 'home' : venue ? `v-${venue}` : 'city'} focusRef={focusRef} onChange={setZone} fixed={home ? HOME_ZONE : venueZone} />
         <DoorWatcher key={`door-${home ? `home${roomTier}` : venue ? 'venue' : 'city'}`} focusRef={focusRef} door={home ? HOME_ROOM.exit : venue ? VENUE_ROOM.exit : HOME_DOOR} onChange={setNearDoor} />
@@ -781,7 +841,25 @@ function WorldScene({ avatar }) {
           </div>
         </div>
       )}
-      <TopBar zone={zone} online={net.online} status={net.status} dnd={net.dnd} onSettings={() => setPanel('settings')} extraButtons={feat.extraButtons} extraNodes={feat.extraNodes} menuNodes={feat.menuNodes} menuBadge={feat.menuBadge} onExit={() => navigate('/avatar')} onHelp={() => setHelp(true)} />
+      <TopBar
+        zone={zone}
+        online={net.online}
+        status={net.status}
+        dnd={net.dnd}
+        onSettings={() => setPanel('settings')}
+        extraButtons={
+          inTutorial
+            ? tutStep === 'wardrobe' || tutStep === 'exit'
+              ? feat.extraButtons.filter((b) => b.key === 'wardrobe').map((b) => ({ ...b, highlight: tutStep === 'wardrobe' }))
+              : []
+            : feat.extraButtons
+        }
+        extraNodes={feat.extraNodes}
+        menuNodes={feat.menuNodes}
+        menuBadge={feat.menuBadge}
+        onExit={() => navigate('/avatar')}
+        onHelp={() => setHelp(true)}
+      />
       <ZoneToast zone={zone} />
       {!home && !venue && <Minimap focusRef={focusRef} remotes={net.remotes} compact={touch} />}
       {touch ? (
@@ -883,8 +961,38 @@ function WorldScene({ avatar }) {
         />
       )}
       {feat.overlays}
-      {help && <HelpModal onClose={() => setHelp(false)} />}
-      {showTips && !help && <StartGuide touch={touch} ready={sceneReady} inCity={!home && !venue} inAirport={venue === START_VENUE} onDone={closeTips} />}
+      {inTutorial && !panel && !help && (
+        <AirportTutorialHud
+          step={tutStep}
+          near={tutNear}
+          touch={touch}
+          celebrate={tutCelebrate}
+          onCollect={onTutCollect}
+          onDoor={onTutDoor}
+          onOpenWardrobe={() => setPanel('wardrobe')}
+          onSkip={() => setTutStep('done')}
+        />
+      )}
+      {help && (
+        <HelpModal
+          inCity={!home && !venue}
+          onClose={() => setHelp(false)}
+          onOpenWardrobe={() => { setHelp(false); setPanel('wardrobe') }}
+          onGoHome={() => { setHelp(false); if (!home && !venue) goTo(ownHome()) }}
+          onOpenMap={() => { setHelp(false); window.dispatchEvent(new CustomEvent('situapp:open-map')) }}
+        />
+      )}
+      {showTips && !help && (
+        <StartGuide
+          touch={touch}
+          ready={sceneReady}
+          inCity={!home && !venue}
+          inAirport={venue === START_VENUE}
+          onDone={closeTips}
+          onOpenWardrobe={() => setPanel('wardrobe')}
+          onOpenMap={() => window.dispatchEvent(new CustomEvent('situapp:open-map'))}
+        />
+      )}
       <div
         aria-hidden
         className={`pointer-events-none absolute inset-0 z-30 bg-gradient-to-br from-[#fff2e3] via-[#f1e6ff] to-[#dff3ff] transition-opacity duration-200 ${fade ? 'opacity-100' : 'opacity-0'}`}

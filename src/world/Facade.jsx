@@ -30,7 +30,7 @@ function Door({ w, h, c, arch, style, open, z }) {
       </RoundedBox>
       {arch && (
         <mesh position={[0, h + 0.07, 0.03]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[(w + 0.24) / 2, (w + 0.24) / 2, 0.14, 20, 1, false, 0, Math.PI]} />
+          <cylinderGeometry args={[(w + 0.24) / 2, (w + 0.24) / 2, 0.14, 20, 1, false, Math.PI / 2, Math.PI]} />
           <Mat c={cream} />
         </mesh>
       )}
@@ -40,7 +40,7 @@ function Door({ w, h, c, arch, style, open, z }) {
       </mesh>
       {arch && (
         <mesh position={[0, h, 0.11]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[w / 2, w / 2, 0.05, 20, 1, false, 0, Math.PI]} />
+          <cylinderGeometry args={[w / 2, w / 2, 0.05, 20, 1, false, Math.PI / 2, Math.PI]} />
           <Mat c={c} r={0.4} />
         </mesh>
       )}

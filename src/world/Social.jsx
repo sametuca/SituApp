@@ -123,7 +123,7 @@ export function NearbyCard({ peer, touch, onChat, onInteract, onDismiss }) {
 export function DoorPrompt({ emoji, label, action, touch, raised, onGo }) {
   return (
     <div
-      className={`absolute left-1/2 z-10 w-[min(92vw,20rem)] -translate-x-1/2 animate-pop ${touch ? (raised ? 'bottom-64' : 'bottom-44') : raised ? 'bottom-24' : 'bottom-4'}`}
+      className={`pointer-events-auto absolute left-1/2 z-10 w-[min(92vw,20rem)] -translate-x-1/2 animate-pop ${touch ? (raised ? 'bottom-64' : 'bottom-44') : raised ? 'bottom-24' : 'bottom-4'}`}
       role="status"
     >
       <div className={`flex items-center gap-3 rounded-3xl p-2.5 pl-4 ${glass}`}>
@@ -149,7 +149,7 @@ export function ReactionBar({ onReact, touch }) {
   return (
     <div
       className="absolute z-10"
-      style={touch ? { right: 'calc(max(1rem, env(safe-area-inset-right)) + 3.9rem)', bottom: 'max(1.5rem, env(safe-area-inset-bottom))' } : { right: '0.75rem', bottom: '3.4rem' }}
+      style={touch ? { right: 'calc(max(1rem, env(safe-area-inset-right)) + 4.6rem)', bottom: 'max(1.5rem, env(safe-area-inset-bottom))' } : { right: '0.75rem', bottom: '4rem' }}
     >
       {open && (
         <div className={`absolute bottom-full right-0 mb-2 grid w-max animate-pop grid-cols-4 gap-1.5 rounded-3xl p-2 ${glass}`} role="menu" aria-label="Emoji tepkileri">
@@ -161,10 +161,10 @@ export function ReactionBar({ onReact, touch }) {
                 onReact(e)
                 setOpen(false)
               }}
-              className="relative grid h-11 w-11 place-items-center rounded-2xl text-2xl transition hover:bg-[#ffedd6]/70 active:scale-90"
+              className="relative grid h-12 w-12 place-items-center rounded-2xl text-2xl transition hover:bg-[#ffedd6]/70 active:scale-90"
             >
               {e}
-              {!touch && i < 10 && <span className="absolute bottom-0 right-1 text-[9px] font-black text-[#8a7a9c]">{(i + 1) % 10}</span>}
+              {!touch && i < 10 && <span className="absolute bottom-0 right-1 text-[10px] font-black text-[#8a7a9c]">{(i + 1) % 10}</span>}
             </button>
           ))}
         </div>
@@ -173,9 +173,9 @@ export function ReactionBar({ onReact, touch }) {
         onClick={() => setOpen((o) => !o)}
         aria-label="Emoji tepkisi gönder"
         aria-expanded={open}
-        className={`grid ${touch ? 'h-14 w-14 text-2xl' : 'h-11 w-11 text-xl'} place-items-center rounded-full transition hover:bg-white ${glass}`}
+        className={`grid ${touch ? 'h-16 w-16 text-3xl' : 'h-14 w-14 text-2xl'} place-items-center rounded-full transition hover:bg-white ${glass}`}
       >
-        <Ico name="smile" size={touch ? 30 : 26} />
+        <Ico name="smile" size={touch ? 34 : 32} />
       </button>
     </div>
   )
@@ -595,10 +595,10 @@ export function ChatFab({ onClick }) {
     <button
       onClick={onClick}
       aria-label="Sohbeti aç"
-      className={`absolute z-10 grid h-14 w-14 place-items-center rounded-full text-2xl ${glass}`}
+      className={`absolute z-10 grid h-16 w-16 place-items-center rounded-full text-3xl ${glass}`}
       style={{ right: 'max(1rem, env(safe-area-inset-right))', bottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
     >
-      <Ico name="chat" size={28} />
+      <Ico name="chat" size={32} />
     </button>
   )
 }

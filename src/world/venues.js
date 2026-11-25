@@ -10,12 +10,12 @@ export const VENUE_ROOM = { hw: 8, hd: 5, wallH: 3.6, spawn: [0, 3.4], exit: { x
 
 export const VENUES = [
   // Başlangıç odası: herkes havalimanı çıkış salonunda doğar (şehirde kapısı yok; /havalimanı ile dönülür). Bisiklet kiralanır, araba kiralanamaz.
-  { id: 'havalimani', label: '✈️ Havalimanı', name: 'Havalimanı · Çıkış Salonu', emoji: '✈️', type: 'airport', desc: 'Hoş geldin! Bisiklet kirala, şehre çık.',
-    npc: { name: 'Kiralama Memuru Selin', avatar: 'zeynep', x: 3.3, z: -3.7, ry: 0, lines: ['Şehre hoş geldin! 🛬', 'Bisiklet 20 altın, şehri gezmenin en keyifli yolu 🚲', 'Arabalar çok değerli… şimdilik göz doldurabilirsin 😄', 'Çıkış kapısı karşıda, iyi eğlenceler ✈️'] } },
+  { id: 'havalimani', label: '✈️ Havalimanı', name: 'Havalimanı · Çıkış Salonu', emoji: '✈️', type: 'airport', desc: 'Hoş geldin! Bisikletini al, şehre çık.',
+    npc: { name: 'Kiralama Memuru Selin', avatar: 'zeynep', x: 3.3, z: -3.7, ry: 0, lines: ['Şehre hoş geldin! 🛬', 'Bisikletin ücretsiz hazır! Şehirde B tuşuyla veya soldaki 🚲 düğmesiyle binebilirsin 🚲', 'Arabalar çok değerli… şimdilik göz doldurabilirsin 😄', 'Çıkış kapısı karşıda, iyi eğlenceler ✈️'] } },
   { id: 'rehber', label: '🧭 Tripadvisör', name: 'Tripadvisör', emoji: '🧭', type: 'guide', desc: 'Yeni gelenlere yol gösterir.',
     npc: { name: 'Rehber Mira', avatar: 'mira', x: 0, z: -3.3, ry: 0, lines: ['Hoş geldin! Haritayı sağ üstte bulursun 🗺️', 'Kafe Sokağı sakin sohbetler, Kulüp enerji için ☕🪩', 'Birine yaklaşıp 💗’e basarsan jest gönderebilirsin.'] } },
   { id: 'kuafor', label: '💇 Toni & Güy', name: 'Toni & Güy', emoji: '💇', type: 'salon', desc: 'Yeni bir görünüm zamanı.',
-    npc: { name: 'Stilist Elif', avatar: 'elif', x: 3.2, z: -3, ry: 0.4, lines: ['Aynada kendine bakmak ister misin? ✨', 'Saç rengi ve aksesuarlar gardıropta, Ayarlar’dan 👗', 'Bugün çok şıksın, söylemiş olayım 💇'] } },
+    npc: { name: 'Stilist Elif', avatar: 'elif', x: 3.2, z: -3, ry: 0.4, lines: ['Aynada kendine bakmak ister misin? ✨', 'Saç rengi, kıyafet ve aksesuarlar gardıropta — soldaki 👗 düğmesinden ya da aynamızdan açabilirsin ✨', 'Bugün çok şıksın, söylemiş olayım 💇'] } },
   { id: 'foto', label: '📸 Kodakk Foto', name: 'Kodakk Foto', emoji: '📸', type: 'studio', desc: 'Pastel kareler yakala.',
     npc: { name: 'Fotoğrafçı Ege', avatar: 'ege', x: -3, z: -3, ry: -0.3, lines: ['Gülümse! 📸', 'Dışarıdaki işaretli noktada da kare çekebilirsin.', 'İki kişi poz verince albüm daha tatlı oluyor 💞'] } },
   { id: 'tatli', label: '🍰 Hafız Mustafam', name: 'Hafız Mustafam', emoji: '🍰', type: 'dessert', desc: 'Şekerli bir mola.',

@@ -315,7 +315,7 @@ export function useTogether(ctx) {
             const d = Math.hypot(sl.x - f.x, sl.z - f.z)
             if (d < best) {
               best = d
-              opt = { seat: seat.id, slot: i, kind: seat.kind }
+              opt = { seat: seat.id, slot: i, kind: seat.kind, style: seat.style ?? seat.kind, x: sl.x, z: sl.z, ry: seat.ry }
             }
           })
         }
@@ -367,8 +367,24 @@ export function useTogether(ctx) {
   // ---- eylemler ----
   const sit = useCallback(() => {
     if (!seatOpt) return
-    if (!send({ t: 'sit', seat: seatOpt.seat, slot: seatOpt.slot })) say('Şu an çevrimdışısın.')
-  }, [seatOpt, send, say])
+    if (!send({ t: 'sit', seat: seatOpt.seat, slot: seatOpt.slot })) {
+      // çevrimdışı modda yerel oturma
+      const pose = {
+        kind: 'sit',
+        style: seatOpt.style ?? seatOpt.kind,
+        seatKind: seatOpt.kind,
+        seat: seatOpt.seat,
+        slot: seatOpt.slot,
+        x: seatOpt.x,
+        z: seatOpt.z,
+        ry: seatOpt.ry,
+        t0: nowS(),
+      }
+      together.self.current = pose
+      setSelfPose(pose)
+      focusRef.current.teleport = [pose.x, pose.z, pose.ry]
+    }
+  }, [seatOpt, send, focusRef])
 
   // E tuşu: kalk > otur > fotoğraf çek
   const keyRef = useRef(null)
@@ -382,7 +398,7 @@ export function useTogether(ctx) {
   })
   useEffect(() => {
     const onKey = (e) => {
-      if (e.code !== 'KeyE' || isTyping(e) || e.ctrlKey || e.metaKey || e.altKey) return
+      if ((e.code !== 'KeyE' && e.key !== 'e' && e.key !== 'E') || isTyping(e) || e.ctrlKey || e.metaKey || e.altKey) return
       keyRef.current?.()
     }
     window.addEventListener('keydown', onKey)

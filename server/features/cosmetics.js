@@ -16,7 +16,7 @@ const MAX_OPEN_TO_YOU = 5 // bir kişiye aynı anda bekleyen gelen teklif (spam 
 const giftList = (key) => user(key).gifts.map((g) => ({ uid: g.uid, kind: g.kind, from: g.from, ts: g.ts }))
 const savedCos = (key) => {
   const c = user(key).cosmetics ?? {}
-  return sanitizeCos({ acc: c.accessory, pet: c.pet })
+  return sanitizeCos({ acc: c.accessory, acc2: c.acc2, pet: c.pet })
 }
 
 export default function cosmetics(ctx) {
@@ -44,7 +44,7 @@ export default function cosmetics(ctx) {
   return {
     onJoin(me) {
       const c = savedCos(me.key)
-      me.cos = { acc: c.acc ?? null, pet: c.pet ?? null, look: user(me.key).character?.look ?? null }
+      me.cos = { acc: c.acc ?? null, acc2: c.acc2 ?? null, pet: c.pet ?? null, look: user(me.key).character?.look ?? null }
     },
     onLeave(me) {
       dropOffers((o) => o.from === me.id || o.to === me.id)
@@ -77,10 +77,10 @@ export default function cosmetics(ctx) {
           delete c.pet // evcil hayvan süresi bitti (features/pets.js)
           send(me.ws, { t: 'info', text: '🐾 Evcil hayvan süren bitti. Gardırop’tan 1 hafta daha ekleyebilirsin.' })
         }
-        if (!('acc' in c) && !('pet' in c)) return
+        if (!('acc' in c) && !('acc2' in c) && !('pet' in c)) return
         me.cos = { ...me.cos, ...c }
         const u = user(me.key)
-        u.cosmetics = { accessory: me.cos.acc, pet: me.cos.pet }
+        u.cosmetics = { accessory: me.cos.acc, acc2: me.cos.acc2 ?? null, pet: me.cos.pet }
         save()
         broadcast({ t: 'cos', id: me.id, cos: me.cos }, undefined, me.room)
       },

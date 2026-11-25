@@ -12,13 +12,13 @@ import { playerPos } from './cull'
 const NEAR_DRAW = 42 // m: bu mesafeden uzaktaki oyuncular çizilmez
 import BikeModel from './Bike'
 
-/** Karakterin üstünde isim etiketi, konuşma balonu, uçan emoji tepkisi ve (fısıldıyorsa) 🤫. */
-function Tag({ name, bubble: rawBubble, accent, reaction, whisper, showName = false }) {
+/** Karakterin üstünde isim etiketi, konuşma balonu, uçan emoji tepkisi, AFK rozeti ve (fısıldıyorsa) 🤫. */
+function Tag({ name, bubble: rawBubble, accent, reaction, whisper, afk = false, showName = false }) {
   // bubble: metin ya da { text, big } (çıkartmalar büyük gösterilir)
   const bubble = typeof rawBubble === 'string' ? { text: rawBubble } : rawBubble
   // oyuncuların kullanıcı adı ekranda yazmaz (kalabalık/okunaksız); isim, karaktere tıklayınca açılan profil penceresinde görünür.
-  // Etiket yalnızca konuşma balonu, emoji tepkisi ya da fısıltı varken çizilir. İsim göstermek gerekirse (Rehber NPC) `showName`.
-  if (!showName && !bubble && !reaction && !whisper) return null
+  // Etiket yalnızca konuşma balonu, emoji tepkisi, AFK durumu ya da fısıltı varken çizilir. İsim göstermek gerekirse (Rehber NPC) `showName`.
+  if (!showName && !bubble && !reaction && !whisper && !afk) return null
   return (
     <Html position={[0, AVATAR_HEIGHT + 0.45, 0]} center distanceFactor={9 * screenK()} zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}>
       <div className="relative flex flex-col items-center gap-1">
@@ -28,15 +28,20 @@ function Tag({ name, bubble: rawBubble, accent, reaction, whisper, showName = fa
           </span>
         )}
         {bubble && (
-          <div className={`max-w-[220px] break-words rounded-2xl rounded-bl-md border-2 border-white bg-white text-center font-bold text-[#4a3b5c] shadow-lg ${bubble.big ? 'px-4 py-1 text-6xl leading-tight' : 'px-3 py-1.5 text-sm'}`}>
+          <div className={`break-words rounded-2xl rounded-bl-md border-2 border-white bg-white text-center font-bold text-[#4a3b5c] shadow-lg ${bubble.big ? 'px-4 py-1 text-6xl leading-tight' : 'w-max min-w-[120px] max-w-[340px] px-3.5 py-1.5 text-sm leading-snug'}`}>
             {bubble.text}
           </div>
         )}
         {whisper && !bubble && (
           <div className="animate-pop rounded-full border-2 border-white bg-[#e9ddff] px-2.5 py-0.5 text-xs font-extrabold text-[#6b4fc0] shadow">🤫 fısıldıyor…</div>
         )}
+        {afk && !bubble && !whisper && (
+          <div className="whitespace-nowrap rounded-full border-2 border-white bg-gradient-to-r from-[#f3e8ff] via-[#ede9fe] to-[#fce7f3] px-3.5 py-0.5 text-[11px] font-black tracking-[0.18em] text-[#5b4678] shadow-[0_4px_14px_rgba(168,139,255,0.45)]">
+            AFK
+          </div>
+        )}
         {showName && (
-          <div className={`whitespace-nowrap rounded-full border-2 border-white px-2.5 py-0.5 text-xs font-extrabold text-white shadow ${accent ?? 'bg-[#a88bff]'}`}>
+          <div className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full border-2 border-white px-3 py-0.5 text-xs font-extrabold text-white shadow ${accent ?? 'bg-[#a88bff]'}`}>
             {name}
           </div>
         )}
@@ -75,6 +80,8 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
   const bubbleRef = useRef(null)
   const [near, setNear] = useState(true) // uzaktaki oyuncular çizilmez (500 oyuncuda FPS için)
   const nearRef = useRef(true)
+  const [afk, setAfk] = useState(false)
+  const idleRef = useRef({ since: Date.now(), x: 0, z: 0, afk: false })
   const { reaction, whisper } = useLiveFlags(id, reactions, whispering)
   const pose = useMemo(() => ({ get current() { return together.poses.get(id) ?? (remotes.current.get(id)?.anim === 'ride' ? BIKE_POSE : null) } }), [id, remotes])
 
@@ -106,6 +113,21 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
       bubbleRef.current = live
       setBubble(live)
     }
+    const now = Date.now()
+    const idl = idleRef.current
+    const moved = r.anim !== 'idle' || Math.hypot(r.tx - idl.x, r.tz - idl.z) > 0.05 || Boolean(live)
+    if (moved) {
+      idl.since = now
+      idl.x = r.tx
+      idl.z = r.tz
+      if (idl.afk) {
+        idl.afk = false
+        setAfk(false)
+      }
+    } else if (!idl.afk && now - idl.since > 45000) {
+      idl.afk = true
+      setAfk(true)
+    }
   })
 
   return (
@@ -124,7 +146,7 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
           <BikeModel />
         </Suspense>
       )}
-      {near && <Tag name={name} bubble={bubble} reaction={reaction} whisper={whisper} />}
+      {near && <Tag name={name} bubble={bubble} reaction={reaction} whisper={whisper} afk={afk} />}
     </group>
   )
 })
@@ -192,7 +214,7 @@ export function GuideNpc({ focusRef, tips }) {
   return (
     <group position={[GUIDE.x, 0, GUIDE.z]} rotation={[0, GUIDE.ry, 0]}>
       <AvatarRig slug={GUIDE.avatar} anim="idle" />
-      <Tag name="🧭 Rehber" bubble={bubble} accent="bg-[#ffa94d]" showName />
+      <Tag name="Rehber" bubble={bubble} accent="bg-[#ffa94d]" showName />
     </group>
   )
 }

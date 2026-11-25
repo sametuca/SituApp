@@ -477,6 +477,27 @@ function Item({ it }) {
       return <Stage {...it} />
     case 'backdrop':
       return <Backdrop {...it} />
+    case 'demodoor':
+      return (
+        <group position={[it.x, 0, it.z]} rotation={[0, Math.PI / 2, 0]}>
+          <mesh position={[0, 1.3, 0.02]}>
+            <planeGeometry args={[1.9, 2.55]} />
+            <Mat c="#fffaf2" r={0.5} />
+          </mesh>
+          <mesh position={[0, 1.25, 0.04]}>
+            <planeGeometry args={[1.45, 2.15]} />
+            <Mat c="#7fd3b8" r={0.4} />
+          </mesh>
+          <mesh position={[0.48, 1.18, 0.06]}>
+            <circleGeometry args={[0.07, 16]} />
+            <Mat c="#ffd35e" r={0.3} />
+          </mesh>
+          <mesh position={[0, 2.15, 0.06]}>
+            <planeGeometry args={[1.05, 0.34]} />
+            <Mat c="#fffaf2" r={0.4} />
+          </mesh>
+        </group>
+      )
     default:
       return null
   }

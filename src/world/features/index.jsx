@@ -33,6 +33,8 @@ import { useFeedback } from './feedback'
 import { useBeach } from './beach'
 import { useEdge } from './edge'
 import { usePvp } from './pvp'
+import { useHomeCare } from './homeCare'
+import { useCityLife } from './cityLife'
 
 function SettingsPanel({ sections, onClose }) {
   return (
@@ -47,7 +49,7 @@ function SettingsPanel({ sections, onClose }) {
 }
 
 export function useFeatures(ctx) {
-  const parts = [useModeration(ctx), useGames(ctx), useFriends(ctx), useProfile(ctx), useProgress(ctx), useMedia(ctx), useTogether(ctx), useCosmetics(ctx), useNpcs(ctx), useAudio(ctx), useSky(ctx), useVenues(ctx), useCollect(ctx), useEconomy(ctx), useDj(ctx), useHousing(ctx), useBike(ctx), useFeedback(ctx), useBeach(ctx), useEdge(ctx), usePvp(ctx)]
+  const parts = [useModeration(ctx), useGames(ctx), useFriends(ctx), useProfile(ctx), useProgress(ctx), useMedia(ctx), useTogether(ctx), useCosmetics(ctx), useNpcs(ctx), useAudio(ctx), useSky(ctx), useVenues(ctx), useCollect(ctx), useEconomy(ctx), useDj(ctx), useHousing(ctx), useBike(ctx), useFeedback(ctx), useBeach(ctx), useEdge(ctx), usePvp(ctx), useHomeCare(ctx), useCityLife(ctx)]
 
   const peerActions = (peer) => parts.flatMap((p) => p.peerActions?.(peer) ?? [])
   const peerHeader = (peer) => parts.map((p, i) => (p.peerHeader ? <div key={i}>{p.peerHeader(peer)}</div> : null))
@@ -66,10 +68,14 @@ export function useFeatures(ctx) {
   const menuNodes = parts.map((p, i) => (p.menuNodes ? <div key={i}>{p.menuNodes}</div> : null))
   const menuBadge = parts.reduce((n, p) => n + (p.menuBadge || 0), 0)
   const readAt = Object.assign({}, ...parts.map((p) => p.readAt))
-  // kişiselleştirme: ev dekoru, döşeme sekmeleri, evcil hayvan katmanı
+  // kişiselleştirme: ev dekoru, döşeme sekmeleri, evcil hayvan katmanı, bahçe
   const homeDecor = parts.find((p) => p.homeDecor)?.homeDecor
+  const garden = parts.find((p) => p.garden)?.garden
+  const landTier = parts.find((p) => p.landTier != null)?.landTier ?? 0
+  const onPlotClick = parts.find((p) => p.onPlotClick)?.onPlotClick
+  const onOpenLand = parts.find((p) => p.onOpenLand)?.onOpenLand
   const editorTabs = parts.flatMap((p) => p.editorTabs ?? [])
   // her katman kendi Suspense'inde: bir modelin yüklenmesi şehrin çizilmesini engellemesin
   const sceneNodes = parts.map((p, i) => (p.sceneNodes ? <Suspense key={i} fallback={null}><group>{p.sceneNodes}</group></Suspense> : null))
-  return { peerActions, peerHeader, overlays, extraButtons, extraNodes, menuNodes, menuBadge, readAt, worldEffects, homeDecor, editorTabs, sceneNodes }
+  return { peerActions, peerHeader, overlays, extraButtons, extraNodes, menuNodes, menuBadge, readAt, worldEffects, homeDecor, garden, landTier, onPlotClick, onOpenLand, editorTabs, sceneNodes }
 }

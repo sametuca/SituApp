@@ -168,25 +168,55 @@ function Label({ text, y, x, z, zOff = 0, focusRef, accent = '#fdbb63' }) {
 
 // ---------- bina çeşitliliği ----------
 // Her bina, sırasına göre bir stil alır (komşu binalar farklı olur): cephe dokusu (Meshy), çatı biçimi, pencere türü ve süsler.
-const WALL_TEX = { brick: 2.4, siding: 2.0, mosaic: 2.6, plaster: 4, shingle: 2.0 } // doku adı → bir kiremitin metre boyu
+const WALL_TEX = { brick: 2.4, siding: 2.0, stucco: 3.2, plaster: 4, shingle: 2.0 } // doku adı → bir kiremitin metre boyu
 const STYLES = [
   { wall: 'brick', roofType: 'gable', win: 'arch', shutters: true, chimney: true, door: '#bf8942' },
   { wall: 'siding', roofType: 'flat', win: 'round', flowerbox: true, door: '#cc7914' },
-  { wall: 'mosaic', roofType: 'hip', win: 'wide', door: '#e8873a' },
+  { wall: 'stucco', roofType: 'hip', win: 'wide', door: '#e8873a' },
   { wall: 'plaster', roofType: 'flat', win: 'rect', balcony: true, door: '#8a6bd1' },
   { wall: 'brick', roofType: 'hip', win: 'rect', shutters: true, chimney: true, door: '#5b86d6' },
   { wall: 'siding', roofType: 'gable', win: 'wide', flowerbox: true, door: '#d58f2b' },
 ]
 const lighten = (hex, t) => `#${new Color(hex).lerp(new Color('#ffffff'), t).getHexString()}`
 
+let stuccoBase = null
+function getStuccoBase() {
+  if (stuccoBase) return stuccoBase
+  const cv = document.createElement('canvas')
+  cv.width = 256
+  cv.height = 256
+  const g = cv.getContext('2d')
+  g.fillStyle = '#fbf8f4'
+  g.fillRect(0, 0, 256, 256)
+  // yumuşak pastel sıva tanecikleri + ince yatay taş çizgileri (ek yeri görünmez)
+  for (let i = 0; i < 4; i++) {
+    g.fillStyle = i % 2 ? 'rgba(255,255,255,0.45)' : 'rgba(235,222,212,0.28)'
+    g.fillRect(0, i * 64, 256, 62)
+    g.fillStyle = 'rgba(210,195,185,0.22)'
+    g.fillRect(0, i * 64 + 62, 256, 2)
+  }
+  for (let i = 0; i < 180; i++) {
+    const x = (i * 73) % 256
+    const y = (i * 137) % 256
+    g.fillStyle = i % 3 ? 'rgba(255,255,255,0.35)' : 'rgba(220,208,198,0.2)'
+    g.fillRect(x, y, 4, 3)
+  }
+  const tex = new CanvasTexture(cv)
+  tex.wrapS = tex.wrapT = RepeatWrapping
+  tex.colorSpace = SRGBColorSpace
+  stuccoBase = tex
+  return tex
+}
+
 /** Dokulu düz yüzey (duvar/çatı paneli): doku dünya ölçüsünde döşenir, renk tonu çarpılır. */
 function Panel({ tex, w, h, color, position, rotation, repeat }) {
-  const base = useLoader(TextureLoader, `/textures/${tex}.webp`)
+  const loaded = useLoader(TextureLoader, `/textures/${tex === 'stucco' ? 'plaster' : tex}.webp`)
+  const base = tex === 'stucco' ? getStuccoBase() : loaded
   const map = useMemo(() => {
     const m = WALL_TEX[tex] ?? 2.4
     const rx = q(repeat?.[0] ?? w / m)
     const ry = q(repeat?.[1] ?? h / m)
-    return sharedTexture(base, `${rx}|${ry}`, (t) => t.repeat.set(rx, ry))
+    return sharedTexture(base, `${tex}|${rx}|${ry}`, (t) => t.repeat.set(rx, ry))
   }, [base, tex, w, h, repeat])
   return (
     <mesh position={position} rotation={rotation} receiveShadow>
@@ -453,6 +483,91 @@ function Blanket({ b }) {
   return <Prop model="/models/venues/picnic-blanket.glb" x={b.x} z={b.z} scale={2.0} ry={b.ry} />
 }
 
+const towelTexCache = new Map()
+function getTowelTex(baseHex) {
+  if (towelTexCache.has(baseHex)) return towelTexCache.get(baseHex)
+  const cv = document.createElement('canvas')
+  cv.width = 128
+  cv.height = 256
+  const ctx = cv.getContext('2d')
+  ctx.fillStyle = baseHex
+  ctx.fillRect(0, 0, 128, 256)
+  // pastel beyaz/krem çizgiler ve kenar bordürü
+  ctx.fillStyle = 'rgba(255, 250, 242, 0.55)'
+  for (let y = 18; y < 240; y += 28) ctx.fillRect(0, y, 128, 10)
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.72)'
+  ctx.fillRect(0, 0, 128, 10)
+  ctx.fillRect(0, 246, 128, 10)
+  ctx.fillRect(0, 0, 6, 256)
+  ctx.fillRect(122, 0, 6, 256)
+  // hafif havlu dokusu
+  ctx.fillStyle = 'rgba(74, 59, 92, 0.04)'
+  for (let y = 0; y < 256; y += 4) for (let x = (y % 8 === 0 ? 0 : 2); x < 128; x += 4) ctx.fillRect(x, y, 2, 2)
+  const tex = new CanvasTexture(cv)
+  tex.colorSpace = SRGBColorSpace
+  towelTexCache.set(baseHex, tex)
+  return tex
+}
+
+/** Plaj havlusu: pastel çizgili kumaş dokusu (tek mesh, hafif). */
+function Towel({ t }) {
+  const map = useMemo(() => getTowelTex(t.c), [t.c])
+  return (
+    <mesh position={[t.x, 0.055, t.z]} rotation={[0, t.ry, 0]} receiveShadow>
+      <boxGeometry args={[0.96, 0.024, 1.9]} />
+      <meshStandardMaterial map={map} roughness={0.95} />
+    </mesh>
+  )
+}
+
+/** Gece kulübünden dışarıya doğru yükselen sol anahtarı / nota animasyonu (WebGL sprite — DOM yükü yok). */
+function ClubMusicNotes() {
+  const notes = useMemo(() => {
+    const syms = ['🎼', '🎵', '🎶']
+    const texs = syms.map((sym) => {
+      const cv = document.createElement('canvas')
+      cv.width = 64
+      cv.height = 64
+      const ctx = cv.getContext('2d')
+      ctx.font = '48px sans-serif'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(sym, 32, 34)
+      const tex = new CanvasTexture(cv)
+      tex.colorSpace = SRGBColorSpace
+      return tex
+    })
+    return [
+      { tex: texs[0], dx: -1.4, dz: 0.4, phase: 0 },
+      { tex: texs[1], dx: 0.2, dz: -0.3, phase: 0.33 },
+      { tex: texs[2], dx: 1.5, dz: 0.2, phase: 0.66 },
+    ]
+  }, [])
+  useEffect(() => () => notes.forEach((n) => n.tex.dispose()), [notes])
+  const refs = useRef([])
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime()
+    notes.forEach((n, i) => {
+      const sp = refs.current[i]
+      if (!sp) return
+      const p = (t * 0.28 + n.phase) % 1
+      sp.position.set(26 + n.dx + Math.sin(t * 1.8 + i * 2) * 0.45, 7.6 + p * 4.2, -9.2 + n.dz)
+      const s = Math.sin(p * Math.PI)
+      sp.scale.setScalar(0.55 + s * 0.5)
+      if (sp.material) sp.material.opacity = s
+    })
+  })
+  return (
+    <group>
+      {notes.map((n, i) => (
+        <sprite key={i} ref={(el) => (refs.current[i] = el)} position={[26 + n.dx, 7.6, -9.2 + n.dz]}>
+          <spriteMaterial map={n.tex} transparent depthWrite={false} />
+        </sprite>
+      ))}
+    </group>
+  )
+}
+
 /** Gölge kamerası oyuncuyu takip eden güneş. */
 function Sun({ focusRef }) {
   const light = useRef()
@@ -472,13 +587,13 @@ function Sun({ focusRef }) {
       ref={light}
       castShadow
       intensity={1.6}
-      shadow-mapSize={[2048, 2048]}
-      shadow-camera-left={-26}
-      shadow-camera-right={26}
-      shadow-camera-top={26}
-      shadow-camera-bottom={-26}
+      shadow-mapSize={[1024, 1024]}
+      shadow-camera-left={-20}
+      shadow-camera-right={20}
+      shadow-camera-top={20}
+      shadow-camera-bottom={-20}
       shadow-camera-near={1}
-      shadow-camera-far={70}
+      shadow-camera-far={55}
       shadow-bias={-0.0004}
     />
   )
@@ -617,7 +732,7 @@ function Sea() {
     <group>
       <mesh ref={plane} position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[2200, 2200]} />
-        <meshStandardMaterial ref={mat} map={deep} roughness={0.25} metalness={0.05} emissive="#3aa9c9" emissiveIntensity={0.06} />
+        <meshStandardMaterial ref={mat} map={deep} roughness={0.22} metalness={0.05} emissive="#3aa9c9" emissiveIntensity={0.06} />
       </mesh>
       <mesh position={[0, -0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[2200, 2200]} />
@@ -642,7 +757,7 @@ const DASHES = Array.from({ length: 49 }, (_, i) => -96 + i * 4).filter((t) => M
 const RING_DASHES = Array.from({ length: 36 }, (_, i) => (i / 36) * Math.PI * 2 + 0.087).filter((a) => [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2].every((c) => Math.abs(Math.atan2(Math.sin(a - c), Math.cos(a - c))) > 0.3))
 const PARK_X = -12 // batıya doğru asfalt biter; parkta patika başlar
 
-/** Gölet: Meshy su dokusu + kum kıyısı (Gölet bölgesi). */
+/** Gölet: Meshy su dokusu + kum kıyısı + nilüfer yaprakları. */
 function Pond({ x, z, r }) {
   const water = useLoader(TextureLoader, '/textures/water.webp')
   const map = useMemo(() => {
@@ -653,6 +768,16 @@ function Pond({ x, z, r }) {
     t.needsUpdate = true
     return t
   }, [water, r])
+  const pads = useMemo(
+    () => [
+      [-2.1, -1.6, 0.55, true],
+      [2.3, -1.2, 0.48, false],
+      [-1.4, 2.2, 0.52, true],
+      [1.8, 2.0, 0.6, false],
+      [0.3, -2.8, 0.45, true],
+    ],
+    [],
+  )
   return (
     <group position={[x, 0, z]}>
       <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -663,6 +788,174 @@ function Pond({ x, z, r }) {
         <circleGeometry args={[r, 48]} />
         <meshStandardMaterial map={map} color="#bfeaf5" roughness={0.2} />
       </mesh>
+      {pads.map(([px, pz, pr, bloom], i) => (
+        <group key={i} position={[px, 0.07, pz]}>
+          <mesh rotation={[-Math.PI / 2, 0, i]}>
+            <circleGeometry args={[pr, 12, 0, Math.PI * 1.82]} />
+            <meshStandardMaterial color="#7be090" roughness={0.7} />
+          </mesh>
+          {bloom && (
+            <mesh position={[0, 0.08, 0]}>
+              <dodecahedronGeometry args={[0.14, 0]} />
+              <meshStandardMaterial color={i % 2 ? '#fff0f6' : '#ff9ec7'} roughness={0.4} />
+            </mesh>
+          )}
+        </group>
+      ))}
+    </group>
+  )
+}
+
+/** Güney plajından denize uzanan pastel ahşap iskele. */
+function BeachPier() {
+  return (
+    <group position={[0, 0, 54.2]}>
+      <RoundedBox args={[3.2, 0.18, 9.6]} radius={0.05} position={[0, 0.28, 0]} castShadow receiveShadow>
+        <meshStandardMaterial color="#f2cfa2" roughness={0.75} />
+      </RoundedBox>
+      {[-1.35, 1.35].map((px) =>
+        [-3.6, 0, 3.8].map((pz) => (
+          <group key={`${px}|${pz}`} position={[px, 0, pz]}>
+            <mesh position={[0, 0.25, 0]} castShadow>
+              <cylinderGeometry args={[0.12, 0.14, 1.1, 8]} />
+              <meshStandardMaterial color="#cfa06e" roughness={0.8} />
+            </mesh>
+            {pz === 3.8 && (
+              <mesh position={[0, 0.92, 0]}>
+                <sphereGeometry args={[0.16, 10, 8]} />
+                <meshStandardMaterial color="#fff3c4" emissive="#ffd970" emissiveIntensity={0.9} />
+              </mesh>
+            )}
+          </group>
+        )),
+      )}
+    </group>
+  )
+}
+
+/** Gökyüzünde yavaşça süzülen pofuduk pastel bulutlar + çeşme su fıskiyesi. */
+function ToyClouds() {
+  const clouds = useMemo(
+    () => [
+      { x: -45, y: 34, z: -38, s: 1.4, sp: 0.6 },
+      { x: 18, y: 37, z: -55, s: 1.7, sp: 0.45 },
+      { x: 58, y: 33, z: -12, s: 1.3, sp: 0.55 },
+      { x: -32, y: 36, z: 32, s: 1.5, sp: 0.5 },
+      { x: 35, y: 35, z: 42, s: 1.25, sp: 0.65 },
+    ],
+    [],
+  )
+  const refs = useRef([])
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime
+    clouds.forEach((c, i) => {
+      const g = refs.current[i]
+      if (!g) return
+      g.position.x = ((c.x + t * c.sp + 90) % 180) - 90
+    })
+  })
+  return (
+    <group>
+      {clouds.map((c, i) => (
+        <group key={i} ref={(el) => (refs.current[i] = el)} position={[c.x, c.y, c.z]} scale={c.s}>
+          <mesh position={[0, 0, 0]}>
+            <sphereGeometry args={[2.2, 10, 8]} />
+            <meshStandardMaterial color="#ffffff" roughness={0.9} />
+          </mesh>
+          <mesh position={[-1.9, -0.35, 0.2]}>
+            <sphereGeometry args={[1.55, 10, 8]} />
+            <meshStandardMaterial color="#fff9f5" roughness={0.9} />
+          </mesh>
+          <mesh position={[1.9, -0.3, -0.2]}>
+            <sphereGeometry args={[1.65, 10, 8]} />
+            <meshStandardMaterial color="#fff9f5" roughness={0.9} />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  )
+}
+
+function FountainFx() {
+  const ring = useRef()
+  const top = useRef()
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime
+    const p = (t * 0.7) % 1
+    if (ring.current) {
+      ring.current.scale.setScalar(0.5 + p * 1.4)
+      ring.current.material.opacity = (1 - p) * 0.55
+    }
+    if (top.current) {
+      top.current.position.y = 2.05 + Math.sin(t * 5) * 0.1
+      top.current.scale.setScalar(0.9 + Math.sin(t * 7) * 0.12)
+    }
+  })
+  return (
+    <group position={[0, 0, 0]}>
+      <mesh ref={top} position={[0, 2.05, 0]}>
+        <sphereGeometry args={[0.28, 10, 8]} />
+        <meshStandardMaterial color="#d8f6ff" emissive="#9be4ff" emissiveIntensity={0.45} roughness={0.1} transparent opacity={0.85} />
+      </mesh>
+      <mesh ref={ring} position={[0, 0.42, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[1.3, 1.5, 28]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.4} depthWrite={false} />
+      </mesh>
+    </group>
+  )
+}
+
+/** Şehir gökyüzünde yavaşça süzülen pastel sıcak hava balonu. */
+function SkyBalloon() {
+  const ref = useRef()
+  useFrame(({ clock }) => {
+    const g = ref.current
+    if (!g) return
+    const t = clock.elapsedTime * 0.08
+    g.position.set(Math.cos(t) * 28, 26 + Math.sin(clock.elapsedTime * 0.7) * 0.8, Math.sin(t) * 28)
+    g.rotation.y = -t
+  })
+  return (
+    <group ref={ref} position={[28, 26, 0]}>
+      <mesh position={[0, 2.2, 0]}>
+        <sphereGeometry args={[2.1, 16, 12]} />
+        <meshStandardMaterial color="#ff9ec7" roughness={0.55} />
+      </mesh>
+      <mesh position={[0, 2.2, 0]} scale={[1.01, 0.45, 1.01]}>
+        <sphereGeometry args={[2.1, 16, 8]} />
+        <meshStandardMaterial color="#ffe478" roughness={0.55} />
+      </mesh>
+      <RoundedBox args={[0.9, 0.75, 0.9]} radius={0.08} position={[0, -0.45, 0]}>
+        <meshStandardMaterial color="#e8b882" roughness={0.75} />
+      </RoundedBox>
+    </group>
+  )
+}
+
+const SPEED_RING_POS = [
+  [0, 22, 0],
+  [22, 0, Math.PI / 2],
+  [-19, 0, Math.PI / 2],
+]
+
+/** Şehir yollarında içinden geçince hız artışı veren parlayan halkalar. */
+function SpeedRings() {
+  const refs = useRef([])
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime
+    refs.current.forEach((m, i) => {
+      if (!m) return
+      m.position.y = 1.05 + Math.sin(t * 2.5 + i) * 0.1
+    })
+  })
+  return (
+    <group>
+      {SPEED_RING_POS.map(([x, z, ry], i) => (
+        <mesh key={i} ref={(el) => (refs.current[i] = el)} position={[x, 1.05, z]} rotation={[0, ry, 0]}>
+          <torusGeometry args={[1.05, 0.09, 10, 24]} />
+          <meshStandardMaterial color="#ffe066" emissive="#ffb703" emissiveIntensity={0.85} roughness={0.25} />
+        </mesh>
+      ))}
     </group>
   )
 }
@@ -680,6 +973,12 @@ export default function City({ focusRef }) {
   return (
     <group>
       <Sun focusRef={focusRef} />
+      <ClubMusicNotes />
+      <ToyClouds />
+      <FountainFx />
+      <SkyBalloon />
+      <SpeedRings />
+      <BeachPier />
 
       {/* zemin ve mahalle zeminleri */}
       <Sea />
@@ -726,6 +1025,15 @@ export default function City({ focusRef }) {
           {t > PARK_X && t <= ROAD_END.east && <Flat x={t} z={0} w={1.8} d={0.28} y={Y.mark} color="#ffffff" />}
         </group>
       ))}
+      {/* yaya geçitleri (dönel kavşak girişleri ve plaj önü) */}
+      {[-1.5, -0.5, 0.5, 1.5].map((ox) => (
+        <group key={ox}>
+          <Flat x={ox} z={-17.2} w={0.42} d={2.1} y={Y.mark} color="#ffffff" />
+          <Flat x={ox} z={17.2} w={0.42} d={2.1} y={Y.mark} color="#ffffff" />
+          <Flat x={ox} z={26.5} w={0.42} d={2.1} y={Y.mark} color="#ffffff" />
+          <Flat x={17.2} z={ox} w={2.1} d={0.42} y={Y.mark} color="#ffffff" />
+        </group>
+      ))}
 
       {/* lobi meydanı */}
       <Flat round={PLAZA_R} y={Y.plaza} tex="cobble" color="#fff7ee" />
@@ -744,10 +1052,7 @@ export default function City({ focusRef }) {
       ))}
       <Plants />
       {TOWELS.map((t, i) => (
-        <mesh key={i} position={[t.x, 0.05, t.z]} rotation={[-Math.PI / 2, 0, t.ry]} receiveShadow>
-          <planeGeometry args={[0.95, 1.9]} />
-          <meshStandardMaterial color={t.c} roughness={1} />
-        </mesh>
+        <Towel key={i} t={t} />
       ))}
       {BLANKETS.map((b, i) => (
         <Blanket key={i} b={b} />

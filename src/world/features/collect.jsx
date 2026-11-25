@@ -185,7 +185,17 @@ export function useCollect(ctx) {
       const now = Date.now()
       if (now - lastSend.current < 400) return
       lastSend.current = now
-      send({ t: 'collect', id })
+      if (!send({ t: 'collect', id })) {
+        // çevrimdışı modda yerel toplama
+        const ttl = 12 * 3600 * 1000
+        store.current.until[id] = now + ttl
+        store.current.leaving[id] = performance.now()
+        const k = KINDS[col.kind]
+        const key = Math.random()
+        setPops((p) => [...p, { key, x: col.x, z: col.z, text: `+${k.stars} ⭐${col.hidden ? ' hazine!' : ''}` }])
+        setTimeout(() => setPops((p) => p.filter((x) => x.key !== key)), 1400)
+        window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'collect' }))
+      }
     },
     [focusRef, say, send],
   )
@@ -194,7 +204,7 @@ export function useCollect(ctx) {
   useEffect(() => {
     if (!nearCol) return
     const onKey = (e) => {
-      if (e.code === 'KeyE' && !isTyping(e) && !e.ctrlKey && !e.metaKey && !e.altKey) pick(nearCol.id)
+      if ((e.code === 'KeyE' || e.key === 'e' || e.key === 'E') && !isTyping(e) && !e.ctrlKey && !e.metaKey && !e.altKey) pick(nearCol.id)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)

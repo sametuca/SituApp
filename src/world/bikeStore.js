@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from 'react'
 
 let on = false
-let until = 0 // kiralama bitiş zamanı (ms); sunucu welcome.bikeUntil / rental ile verir
+let until = 0 // isteğe bağlı kiralama zaman damgası (bisiklet artık herkese ücretsiz/açık)
 const subs = new Set()
 const emit = () => subs.forEach((f) => f())
 
@@ -18,20 +18,17 @@ export const bike = {
     window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: v ? 'pop' : 'tick' }))
     emit()
   },
-  /** Kiralama süresi (ms zaman damgası). Süre bitince binmek yasak, biniyorsa iner. */
   get until() {
     return until
   },
   setUntil(t) {
     until = Number(t) || 0
-    if (!this.rented) this.set(false)
     emit()
   },
   get rented() {
-    return until > Date.now()
+    return true
   },
   toggle() {
-    if (!on && !this.rented) return false // kiralanmamış
     this.set(!on)
     return true
   },
@@ -39,5 +36,8 @@ export const bike = {
 
 export const useRiding = () => useSyncExternalStore((cb) => (subs.add(cb), () => subs.delete(cb)), () => on)
 
-export const BIKE_SPEED = 8.4 // m/sn (yürüyüş 3,2 / koşu 6,5)
+export const BIKE_SPEED = 5.2 // m/sn (yürüyüş 3,2 m/sn'den bir tık hızlı; Shift ile 7,2)
 export const BIKE_POSE = { kind: 'sit', style: 'bike' } // avatarPose.js: bisiklet selesinde oturuş
+
+/** Şehir hız halkalarından alınan geçici hız artışı (ms zaman damgası). */
+export const speedBoost = { until: 0 }

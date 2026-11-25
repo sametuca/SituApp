@@ -5,12 +5,14 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import {
   AdditiveBlending,
+  BackSide,
   BufferGeometry,
   CanvasTexture,
   Color,
   Float32BufferAttribute,
   MeshStandardMaterial,
   Object3D,
+  ShaderMaterial,
   SRGBColorSpace,
   Vector3,
 } from 'three'
@@ -39,7 +41,7 @@ export const skyLive = {
 
 /** Şehir binalarının/çeşmenin paylaşılan malzemeleri (City.jsx kullanır; Sky gece parlatır). */
 export const SKY_MATS = {
-  window: new MeshStandardMaterial({ color: '#fff6cf', emissive: '#ffe49a', emissiveIntensity: 0.35, roughness: 0.3 }),
+  window: new MeshStandardMaterial({ color: '#fff6cf', emissive: '#ffe49a', emissiveIntensity: 0.35, roughness: 0.12, metalness: 0.25 }),
   neonPink: new MeshStandardMaterial({ color: '#fdb15e', emissive: '#fd9c33', emissiveIntensity: 1.4 }),
   neonBlue: new MeshStandardMaterial({ color: '#8fd8ff', emissive: '#4fc3ff', emissiveIntensity: 1.4 }),
   water: new MeshStandardMaterial({ color: '#9fdcff', roughness: 0.1, metalness: 0.1, emissive: '#6cc7f5', emissiveIntensity: 0.25 }),
@@ -51,7 +53,7 @@ const C = (s) => new Color(s)
 const KEYS = {
   night: { bg: C('#3b3f80'), fog: C('#4d4f93'), sun: C('#b4c0ff'), sunI: 0.55, amb: C('#9aa4ff'), ambI: 0.55, hs: C('#8e9cff'), hg: C('#6b5aa6'), hI: 0.65, fn: 40, ff: 125 },
   dawn: { bg: C('#ffecd0'), fog: C('#fff3e1'), sun: C('#ffc6a0'), sunI: 1.0, amb: C('#fff8f0'), ambI: 0.55, hs: C('#fff2e1'), hg: C('#ffedd6'), hI: 0.85, fn: 45, ff: 130 },
-  day: { bg: C('#dcf0ff'), fog: C('#dcf0ff'), sun: C('#ffffff'), sunI: 1.6, amb: C('#ffffff'), ambI: 0.7, hs: C('#ffffff'), hg: C('#ffedd6'), hI: 1.1, fn: 45, ff: 122 },
+  day: { bg: C('#cbeaff'), fog: C('#d8f0ff'), sun: C('#ffffff'), sunI: 1.95, amb: C('#ffffff'), ambI: 0.45, hs: C('#e8f6ff'), hg: C('#fff3e6'), hI: 0.95, fn: 50, ff: 135 },
   dusk: { bg: C('#ffb494'), fog: C('#ffcdb9'), sun: C('#ff9f6b'), sunI: 1.1, amb: C('#ffd5c4'), ambI: 0.55, hs: C('#ffc7b0'), hg: C('#d9a7e8'), hI: 0.75, fn: 45, ff: 130 },
   dusk2: { bg: C('#8f6fb8'), fog: C('#a98bc4'), sun: C('#c99aff'), sunI: 0.8, amb: C('#cdb0ff'), ambI: 0.5, hs: C('#b79be8'), hg: C('#8a63b0'), hI: 0.65, fn: 42, ff: 128 },
 }
@@ -313,6 +315,58 @@ const EASE_WX = 3 // sn: hava geçişi
 const MAX_HOUR_SPEED = 3.5 // saat/sn: mod değişiminde saatin akış hızı
 
 // home: ev içi (sabit ışık). interior: mekân içi { bg, fog: [renk, near, far], dim } (gün-geceden bağımsız, temaya göre loş).
+const ZENITH_DAY = new Color('#62baff')
+const ZENITH_NIGHT = new Color('#1d225c')
+const ZENITH_DUSK = new Color('#b47aea')
+
+/** Ufuktan tepeye yumuşak pastel gökyüzü kubbesi (sıfır doku, tek shader). */
+function SkyDome() {
+  const mat = useMemo(
+    () =>
+      new ShaderMaterial({
+        side: BackSide,
+        depthWrite: false,
+        fog: false,
+        uniforms: {
+          uTop: { value: new Color('#62baff') },
+          uHorizon: { value: new Color('#d4eeff') },
+        },
+        vertexShader: `
+          varying vec3 vPos;
+          void main() {
+            vPos = position;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 uTop;
+          uniform vec3 uHorizon;
+          varying vec3 vPos;
+          void main() {
+            float h = clamp(normalize(vPos).y, 0.0, 1.0);
+            vec3 col = mix(uHorizon, uTop, pow(h, 0.65));
+            gl_FragColor = vec4(col, 1.0);
+          }
+        `,
+      }),
+    [],
+  )
+  useEffect(() => () => mat.dispose(), [mat])
+  const tmpZ = useMemo(() => new Color(), [])
+  useFrame(({ scene }) => {
+    if (scene.fog) mat.uniforms.uHorizon.value.copy(scene.fog.color)
+    const night = Number.isFinite(skyLive.night) ? skyLive.night : 0
+    const sun = sunsetAt(skyLive.hour)
+    tmpZ.copy(ZENITH_DAY).lerp(ZENITH_DUSK, sun).lerp(ZENITH_NIGHT, night)
+    mat.uniforms.uTop.value.copy(tmpZ)
+  })
+  return (
+    <mesh material={mat} frustumCulled={false}>
+      <sphereGeometry args={[210, 20, 14]} />
+    </mesh>
+  )
+}
+
 export default function Sky({ home: homeProp, interior = null, focusRef }) {
   const home = Boolean(homeProp || interior)
   const scene = useThree((s) => s.scene)
@@ -418,6 +472,7 @@ export default function Sky({ home: homeProp, interior = null, focusRef }) {
       <hemisphereLight ref={hemi} args={['#ffffff', '#ffedd6', 1.1]} />
       {!home && (
         <>
+          <SkyDome />
           <Heavens />
           <Lamps focusRef={focusRef} />
           <WetSheen focusRef={focusRef} />

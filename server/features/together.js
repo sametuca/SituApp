@@ -27,7 +27,7 @@ const groupKeys = (table, seat) => {
   for (const o of table.values()) if (o.id === seat.id || (seat.group && o.group === seat.group)) o.slots.forEach((_, k) => keys.push(`${o.id}:${k}`))
   return keys
 }
-const SIT_RANGE = 2.6 // m: koltuğa bu kadar yakın olmalısın
+const SIT_RANGE = 3.2 // m: koltuğa bu kadar yakın olmalısın
 const DANCE_RANGE = 6 // m
 const DANCE_GAP = 0.55 // dansçıların orta noktadan uzaklığı
 const OFFER_TTL = 20000

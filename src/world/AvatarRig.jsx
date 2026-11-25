@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import { AnimationMixer } from 'three'
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js'
-import { applyPose, makeRig } from './avatarPose'
+import { applyPose, applyUprightIdle, makeRig } from './avatarPose'
 import { HeadAccessory } from './Accessories'
 import { cosStore } from './cosStore'
 import { applyLook, trimBase } from './avatarLook'
@@ -49,11 +49,22 @@ export default function AvatarRig({ slug, anim = 'idle', pose, cosId }) {
 
   useFrame((_, dt) => {
     const next = actions[anim] ?? actions.idle
+    const isIdle = !next || next === actions.idle
+    if (isIdle) {
+      if (current.current !== 'upright') {
+        mixer.stopAllAction()
+        current.current = 'upright'
+      }
+      applyUprightIdle(rig)
+      if (pose?.current) applyPose(rig, pose.current, dt)
+      return
+    }
     if (next && current.current !== next) {
       const prev = current.current
-      prev?.fadeOut(0.2)
+      if (prev && typeof prev === 'object') prev.fadeOut(0.2)
       next.reset()
-      if (prev) next.fadeIn(0.2)
+      next.paused = false
+      if (prev && typeof prev === 'object') next.fadeIn(0.2)
       next.play()
       current.current = next
     }

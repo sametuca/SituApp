@@ -162,6 +162,9 @@ const M = {
   volleyball: '/models/beach/volleyball.glb',
   sandcastle: '/models/beach/sandcastle.glb',
   plane: '/models/airport/toy-plane.glb',
+  flowerbed: '/models/neighborhood/garden-flowerbed.glb',
+  cafetable: '/models/cafe/cafe-table.glb',
+  cafechair: '/models/cafe/cafe-chair.glb',
 }
 const p = (model, x, z, scale, r = 0, ry = 0) => ({ model: M[model], x, z, scale, r, ry })
 
@@ -181,11 +184,17 @@ for (let i = 0; i < 6; i++) {
   PROPS.push(p('bench', Math.cos(a) * 7.2, Math.sin(a) * 7.2, 1.7, 0, -a - Math.PI / 2))
 }
 PROPS.push(p('fountain', 0, 0, 5.4))
+for (const [fx, fz] of [[3.5, 3.5], [-3.5, 3.5], [3.5, -3.5], [-3.5, -3.5]]) PROPS.push(p('flowerbed', fx, fz, 1.5))
 PROPS.push(p('tree', 5.2, 5.2, 3.0, 0.7), p('tree', 5.2, -5.2, 3.0, 0.7), p('tree', -5.2, -5.2, 3.0, 0.7))
-// kafe sokağı: kaldırımda bitkiler (kapılardan ve lambalardan uzak)
-for (const side of [-1, 1]) for (const z of [-14, -23, -31.5, -41.5]) PROPS.push(p('plant', side * 5.2, z, 1.4, 0.4))
-// gece kulübü: girişin önünde hoparlörler, DJ standı
-PROPS.push(p('booth', 22.6, -5.3, 2.6, 1.0), p('speaker', 20.2, -5.3, 2, 0.6), p('speaker', 31.5, -5.3, 2, 0.6))
+// kafe sokağı: kaldırımda bitkiler ve açık hava kafe masaları
+for (const side of [-1, 1]) {
+  for (const z of [-14, -23, -31.5, -41.5]) PROPS.push(p('plant', side * 5.2, z, 1.4, 0.4))
+  for (const z of [-18.5, -27.5]) {
+    PROPS.push(p('cafetable', side * 6.4, z, 1.1, 0.45), p('cafechair', side * 6.4, z + 0.85, 1.0, 0, Math.PI))
+  }
+}
+// gece kulübü: girişin önünde hoparlörler (DJ standı içeride)
+PROPS.push(p('speaker', 20.2, -5.3, 2, 0.6), p('speaker', 31.5, -5.3, 2, 0.6))
 PROPS.push(p('speaker', 38, 5.3, 1.8, 0.5))
 // park: ağaçlar, banklar
 for (const [x, z] of [[-18, -9], [-24, -10], [-36, -10], [-44, -8], [-20, 9], [-26, 10], [-37, 9], [-44, 6], [-42, -1], [-16, 7]]) PROPS.push(p('tree', x, z, 3.6, 0.7))
@@ -358,6 +367,7 @@ export const HOME_ROOM = {
   hw: 5, // yarı genişlik (x)
   hd: 4.5, // yarı derinlik (z)
   wallH: 3.4,
+  gardenW: 6.9, // bahçe genişliği (arazi kademesine göre büyür)
   spawn: [0, 3.0], // girince doğduğun nokta
   exit: { x: 0, z: 3.7, radius: 1.6 }, // kapının önü: "Dışarı çık"
 }
@@ -366,8 +376,14 @@ export const HOME_ZONE = { id: 'home', name: 'Evim', emoji: '🏠', desc: 'Kendi
 /** Odada duvarlardan ve mobilyalardan (dönmüş kutular: { x, z, hw, hd, ry }) çıkar. */
 export function resolveRoom(x, z, colliders = []) {
   const m = PLAYER_RADIUS + 0.15
-  x = Math.max(-HOME_ROOM.hw + m, Math.min(HOME_ROOM.hw - m, x))
+  const prevX = x
+  const maxX = HOME_ROOM.hw + (HOME_ROOM.gardenW ?? 6.9) - 0.35
+  x = Math.max(-HOME_ROOM.hw + m, Math.min(maxX, x))
   z = Math.max(-HOME_ROOM.hd + m, Math.min(HOME_ROOM.hd - 0.35, z))
+  // doğu duvarı (x = hw): bahçe kapısı (|z| < 1.1) dışındaki bölümlerde çarpışma
+  if (Math.abs(z) >= 1.1 && Math.abs(x - HOME_ROOM.hw) < m) {
+    x = prevX <= HOME_ROOM.hw ? HOME_ROOM.hw - m : HOME_ROOM.hw + m
+  }
   for (const c of colliders) {
     // noktayı kutunun yerel eksenine çevir, en yakın noktaya göre dışarı it, geri çevir
     const cos = Math.cos(c.ry)

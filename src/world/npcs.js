@@ -95,7 +95,7 @@ const CITY = [
     ],
   },
   {
-    id: 'hayran', avatar: 'elif', name: 'DJ Hayranı Elif', role: '🎧', x: 29.5, z: -1.8, ry: 3.1, pose: SOLO,
+    id: 'hayran', where: 'kulup', avatar: 'elif', name: 'DJ Hayranı Elif', role: '🎧', x: -1.4, z: 0.8, ry: 3.1, pose: SOLO,
     lines: ['DJ Kaan bu akşam harika çalıyor!! 🎧', 'Ben bu şarkıyı bin kere dinledim ve hâlâ dans ediyorum 💃', 'Dans etmek için birine 💃 gönder, kabul ederse el ele dönersiniz 😍', 'Şarkıyı duyunca duramıyorum 🪩'],
     options: [
       { label: 'Öneri iste', reply: ['Cuma akşamları kulüpte konfeti yağıyor, kaçırma 🎉', 'Piste yalnız çıkmaktan çekinme, biri mutlaka katılır 💃'] },
@@ -158,8 +158,17 @@ const venueNpcs = VENUES.filter((v) => v.npc).map((v) => ({
     // Havalimanı memuru: kiralama burada yapılır (action → istemci 'rent' mesajı yollar; sunucu karar verir)
     ...(v.type === 'airport'
       ? [
-          { label: 'Bisiklet · 20 🪙', action: 'rent_bike', reply: ['Bisikletin hazırlanıyor, anahtarı sana veriyorum! Şehirde B tuşuyla binebilirsin 🚲'] },
+          { label: 'Bisiklet al 🚲', action: 'rent_bike', reply: ['Bisikletin hazır! Şehirde B tuşuyla veya soldaki 🚲 düğmesiyle istediğin zaman binebilirsin 🚲'] },
           { label: 'Araba', action: 'rent_car', reply: ['Arabalar çok değerli… şimdilik bakiyen buna yetmiyor, camın ardından hayran kalabilirsin 😄'] },
+        ]
+      : []),
+    ...(v.type === 'salon'
+      ? [{ label: '👗 Gardırobu aç', action: 'open_wardrobe', reply: ['İşte ayna hazır! Saç, kıyafet ve aksesuarlarını dilediğin gibi seç ✨'] }]
+      : []),
+    ...(v.type === 'guide'
+      ? [
+          { label: '👗 Gardırop nerede?', action: 'open_wardrobe', reply: ['Soldaki 👗 düğmesinden (veya Toni & Güy’den) dilediğin zaman açabilirsin! Açıyorum ✨'] },
+          { label: '🗺️ Mekanlara nasıl giderim?', reply: ['Sağ üstteki yuvarlak haritaya tıklayınca tüm şehir açılır; kafe, kulüp, plaj veya Toni & Güy’e tek tıkla ışınlanabilirsin 🗺️'] },
         ]
       : []),
     { label: 'Ne önerirsin?', reply: TYPE_TIPS[v.type] ?? TYPE_TIPS.cafe },

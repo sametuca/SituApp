@@ -162,7 +162,7 @@ export function useNeighborhood(ctx) {
   useEffect(() => {
     const onKey = (e) => {
       const typing = e.target instanceof HTMLElement && ['INPUT', 'TEXTAREA'].includes(e.target.tagName)
-      if (e.code === 'KeyE' && !typing) goRef.current()
+      if ((e.code === 'KeyE' || e.key === 'e' || e.key === 'E') && !typing) goRef.current()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
