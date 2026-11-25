@@ -683,11 +683,18 @@ function WorldScene({ avatar }) {
     tutActionRef.current = inTutorial && !fade ? (tutNear === 'collect' && tutStep === 'collect' ? onTutCollect : tutNear === 'door' && tutStep === 'door' ? onTutDoor : null) : null
   }, [nearDoor, fade, doorGo, nearVenue, home, venue, enterVenue, nearGuide, inTutorial, tutNear, tutStep, onTutCollect, onTutDoor])
 
-  // H tuşu: yardım (E: kapı / eğitim etkileşimi)
+  // H tuşu: yardım, M tuşu: harita, Esc: açık pencereyi kapat, E: kapı / eğitim etkileşimi
   useEffect(() => {
     const onKey = (e) => {
       const typing = e.target instanceof HTMLElement && ['INPUT', 'TEXTAREA'].includes(e.target.tagName)
+      if (e.code === 'Escape' && !typing) {
+        setHelp(false)
+        setPanel(null)
+        setInteractId(null)
+        return
+      }
       if (e.code === 'KeyH' && !typing) setHelp((h) => !h)
+      if (e.code === 'KeyM' && !typing) window.dispatchEvent(new CustomEvent('situapp:toggle-map'))
       if (e.code === 'KeyE' && !typing && tutActionRef.current) tutActionRef.current()
       else if (e.code === 'KeyE' && !typing && nearDoorRef.current) doorGoRef.current()
       else if (e.code === 'KeyE' && !typing && nearVenueRef.current && !together.self.current) enterVenueRef.current(nearVenueRef.current)

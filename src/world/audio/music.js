@@ -4,7 +4,7 @@
 // Sahne: { bpm, step(c), ambience?(ac, out, t) → stop }.  step her 16'lık adımda çağrılır:
 //   c = { ac, out, t, i, s (0-15), bar, st (sahneye özel durum), night (0..1), spb (adım süresi, sn) }
 // Sahne kimlikleri: lobby, jazz, lounge, park, beach, house, home, arcade, pop
-import { bass, bell, brush, clap, hat, kick, keys, mallet, mtof, musicBox, noise, noiseLayer, pad, pick, pluck, rnd, tone } from './synth'
+import { bass, bell, clap, hat, kick, keys, mallet, mtof, musicBox, noise, noiseLayer, pad, pluck, rnd, tone } from './synth'
 
 const N = mtof
 const chance = (p) => Math.random() < p

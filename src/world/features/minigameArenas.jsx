@@ -471,8 +471,12 @@ function nextOrder(rng, count) {
 }
 
 export function BaristaArena({ seed, onFinish, onExit }) {
-  const rngRef = useRef(makeRng(seed))
-  const [order, setOrder] = useState(() => nextOrder(rngRef.current, 0))
+  const [init] = useState(() => {
+    const r = makeRng(seed)
+    return { rng: r, firstOrder: nextOrder(r, 0) }
+  })
+  const rngRef = useRef(init.rng)
+  const [order, setOrder] = useState(init.firstOrder)
   const [cup, setCup] = useState([])
   const [score, setScore] = useState(0)
   const [streak, setStreak] = useState(0)

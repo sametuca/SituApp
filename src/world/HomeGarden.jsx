@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Html, RoundedBox } from '@react-three/drei'
-import { CanvasTexture, RepeatWrapping, SRGBColorSpace } from 'three'
+import { CanvasTexture, Object3D, RepeatWrapping, SRGBColorSpace } from 'three'
 import { HOME_ROOM } from './layout'
 import Prop from './Prop'
 import { CROP_BY_ID, LAND_TIERS, MAX_LAND_TIER, clampLandTier, cropProgress, gardenPlots } from './homeGarden'
@@ -106,15 +106,42 @@ function GardenButterflies({ cx, gw, gd }) {
   )
 }
 
-/** Gerçek kazıklı beyaz ahşap bahçe çiti (düz duvar yerine çıtalı ve yuvarlak direkli). */
+/** Gerçek kazıklı beyaz ahşap bahçe çiti (tek InstancedMesh ile 45+ çıta 1 draw-call). */
 function PicketFence({ x0, x1, z0, z1 }) {
   const lenX = x1 - x0
   const lenZ = z1 - z0
   const countX = Math.max(4, Math.floor(lenX / 0.42))
   const countZ = Math.max(6, Math.floor(lenZ / 0.42))
+  const totalPickets = countX * 2 + countZ
+  const picketsRef = useRef()
+
+  useEffect(() => {
+    const mesh = picketsRef.current
+    if (!mesh) return
+    const dummy = new Object3D()
+    let idx = 0
+    for (const z of [z0, z1]) {
+      for (let i = 0; i < countX; i++) {
+        const px = x0 + 0.22 + (i / (countX - 1)) * (lenX - 0.44)
+        dummy.position.set(px, 0.34, z)
+        dummy.rotation.set(0, 0, 0)
+        dummy.updateMatrix()
+        mesh.setMatrixAt(idx++, dummy.matrix)
+      }
+    }
+    for (let i = 0; i < countZ; i++) {
+      const pz = z0 + 0.22 + (i / (countZ - 1)) * (lenZ - 0.44)
+      dummy.position.set(x1, 0.34, pz)
+      dummy.rotation.set(0, Math.PI / 2, 0)
+      dummy.updateMatrix()
+      mesh.setMatrixAt(idx++, dummy.matrix)
+    }
+    mesh.instanceMatrix.needsUpdate = true
+  }, [x0, x1, z0, z1, lenX, lenZ, countX, countZ])
+
   return (
     <group>
-      {/* Kuzey ve güney çit rayları + çıtalar */}
+      {/* Kuzey ve güney çit rayları */}
       {[z0, z1].map((z) => (
         <group key={z}>
           <mesh position={[(x0 + x1) / 2, 0.24, z]} castShadow>
@@ -125,17 +152,9 @@ function PicketFence({ x0, x1, z0, z1 }) {
             <boxGeometry args={[lenX, 0.06, 0.06]} />
             <meshStandardMaterial color="#fff6ea" roughness={0.6} />
           </mesh>
-          {Array.from({ length: countX }, (_, i) => {
-            const px = x0 + 0.22 + (i / (countX - 1)) * (lenX - 0.44)
-            return (
-              <RoundedBox key={i} args={[0.14, 0.66, 0.05]} radius={0.02} smoothness={2} position={[px, 0.34, z]} castShadow>
-                <meshStandardMaterial color="#fffaf2" roughness={0.55} />
-              </RoundedBox>
-            )
-          })}
         </group>
       ))}
-      {/* Doğu çiti */}
+      {/* Doğu çit rayları */}
       <mesh position={[x1, 0.24, 0]} castShadow>
         <boxGeometry args={[0.06, 0.06, lenZ]} />
         <meshStandardMaterial color="#fff6ea" roughness={0.6} />
@@ -144,14 +163,11 @@ function PicketFence({ x0, x1, z0, z1 }) {
         <boxGeometry args={[0.06, 0.06, lenZ]} />
         <meshStandardMaterial color="#fff6ea" roughness={0.6} />
       </mesh>
-      {Array.from({ length: countZ }, (_, i) => {
-        const pz = z0 + 0.22 + (i / (countZ - 1)) * (lenZ - 0.44)
-        return (
-          <RoundedBox key={i} args={[0.05, 0.66, 0.14]} radius={0.02} smoothness={2} position={[x1, 0.34, pz]} castShadow>
-            <meshStandardMaterial color="#fffaf2" roughness={0.55} />
-          </RoundedBox>
-        )
-      })}
+      {/* Tüm çit çıtaları tek InstancedMesh'te */}
+      <instancedMesh ref={picketsRef} args={[null, null, totalPickets]} castShadow>
+        <boxGeometry args={[0.14, 0.66, 0.05]} />
+        <meshStandardMaterial color="#fffaf2" roughness={0.55} />
+      </instancedMesh>
       {/* Köşe direkleri + altın topuz */}
       {[
         [x0, z0],

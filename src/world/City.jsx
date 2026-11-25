@@ -12,7 +12,7 @@ import Plants from './Plants'
 import { Em } from '../components/emoji'
 import { SKY_MATS, skyLive } from './Sky'
 import { worldClock } from './worldClock'
-import { getPuffySandPair, getPuffyShinglePair, getWallPair } from './pastelTex'
+import { getPuffyPaverPair, getPuffySandPair, getPuffyShinglePair, getWallPair } from './pastelTex'
 
 const FACING = { s: 0, n: Math.PI, e: Math.PI / 2, w: -Math.PI / 2 }
 
@@ -211,7 +211,8 @@ function Flat({ x = 0, z = 0, w, d, y, color = '#ffffff', round, tex, feather = 
   const loaded = useLoader(TextureLoader, `/textures/${tex ?? 'grass'}.webp`)
   const isAsphalt = tex === 'asphalt'
   const isSand = tex === 'sand'
-  const pair = isAsphalt ? getAsphaltPair() : isSand ? getPuffySandPair() : null
+  const isCobble = tex === 'cobble'
+  const pair = isAsphalt ? getAsphaltPair() : isSand ? getPuffySandPair() : isCobble ? getPuffyPaverPair() : null
   const base = pair ? pair.map : loaded
   const { map, bumpMap } = useMemo(() => {
     if (!tex) return { map: null, bumpMap: null }
@@ -234,7 +235,7 @@ function Flat({ x = 0, z = 0, w, d, y, color = '#ffffff', round, tex, feather = 
   return (
     <mesh position={[x, y, z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow renderOrder={alpha ? 1 : 0}>
       {round ? <circleGeometry args={[round, 64]} /> : <planeGeometry args={[w, d]} />}
-      <meshStandardMaterial color={color} map={map} bumpMap={bumpMap} bumpScale={isAsphalt ? 0.032 : isSand ? 0.025 : 0} alphaMap={alpha} transparent={Boolean(alpha)} depthWrite={!alpha} roughness={isAsphalt ? 0.84 : isSand ? 0.78 : 0.92} />
+      <meshStandardMaterial color={color} map={map} bumpMap={bumpMap} bumpScale={isAsphalt ? 0.032 : isSand ? 0.025 : isCobble ? 0.02 : 0} alphaMap={alpha} transparent={Boolean(alpha)} depthWrite={!alpha} roughness={isAsphalt ? 0.84 : isSand ? 0.78 : isCobble ? 0.85 : 0.92} />
     </mesh>
   )
 }
@@ -243,20 +244,22 @@ function Flat({ x = 0, z = 0, w, d, y, color = '#ffffff', round, tex, feather = 
 function TexRing({ r0, r1, y, tex, color = '#ffffff' }) {
   const loaded = useLoader(TextureLoader, `/textures/${tex}.webp`)
   const isAsphalt = tex === 'asphalt'
-  const base = isAsphalt ? getAsphaltPair().map : loaded
+  const isCobble = tex === 'cobble'
+  const pair = isAsphalt ? getAsphaltPair() : isCobble ? getPuffyPaverPair() : null
+  const base = pair ? pair.map : loaded
   const { map, bumpMap } = useMemo(() => {
     const m = GROUND_TEX[tex]
     const rep = Math.round(((r1 * 2) / m) * 10) / 10
     const setup = (t) => t.repeat.set(rep, rep)
     return {
       map: sharedTexture(base, `ring${rep}`, setup),
-      bumpMap: isAsphalt ? sharedTexture(getAsphaltPair().bump, `bring${rep}`, setup) : null,
+      bumpMap: pair ? sharedTexture(pair.bump, `bring${rep}`, setup) : null,
     }
-  }, [base, isAsphalt, tex, r1])
+  }, [base, pair, tex, r1])
   return (
     <mesh position={[0, y, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
       <ringGeometry args={[r0, r1, 96]} />
-      <meshStandardMaterial color={color} map={map} bumpMap={bumpMap} bumpScale={bumpMap ? 0.032 : 0} roughness={isAsphalt ? 0.84 : 0.95} />
+      <meshStandardMaterial color={color} map={map} bumpMap={bumpMap} bumpScale={isAsphalt ? 0.032 : isCobble ? 0.02 : 0} roughness={isAsphalt ? 0.84 : isCobble ? 0.85 : 0.95} />
     </mesh>
   )
 }
@@ -282,6 +285,7 @@ function splitLabel(text) {
 // Modern harita pini: renkli halkalı yuvarlak rozet + 3D ikon + sivri uç; yakında ad etiketi açılır.
 function Label({ text, y, x, z, zOff = 0, focusRef, accent = '#fdbb63' }) {
   const [mode, setMode] = useState(2) // 0 gizli, 1 yalnız rozet, 2 rozet + ad
+  const modeRef = useRef(2)
   const clock = useRef(0)
   useFrame(({ camera }, dt) => {
     clock.current += dt
@@ -291,7 +295,11 @@ function Label({ text, y, x, z, zOff = 0, focusRef, accent = '#fdbb63' }) {
     const dist = Math.hypot(f.x - x, f.z - z)
     // kameraya çok yakın pin (distanceFactor yüzünden) dev boyuna çıkmasın
     const camDist = Math.hypot(camera.position.x - x, camera.position.y - y, camera.position.z - z)
-    setMode(dist > LABEL_RANGE || camDist < 15 ? 0 : dist > LABEL_NAME_RANGE ? 1 : 2)
+    const next = dist > LABEL_RANGE || camDist < 15 ? 0 : dist > LABEL_NAME_RANGE ? 1 : 2
+    if (next !== modeRef.current) {
+      modeRef.current = next
+      setMode(next)
+    }
   })
   if (mode === 0) return null
   const { icon, name } = splitLabel(text)

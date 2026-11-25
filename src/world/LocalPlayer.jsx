@@ -37,11 +37,17 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
   const placed = useRef(false)
   const riding = useRiding()
   const movingRef = useRef(false)
-  // duruş: oturma/dans (together) ya da bisiklet; AvatarRig her karede .current okur
+  const velRef = useRef({ x: 0, z: 0 })
+  const bikePoseRef = useRef({ ...BIKE_POSE, moving: false })
+  // duruş: oturma/dans (together) ya da bisiklet; AvatarRig her karede .current okur (sıfır bellek tahsisi)
   const pose = useMemo(
     () => ({
       get current() {
-        return bike.on ? { ...BIKE_POSE, moving: movingRef.current } : together.self.current ?? work.self.current
+        if (bike.on) {
+          bikePoseRef.current.moving = movingRef.current
+          return bikePoseRef.current
+        }
+        return together.self.current ?? work.self.current
       },
     }),
     [],
@@ -94,6 +100,8 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
     if (f.teleport) {
       const [tx, tz, tr] = f.teleport
       f.teleport = null
+      velRef.current.x = 0
+      velRef.current.z = 0
       placeAt(tx, tz)
       if (tr !== undefined) g.rotation.y = tr
     }
@@ -134,6 +142,9 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
       g.rotation.y += diff * Math.min(1, dt * 7)
     }
 
+    const stepDt = Math.min(dt, 0.1)
+    let targetVx = 0
+    let targetVz = 0
     if (moving) {
       const { fwd, right, dir, up } = v
       camera.getWorldDirection(fwd)
@@ -144,20 +155,38 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
 
       const boost = Date.now() < speedBoost.until ? 1.55 : 1
       const baseSpeed = bike.on ? (running ? 7.2 : BIKE_SPEED) : running ? RUN_SPEED : WALK_SPEED
-      const speed = baseSpeed * boost * (bike.on ? Math.max(0.65, analog) : analog) * Math.min(dt, 0.1)
-      const [nx, nz] = collide(g.position.x + dir.x * speed, g.position.z + dir.z * speed)
-      const dx = nx - g.position.x
-      const dz = nz - g.position.z
-      g.position.x = nx
-      g.position.z = nz
-      camera.position.x += dx
-      camera.position.z += dz
-      controlsRef.current?.target.set(nx, 0.8, nz)
+      const speed = baseSpeed * boost * (bike.on ? Math.max(0.65, analog) : analog)
+      targetVx = dir.x * speed
+      targetVz = dir.z * speed
 
       // yüzünü yürüdüğü yöne çevir (model +Z'ye bakar)
       const target = Math.atan2(dir.x, dir.z)
       const diff = MathUtils.euclideanModulo(target - g.rotation.y + Math.PI, Math.PI * 2) - Math.PI
-      g.rotation.y += diff * Math.min(1, dt * 12)
+      g.rotation.y += diff * Math.min(1, stepDt * 12)
+    }
+
+    // Yumuşak ivmelenme ve duruş ataleti (anlık sıçrama yerine akıcı yürüyüş/bisiklet hissi)
+    const vel = velRef.current
+    if (posed) {
+      vel.x = 0
+      vel.z = 0
+    } else {
+      const accel = moving ? (bike.on ? 10 : 16) : bike.on ? 11 : 20
+      const kVel = Math.min(1, stepDt * accel)
+      vel.x = MathUtils.lerp(vel.x, targetVx, kVel)
+      vel.z = MathUtils.lerp(vel.z, targetVz, kVel)
+      if (Math.abs(vel.x) < 0.03 && !moving) vel.x = 0
+      if (Math.abs(vel.z) < 0.03 && !moving) vel.z = 0
+      if (vel.x !== 0 || vel.z !== 0) {
+        const [nx, nz] = collide(g.position.x + vel.x * stepDt, g.position.z + vel.z * stepDt)
+        const dx = nx - g.position.x
+        const dz = nz - g.position.z
+        g.position.x = nx
+        g.position.z = nz
+        camera.position.x += dx
+        camera.position.z += dz
+        controlsRef.current?.target.set(nx, 0.8, nz)
+      }
     }
 
     const next = bike.on ? 'ride' : moving ? (running ? 'run' : 'walk') : 'idle'

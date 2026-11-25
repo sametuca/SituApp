@@ -305,6 +305,74 @@ export function getPuffySandPair() {
   })
 }
 
+/** Temiz, sıcak krem/kumtaşı pofuduk taş karo (kaldırım ve meydan zemini — karmaşık pembe kaldırım yerine). */
+export function getPuffyPaverPair() {
+  return makePair('puffy_paver', (g, bg, N) => {
+    // yumuşak sıcak harç zemini
+    g.fillStyle = '#ddd2c6'
+    g.fillRect(0, 0, N, N)
+    bg.fillStyle = '#4c4c4c'
+    bg.fillRect(0, 0, N, N)
+
+    const rows = 4
+    const cols = 4
+    const rh = N / rows
+    const cw = N / cols
+    const pad = 5
+    const rad = 14
+    const r = rng(6619)
+    const tones = [
+      ['#fffaf2', '#f3e7d8'],
+      ['#fdf6ec', '#efe2d2'],
+      ['#faf2e8', '#eadcc9'],
+      ['#fffcf6', '#f4eadc'],
+    ]
+
+    for (let row = 0; row < rows; row++) {
+      const shift = (row % 2) * (cw * 0.5)
+      for (let col = -1; col <= cols; col++) {
+        const x = col * cw + shift + pad
+        const y = row * rh + pad
+        const w = cw - pad * 2
+        const h = rh - pad * 2
+        const [cTop, cBot] = tones[Math.floor(r() * tones.length)]
+
+        const gr = g.createLinearGradient(x, y, x, y + h)
+        gr.addColorStop(0, cTop)
+        gr.addColorStop(0.65, '#faf3ea')
+        gr.addColorStop(1, cBot)
+        g.fillStyle = gr
+        roundRect(g, x, y, w, h, rad)
+        g.fill()
+
+        // hafif üst parlaklık kenarı
+        g.fillStyle = 'rgba(255,255,255,0.45)'
+        roundRect(g, x + 6, y + 4, w - 12, h * 0.22, rad * 0.55)
+        g.fill()
+
+        // kabartma: ortası düz-şişkin karo, kenarlar yumuşak derz
+        const bgr = bg.createRadialGradient(x + w * 0.5, y + h * 0.5, 6, x + w * 0.5, y + h * 0.5, Math.max(w, h) * 0.68)
+        bgr.addColorStop(0, '#f2f2f2')
+        bgr.addColorStop(0.78, '#dcdcdc')
+        bgr.addColorStop(1, '#7a7a7a')
+        bg.fillStyle = bgr
+        roundRect(bg, x, y, w, h, rad)
+        bg.fill()
+      }
+    }
+
+    // ince terrazzo taş benekleri (doğal ama göz yormayan doku)
+    for (let i = 0; i < 650; i++) {
+      const x = r() * N
+      const y = r() * N
+      g.fillStyle = r() > 0.5 ? 'rgba(255,255,255,0.38)' : 'rgba(182,162,142,0.16)'
+      g.beginPath()
+      g.arc(x, y, 1 + r() * 1.5, 0, Math.PI * 2)
+      g.fill()
+    }
+  })
+}
+
 export function getWallPair(tex) {
   if (tex === 'siding') return getPuffySidingPair()
   if (tex === 'brick') return getPuffyBrickPair()

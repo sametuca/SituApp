@@ -323,8 +323,13 @@ export function Minimap({ focusRef, remotes, compact }) {
 
   useEffect(() => {
     const onOpen = () => setBig(true)
+    const onToggle = () => setBig((b) => !b)
     window.addEventListener('situapp:open-map', onOpen)
-    return () => window.removeEventListener('situapp:open-map', onOpen)
+    window.addEventListener('situapp:toggle-map', onToggle)
+    return () => {
+      window.removeEventListener('situapp:open-map', onOpen)
+      window.removeEventListener('situapp:toggle-map', onToggle)
+    }
   }, [])
 
   const travel = (z) => {
