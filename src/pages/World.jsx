@@ -676,7 +676,7 @@ function WorldScene({ avatar }) {
   const enterVenueRef = useRef(() => {})
   const tutActionRef = useRef(null)
   useEffect(() => {
-    nearDoorRef.current = nearDoor && !fade
+    nearDoorRef.current = nearDoor && !fade && !(inTutorial && tutStep !== 'exit') // eğitim bitmeden havalimanından çıkılmaz
     doorGoRef.current = doorGo
     nearVenueRef.current = !fade && !home && !venue && !nearDoor ? nearVenue : null
     enterVenueRef.current = enterVenue
@@ -1042,7 +1042,7 @@ function WorldScene({ avatar }) {
           onClose={stopEditing}
         />
       )}
-      {nearDoor && !chatTarget && !fade && (
+      {nearDoor && !(inTutorial && tutStep !== 'exit') && !chatTarget && !fade && (
         <DoorPrompt emoji={home || venue ? '🚪' : '🏠'} label={home || venue ? 'Dışarı çık' : 'Evine gir'} action={home || venue ? 'Çık' : 'Gir'} touch={touch} raised={Boolean(nearPeer || editing)} onGo={doorGo} />
       )}
       {!home && !venue && !nearDoor && nearVenue && !chatTarget && !fade && !editing && (
