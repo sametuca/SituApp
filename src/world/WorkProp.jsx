@@ -6,6 +6,7 @@ import { Color, MathUtils, Quaternion, Vector3 } from 'three'
 import { fishArm } from './avatarPose'
 import FishModel from './FishModel'
 import { FISH_CAST_DIST, PARCEL_KINDS } from './jobsData'
+import { PIER } from './layout'
 
 const HAND = new Vector3(-0.05, 0.8, 0.26) // iki elin ortası (avatar yerel)
 const ROD_LEN = 1.55
@@ -81,6 +82,8 @@ function Inner({ pose }) {
   const [parcelKind, setParcelKind] = useState('box')
   const tip = useMemo(() => new Vector3(), [])
   const tgt = useMemo(() => new Vector3(0, WATER_Y, FISH_CAST_DIST), [])
+  const anchor = useRef() // avatar çerçevesinin başlangıcı: dünya konumu/yüksekliği için
+  const wpos = useMemo(() => new Vector3(), [])
   const tmp = useMemo(() => new Vector3(), [])
   const splashAt = useRef(-9)
   const lastPhase = useRef(null)
@@ -119,6 +122,15 @@ function Inner({ pose }) {
     }
     if (!fishing) return
 
+    // olta ucu her zaman SUYA düşsün: iskelede iken iskelenin ucunun ötesine, yerden/iskeleden suya olan yüksekliğe göre
+    if (anchor.current) {
+      anchor.current.getWorldPosition(wpos)
+      const onPier = Math.abs(wpos.x - PIER.x) <= PIER.hw + 0.6 && wpos.z >= PIER.z0 - 0.5
+      tgt.z = onPier ? Math.max(3.2, Math.min(10.5, PIER.z1 + 2.2 - wpos.z)) : FISH_CAST_DIST
+      tgt.y = WATER_Y - wpos.y
+    }
+    const wy = tgt.y // suyun bu avatara göre yüksekliği
+
     const t = now - p.t0
     const phase = p.phase ?? 'wait'
     if (p.fish !== fishId) setFishId(p.fish ?? null)
@@ -145,9 +157,9 @@ function Inner({ pose }) {
         if (k >= 1 && splashAt.current < 0) splashAt.current = now
       }
     } else if (phase === 'wait') {
-      b.position.set(tgt.x, WATER_Y + 0.03 + Math.sin(now * 2.2) * 0.012, tgt.z)
+      b.position.set(tgt.x, wy + 0.03 + Math.sin(now * 2.2) * 0.012, tgt.z)
     } else if (phase === 'bite') {
-      b.position.set(tgt.x + Math.sin(now * 18) * 0.015, WATER_Y - 0.02 - Math.abs(Math.sin(now * 13)) * 0.09, tgt.z)
+      b.position.set(tgt.x + Math.sin(now * 18) * 0.015, wy - 0.02 - Math.abs(Math.sin(now * 13)) * 0.09, tgt.z)
     } else if (phase === 'reel') {
       const k = MathUtils.clamp(t / 0.7, 0, 1)
       b.position.lerpVectors(tgt, tip, ease(k))
@@ -174,7 +186,7 @@ function Inner({ pose }) {
       r.visible = water
       if (!water) return
       const ph = (now * rate + i / 3) % 1
-      r.position.set(tgt.x, WATER_Y + 0.012, tgt.z)
+      r.position.set(tgt.x, wy + 0.012, tgt.z)
       r.scale.setScalar(0.1 + ph * (phase === 'bite' ? 0.9 : 0.6))
       r.material.opacity = (1 - ph) * (phase === 'bite' ? 0.7 : 0.4)
     })
@@ -187,7 +199,7 @@ function Inner({ pose }) {
       if (!live) return
       const ang = i * 1.05
       const sp = 0.35 + (i % 3) * 0.12
-      d.position.set(tgt.x + Math.cos(ang) * sp * age * 1.4, WATER_Y + sp * 2.4 * age - 3.4 * age * age, tgt.z + Math.sin(ang) * sp * age * 1.4)
+      d.position.set(tgt.x + Math.cos(ang) * sp * age * 1.4, wy + sp * 2.4 * age - 3.4 * age * age, tgt.z + Math.sin(ang) * sp * age * 1.4)
       d.scale.setScalar(1 - age / 0.7)
     })
     void state
@@ -199,6 +211,7 @@ function Inner({ pose }) {
 
   return (
     <>
+      <group ref={anchor} />
       {/* olta */}
       <group ref={rod} visible={false}>
         <mesh position={[0, ROD_LEN / 2, 0]}>
