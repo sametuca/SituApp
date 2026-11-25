@@ -317,7 +317,7 @@ export function useDj(ctx) {
   // oynatıcı çalarken ortam müziğini kıs
   const playing = inClub && Boolean(d?.now?.track) && !muted
   useEffect(() => {
-    window.dispatchEvent(new CustomEvent('situapp:duck', { detail: playing }))
+    window.dispatchEvent(new CustomEvent('situapp:duck', { detail: playing ? 'mute' : false })) // DJ çalarken oyunun kendi müziği susar (iki müzik üst üste binmesin)
     return () => window.dispatchEvent(new CustomEvent('situapp:duck', { detail: false }))
   }, [playing])
 

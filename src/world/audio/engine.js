@@ -15,7 +15,7 @@ let unlockInstalled = false
 const settingSubs = new Set()
 const readySubs = new Set()
 const lastPlay = new Map()
-let duckOn = false
+let duckOn = false // false | true (kıs) | 'mute' (DJ oynatıcısı çalarken ortam müziği tamamen susar)
 
 function load() {
   try {
@@ -59,7 +59,7 @@ function applyGains() {
   buses.master.gain.setTargetAtTime(hidden || settings.muted ? 0 : 1, now, 0.05)
   buses.music.gain.setTargetAtTime(vol(settings.music) * MUSIC_BASE, now, 0.08)
   buses.sfx.gain.setTargetAtTime(vol(settings.sfx) * SFX_BASE, now, 0.05)
-  buses.duck.gain.setTargetAtTime(duckOn ? 0.3 : 1, now, 0.25)
+  buses.duck.gain.setTargetAtTime(duckOn === 'mute' ? 0.0001 : duckOn ? 0.3 : 1, now, 0.25)
 }
 
 function onVisibility() {
@@ -142,7 +142,7 @@ export function subscribeSettings(fn) {
 
 /** Sesli mesaj vb. çalarken müziği kıs. */
 export function duck(on) {
-  duckOn = Boolean(on)
+  duckOn = on === 'mute' ? 'mute' : Boolean(on)
   applyGains()
 }
 

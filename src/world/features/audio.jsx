@@ -175,7 +175,7 @@ export function useAudio({ net, focusRef, home, panel }) {
       if (typeof d === 'string') play(d)
       else if (d && typeof d.name === 'string') play(d.name, d)
     }
-    const onDuck = (e) => duck(Boolean(e.detail))
+    const onDuck = (e) => duck(e.detail === 'mute' ? 'mute' : Boolean(e.detail))
     const onClick = (e) => {
       const el = e.target?.closest?.('button, a, [role="button"]')
       if (el && !el.closest('[data-nosfx]') && !el.disabled) play('click', { gain: 0.8 })

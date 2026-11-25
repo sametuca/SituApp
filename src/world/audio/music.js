@@ -374,6 +374,7 @@ export function createMusic(ac, out) {
   let shoreStop = null
   const mood = { night: 0, rain: false, outdoor: true }
   let cur = null
+  let lastSwitch = -99
   let timer = null
   let rainStop = null
   const cr = { next: 0 }
@@ -437,6 +438,9 @@ export function createMusic(ac, out) {
     setScene(id, { outdoor } = {}) {
       if (outdoor !== undefined && outdoor !== mood.outdoor) mood.outdoor = outdoor
       if (cur?.id === id) return
+      // bölge sınırında gidip gelirken sahneler üst üste binmesin: en az 6 sn aralık (sonraki yoklamada yeniden denenir)
+      if (cur && ac.currentTime - lastSwitch < 6) return
+      lastSwitch = ac.currentTime
       if (cur) retire(cur)
       startScene(id)
     },
