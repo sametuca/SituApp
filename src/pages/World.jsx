@@ -1,4 +1,5 @@
 import { Component, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { DockSlot } from '../components/Dock'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, useProgress } from '@react-three/drei'
@@ -982,6 +983,7 @@ function WorldScene({ avatar }) {
           <HintBar />
         </>
       ))}
+      <DockSlot />
       {!introActive && !editing && !chatTarget && !interactPeer && (
         <>
           <SkillBar xp={feat.xp} cooldowns={skillCd} onSkill={triggerSkill} onOpenExp={() => setPanel('collection')} touch={touch} />

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Dock } from '../../components/Dock'
 import { Modal } from '../Hud'
 import { PhotoSection } from './photoUpload'
 import { Ico, TagIcon } from '../../components/Icon'
@@ -353,7 +354,7 @@ export function useProfile({ net, say, panel, setPanel, home }) {
         />
       )}
       {nudge && !panel && !home && (
-        <div className={`pointer-events-auto absolute inset-x-3 bottom-[9.5rem] z-20 mx-auto flex max-w-sm animate-pop flex-col gap-2 rounded-3xl p-4 ${glass}`} role="status">
+        <Dock><div className="pointer-events-auto relative mx-auto flex w-full max-w-sm animate-pop flex-col gap-2 rounded-3xl p-4 border-2 border-white bg-white/80 shadow-soft backdrop-blur-md" role="status">
           <p className="text-base font-black text-[#4a3b5c]">Profilini tamamla 💗</p>
           <p className="text-xs font-semibold text-[#8a7a9c]">Kısa bir tanıtım ve ilgi alanları ekle; ortak ilgileri olanlar seni daha kolay bulur.</p>
           <div className="flex gap-2">
@@ -370,7 +371,7 @@ export function useProfile({ net, say, panel, setPanel, home }) {
               Sonra
             </button>
           </div>
-        </div>
+        </div></Dock>
       )}
       {first && (
         <div className={`absolute left-1/2 top-24 z-20 flex w-[min(92vw,22rem)] -translate-x-1/2 animate-pop flex-col gap-2 rounded-3xl p-4 ${glass}`} role="dialog" aria-label="Buz kırıcı">

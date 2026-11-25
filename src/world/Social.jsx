@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Dock } from '../components/Dock'
 import { Ico } from '../components/Icon'
 import { ToyButton } from '../components/ui'
 import { MicButton, StickerBubble, StickerPanel, VoiceBubble } from './features/media'
@@ -92,10 +93,7 @@ export function Joystick({ inputRef }) {
 // ---------- yakındaki oyuncu kartı ----------
 export function NearbyCard({ peer, touch, onChat, onInteract, onDismiss }) {
   return (
-    <div
-      className={`pointer-events-auto absolute left-1/2 z-20 w-[min(94vw,24rem)] -translate-x-1/2 animate-pop ${touch ? 'bottom-[9.25rem]' : 'bottom-[9.5rem]'}`}
-      role="status"
-    >
+    <Dock><div className="pointer-events-auto relative w-[min(94vw,24rem)] animate-pop" role="status">
       <div className={`flex items-center gap-3 rounded-3xl p-2.5 pr-3 ${glass}`}>
         <Portrait peer={peer} size={44} className="h-11 w-11" />
         <div className="min-w-0 flex-1">
@@ -116,17 +114,14 @@ export function NearbyCard({ peer, touch, onChat, onInteract, onDismiss }) {
           ✕
         </button>
       </div>
-    </div>
+    </div></Dock>
   )
 }
 
 // ---------- kapı ("Eve gir" / "Dışarı çık" / etkileşim istemi — SkillBar'ın hemen üstünde) ----------
 export function DoorPrompt({ emoji, label, action, touch, raised, onGo }) {
   return (
-    <div
-      className={`pointer-events-auto absolute left-1/2 z-20 w-[min(92vw,21rem)] -translate-x-1/2 animate-pop ${touch ? (raised ? 'bottom-[13.5rem]' : 'bottom-[9.25rem]') : raised ? 'bottom-[14rem]' : 'bottom-[9.5rem]'}`}
-      role="status"
-    >
+    <Dock><div className="pointer-events-auto relative w-[min(92vw,21rem)] animate-pop" role="status">
       <div className={`flex items-center gap-3 rounded-3xl p-2.5 pl-4 ${glass}`}>
         {emoji && (
           <span className="text-2xl" aria-hidden>
@@ -140,7 +135,7 @@ export function DoorPrompt({ emoji, label, action, touch, raised, onGo }) {
           </ToyButton>
         </div>
       </div>
-    </div>
+    </div></Dock>
   )
 }
 

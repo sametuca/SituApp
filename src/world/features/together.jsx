@@ -1,6 +1,7 @@
 // Birlikte yapılan şeyler: oturma, çift dans, fotoğraf kabini ve gün batımı anı.
 // Sunucu tarafı (oturma/dans): server/features/together.js. Fotoğraf ve gün batımı yalnızca istemcidedir.
 // 3D parçalar: TogetherScene.jsx (World.jsx Canvas'ında), duruş çizimi: avatarPose.js + AvatarRig.
+import { Dock } from '../../components/Dock'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ToyButton } from '../../components/ui'
 import { DoorPrompt } from '../Social'
@@ -104,7 +105,7 @@ function SunsetVeil() {
 
 function PhotoPrompt({ touch, raised, onShoot, onAlbum }) {
   return (
-    <div className={`pointer-events-auto absolute left-1/2 z-20 w-[min(92vw,21rem)] -translate-x-1/2 animate-pop ${touch ? (raised ? 'bottom-[17.5rem]' : 'bottom-[13rem]') : raised ? 'bottom-[12.25rem]' : 'bottom-[7.75rem]'}`} role="status">
+    <Dock><div className="pointer-events-auto relative w-[min(92vw,21rem)] animate-pop" role="status">
       <div className={`flex items-center gap-2 rounded-3xl p-2.5 pl-4 ${glass}`}>
         <span className="text-2xl" aria-hidden>
           📸
@@ -119,7 +120,7 @@ function PhotoPrompt({ touch, raised, onShoot, onAlbum }) {
           </ToyButton>
         </div>
       </div>
-    </div>
+    </div></Dock>
   )
 }
 
@@ -503,15 +504,12 @@ export function useTogether(ctx) {
         />
       )}
       {!busy && !atDoor && !selfPose && !seatOpt && fullSeat && (
-        <div
-          className={`pointer-events-none absolute left-1/2 z-20 w-[min(92vw,18rem)] -translate-x-1/2 animate-pop ${touch ? (nearAny ? 'bottom-[13.5rem]' : 'bottom-[9.25rem]') : nearAny ? 'bottom-[14rem]' : 'bottom-[9.5rem]'}`}
-          role="status"
-        >
+        <Dock><div className="pointer-events-none relative w-[min(92vw,18rem)] animate-pop" role="status">
           <div className={`flex items-center justify-center gap-2 rounded-3xl px-4 py-2.5 text-sm font-black text-[#8a7a9c] ${glass}`}>
             <span aria-hidden>{fullSeat === 'lounger' || fullSeat === 'towel' ? '🏖️' : '🪑'}</span>
             <span>Boş yer yok</span>
           </div>
-        </div>
+        </div></Dock>
       )}
       {!busy && !atDoor && !selfPose && !seatOpt && photoNear && <PhotoPrompt touch={touch} raised={nearAny} onShoot={startShoot} onAlbum={() => setPanel('photos')} />}
 
