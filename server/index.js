@@ -153,6 +153,8 @@ app.post('/api/assets/import', async (req, res) => {
 
 import { feedbackHandler } from './feedback.js'
 app.post('/api/feedback', feedbackHandler)
+import { consentHandler } from './consent.js'
+app.post('/api/consent', consentHandler)
 import { adminBan, adminHidePhoto, adminOverview, adminResolve } from './admin.js'
 app.get('/api/admin/overview', adminOverview)
 app.post('/api/admin/resolve', adminResolve)

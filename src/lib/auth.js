@@ -16,7 +16,7 @@ export class AuthError extends Error {}
 export const USERNAME_RE = /^[A-Za-z0-9_çğıöşüÇĞİÖŞÜ-]+$/
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
-export function validate({ mode, username, email, password, confirm, adult }) {
+export function validate({ mode, username, email, password, confirm, consent }) {
   const errors = {}
   if (mode === 'register') {
     const u = (username ?? '').trim()
@@ -27,7 +27,7 @@ export function validate({ mode, username, email, password, confirm, adult }) {
   if (mode === 'register') {
     if ((password ?? '').length < 8) errors.password = 'Şifre en az 8 karakter olmalı.'
     if (confirm !== password) errors.confirm = 'Şifreler eşleşmiyor.'
-    if (!adult) errors.adult = '18 yaşından büyük olmalısın.'
+    for (const k of ['terms', 'kvkk', 'transfer']) if (!consent?.[k]) errors[k] = 'Devam etmek için bu onay gerekli.'
   } else if (!password) {
     errors.password = 'Şifreni gir.'
   }
@@ -48,16 +48,16 @@ async function sha256(text) {
   return Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, '0')).join('')
 }
 
-const publicUser = (u) => ({ id: u.id, email: u.email, username: u.username })
+const publicUser = (u) => ({ id: u.id, email: u.email, username: u.username, consent: u.consent ?? null })
 
 const demo = {
-  async signUp({ email, password, username }) {
+  async signUp({ email, password, username, consentRecord }) {
     const users = readJSON(DEMO_USERS_KEY, [])
     const mail = email.trim().toLowerCase()
     if (users.some((u) => u.email === mail)) throw new AuthError('Bu e-posta ile zaten bir hesap var.')
     if (users.some((u) => u.username.toLowerCase() === username.trim().toLowerCase()))
       throw new AuthError('Bu kullanıcı adı alınmış.')
-    const user = { id: crypto.randomUUID(), email: mail, username: username.trim(), hash: await sha256(password) }
+    const user = { id: crypto.randomUUID(), email: mail, username: username.trim(), hash: await sha256(password), consent: consentRecord ?? null }
     localStorage.setItem(DEMO_USERS_KEY, JSON.stringify([...users, user]))
     localStorage.setItem(DEMO_SESSION_KEY, user.id)
     return { user: publicUser(user), needsConfirmation: false }
@@ -71,6 +71,13 @@ const demo = {
   },
   async signOut() {
     localStorage.removeItem(DEMO_SESSION_KEY)
+  },
+  async acceptConsent(record) {
+    const id = localStorage.getItem(DEMO_SESSION_KEY)
+    const users = readJSON(DEMO_USERS_KEY, [])
+    const next = users.map((u) => (u.id === id ? { ...u, consent: record } : u))
+    localStorage.setItem(DEMO_USERS_KEY, JSON.stringify(next))
+    return publicUser(next.find((u) => u.id === id))
   },
   async getUser() {
     const id = localStorage.getItem(DEMO_SESSION_KEY)
@@ -110,10 +117,10 @@ const toAuthError = (e) => {
   return new AuthError('Bir şeyler ters gitti, tekrar dene.')
 }
 
-const toUser = (u) => (u ? { id: u.id, email: u.email, username: u.user_metadata?.username ?? u.email.split('@')[0] } : null)
+const toUser = (u) => (u ? { id: u.id, email: u.email, username: u.user_metadata?.username ?? u.email.split('@')[0], consent: u.user_metadata?.consent ?? null } : null)
 
 const remote = {
-  async signUp({ email, password, username }) {
+  async signUp({ email, password, username, consentRecord }) {
     const name = username.trim()
     // kullanıcı adı boş mu? (sunucu tarafı RPC; tetikleyici yine de benzersizliği garanti eder)
     const { data: free, error: rpcErr } = await supabase.rpc('username_available', { p_name: name })
@@ -127,7 +134,7 @@ const remote = {
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { data: { username: name, avatar }, emailRedirectTo: window.location.origin },
+      options: { data: { username: name, avatar, consent: consentRecord ?? null }, emailRedirectTo: window.location.origin },
     })
     if (error) throw toAuthError(error)
     // e-posta zaten kayıtlıysa Supabase (kullanıcı sızdırmamak için) sahte bir kullanıcı döner: identities boş
@@ -142,6 +149,11 @@ const remote = {
   },
   async signOut() {
     await supabase.auth.signOut()
+  },
+  async acceptConsent(record) {
+    const { data, error } = await supabase.auth.updateUser({ data: { consent: record } })
+    if (error) throw toAuthError(error)
+    return toUser(data.user)
   },
   async getUser() {
     const { data } = await supabase.auth.getSession()
