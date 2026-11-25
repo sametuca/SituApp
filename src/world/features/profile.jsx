@@ -353,7 +353,7 @@ export function useProfile({ net, say, panel, setPanel, home }) {
         />
       )}
       {nudge && !panel && !home && (
-        <div className={`absolute inset-x-3 bottom-24 z-20 mx-auto flex max-w-sm animate-pop flex-col gap-2 rounded-3xl p-4 ${glass}`} role="status">
+        <div className={`pointer-events-auto absolute inset-x-3 bottom-[9.5rem] z-20 mx-auto flex max-w-sm animate-pop flex-col gap-2 rounded-3xl p-4 ${glass}`} role="status">
           <p className="text-base font-black text-[#4a3b5c]">Profilini tamamla 💗</p>
           <p className="text-xs font-semibold text-[#8a7a9c]">Kısa bir tanıtım ve ilgi alanları ekle; ortak ilgileri olanlar seni daha kolay bulur.</p>
           <div className="flex gap-2">

@@ -118,41 +118,37 @@ export function AirportTutorialHud({ step, near, touch, celebrate, onCollect, on
 
   return (
     <>
-      {/* üst görev kartı */}
-      <div className="pointer-events-auto absolute left-1/2 top-[5.25rem] z-10 w-[min(94vw,35rem)] -translate-x-1/2 animate-pop rounded-[2rem] border-2 border-white bg-white/95 px-6 py-5 shadow-toy backdrop-blur-md sm:top-[6.25rem]">
+      {/* sadeleştirilmiş görev kartı */}
+      <div className="pointer-events-auto absolute left-1/2 top-[5rem] z-10 w-[min(92vw,28rem)] -translate-x-1/2 animate-pop rounded-[1.75rem] border-2 border-white bg-white/95 px-5 py-4 shadow-toy backdrop-blur-md sm:top-[5.75rem]">
         <div className="flex items-center justify-between gap-2">
-          <span className="rounded-full bg-[#fff3c8] px-3.5 py-1.5 text-sm font-black text-[#8a5a00]">
-            🎓 Görev {idx + 1}/{STEPS.length}
-          </span>
           <div className="flex items-center gap-2">
-            {STEPS.map((s, i) => (
-              <span
-                key={s.id}
-                title={s.short}
-                className={`grid h-10 w-10 place-items-center rounded-full text-base font-black transition ${
-                  i < idx ? 'bg-[#b9ebcf] text-[#1f6b47]' : i === idx ? 'bg-[#a88bff] text-white ring-2 ring-[#d6c7ff]' : 'bg-[#f6f0ff] text-[#8a7a9c]'
-                }`}
-              >
-                {i < idx ? '✓' : s.emoji}
-              </span>
-            ))}
+            <span className="rounded-full bg-[#fff3c8] px-3 py-0.5 text-xs font-black text-[#8a5a00]">
+              Görev {idx + 1}/{STEPS.length}
+            </span>
+            <div className="flex items-center gap-1" aria-hidden>
+              {STEPS.map((s, i) => (
+                <span
+                  key={s.id}
+                  className={`h-2 rounded-full transition-all ${
+                    i < idx ? 'w-2 bg-[#7fd8a8]' : i === idx ? 'w-5 bg-[#a88bff]' : 'w-2 bg-[#e8dff8]'
+                  }`}
+                />
+              ))}
+            </div>
           </div>
-          <button onClick={onSkip} className="rounded-full px-3.5 py-1.5 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#ffedd6]/70">
+          <button onClick={onSkip} className="rounded-full px-2.5 py-0.5 text-xs font-extrabold text-[#8a7a9c] transition hover:bg-[#f6f0ff]">
             Atla ›
           </button>
         </div>
-        <div className="mt-3.5 h-2.5 overflow-hidden rounded-full bg-[#f1e6ff]">
-          <div className="h-full rounded-full bg-gradient-to-r from-[#fdb252] to-[#a88bff] transition-[width] duration-500" style={{ width: `${(idx / STEPS.length) * 100 + 8}%` }} />
-        </div>
 
-        <div className="mt-4 flex items-center gap-4">
-          <span className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-[#f6f0ff] text-4xl">{cur.emoji}</span>
+        <div className="mt-3 flex items-center gap-3.5">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#f6f0ff] text-2xl">{cur.emoji}</span>
           <div className="min-w-0 flex-1">
-            <p className="text-xl font-black leading-snug text-[#4a3b5c]">{cur.title}</p>
-            <p className="mt-1 text-base font-semibold text-[#8a7a9c]">{cur.hint}</p>
+            <p className="text-base font-black leading-snug text-[#4a3b5c] sm:text-lg">{cur.title}</p>
+            <p className="mt-0.5 text-xs font-semibold text-[#8a7a9c] sm:text-sm">{cur.hint}</p>
           </div>
           {step === 'wardrobe' ? (
-            <button onClick={onOpenWardrobe} className="shrink-0 rounded-2xl border-b-4 border-[#7a5fd0] bg-[#a88bff] px-5 py-3 text-base font-black text-white shadow-soft active:translate-y-[2px] active:border-b-2">
+            <button onClick={onOpenWardrobe} className="shrink-0 rounded-2xl border-b-4 border-[#7a5fd0] bg-[#a88bff] px-4 py-2 text-sm font-black text-white shadow-soft active:translate-y-[2px] active:border-b-2">
               👗 Aç
             </button>
           ) : null}
@@ -161,7 +157,7 @@ export function AirportTutorialHud({ step, near, touch, celebrate, onCollect, on
 
       {/* adım tamamlanınca mini konfeti kutlaması */}
       {celebrate && (
-        <div className="pointer-events-none absolute inset-x-0 top-[17.5rem] z-20 grid place-items-center" role="status">
+        <div className="pointer-events-none absolute inset-x-0 top-[13.5rem] z-20 grid place-items-center" role="status">
           <div className="relative animate-pop">
             {CONFETTI.map((p, i) => (
               <span

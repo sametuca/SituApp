@@ -541,9 +541,12 @@ export function useJobs({ net, focusRef, home, venue, atDoor, touch, say, panel 
         </div>
       )}
 
-      {/* Nazik, zorlamayan sahil balıkçılık daveti */}
+      {/* Nazik, zorlamayan sahil balıkçılık daveti — ortada, SkillBar'ın tam üstünde */}
       {inCity && nudge && !panel && !fishing && (
-        <div className={`pointer-events-auto absolute right-3 bottom-24 z-20 flex w-[min(92vw,19.5rem)] animate-pop flex-col gap-2 rounded-3xl p-3.5 ${glass}`}>
+        <div
+          className={`pointer-events-auto absolute left-1/2 z-20 flex w-[min(92vw,23rem)] -translate-x-1/2 animate-pop flex-col gap-2.5 rounded-3xl p-4 ${glass} ${touch ? 'bottom-[9.25rem]' : 'bottom-[9.5rem]'}`}
+          role="status"
+        >
           <div className="flex items-start gap-2.5">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-[#dff3ff]">
               <Ico name="fish" size={20} />

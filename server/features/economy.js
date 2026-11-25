@@ -10,7 +10,7 @@ import { istanbul } from './progress.js'
 // Altın hilesine karşı: (1) yalnızca sunucu verir; (2) neden başına ve toplam GÜNLÜK kazanç sınırı; (3) her işlem coins.log defterine yazılır;
 // (4) aynı IP'deki hesaplar birbirine PvP/voleybol ödülü kazandıramaz, aynı çift günde ≤ 3 ödül alır.
 const LOG = path.join(process.env.SITUAPP_DATA_DIR || path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data'), 'coins.log')
-const DAILY_CAP = { dj: 400, meetup: 60, voley: 90, kale: 50, pvp: 150, hosgeldin: 100, fish: 260, post: 260, surf: 300, job_crop: 260, job_fish: 260, job_post: 280, job_quest: 160 }
+const DAILY_CAP = { dj: 400, meetup: 60, voley: 90, kale: 50, pvp: 150, hosgeldin: 100, fish: 260, post: 260, surf: 300, minigame: 350, job_crop: 260, job_fish: 260, job_post: 280, job_quest: 160 }
 const DAILY_TOTAL = 1000
 
 const MAX_COINS = 1_000_000

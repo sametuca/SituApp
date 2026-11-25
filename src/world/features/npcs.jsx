@@ -332,6 +332,12 @@ export function useNpcs(ctx) {
       window.dispatchEvent(new CustomEvent('situapp:open-surf', { detail: { mode: o.action === 'open_surf_board' ? 'board' : 'lobby' } }))
       return
     }
+    if (typeof o.action === 'string' && o.action.startsWith('open_mg:')) {
+      const game = o.action.slice('open_mg:'.length)
+      setTalk(null)
+      window.dispatchEvent(new CustomEvent('situapp:open-mg', { detail: { game } }))
+      return
+    }
     setTalk((t) => (t ? { ...t, text: pick(o.reply) } : t))
   }
 

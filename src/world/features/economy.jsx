@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { Ico } from '../../components/Icon'
 
 const glass = 'border-2 border-white bg-white/75 shadow-soft backdrop-blur-md'
-const WHY = { dj: 'DJ kazancı', meetup: 'Buluşma', voley: 'Voleybol', kale: 'Kum kalesi', surf: 'Sörf yarışı', fish: 'Balıkçılık', post: 'Postacılık', job_crop: 'Pazar', job_fish: 'Pazar', job_post: 'Teslimat', job_quest: 'Meslek görevi', pet: '', ev: '', kira: '' }
+const WHY = { dj: 'DJ kazancı', meetup: 'Buluşma', voley: 'Voleybol', kale: 'Kum kalesi', surf: 'Sörf yarışı', minigame: 'Mini oyun', fish: 'Balıkçılık', post: 'Postacılık', job_crop: 'Pazar', job_fish: 'Pazar', job_post: 'Teslimat', job_quest: 'Meslek görevi', pet: '', ev: '', kira: '' }
 
 export function useEconomy({ net }) {
   const { on } = net

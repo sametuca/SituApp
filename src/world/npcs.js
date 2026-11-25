@@ -40,6 +40,7 @@ const CITY = [
       { id: 'balloon_blue', label: 'Mavi Balon', emoji: '🎈', price: 5, style: 'hold', color: '#7fcdf3', reply: 'Gökyüzü rengi balonun hazır! 🎈✨' },
     ],
     options: [
+      { label: '🎈 Balon Patlatma Oyunu', action: 'open_mg:balloon', reply: ['Parti şapkanı tak, bombalara dokunmadan balonları patlat! 🎈✨'] },
       { label: 'Öneri iste', reply: ['Çeşmenin başında buluşmak klasik ama hep işe yarar ⛲', 'Park çardağı akşamüstü çok romantik oluyor 🌳'] },
       { label: 'Hikâye anlat', reply: ['Bir balon uçup gitti, peşinden koşan çocuk bir de baktı ki yeni arkadaş edinmiş 🎈', 'Bir çift buluştuğunda iki balonun ipini birbirine bağlamıştı. Hâlâ birlikteler 💞'] },
     ],
@@ -68,6 +69,7 @@ const CITY = [
     route: { pts: [[-33, -7.5], [-27, -7.5]], mode: 'pingpong', speed: 0.7, pause: 4 },
     lines: ['Ağaçlar bu yıl çok güzel yeşerdi 🌳', 'Park banklarında iki kişi oturunca sohbet açılır 😉', 'Çardağın altı yaz sıcağında bir cennet 🌿', 'Çiçekleri sularken dünyayı unutuyorum 🌱'],
     options: [
+      { label: '🚲 Bisiklet Engel Yarışı', action: 'open_mg:bike', reply: ['Forma hazır! Park yolunda engellerden kaçıp hız şeritlerini yakala 🚲⚡'] },
       { label: 'Öneri iste', reply: ['Park banklarından birine otur, biri mutlaka yanına gelir 😉', 'Çardağın önü fotoğraf için güzel, ışığı yumuşak 📸'] },
       { label: 'Hikâye anlat', reply: ['Bir fidanı iki kişi birlikte dikmişti. Şimdi her yıl onun gölgesinde buluşuyorlar 🌳', 'Bu bank var ya, üç evliliğe şahit oldu. Söylemem ama… 🤫'] },
     ],
@@ -186,6 +188,15 @@ const venueNpcs = VENUES.filter((v) => v.npc).map((v) => ({
           { label: '🏄 Sörf Yarışına Katıl (2–10 kişi)', action: 'open_surf', reply: ['Sörf kıyafetin hazır! Dalgalardan kaç, en sona kalan kazanır! 🏄🌊'] },
           { label: '🏆 Sörf Puan Tablosu', action: 'open_surf_board', reply: ['İşte şehrin en iyi sörfçüleri! 🏆🌊'] },
         ]
+      : []),
+    ...(v.type === 'club'
+      ? [{ label: '🪩 Ritim & Dans Savaşı (2–10 kişi)', action: 'open_mg:rhythm', reply: ['Disko ışıkları açıldı! Ritimle notalara bas, pistin kralı ol 🪩✨'] }]
+      : []),
+    ...(v.type === 'arcade'
+      ? [{ label: '🎮 Renk Karosu — Düşmeden Kal!', action: 'open_mg:tiles', reply: ['Neon tulumun hazır! Söylenen renge koş, en sona kalan kazanır 🎮🔥'] }]
+      : []),
+    ...(v.type === 'cafe' || v.type === 'dessert'
+      ? [{ label: '☕ Barista Sipariş Yarışı', action: 'open_mg:barista', reply: ['Önlüğünü taktın! Müşteri siparişlerini katman katman en hızlı hazırla ☕🍰'] }]
       : []),
     ...(v.type === 'salon'
       ? [{ label: '👗 Gardırobu aç', action: 'open_wardrobe', reply: ['İşte ayna hazır! Saç, kıyafet ve aksesuarlarını dilediğin gibi seç ✨'] }]
