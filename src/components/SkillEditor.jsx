@@ -1,6 +1,5 @@
 // Beceri çubuğu düzenleyici: alttaki ifade paletinden üstteki 4 yuvaya SÜRÜKLE-BIRAK (dokunmatikte: önce ifadeye, sonra yuvaya dokun).
 import { useState } from 'react'
-import { Em } from './emoji'
 import { ToyButton } from './ui'
 import { DEFAULT_SLOTS, REACTIONS, REACTION_LABEL, skillFor } from '../world/interact'
 import { SlotIcon } from './SkillIcon'
@@ -63,7 +62,7 @@ export default function SkillEditor({ slots, onChange, onClose }) {
               title={REACTION_LABEL[emoji] ?? emoji}
               className={`grid h-12 w-full cursor-grab place-items-center rounded-2xl border-2 transition active:scale-90 ${picked === emoji ? 'border-[#a88bff] bg-[#f1eaff]' : slots.includes(emoji) ? 'border-[#e1d6f7] bg-[#f6f0ff]' : 'border-transparent bg-[#faf6ff]'}`}
             >
-              <Em e={emoji} size={28} />
+              <SlotIcon emoji={emoji} size={38} />
             </button>
           ))}
         </div>

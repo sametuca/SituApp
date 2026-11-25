@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { PencilSimple } from '@phosphor-icons/react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { PencilEdit02Icon } from '@hugeicons/core-free-icons'
 import { SlotIcon } from '../components/SkillIcon'
 import { TopDock } from '../components/Dock'
 import { Dock } from '../components/Dock'
@@ -201,17 +202,6 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch, slots =
         style={{ right: 'max(0.85rem, env(safe-area-inset-right))', bottom: 'max(1rem, env(safe-area-inset-bottom))' }}
         aria-label="Beceri ve deneyim çubuğu"
       >
-      {onEdit && (
-        <button
-          type="button"
-          onClick={onEdit}
-          aria-label="İfadeleri düzenle"
-          title="İfadeleri düzenle"
-          className="absolute -top-3 right-3 grid h-7 w-7 place-items-center rounded-full border-2 border-white bg-[#7a5fd0] text-white shadow-soft transition active:scale-90"
-        >
-          <PencilSimple size={14} weight="fill" />
-        </button>
-      )}
         <div className="grid grid-cols-4 gap-1.5">
           {slots.map((sk) => {
             const rem = Math.min(SKILL_COOLDOWN_MS, Math.max(0, (cooldowns[sk.id] ?? 0) - now))
@@ -242,11 +232,12 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch, slots =
             )
           })}
         </div>
+        <div className="flex items-center gap-1.5">
         <button
           type="button"
           onClick={onOpenExp}
           title="Koleksiyon ve seviye ilerlemesini aç"
-          className="flex items-center gap-1.5 rounded-2xl bg-[#faf6ff]/90 px-2 py-1 text-left active:scale-[0.99]"
+          className="flex min-w-0 flex-1 items-center gap-1.5 rounded-2xl bg-[#faf6ff]/90 px-2 py-1 text-left active:scale-[0.99]"
         >
           <span className="shrink-0 rounded-full bg-[#ffe48f] px-2 py-0.5 text-[10px] font-black text-[#7a5b00]">
             Sv.{lv.level}
@@ -258,6 +249,16 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch, slots =
             {lv.into}/{lv.span}
           </span>
         </button>
+        {onEdit && <button
+            type="button"
+            onClick={onEdit}
+            aria-label="İfadeleri düzenle"
+            title="İfadeleri düzenle"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[#efe7ff] text-[#6b4fc0] transition hover:bg-[#e3d6ff] active:scale-90"
+          >
+            <HugeiconsIcon icon={PencilEdit02Icon} size={16} strokeWidth={2} />
+          </button>}
+        </div>
       </div>
     )
   }
@@ -267,17 +268,6 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch, slots =
       className={`pointer-events-auto absolute bottom-3.5 left-1/2 z-10 flex w-[min(94vw,27rem)] -translate-x-1/2 flex-col gap-2 rounded-[1.75rem] px-3.5 py-2.5 ${glass}`}
       aria-label="Beceri ve deneyim çubuğu"
     >
-      {onEdit && (
-        <button
-          type="button"
-          onClick={onEdit}
-          aria-label="İfadeleri düzenle"
-          title="İfadeleri düzenle"
-          className="absolute -top-3 right-3 grid h-7 w-7 place-items-center rounded-full border-2 border-white bg-[#7a5fd0] text-white shadow-soft transition active:scale-90"
-        >
-          <PencilSimple size={14} weight="fill" />
-        </button>
-      )}
       <div className="grid grid-cols-4 gap-2">
         {slots.map((sk) => {
           const rem = Math.min(SKILL_COOLDOWN_MS, Math.max(0, (cooldowns[sk.id] ?? 0) - now))
@@ -315,11 +305,12 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch, slots =
           )
         })}
       </div>
+      <div className="flex items-center gap-2">
       <button
         type="button"
         onClick={onOpenExp}
         title="Koleksiyon ve seviye ilerlemesini aç"
-        className="flex items-center gap-2.5 rounded-2xl bg-[#faf6ff]/90 px-3 py-1.5 text-left transition hover:bg-white active:scale-[0.99]"
+        className="flex min-w-0 flex-1 items-center gap-2.5 rounded-2xl bg-[#faf6ff]/90 px-3 py-1.5 text-left transition hover:bg-white active:scale-[0.99]"
       >
         <span className="shrink-0 rounded-full bg-[#ffe48f] px-2.5 py-0.5 text-xs font-black text-[#7a5b00]">
           Sv. {lv.level}
@@ -331,6 +322,16 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch, slots =
           EXP {lv.into}/{lv.span}
         </span>
       </button>
+      {onEdit && <button
+            type="button"
+            onClick={onEdit}
+            aria-label="İfadeleri düzenle"
+            title="İfadeleri düzenle"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[#efe7ff] text-[#6b4fc0] transition hover:bg-[#e3d6ff] active:scale-90"
+          >
+            <HugeiconsIcon icon={PencilEdit02Icon} size={16} strokeWidth={2} />
+          </button>}
+      </div>
     </div>
   )
 }
