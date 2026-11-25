@@ -411,11 +411,10 @@ export default function HomeGarden({ plots = [], landTier = 0, isOwnHome = false
       {/* kelebekler */}
       <GardenButterflies cx={gx} gw={gw} gd={gd} />
 
-      {/* bahçe köşelerinde fener, çiçeklik, sulama kabı ve dinlenme bankı */}
+      {/* bahçe köşelerinde fener, çiçeklik, sulama kabı */}
       <Prop model="/models/neighborhood/garden-lantern.glb" x={fenceX1 - 0.55} z={hd - 0.6} scale={1.7} />
       <Prop model="/models/neighborhood/garden-flowerbed.glb" x={hw + 1.2} z={-hd + 0.72} scale={1.45} />
       <WateringCan x={hw + 2.25} z={-hd + 0.65} />
-      <Prop model="/models/park/park-bench.glb" x={hw + 1.35} z={hd - 0.7} scale={1.45} ry={Math.PI} />
 
       {/* arazi genişletme tabelası (çitin hemen dışında, tarhlarla çakışmaz) */}
       {isOwnHome && nextLand && (
