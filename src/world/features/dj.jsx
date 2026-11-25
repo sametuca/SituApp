@@ -193,7 +193,7 @@ function DjCard({ d, selfId, fire, result, muted, setMuted, onJoin, onLeave, onP
             )}
             {track && playerErr && <p className="rounded-2xl bg-[#fff2e3] px-3 py-2 text-xs font-bold text-[#aa732e]">Bu parça gömülü çalmaya kapalı ya da yüklenemedi.</p>}
             {track && (
-              <p className="text-center text-[11px] font-extrabold text-[#8a7a9c]">
+              <p className="text-center text-[0.6875rem] font-extrabold text-[#8a7a9c]">
                 {trackLabel(track)}
                 {track.p === 'sp' && ' · giriş yapmadıysan 30 sn önizleme'}
               </p>
@@ -210,7 +210,7 @@ function DjCard({ d, selfId, fire, result, muted, setMuted, onJoin, onLeave, onP
                   autoComplete="off"
                   className="min-w-0 rounded-xl border-2 border-[#d6c7ff] bg-white px-3 py-2 text-xs font-semibold text-[#4a3b5c] outline-none focus:ring-4 focus:ring-[#d6c7ff]/60"
                 />
-                {err && <p className="text-[11px] font-bold text-rose-400">{err}</p>}
+                {err && <p className="text-[0.6875rem] font-bold text-rose-400">{err}</p>}
                 <div className="flex gap-1.5">
                   <button type="submit" className={`${btn} flex-1 border-[#e8952c] bg-[#fdb252] text-white`}>
                     ▶ Çal
@@ -224,7 +224,7 @@ function DjCard({ d, selfId, fire, result, muted, setMuted, onJoin, onLeave, onP
                 {history.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {history.slice(0, 3).map((h) => (
-                      <button key={h} type="button" onClick={() => submit(null, h)} className="max-w-full truncate rounded-full bg-[#f1e8ff] px-2 py-1 text-[10px] font-bold text-[#5b3fa8]">
+                      <button key={h} type="button" onClick={() => submit(null, h)} className="max-w-full truncate rounded-full bg-[#f1e8ff] px-2 py-1 text-[0.625rem] font-bold text-[#5b3fa8]">
                         ↻ {h.replace(/^https?:\/\/(www\.)?/, '').slice(0, 26)}
                       </button>
                     ))}
@@ -247,7 +247,7 @@ function DjCard({ d, selfId, fire, result, muted, setMuted, onJoin, onLeave, onP
                   </div>
                 )}
                 {d?.queue.length > 0 && (
-                  <p className="truncate text-[11px] font-bold text-[#8a7a9c]">
+                  <p className="truncate text-[0.6875rem] font-bold text-[#8a7a9c]">
                     Sırada ({d.queue.length}): {d.queue.map((q) => q.name).join(', ')}
                   </p>
                 )}

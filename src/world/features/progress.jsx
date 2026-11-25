@@ -116,12 +116,12 @@ function QuestPanel({ prog, onClose }) {
               className={`flex flex-col items-center gap-1 rounded-2xl border-2 px-1.5 py-2.5 text-center ${b.earned ? 'border-[#ffe48f] bg-[#fffbea] shadow-soft' : 'border-white bg-[#f3eef9] opacity-55 grayscale'}`}
             >
               <span className="text-3xl">{b.emoji}</span>
-              <span className="text-[11px] font-black leading-tight text-[#4a3b5c]">{b.name}</span>
-              <span className="text-[10px] font-semibold leading-tight text-[#8a7a9c]">{b.desc}</span>
+              <span className="text-[0.6875rem] font-black leading-tight text-[#4a3b5c]">{b.name}</span>
+              <span className="text-[0.625rem] font-semibold leading-tight text-[#8a7a9c]">{b.desc}</span>
               {!b.earned && b.goal > 1 && (
                 <span className="mt-0.5 w-full">
                   <Bar value={b.have} max={b.goal} />
-                  <span className="text-[10px] font-extrabold tabular-nums text-[#8a7a9c]">
+                  <span className="text-[0.625rem] font-extrabold tabular-nums text-[#8a7a9c]">
                     {b.have}/{b.goal}
                   </span>
                 </span>
@@ -161,7 +161,7 @@ function SuggestCard({ s, onHi, onClose }) {
     <div className="absolute left-[4.5rem] right-32 top-24 z-20 flex max-w-[22rem] animate-pop items-center gap-3 rounded-3xl border-2 border-white bg-white/90 p-3 shadow-toy backdrop-blur-md">
       <img src={`/avatars/${s.avatar}.png`} alt="" width="44" height="44" className="h-11 w-11 shrink-0 rounded-full border-2 border-white bg-white/60 object-cover object-top" />
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#fdb252]">Bugünün önerisi</p>
+        <p className="text-[0.6875rem] font-extrabold uppercase tracking-wide text-[#fdb252]">Bugünün önerisi</p>
         <p className="line-clamp-2 text-sm font-black text-[#4a3b5c]">
           {s.name} {tags ? <>{tags} <span className="font-bold text-[#8a7a9c]">ortak ilgi</span></> : <span className="font-bold text-[#8a7a9c]">✨ tanışmaya ne dersin?</span>}
         </p>

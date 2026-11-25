@@ -135,7 +135,7 @@ export function FurnitureSheet({ count, max, selected, selectedName, onAdd, onRo
           >
             <span className="grid h-6 w-6 place-items-center rounded-full bg-[#ede9fe] text-sm text-[#6d4aff]">▴</span>
             <span>Döşeme modu</span>
-            <span className="text-[11px] font-bold text-[#8a7a9c]">{count}/{max}</span>
+            <span className="text-[0.6875rem] font-bold text-[#8a7a9c]">{count}/{max}</span>
           </button>
           <button onClick={onClose} className="rounded-full bg-[#fdb252] px-3 py-1 text-xs font-extrabold text-white shadow-soft transition hover:brightness-105 active:scale-95">
             Bitti
@@ -151,7 +151,7 @@ export function FurnitureSheet({ count, max, selected, selectedName, onAdd, onRo
         <div className="mb-2.5 flex items-center gap-2">
           <p className="min-w-0 flex-1 truncate text-sm font-black text-[#4a3b5c]">
             {selected ? `${selectedName} seçili · sürükleyerek taşı` : 'Döşeme modu · bir eşyaya dokun'}
-            <span className="ml-2 rounded-full bg-[#f3e8ff] px-2 py-0.5 text-[11px] font-extrabold text-[#6d4aff]">
+            <span className="ml-2 rounded-full bg-[#f3e8ff] px-2 py-0.5 text-[0.6875rem] font-extrabold text-[#6d4aff]">
               {count}/{max}
             </span>
           </p>
@@ -199,7 +199,7 @@ export function FurnitureSheet({ count, max, selected, selectedName, onAdd, onRo
               key={st.id}
               onClick={() => setSet(st.id)}
               aria-pressed={set === st.id}
-              className={`shrink-0 rounded-full border-2 border-white px-3 py-1 text-[11px] font-extrabold transition active:scale-95 ${set === st.id ? 'bg-[#fdb252] text-white shadow-sm' : 'bg-[#fff6eb] text-[#4a3b5c] hover:bg-white'}`}
+              className={`shrink-0 rounded-full border-2 border-white px-3 py-1 text-[0.6875rem] font-extrabold transition active:scale-95 ${set === st.id ? 'bg-[#fdb252] text-white shadow-sm' : 'bg-[#fff6eb] text-[#4a3b5c] hover:bg-white'}`}
             >
               {st.name}
             </button>
@@ -222,7 +222,7 @@ export function FurnitureSheet({ count, max, selected, selectedName, onAdd, onRo
                 className="flex w-20 shrink-0 flex-col items-center gap-1 rounded-2xl border-2 border-white bg-white/90 p-1.5 shadow-sm transition hover:border-[#d8c8ff] hover:bg-white active:scale-95"
               >
                 <img src={`/models/furniture/${f.id}.webp`} alt="" width="56" height="56" className="h-14 w-14 rounded-xl object-contain" loading="lazy" />
-                <span className="w-full truncate text-center text-[11px] font-extrabold text-[#4a3b5c]">{f.name}</span>
+                <span className="w-full truncate text-center text-[0.6875rem] font-extrabold text-[#4a3b5c]">{f.name}</span>
               </button>
             ))}
           </div>

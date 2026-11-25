@@ -3,11 +3,13 @@ import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { isDemoMode, validate, AuthError } from '../lib/auth'
 import { Field, PastelBackground, ToyButton } from '../components/ui'
+import { ConsentFields, LegalLinks } from '../components/Consent'
+import { emptyConsent } from '../legal/legalTexts'
 
 // three.js yalnızca giriş ekranı çizildikten sonra yüklensin
 const AvatarPreview = lazy(() => import('../components/3d/AvatarPreview'))
 
-const EMPTY = { username: '', email: '', password: '', confirm: '', adult: false }
+const EMPTY = { username: '', email: '', password: '', confirm: '', consent: emptyConsent() }
 const QUICK_LOGIN = { email: 'test@situapp.dev', password: 'situapp-test-123' }
 const SHOW_QUICK_LOGIN = import.meta.env.DEV && isDemoMode // production build'de kod dışarıda kalır
 
@@ -91,7 +93,7 @@ export default function AuthPage() {
       try {
         await signIn(QUICK_LOGIN)
       } catch {
-        await signUp({ ...QUICK_LOGIN, username: 'tester' })
+        await signUp({ ...QUICK_LOGIN, username: 'tester', consent: { terms: true, kvkk: true, transfer: true } })
       }
     } catch (err) {
       fail({}, err instanceof AuthError ? err.message : 'Hızlı giriş başarısız.')
@@ -148,7 +150,7 @@ export default function AuthPage() {
           <h1 className="text-5xl font-black tracking-tight text-ink">
             Situ<span className="text-candy-pink-deep">App</span>
           </h1>
-          <span className="mx-auto mt-1 inline-block rounded-full border-2 border-white bg-[#fff3c8] px-3 py-0.5 text-[11px] font-black uppercase tracking-widest text-[#8a5a00] shadow-soft">Pre-alpha</span>
+          <span className="mx-auto mt-1 inline-block rounded-full border-2 border-white bg-[#fff3c8] px-3 py-0.5 text-[0.6875rem] font-black uppercase tracking-widest text-[#8a5a00] shadow-soft">Pre-alpha</span>
           <p className="mt-1 text-sm font-bold tracking-wide text-ink-soft">
             Avatarını seç. Mekânı bul. Bağlantını kur. 💫
           </p>
@@ -285,23 +287,7 @@ export default function AuthPage() {
                   onChange={set('confirm')}
                   error={errors.confirm}
                 />
-                <div>
-                  <label className="flex cursor-pointer items-start gap-3 text-sm font-semibold text-ink">
-                    <input
-                      type="checkbox"
-                      checked={form.adult}
-                      onChange={set('adult')}
-                      aria-invalid={Boolean(errors.adult)}
-                      className="mt-0.5 h-5 w-5 shrink-0 accent-candy-pink-deep"
-                    />
-                    <span>18 yaşından büyüğüm ve kullanım şartlarını kabul ediyorum.</span>
-                  </label>
-                  {errors.adult && (
-                    <p role="alert" className="mt-1.5 text-xs font-bold text-candy-pink-dark">
-                      {errors.adult}
-                    </p>
-                  )}
-                </div>
+                <ConsentFields value={form.consent} onChange={(consent) => setForm((f) => ({ ...f, consent }))} errors={errors} />
               </>
             )}
 
@@ -340,6 +326,7 @@ export default function AuthPage() {
               {isRegister ? 'Giriş yap' : 'Kayıt ol'}
             </button>
           </p>
+          <LegalLinks />
             </>
           )}
         </section>

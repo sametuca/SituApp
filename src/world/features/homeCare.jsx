@@ -314,7 +314,7 @@ export function useHomeCare({ net, home, focusRef, touch, say, panel }) {
               )}
             </div>
             {needWater > 1 && (
-              <button onClick={waterAll} className="rounded-full bg-[#dbeafe] px-2 py-0.5 text-[10px] font-black text-[#1d4ed8] transition hover:bg-[#bfdbfe] active:scale-95">
+              <button onClick={waterAll} className="rounded-full bg-[#dbeafe] px-2 py-0.5 text-[0.625rem] font-black text-[#1d4ed8] transition hover:bg-[#bfdbfe] active:scale-95">
                 💧 Hepsini Sula
               </button>
             )}
@@ -364,7 +364,7 @@ export function useHomeCare({ net, home, focusRef, touch, say, panel }) {
                 <span className="text-2xl">{c.emoji}</span>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-black text-[#4a3b5c]">{c.name}</p>
-                  <p className="text-[11px] font-bold text-[#8a7a9c]">
+                  <p className="text-[0.6875rem] font-bold text-[#8a7a9c]">
                     {Math.round(c.ms / 1000)} sn · +{c.coins} 🪙
                   </p>
                 </div>
@@ -393,7 +393,7 @@ export function useHomeCare({ net, home, focusRef, touch, say, panel }) {
                     <div key={f.key} className="flex items-center justify-between gap-2 rounded-2xl border-2 border-white bg-white/80 px-3 py-2">
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-black text-[#4a3b5c]">{f.name}</p>
-                        <p className="truncate text-[11px] font-bold text-[#8a7a9c]">📍 {f.where || 'Şehirde'}</p>
+                        <p className="truncate text-[0.6875rem] font-bold text-[#8a7a9c]">📍 {f.where || 'Şehirde'}</p>
                       </div>
                       <button
                         disabled={sent}
@@ -460,7 +460,7 @@ export function useHomeCare({ net, home, focusRef, touch, say, panel }) {
                   <span className="text-2xl">{t.emoji}</span>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-black text-[#4a3b5c]">
-                      {t.name} {state === 'now' && <span className="ml-1 rounded-full bg-[#6cd47e] px-2 py-0.5 text-[10px] text-white">Arazin</span>}
+                      {t.name} {state === 'now' && <span className="ml-1 rounded-full bg-[#6cd47e] px-2 py-0.5 text-[0.625rem] text-white">Arazin</span>}
                     </p>
                     <p className="text-xs font-semibold text-[#8a7a9c]">{t.desc}</p>
                   </div>

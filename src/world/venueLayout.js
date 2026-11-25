@@ -454,6 +454,12 @@ function build(v) {
       add({ t: 'rug', x: 0.3, z: 2.4, w: 3.0, d: 3.0, c: mix(th.accent, '#ffffff', 0.6), round: true })
       plant(-hw + 0.7, -4.4)
       plant(2.2, 4.3)
+      // doğu bekleme köşesi: oda tek yana yığılmış görünmesin
+      sofaAt('sofaC', hw - 1.1, -0.9, -Math.PI / 2, 2.2, '#ffc98f')
+      sofaAt('sofaD', hw - 1.1, 1.6, -Math.PI / 2, 2.2, '#8fd0ff')
+      plant(hw - 0.7, -4.4)
+      plant(hw - 0.7, 4.2)
+      add({ t: 'rug', x: hw - 2.6, z: 0.4, w: 2.2, d: 4.2, c: mix(th.accent, '#ffffff', 0.62) })
       windows([-0.6, 2.4])
       break
     }

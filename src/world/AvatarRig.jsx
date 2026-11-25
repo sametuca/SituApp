@@ -7,6 +7,7 @@ import { applyPose, applyUprightIdle, makeRig } from './avatarPose'
 import { HeadAccessory } from './Accessories'
 import { cosStore } from './cosStore'
 import { applyLook, trimBase } from './avatarLook'
+import WorkProp from './WorkProp'
 
 export const AVATAR_HEIGHT = 1.3
 const RIG_HEIGHT = 1.2 // meshy_rig çağrısındaki height_meters
@@ -181,6 +182,7 @@ export default function AvatarRig({ slug, anim = 'idle', pose, cosId }) {
   return (
     <>
       <primitive object={model} />
+      {pose && <WorkProp pose={pose} />}
       {cosId && <HeadAccessory model={model} cosId={cosId} />}
       {handProp && <HandProp item={handProp.item} t0={handProp.t0} />}
     </>

@@ -17,7 +17,7 @@ function SongPicker({ onPick, onClose }) {
           <span className="text-2xl">{s.emoji}</span>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-black text-[#4a3b5c]">{s.title}</span>
-            <span className="block truncate text-[11px] font-bold text-[#8a7a9c]">{s.tag} · “{s.lines[0]}”</span>
+            <span className="block truncate text-[0.6875rem] font-bold text-[#8a7a9c]">{s.tag} · “{s.lines[0]}”</span>
           </span>
         </button>
       ))}
@@ -33,11 +33,11 @@ function Lyrics({ song, left, dur }) {
   const idx = Math.max(0, Math.min(lines.length - 1, Math.floor(((dur - left) / dur) * lines.length)))
   return (
     <div className="mt-2 rounded-2xl bg-[#2b1f4d] px-3 py-2 text-center">
-      <p className="truncate text-[11px] font-bold text-[#9d8ac7]">{lines[idx - 1] ?? '♪'}</p>
+      <p className="truncate text-[0.6875rem] font-bold text-[#9d8ac7]">{lines[idx - 1] ?? '♪'}</p>
       <p key={idx} className="animate-pop text-base font-black leading-snug text-[#fec286]">
         {lines[idx]}
       </p>
-      <p className="truncate text-[11px] font-bold text-[#9d8ac7]">{lines[idx + 1] ?? '♪'}</p>
+      <p className="truncate text-[0.6875rem] font-bold text-[#9d8ac7]">{lines[idx + 1] ?? '♪'}</p>
     </div>
   )
 }

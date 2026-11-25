@@ -7,6 +7,7 @@ import AvatarRig, { AVATAR_HEIGHT } from './AvatarRig'
 import { Em } from '../components/emoji'
 import { GUIDE, groundY } from './layout'
 import { together } from './features/togetherStore'
+import { work } from './features/jobStore'
 import { BIKE_POSE } from './bikeStore'
 import { playerPos } from './cull'
 
@@ -129,7 +130,7 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
           const moving = Math.hypot((r.tx ?? r.x) - r.x, (r.tz ?? r.z) - r.z) > 0.03
           return { ...BIKE_POSE, moving }
         }
-        return null
+        return work.poses.get(id) ?? null
       },
     }),
     [id, remotes],

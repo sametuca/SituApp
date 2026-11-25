@@ -3,6 +3,7 @@
 //   sunucu → istemci: { t: 'home_tier', owner, tier }   evin kademesi değişti (evdekilerin hepsine); welcome.homeTier; room.tier
 import { HOME_TIERS, MAX_TIER } from '../../src/world/homeTiers.js'
 import { CROP_BY_ID, GARDEN_PLOT_COUNT, LAND_TIERS, MAX_LAND_TIER, clampLandTier, cropProgress } from '../../src/world/homeGarden.js'
+import { PERK } from '../../src/world/jobsData.js'
 import { getTier, setTier } from '../homes.js'
 import { save, user } from '../store.js'
 
@@ -49,9 +50,12 @@ export default function housing(ctx) {
         const idx = Number(msg.idx)
         const crop = CROP_BY_ID[msg.crop]
         if (!Number.isInteger(idx) || idx < 0 || idx >= GARDEN_PLOT_COUNT || !crop) return
+        if (ctx.jobOf?.(me) !== 'gardener') return send(me.ws, { t: 'info', text: '🌱 Tohum ekmek için Bahçıvan mesleğini seç (soldaki 💼 düğmesi).' })
         const plots = getGarden(me.homeKey)
         if (plots[idx]) return
         plots[idx] = { crop: crop.id, plantedAt: Date.now(), wateredAt: null }
+        ctx.jobEvent?.(me, 'plant')
+        ctx.workTend?.(me)
         save()
         pushGarden(me.homeKey, plots, me)
       },
@@ -61,6 +65,8 @@ export default function housing(ctx) {
         const plots = getGarden(me.homeKey)
         if (!plots[idx] || plots[idx].wateredAt) return
         plots[idx] = { ...plots[idx], wateredAt: Date.now() }
+        if (ctx.jobOf?.(me) === 'gardener') ctx.jobEvent?.(me, 'water')
+        ctx.workTend?.(me)
         save()
         pushGarden(me.homeKey, plots, me)
       },
@@ -74,7 +80,19 @@ export default function housing(ctx) {
         if (!crop || !cropProgress(slot, Date.now()).ready) return
         plots[idx] = null
         save()
-        ctx.addCoins?.(me, crop.coins, 'garden')
+        ctx.workTend?.(me)
+        if (ctx.bagAdd) {
+          // ürün çantaya girer, pazarda satılır (Bahçıvan: seviyeye göre çifte ürün şansı)
+          const gardener = ctx.jobOf?.(me) === 'gardener'
+          const lv = ctx.features.find((f) => f.api?.levelOf)?.api.levelOf(me.key, 'gardener') ?? 1
+          const n = gardener && Math.random() < PERK.double(lv) ? 2 : 1
+          ctx.bagAdd(me, 'crop', crop.id, n)
+          if (gardener) {
+            ctx.jobGain?.(me, 4 + crop.stars * 2)
+            ctx.jobEvent?.(me, 'harvest', n)
+          }
+          send(me.ws, { t: 'info', text: `🧺 ${crop.emoji} ${crop.name} ×${n} çantaya girdi. Pazarda sat: 💼 meslek paneli.` })
+        } else ctx.addCoins?.(me, crop.coins, 'garden')
         pushGarden(me.homeKey, plots, me)
       },
       garden_bonus(me) {

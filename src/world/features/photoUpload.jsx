@@ -154,7 +154,7 @@ export function PhotoSection({ net, enabled, privacy, setPrivacy }) {
         )}
         <div className="min-w-0 flex-1">
           <p className="text-sm font-black text-[#4a3b5c]">📷 Profil fotoğrafı</p>
-          <p className="text-[11px] font-semibold text-[#8a7a9c]">Kare kırpılır, küçültülür. Yüzün net olduğu, size ait bir fotoğraf seç.</p>
+          <p className="text-[0.6875rem] font-semibold text-[#8a7a9c]">Kare kırpılır, küçültülür. Yüzün net olduğu, size ait bir fotoğraf seç.</p>
         </div>
       </div>
       <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={pick} data-testid="photo-file" />

@@ -1,6 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { authService, subscribeToAuth } from './auth'
+import { ConsentGate } from '../components/Consent'
+import { consentCurrent, makeConsentRecord } from '../legal/legalTexts'
+import { recordConsent } from '../legal/record'
 
 const AuthContext = createContext(null)
 
@@ -28,7 +31,9 @@ export function AuthProvider({ children }) {
   }, [])
 
   const signUp = useCallback(async (data) => {
-    const res = await authService.signUp(data)
+    const consentRecord = makeConsentRecord(data.consent ?? {})
+    const res = await authService.signUp({ ...data, consentRecord })
+    recordConsent(consentRecord, data.email) // sunucuda IP + zaman damgalı kanıt (başarısız olsa da akış sürer)
     if (res.user && !res.needsConfirmation) setUser(res.user)
     return res
   }, [])
@@ -47,6 +52,12 @@ export function AuthProvider({ children }) {
     setUser(null)
   }, [])
 
+  const acceptConsent = useCallback(async (record) => {
+    const u = await authService.acceptConsent(record)
+    recordConsent(record, u?.email ?? '')
+    setUser(u)
+  }, [])
+
   const updatePassword = useCallback(async (password) => {
     await authService.updatePassword(password)
     setRecovery(false)
@@ -54,11 +65,11 @@ export function AuthProvider({ children }) {
 
   const value = useMemo(
     () => ({
-      user, loading, recovery, signUp, signIn, signOut, updatePassword,
+      user, loading, recovery, signUp, signIn, signOut, updatePassword, acceptConsent,
       resetPassword: authService.resetPassword,
       resendConfirmation: authService.resendConfirmation,
     }),
-    [user, loading, recovery, signUp, signIn, signOut, updatePassword],
+    [user, loading, recovery, signUp, signIn, signOut, updatePassword, acceptConsent],
   )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
@@ -72,9 +83,11 @@ export function useAuth() {
 
 /** Oturum yoksa giriş ekranına yönlendirir. */
 export function RequireAuth({ children }) {
-  const { user, loading } = useAuth()
+  const { user, loading, acceptConsent, signOut } = useAuth()
   const location = useLocation()
   if (loading) return null
   if (!user) return <Navigate to="/" replace state={{ from: location.pathname }} />
+  // KVKK / kullanım şartları: güncel sürümü onaylamamış hesaplar (eski üyeler dahil) oyuna giremez
+  if (!consentCurrent(user.consent)) return <ConsentGate onAccept={acceptConsent} onSignOut={signOut} />
   return children
 }

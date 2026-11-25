@@ -294,7 +294,7 @@ function FriendsPanel({ data, inbox, fresh, roster, onClose, api, startTab }) {
                     <li key={m.id} className={`rounded-2xl p-2.5 ${fresh.has(m.id) ? 'bg-[#fff2e3]' : 'bg-[#f6f0ff]'}`}>
                       <div className="flex items-center gap-2">
                         <p className="min-w-0 flex-1 truncate text-sm font-black text-[#4a3b5c]">
-                          {fresh.has(m.id) && <span className="mr-1 rounded-full bg-[#fdb252] px-1.5 py-0.5 text-[10px] text-white">yeni</span>}
+                          {fresh.has(m.id) && <span className="mr-1 rounded-full bg-[#fdb252] px-1.5 py-0.5 text-[0.625rem] text-white">yeni</span>}
                           {m.name}
                         </p>
                         <span className="text-xs font-bold text-[#8a7a9c]">{ago(m.ts)}</span>
@@ -591,7 +591,7 @@ export function useFriends({ net, say, focusRef, home, venue, panel, setPanel, o
       <Ico name="friends" size={22} />
       <span className="flex-1">Arkadaşlar</span>
       {badge > 0 && !net.dnd && (
-        <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[#fdb252] px-1 text-[10px] font-black text-white">{badge}</span>
+        <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[#fdb252] px-1 text-[0.625rem] font-black text-white">{badge}</span>
       )}
     </button>
   )

@@ -54,7 +54,7 @@ export function CollectBurst({ ev, onDone }) {
         <div className="w-44 overflow-hidden rounded-full border-2 border-white bg-white/70 p-[3px] shadow">
           <div className="h-2.5 rounded-full bg-gradient-to-r from-[#ffd35e] to-[#ff9f43]" style={{ '--from': `${fromPct}%`, '--to': `${toPct}%`, animation: 'cel-bar 0.9s 0.2s ease-out both' }} />
         </div>
-        <span className="rounded-full bg-[#4a3b5c]/80 px-2.5 py-0.5 text-[11px] font-extrabold text-white">Seviye {lv.level} · {lv.into}/{lv.span} ⭐</span>
+        <span className="rounded-full bg-[#4a3b5c]/80 px-2.5 py-0.5 text-[0.6875rem] font-extrabold text-white">Seviye {lv.level} · {lv.into}/{lv.span} ⭐</span>
       </div>
     </div>
   )
