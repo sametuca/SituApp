@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import SkillIcon from '../components/SkillIcon'
 import { TopDock } from '../components/Dock'
 import { Dock } from '../components/Dock'
 import { Ico } from '../components/Icon'
@@ -216,7 +217,7 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch }) {
                   onCd ? 'cursor-not-allowed border-white/70 bg-[#ede6fa]' : 'border-white bg-[#faf6ff] shadow-sm active:scale-95'
                 }`}
               >
-                <span className={`text-xl leading-none ${onCd ? 'opacity-45 grayscale-[35%]' : ''}`}>{sk.emoji}</span>
+                <SkillIcon id={sk.id} size={26} dim={onCd} />
                 {onCd && (
                   <>
                     <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-[#4a3b5c]/35 transition-[height] duration-100" style={{ height: `${fillPct}%` }} />
@@ -277,7 +278,7 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch }) {
                   {sk.key}
                 </span>
               )}
-              <span className={`text-3xl leading-none ${onCd ? 'opacity-45 grayscale-[35%]' : ''}`}>{sk.emoji}</span>
+              <SkillIcon id={sk.id} size={38} dim={onCd} />
               <span className="mt-1 text-xs font-extrabold leading-none text-[#5b4a70]">{sk.label}</span>
               {onCd && (
                 <>
