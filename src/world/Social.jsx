@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import SkillIcon from '../components/SkillIcon'
+import { PencilSimple } from '@phosphor-icons/react'
+import { SlotIcon } from '../components/SkillIcon'
 import { TopDock } from '../components/Dock'
 import { Dock } from '../components/Dock'
 import { Ico } from '../components/Icon'
@@ -180,9 +181,9 @@ export function ReactionBar({ onReact, touch }) {
 }
 
 // ---------- alt beceri ve EXP çubuğu (Skill 1-4 · 5 sn bekleme) ----------
-export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch }) {
+export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch, slots = SKILLS, onEdit }) {
   const [now, setNow] = useState(() => Date.now())
-  const hasCd = SKILLS.some((s) => (cooldowns[s.id] ?? 0) > now)
+  const hasCd = slots.some((s) => (cooldowns[s.id] ?? 0) > now)
 
   useEffect(() => {
     if (!hasCd) return
@@ -197,11 +198,22 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch }) {
     return (
       <div
         className={`pointer-events-auto absolute z-10 flex flex-col gap-1.5 rounded-3xl p-2 ${glass}`}
-        style={{ right: 'max(0.85rem, env(safe-area-inset-right))', bottom: 'calc(max(1rem, env(safe-area-inset-bottom)) + 4.1rem)' }}
+        style={{ right: 'max(0.85rem, env(safe-area-inset-right))', bottom: 'max(1rem, env(safe-area-inset-bottom))' }}
         aria-label="Beceri ve deneyim çubuğu"
       >
+      {onEdit && (
+        <button
+          type="button"
+          onClick={onEdit}
+          aria-label="İfadeleri düzenle"
+          title="İfadeleri düzenle"
+          className="absolute -top-3 right-3 grid h-7 w-7 place-items-center rounded-full border-2 border-white bg-[#7a5fd0] text-white shadow-soft transition active:scale-90"
+        >
+          <PencilSimple size={14} weight="fill" />
+        </button>
+      )}
         <div className="grid grid-cols-4 gap-1.5">
-          {SKILLS.map((sk) => {
+          {slots.map((sk) => {
             const rem = Math.min(SKILL_COOLDOWN_MS, Math.max(0, (cooldowns[sk.id] ?? 0) - now))
             const onCd = rem > 0
             const fillPct = onCd ? Math.min(100, (rem / SKILL_COOLDOWN_MS) * 100) : 0
@@ -217,7 +229,7 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch }) {
                   onCd ? 'cursor-not-allowed border-white/70 bg-[#ede6fa]' : 'border-white bg-[#faf6ff] shadow-sm active:scale-95'
                 }`}
               >
-                <SkillIcon id={sk.id} size={26} dim={onCd} />
+                <SlotIcon sk={sk} size={26} dim={onCd} />
                 {onCd && (
                   <>
                     <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-[#4a3b5c]/35 transition-[height] duration-100" style={{ height: `${fillPct}%` }} />
@@ -255,8 +267,19 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch }) {
       className={`pointer-events-auto absolute bottom-3.5 left-1/2 z-10 flex w-[min(94vw,27rem)] -translate-x-1/2 flex-col gap-2 rounded-[1.75rem] px-3.5 py-2.5 ${glass}`}
       aria-label="Beceri ve deneyim çubuğu"
     >
+      {onEdit && (
+        <button
+          type="button"
+          onClick={onEdit}
+          aria-label="İfadeleri düzenle"
+          title="İfadeleri düzenle"
+          className="absolute -top-3 right-3 grid h-7 w-7 place-items-center rounded-full border-2 border-white bg-[#7a5fd0] text-white shadow-soft transition active:scale-90"
+        >
+          <PencilSimple size={14} weight="fill" />
+        </button>
+      )}
       <div className="grid grid-cols-4 gap-2">
-        {SKILLS.map((sk) => {
+        {slots.map((sk) => {
           const rem = Math.min(SKILL_COOLDOWN_MS, Math.max(0, (cooldowns[sk.id] ?? 0) - now))
           const onCd = rem > 0
           const fillPct = onCd ? Math.min(100, (rem / SKILL_COOLDOWN_MS) * 100) : 0
@@ -278,7 +301,7 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch }) {
                   {sk.key}
                 </span>
               )}
-              <SkillIcon id={sk.id} size={38} dim={onCd} />
+              <SlotIcon sk={sk} size={38} dim={onCd} />
               <span className="mt-1 text-xs font-extrabold leading-none text-[#5b4a70]">{sk.label}</span>
               {onCd && (
                 <>

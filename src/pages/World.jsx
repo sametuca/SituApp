@@ -26,8 +26,9 @@ import LocalPlayer from '../world/LocalPlayer'
 import RemotePlayers, { GuideNpc, SelfTag } from '../world/RemotePlayers'
 import { useMultiplayer } from '../world/net'
 import { ChatPanel, HelpModal, HintBar, Minimap, StartGuide, TopBar } from '../world/Hud'
-import { ChatFab, ChatSheet, DoorPrompt, GestureChip, IncomingChip, InteractSheet, InviteChip, Joystick, MatchOverlay, NearbyCard, ReactionBar, SkillBar } from '../world/Social'
-import { GESTURE_BY_KIND, REACTIONS, SKILL_COOLDOWN_MS, SKILLS, WHISPER_RANGE } from '../world/interact'
+import { ChatFab, ChatSheet, DoorPrompt, GestureChip, IncomingChip, InteractSheet, InviteChip, Joystick, MatchOverlay, NearbyCard, SkillBar } from '../world/Social'
+import { GESTURE_BY_KIND, REACTIONS, SKILL_COOLDOWN_MS, WHISPER_RANGE, loadSlots, saveSlots, skillFor } from '../world/interact'
+import SkillEditor from '../components/SkillEditor'
 import { useIsTouch } from '../world/useIsTouch'
 import { HOME_TIERS, applyHomeTier } from '../world/homeTiers'
 import { bike } from '../world/bikeStore'
@@ -592,6 +593,15 @@ function WorldScene({ avatar }) {
   }
   const react = useCallback((e) => net.sendReact(e), [net])
   const reactRef = useRef(react)
+  const [slots, setSlots] = useState(loadSlots) // beceri çubuğu 4 yuvası (ifadeler; sürükle-bırakla değişir)
+  const [skillEdit, setSkillEdit] = useState(false)
+  const skillList = useMemo(() => slots.map((e, i) => skillFor(e, i)), [slots])
+  const skillListRef = useRef(skillList)
+  skillListRef.current = skillList
+  const changeSlots = useCallback((next) => {
+    setSlots(next)
+    saveSlots(next)
+  }, [])
   const [skillCd, setSkillCd] = useState({})
   const skillCdRef = useRef({})
   const soloDanceTimer = useRef(null)
@@ -702,8 +712,8 @@ function WorldScene({ avatar }) {
       else if (e.code === 'KeyE' && !typing && nearGuideRef.current) setHelp(true)
       if (!typing && /^Digit[0-9]$/.test(e.code) && !e.ctrlKey && !e.metaKey && !e.altKey) {
         const n = Number(e.code.slice(5))
-        if (n >= 1 && n <= SKILLS.length) {
-          skillRef.current(SKILLS[n - 1])
+        if (n >= 1 && n <= 4) {
+          skillRef.current(skillListRef.current[n - 1])
         } else {
           const emoji = REACTIONS[(n + 9) % 10]
           if (emoji) reactRef.current(emoji)
@@ -984,11 +994,11 @@ function WorldScene({ avatar }) {
         </>
       ))}
       <DockSlot />
+      {skillEdit && <SkillEditor slots={slots} onChange={changeSlots} onClose={() => setSkillEdit(false)} />}
       <TopDockSlot />
       {!introActive && !editing && !chatTarget && !interactPeer && (
         <>
-          <SkillBar xp={feat.xp} cooldowns={skillCd} onSkill={triggerSkill} onOpenExp={() => setPanel('collection')} touch={touch} />
-          <ReactionBar onReact={react} touch={touch} />
+          <SkillBar xp={feat.xp} cooldowns={skillCd} slots={skillList} onEdit={() => setSkillEdit(true)} onSkill={triggerSkill} onOpenExp={() => setPanel('collection')} touch={touch} />
         </>
       )}
       {nearPeer && !chatTarget && !interactPeer && (

@@ -1,5 +1,6 @@
 // Beceri çubuğu ikonları: emoji yerine renkli, yumuşak degrade "sticker" karo içinde beyaz Phosphor glifi (özgün, emoji setinden ayrı görünüm).
 import { Confetti, HandWaving, Heart, MusicNotes } from '@phosphor-icons/react'
+import { Em } from './emoji'
 
 const SKILL_ART = {
   wave: { Glyph: HandWaving, from: '#ffd36b', to: '#f59a23' },
@@ -19,6 +20,20 @@ export default function SkillIcon({ id, size = 40, dim = false }) {
       style={{ width: size, height: size, background: `linear-gradient(150deg, ${a.from}, ${a.to})` }}
     >
       <Glyph size={size * 0.62} weight="fill" color="#ffffff" style={{ filter: 'drop-shadow(0 1px 0 rgba(0,0,0,0.18))' }} />
+    </span>
+  )
+}
+
+/** Yuva ikonu: varsayılan 4 beceri degrade glif karosu, atanmış diğer ifadeler yumuşak karo içinde emoji. */
+export function SlotIcon({ sk, size = 40, dim = false }) {
+  if (SKILL_ART[sk.id]) return <SkillIcon id={sk.id} size={size} dim={dim} />
+  return (
+    <span
+      aria-hidden
+      className={`grid shrink-0 place-items-center rounded-[28%] bg-gradient-to-br from-[#fff7e0] to-[#ffe2b8] shadow-[inset_0_-3px_0_rgba(0,0,0,0.08),0_2px_4px_rgba(74,59,92,0.18)] ${dim ? 'opacity-45 grayscale-[35%]' : ''}`}
+      style={{ width: size, height: size }}
+    >
+      <Em e={sk.emoji} size={Math.round(size * 0.66)} />
     </span>
   )
 }

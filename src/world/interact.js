@@ -12,6 +12,32 @@ export const SKILLS = [
 ]
 export const SKILL_COOLDOWN_MS = 5000
 
+// Beceri çubuğu 4 yuvadır; her yuvaya REACTIONS'tan istenen ifade sürükle-bırakla atanır (varsayılan: SKILLS). Kayıt: localStorage.
+export const REACTION_LABEL = { '❤️': 'Kalp', '😘': 'Öpücük', '😍': 'Hayran', '🥰': 'Sevgi', '😂': 'Kahkaha', '😳': 'Utan', '🔥': 'Ateş', '👋': 'Selam', '😉': 'Göz kır', '🥺': 'Rica', '💃': 'Dans', '🎉': 'Kutla' }
+export const DEFAULT_SLOTS = SKILLS.map((s) => s.emoji)
+const SLOTS_KEY = 'situapp_skill_slots'
+export const loadSlots = () => {
+  try {
+    const a = JSON.parse(localStorage.getItem(SLOTS_KEY))
+    if (Array.isArray(a) && a.length === 4 && a.every((e) => REACTIONS.includes(e))) return a
+  } catch {
+    /* varsayılan */
+  }
+  return [...DEFAULT_SLOTS]
+}
+export const saveSlots = (slots) => {
+  try {
+    localStorage.setItem(SLOTS_KEY, JSON.stringify(slots))
+  } catch {
+    /* önemli değil */
+  }
+}
+/** Yuvadaki ifadeden çalıştırılabilir beceri nesnesi (varsayılan 4'ü kendi ses/dans davranışını korur). */
+export const skillFor = (emoji, i) => {
+  const base = SKILLS.find((s) => s.emoji === emoji)
+  return { ...(base ?? { id: `r:${emoji}`, emoji, label: REACTION_LABEL[emoji] ?? emoji, sfx: 'pop' }), key: String(i + 1) }
+}
+
 /** Birine yönelik jestler. text: alıcıda "X ..." diye okunur. */
 export const GESTURES = [
   { kind: 'heart', emoji: '💗', label: 'Kalp', text: 'sana kalp gönderdi' },
