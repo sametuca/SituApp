@@ -119,6 +119,7 @@ export function useCollect(ctx) {
   const [pops, setPops] = useState([])
   const [bursts, setBursts] = useState([]) // { key, kind, gain, xp }
   const [levelUp, setLevelUp] = useState(null)
+  const [xp, setXp] = useState(0)
   const xpRef = useRef(null) // son bilinen toplam ⭐
   const lastGain = useRef({ kind: 'star', gain: 1 })
   const lastSend = useRef(0)
@@ -126,7 +127,10 @@ export function useCollect(ctx) {
   const applyState = useCallback((m) => {
     const now = Date.now()
     const until = {}
-    if (m?.s?.xp != null) xpRef.current = m.s.xp
+    if (m?.s?.xp != null) {
+      xpRef.current = m.s.xp
+      setXp(m.s.xp)
+    }
     for (const [id, ttl] of Object.entries(m?.c ?? {})) until[id] = now + ttl
     store.current.until = until
     setData(m ?? null)
@@ -160,6 +164,7 @@ export function useCollect(ctx) {
       on('collect_xp', (m) => {
         const before = xpRef.current ?? Math.max(0, m.xp - lastGain.current.gain - (m.bonus ?? 0))
         xpRef.current = m.xp
+        setXp(m.xp)
         const key = Math.random()
         setBursts((b) => [...b.slice(-2), { key, kind: m.kind, gain: lastGain.current.gain + (m.bonus ?? 0), xp: m.xp }])
         if (levelOf(m.xp).level > levelOf(before).level) {
@@ -191,6 +196,7 @@ export function useCollect(ctx) {
         store.current.until[id] = now + ttl
         store.current.leaving[id] = performance.now()
         const k = KINDS[col.kind]
+        setXp((v) => v + k.stars)
         const key = Math.random()
         setPops((p) => [...p, { key, x: col.x, z: col.z, text: `+${k.stars} ⭐${col.hidden ? ' hazine!' : ''}` }])
         setTimeout(() => setPops((p) => p.filter((x) => x.key !== key)), 1400)
@@ -211,6 +217,7 @@ export function useCollect(ctx) {
   }, [nearCol, pick])
 
   return {
+    xp,
     extraButtons: [{ key: 'collection', icon: 'collection', label: 'Koleksiyon', onClick: () => setPanel('collection') }],
     sceneNodes: where ? <CollectiblesLayer where={where} focusRef={focusRef} store={store} onNear={setNear} onPick={pick} pops={pops} /> : null,
     overlays: (

@@ -7,12 +7,12 @@ export const HAIR_COLORS = [
 ]
 export const EYE_COLORS = [
   '#5a3a26', '#9a6a3a', '#6fae5a', '#4f95d0', '#8fb6d4', '#8a8f98',
-  '#a98be0', '#e0b85f', '#3a7d7c', '#7c5a8f',
+  '#a98be0', '#e0b85f', '#3a7d7c', '#6c6be0',
 ]
 export const OUTFIT_COLORS = [
   '#f6b98a', '#f2998a', '#f3d98b', '#a9d9a4', '#8fd3c8', '#9ccdf0',
   '#8aa6e6', '#b79be6', '#cdbdf0', '#f4efe6', '#8b90a0', '#4c5160',
-  '#e69686', '#e8c8a0', '#b7d89c', '#6e5278', '#f5d0c5',
+  '#e69686', '#e8c8a0', '#b7d89c', '#5c578c', '#f5d0c5',
 ]
 export const HAIR_NAMES = [
   'Siyah', 'Koyu kahve', 'Kahve', 'Bal', 'Sarı', 'Kızıl',
@@ -21,12 +21,12 @@ export const HAIR_NAMES = [
 ]
 export const EYE_NAMES = [
   'Kahve', 'Ela', 'Yeşil', 'Mavi', 'Buz mavisi', 'Gri',
-  'Mor', 'Amber', 'Zümrüt', 'Ametist',
+  'Mor', 'Amber', 'Zümrüt', 'Çivit',
 ]
 export const OUTFIT_NAMES = [
   'Turuncu', 'Mercan', 'Sarı', 'Yeşil', 'Turkuaz', 'Gök',
   'Lacivert', 'Mor', 'Leylak', 'Krem', 'Gri', 'Siyah',
-  'Gül Kurusu', 'Şampanya', 'Adaçayı', 'Mürdüm', 'Pudra',
+  'Gül Kurusu', 'Şampanya', 'Adaçayı', 'Gece Moru', 'Pudra',
 ]
 
 export const emptyLook = () => ({ h: -1, e: -1, o: -1 })

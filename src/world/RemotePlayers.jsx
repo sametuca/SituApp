@@ -85,7 +85,21 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
   const [afk, setAfk] = useState(false)
   const idleRef = useRef({ since: Date.now(), x: 0, z: 0, afk: false })
   const { reaction, whisper } = useLiveFlags(id, reactions, whispering)
-  const pose = useMemo(() => ({ get current() { return together.poses.get(id) ?? (remotes.current.get(id)?.anim === 'ride' ? BIKE_POSE : work.poses.get(id) ?? null) } }), [id, remotes])
+  const pose = useMemo(
+    () => ({
+      get current() {
+        const t = together.poses.get(id)
+        if (t) return t
+        const r = remotes.current.get(id)
+        if (r?.anim === 'ride') {
+          const moving = Math.hypot((r.tx ?? r.x) - r.x, (r.tz ?? r.z) - r.z) > 0.03
+          return { ...BIKE_POSE, moving }
+        }
+        return work.poses.get(id) ?? null
+      },
+    }),
+    [id, remotes],
+  )
 
   useFrame((_, dt) => {
     const r = remotes.current.get(id)
@@ -181,7 +195,8 @@ export function SelfTag({ name, bubbles, selfId, reactions }) {
       ref.current = liveBubble
       setBubble(liveBubble)
     }
-    const r = selfId.current ? reactions?.current.get(selfId.current) : null
+    const rid = selfId.current ?? 'self'
+    const r = reactions?.current.get(rid) ?? null
     const live = r && r.until > Date.now() ? r : null
     if ((live?.key ?? null) !== reactKey.current) {
       reactKey.current = live?.key ?? null

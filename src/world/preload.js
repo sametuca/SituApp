@@ -14,7 +14,7 @@ const VENUE_ITEMS = [
   'arcade-cabinet', 'bakery-oven', 'bar-stool', 'bottle-shelf', 'cake-display', 'camera-tripod', 'cash-register', 'claw-machine', 'clothes-rack', 'coffee-machine',
   'counter', 'dj-stand', 'icecream-freezer', 'karaoke-mic', 'salon-chair', 'salon-mirror', 'samovar', 'softbox-light', 'stage-podium', 'surfboard-a', 'surfboard-b', 'world-globe',
 ].map((n) => `/models/venues/${n}.glb`)
-const AIRPORT = ['car', 'suitcases', 'luggage-cart', 'toy-plane'].map((n) => `/models/airport/${n}.glb`).concat('/models/bike/bike.glb')
+const AIRPORT = ['suitcases', 'luggage-cart', 'toy-plane'].map((n) => `/models/airport/${n}.glb`).concat('/models/bike/bike.glb')
 const COLLECT = ['star', 'heartstone', 'flower', 'balloon', 'shell', 'chest'].map((n) => `/models/collectibles/${n}.glb`)
 const PETS = ['cat', 'bunny', 'chick', 'dog'].map((n) => `/models/pets/pet-${n}.glb`)
 const GIFTS = ['bear', 'heartbox', 'roses', 'choco'].map((n) => `/models/gifts/gift-${n}.glb`)

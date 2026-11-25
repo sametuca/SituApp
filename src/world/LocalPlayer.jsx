@@ -36,8 +36,16 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
   const v = useMemo(() => ({ fwd: new Vector3(), right: new Vector3(), dir: new Vector3(), up: new Vector3(0, 1, 0) }), [])
   const placed = useRef(false)
   const riding = useRiding()
+  const movingRef = useRef(false)
   // duruş: oturma/dans (together) ya da bisiklet; AvatarRig her karede .current okur
-  const pose = useMemo(() => ({ get current() { return bike.on ? BIKE_POSE : together.self.current ?? work.self.current } }), [])
+  const pose = useMemo(
+    () => ({
+      get current() {
+        return bike.on ? { ...BIKE_POSE, moving: movingRef.current } : together.self.current ?? work.self.current
+      },
+    }),
+    [],
+  )
 
   useEffect(() => {
     const down = (e) => {
@@ -153,6 +161,7 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
     }
 
     const next = bike.on ? 'ride' : moving ? (running ? 'run' : 'walk') : 'idle'
+    movingRef.current = moving
     if (next !== animRef.current) {
       animRef.current = next
       setAnim(next === 'ride' ? 'idle' : next) // bisiklette klip idle, duruş procedural

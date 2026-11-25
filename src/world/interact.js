@@ -3,6 +3,15 @@
 /** Kafanın üstünde uçan emoji tepkileri; 1-9 ve 0 tuşları sırayla bunları gönderir. */
 export const REACTIONS = ['❤️', '😘', '😍', '🥰', '😂', '😳', '🔥', '👋', '😉', '🥺', '💃', '🎉']
 
+/** Alt beceri çubuğu (Skill 1-4): her biri 5 sn bekleme süreli hızlı ifade/eylem. */
+export const SKILLS = [
+  { id: 'wave', key: '1', emoji: '👋', label: 'Selam', sfx: 'pop' },
+  { id: 'dance', key: '2', emoji: '💃', label: 'Dans', sfx: 'dance', pose: 'dance' },
+  { id: 'heart', key: '3', emoji: '❤️', label: 'Kalp', sfx: 'heart' },
+  { id: 'party', key: '4', emoji: '🎉', label: 'Kutla', sfx: 'collect' },
+]
+export const SKILL_COOLDOWN_MS = 5000
+
 /** Birine yönelik jestler. text: alıcıda "X ..." diye okunur. */
 export const GESTURES = [
   { kind: 'heart', emoji: '💗', label: 'Kalp', text: 'sana kalp gönderdi' },

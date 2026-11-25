@@ -222,7 +222,7 @@ export function useTogether(ctx) {
       together.self.current = null
       setSelfPose(null)
       setPair(null)
-      send({ t: 'pose_end' })
+      if (!s.solo) send({ t: 'pose_end' })
       if (!fromInput && s.kind === 'sit') {
         // koltuğun önüne (sandalyede arkasına: önünde masa var) çık
         const dir = s.style === 'chair' ? -1 : 1

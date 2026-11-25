@@ -73,10 +73,11 @@ export function useFeatures(ctx) {
   const homeDecor = parts.find((p) => p.homeDecor)?.homeDecor
   const garden = parts.find((p) => p.garden)?.garden
   const landTier = parts.find((p) => p.landTier != null)?.landTier ?? 0
+  const xp = parts.find((p) => p.xp != null)?.xp ?? 0
   const onPlotClick = parts.find((p) => p.onPlotClick)?.onPlotClick
   const onOpenLand = parts.find((p) => p.onOpenLand)?.onOpenLand
   const editorTabs = parts.flatMap((p) => p.editorTabs ?? [])
   // her katman kendi Suspense'inde: bir modelin yüklenmesi şehrin çizilmesini engellemesin
   const sceneNodes = parts.map((p, i) => (p.sceneNodes ? <Suspense key={i} fallback={null}><group>{p.sceneNodes}</group></Suspense> : null))
-  return { peerActions, peerHeader, overlays, extraButtons, extraNodes, menuNodes, menuBadge, readAt, worldEffects, homeDecor, garden, landTier, onPlotClick, onOpenLand, editorTabs, sceneNodes }
+  return { peerActions, peerHeader, overlays, extraButtons, extraNodes, menuNodes, menuBadge, readAt, worldEffects, homeDecor, garden, landTier, xp, onPlotClick, onOpenLand, editorTabs, sceneNodes }
 }

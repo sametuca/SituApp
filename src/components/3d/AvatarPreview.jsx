@@ -1,6 +1,7 @@
-import { Suspense, useEffect, useMemo, useRef } from 'react'
-import { Canvas } from '@react-three/fiber'
-import { OrbitControls, useGLTF, useAnimations } from '@react-three/drei'
+import { Suspense, useEffect, useMemo } from 'react'
+import { Canvas, useFrame } from '@react-three/fiber'
+import { OrbitControls, useGLTF } from '@react-three/drei'
+import { AnimationMixer } from 'three'
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { applyLook, trimBase } from '../../world/avatarLook'
 
@@ -8,7 +9,6 @@ const TARGET_Y = 0.6
 
 function Model({ slug, look }) {
   const { scene, animations } = useGLTF(`/models/avatars/${slug}.glb`)
-  const group = useRef()
   const model = useMemo(() => {
     const clone = cloneSkinned(scene)
     clone.traverse((o) => {
@@ -19,15 +19,17 @@ function Model({ slug, look }) {
     return clone
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene, look?.h, look?.e, look?.o])
-  const { actions } = useAnimations(animations, group)
+  const mixer = useMemo(() => new AnimationMixer(model), [model])
   useEffect(() => {
-    actions.idle?.reset().play()
-  }, [actions])
-  return (
-    <group ref={group}>
-      <primitive object={model} />
-    </group>
-  )
+    const clip = animations.find((c) => c.name === 'idle') ?? animations[0]
+    if (clip) {
+      mixer.clipAction(clip).reset().play()
+      mixer.update(0) // ilk karede T-pozunda kalmasın
+    }
+    return () => mixer.stopAllAction()
+  }, [mixer, animations])
+  useFrame((_, dt) => mixer.update(dt))
+  return <primitive object={model} />
 }
 
 /** Avatarın bastığı yuvarlak pastel platform. */

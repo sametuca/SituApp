@@ -69,11 +69,20 @@ function findRefs(slug, mesh, px, w, h) {
   }
   const q = (c) => c.map((v) => Math.round(v / 24) * 24)
   const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) / 255
-  const cluster = (cols, max, minShare, exclude = []) => {
+  const lum = (c) => (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) / 255
+  const dirDist = (a, b) => {
+    const la = Math.hypot(a[0] + 8, a[1] + 8, a[2] + 8)
+    const lb = Math.hypot(b[0] + 8, b[1] + 8, b[2] + 8)
+    return Math.hypot((a[0] + 8) / la - (b[0] + 8) / lb, (a[1] + 8) / la - (b[1] + 8) / lb, (a[2] + 8) / la - (b[2] + 8) / lb)
+  }
+  const isSkinTone = (c, skins, shadeRatio = 0.58) =>
+    skins.some((s) => dist(s, c) < 0.17 || (dirDist(s, c) < 0.105 && lum(c) > lum(s) * shadeRatio && lum(c) < lum(s) * 1.5))
+  const cluster = (cols, max, minShare, exclude = [], skinFilter = null) => {
     const m = new Map()
     for (const c of cols) {
       if (c[0] + c[1] + c[2] < 60) continue // siyah boşluk/kenar
       if (exclude.some((e) => dist(e, c) < 0.16)) continue
+      if (skinFilter && isSkinTone(c, skinFilter.skins, skinFilter.ratio)) continue
       const k = q(c).join(',')
       const e = m.get(k) ?? { n: 0, s: [0, 0, 0] }
       e.n++
@@ -97,17 +106,18 @@ function findRefs(slug, mesh, px, w, h) {
   const skin = cluster(hands, 3, 0.05)
   const nearWhite = (c) => Math.min(c[0], c[1], c[2]) > 200
   const greyish = (c) => Math.max(...c) - Math.min(...c) < 30 && Math.max(...c) > 150 // gri/beyaz: saç değil (göz akı, yaka)
-  const hair = cluster(heads.filter((c) => !nearWhite(c)), 6, 0.025, skin).filter((c) => !greyish(c)).slice(0, HAIR_N)
+  // Koyu tenli avatarlarda (örn. Elif) yüzdeki gölgeli ten saç sanılmasın: aynı renk yönündeki ten tonlarını dışla
+  const hair = cluster(heads.filter((c) => !nearWhite(c)), 6, 0.025, skin, { skins: skin, ratio: 0.62 }).filter((c) => !greyish(c)).slice(0, HAIR_N)
   const out = {
     skin,
     hair,
-    outfit: cluster(bodies, 5, 0.04, [...skin, ...hair]).slice(0, 4), // saç telleri omuzda gövde kemiğine bağlıysa kıyafet sayılmaz
+    outfit: cluster(bodies, 5, 0.04, [...skin, ...hair], { skins: skin, ratio: 0.55 }).slice(0, 4), // gölgeli kol/bacak teni kıyafet sayılmaz
   }
   analysis.set(key, out)
   return out
 }
 
-/** Göz akı (beyaz) yamalarından iki göz merkezi bulur (bind pozu, mesh yerel koordinatı). */
+/** Göz akı (nötr beyaz) yamalarından iki göz merkezi bulur (bind pozu, mesh yerel koordinatı). */
 function findEyes(slug, mesh) {
   if (analysis.has(slug)) return analysis.get(slug)
   const res = { eyes: [], r: 0.02 }
@@ -119,18 +129,33 @@ function findEyes(slug, mesh) {
   const pos = g.attributes.position
   const uv = g.attributes.uv
   const head = g.attributes.aHead
-  let cx = 0, cz = 0, n = 0
-  for (let i = 0; i < pos.count; i++) if (head.getX(i) > 0.9) (cx += pos.getX(i), (cz += pos.getZ(i)), n++)
+  let cx = 0, cz = 0, n = 0, minY = Infinity, maxY = -Infinity
+  for (let i = 0; i < pos.count; i++) {
+    if (head.getX(i) > 0.9) {
+      const y = pos.getY(i)
+      cx += pos.getX(i)
+      cz += pos.getZ(i)
+      if (y < minY) minY = y
+      if (y > maxY) maxY = y
+      n++
+    }
+  }
   if (!n) return res
   cx /= n
   cz /= n
+  const headH = maxY - minY
+  const eyeY0 = minY + headH * 0.34
+  const eyeY1 = minY + headH * 0.72
   const pts = []
   for (let i = 0; i < pos.count; i++) {
-    if (head.getX(i) < 0.9 || pos.getZ(i) < cz || Math.abs(pos.getX(i) - cx) < 0.05) continue // yüzün önü, orta hattan uzak
+    const py = pos.getY(i)
+    if (head.getX(i) < 0.9 || pos.getZ(i) < cz || Math.abs(pos.getX(i) - cx) < 0.05 || py < eyeY0 || py > eyeY1) continue // yüzün önü, göz bandı
     const x = Math.min(w - 1, Math.max(0, Math.floor(uv.getX(i) * w)))
     const y = Math.min(h - 1, Math.max(0, Math.floor(uv.getY(i) * h)))
     const o = (y * w + x) * 4
-    if (Math.min(px[o], px[o + 1], px[o + 2]) > 190) pts.push([pos.getX(i), pos.getY(i), pos.getZ(i)])
+    const r = px[o], gr = px[o + 1], b = px[o + 2]
+    const mn = Math.min(r, gr, b), mx = Math.max(r, gr, b)
+    if (mn > 185 && mx - mn < 32) pts.push([pos.getX(i), py, pos.getZ(i)]) // yalnızca nötr beyaz göz akı (sarı saç/ten hariç)
   }
   res.pts = pts.length
   if (pts.length < 4) return res
@@ -138,14 +163,8 @@ function findEyes(slug, mesh) {
   const L = pts.filter((p) => p[0] < cx)
   const R = pts.filter((p) => p[0] >= cx)
   if (!L.length || !R.length) return res
-  // her yanda en yüksek beyaz nokta grubu (ağız/diş daha aşağıdadır)
-  const top = (arr) => {
-    const ys = arr.map((p) => p[1]).sort((a, b) => b - a)
-    const cut = ys[Math.min(ys.length - 1, Math.floor(ys.length * 0.5))]
-    return arr.filter((p) => p[1] >= cut)
-  }
-  res.eyes = [mean(top(L)), mean(top(R))]
-  res.r = Math.max(0.012, Math.abs(res.eyes[0][0] - res.eyes[1][0]) * 0.16)
+  res.eyes = [mean(L), mean(R)]
+  res.r = Math.max(0.015, Math.abs(res.eyes[0][0] - res.eyes[1][0]) * 0.21)
   return res
 }
 
@@ -160,6 +179,22 @@ varying float vHead; varying float vHand; varying float vFoot; varying vec3 vBin
 uniform float uHairMinY;
 uniform vec3 uBrow; uniform vec2 uBrowX; // uBrowX: yüz orta x, yarı genişlik // x: yüz bandı alt y, y: üst y, z: yüzün ön z eşiği
 float lookLum(vec3 c){ return dot(c, vec3(0.299,0.587,0.114)); }
+float lookSkinMask(vec3 sc, vec3 skinRef[3], float minRatio){
+  float bestD = 9.0; float bestDir = 9.0; float sl = 0.5;
+  vec3 ns = normalize(sc + vec3(0.03));
+  float scl = lookLum(sc);
+  for (int i=0;i<3;i++){
+    if (skinRef[i].r < 0.0) continue;
+    float d = distance(sc, skinRef[i]);
+    float dd = distance(ns, normalize(skinRef[i] + vec3(0.03)));
+    float rl = lookLum(skinRef[i]);
+    if (d < bestD){ bestD = d; }
+    if (dd < bestDir && scl > rl * minRatio && scl < rl * 1.55){ bestDir = dd; sl = rl; }
+  }
+  float m1 = 1.0 - smoothstep(0.08, 0.16, bestD);
+  float m2 = 1.0 - smoothstep(0.06, 0.115, bestDir);
+  return max(m1, m2);
+}
 vec3 lookRecolor(vec3 col, vec3 ref, vec3 to, float w){
   float k = clamp(mix(1.0, lookLum(col)/max(lookLum(ref),0.04), 0.4), 0.72, 1.18); // gölgeyi koru, kontrastı yumuşat (pastel kalsın)
   vec3 t = clamp(to*k, 0.0, 1.0);
@@ -167,7 +202,7 @@ vec3 lookRecolor(vec3 col, vec3 ref, vec3 to, float w){
 }
 vec3 lookApply(vec3 col){
   vec3 res = col;
-  float tol = 0.15;
+  float tol = 0.14;
   vec3 sc = pow(col, vec3(0.4545));
   float hairW = 0.0; vec3 hairRef = uHairRef[0];
   {
@@ -175,32 +210,38 @@ vec3 lookApply(vec3 col){
     for (int i=0;i<${HAIR_N};i++){ float d = distance(sc, uHairRef[i]); if (d<best){best=d;hairRef=uHairRef[i];} }
     float skinH = 9.0;
     for (int i=0;i<3;i++) skinH = min(skinH, distance(sc, uSkinRef[i]));
-    hairW = (1.0 - smoothstep(tol*0.7, tol*1.25, best)) * mix(1.0, smoothstep(-0.07, -0.03, skinH - best), step(uBrow.z, vBind.z)); // yüzde ten saça yakınsa saç sayılmaz; ense/tepede (yüzün gerisi) ten kontrolü yok
+    float faceSkin = lookSkinMask(sc, uSkinRef, 0.60);
+    // yüzde gölgeli ten saça dönmesin (hem öklid hem renk-yönü ten koruması); ense/tepede (yüzün gerisi) daha serbest
+    hairW = (1.0 - smoothstep(tol*0.68, tol*1.2, best)) * mix(1.0, (1.0 - faceSkin) * smoothstep(-0.02, 0.03, skinH - best), step(uBrow.z, vBind.z));
   }
   // kaş / göz kapağı bandı saç sayılmaz (kaşlar ve kirpikler boyanmasın); sakal ve saç bu bandın dışında kalır
   float inBrow = step(uBrow.x, vBind.y) * step(vBind.y, uBrow.y) * step(uBrow.z, vBind.z) * step(abs(vBind.x - uBrowX.x), uBrowX.y) * step(0.9, vHead);
   hairW *= (1.0 - inBrow) * step(uHairMinY, vBind.y); // saç belden aşağıda olamaz (etek altı, pantolon)
   if (uUseHair > 0.5 && hairW > 0.0) res = lookRecolor(res, pow(hairRef, vec3(2.2)), uHairTo, hairW);
   if (uUseOut > 0.5 && vHead < 0.8 && vHand < 0.4) {
-    // gövdede ten ve siyah çizgiler dışındaki HER yama kıyafettir (baskı/desen parçaları dahil); saç renkleri hariç
-    float skinD = 9.0;
-    for (int i=0;i<3;i++) skinD = min(skinD, distance(sc, uSkinRef[i]));
-    float nonSkin = smoothstep(0.07, 0.13, skinD);
+    // gövdede gölgeli ten dahil tüm ten alanları korunur; yalnızca gerçek kıyafet ve beyaz taban dışı kumaş boyanır
+    float bodySkin = lookSkinMask(sc, uSkinRef, 0.52);
+    float nonSkin = 1.0 - bodySkin;
     float notDark = smoothstep(0.05, 0.13, lookLum(sc));
-    float whiteSole = step(0.5, vFoot) * smoothstep(0.7, 0.85, lookLum(sc)) * (1.0 - smoothstep(0.08, 0.16, max(sc.r,max(sc.g,sc.b)) - min(sc.r,min(sc.g,sc.b))));
-    float w = nonSkin * notDark * (1.0 - hairW) * (1.0 - whiteSole); // ayak altı beyaz taban/platform olduğu gibi kalır
+    float whiteSole = step(0.25, vFoot) * smoothstep(0.68, 0.84, lookLum(sc)) * (1.0 - smoothstep(0.08, 0.16, max(sc.r,max(sc.g,sc.b)) - min(sc.r,min(sc.g,sc.b))));
     vec3 ref = vec3(0.0); float bd = 9.0;
     for (int i=0;i<${OUT_N};i++){ float d = distance(sc, uOutRef[i]); if (d<bd){bd=d;ref=uOutRef[i];} }
+    float isKnownOut = 1.0 - smoothstep(0.14, 0.22, bd);
+    float w = max(nonSkin, isKnownOut * (1.0 - bodySkin * 0.7)) * notDark * (1.0 - hairW) * (1.0 - whiteSole);
     if (bd > 0.3) ref = sc; // bilinmeyen yama: kendi parlaklığına göre
     res = lookRecolor(res, pow(ref, vec3(2.2)), uOutTo, w);
   }
   if (uUseEye > 0.5 && vHead > 0.9) {
     float d = min(distance(vBind, uEyeC0), distance(vBind, uEyeC1));
-    float inEye = 1.0 - smoothstep(uEyeR*0.8, uEyeR, d);
-    float l = lookLum(col);
-    float dark = (1.0 - smoothstep(0.30, 0.55, l)) * smoothstep(0.02, 0.08, l);   // beyaz göz akı ve ten hariç, koyu iris
-    float sat = max(col.r,max(col.g,col.b)) - min(col.r,min(col.g,col.b));
-    res = mix(res, clamp(uEyeTo * (0.55 + l*1.2), 0.0, 1.0), inEye * dark * (1.0 - smoothstep(0.35, 0.6, sat)));
+    float inEye = 1.0 - smoothstep(uEyeR*0.78, uEyeR, d);
+    float ls = lookLum(sc); // algısal (sRGB) parlaklık: koyu irisler doğrusal uzayda 0.02'nin altına düşüp kaybolmasın
+    float skinE = 9.0;
+    for (int i=0;i<3;i++) skinE = min(skinE, distance(sc, uSkinRef[i]));
+    float notSkinE = smoothstep(0.09, 0.17, skinE);
+    float notWhite = 1.0 - smoothstep(0.46, 0.68, ls); // beyaz göz akı ve parlama noktası korunur
+    float notPupil = smoothstep(0.03, 0.09, ls);       // tam siyah gözbebeği / kirpik korunur
+    vec3 eyeCol = clamp(uEyeTo * (0.62 + ls * 1.15), 0.0, 1.0);
+    res = mix(res, eyeCol, inEye * notWhite * notPupil * notSkinE);
   }
   return res;
 }
@@ -274,8 +315,8 @@ export function applyLook(model, slug, look) {
       uEyeC0: { value: new Vector3(...(eyes?.eyes[0] ?? [0, 0, 0])) },
       uEyeC1: { value: new Vector3(...(eyes?.eyes[1] ?? [0, 0, 0])) },
       uHairMinY: { value: hairMinY(o) },
-      uBrow: { value: eyes?.eyes.length === 2 ? new Vector3(eyes.eyes[0][1] - 0.07, eyes.eyes[0][1] + 0.075, Math.min(eyes.eyes[0][2], eyes.eyes[1][2]) - 0.07) : new Vector3(9, -9, 9) },
-      uBrowX: { value: eyes?.eyes.length === 2 ? new Vector2((eyes.eyes[0][0] + eyes.eyes[1][0]) / 2, Math.abs(eyes.eyes[0][0] - eyes.eyes[1][0]) / 2 + 0.03) : new Vector2(0, 0) },
+      uBrow: { value: eyes?.eyes.length === 2 ? new Vector3(eyes.eyes[0][1] - 0.07, eyes.eyes[0][1] + 0.095, Math.min(eyes.eyes[0][2], eyes.eyes[1][2]) - 0.07) : new Vector3(9, -9, 9) },
+      uBrowX: { value: eyes?.eyes.length === 2 ? new Vector2((eyes.eyes[0][0] + eyes.eyes[1][0]) / 2, Math.abs(eyes.eyes[0][0] - eyes.eyes[1][0]) / 2 + 0.055) : new Vector2(0, 0) },
       uEyeR: { value: eyes?.r ?? 0.02 },
     }
     const prev = mat.onBeforeCompile

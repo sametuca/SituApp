@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Ico } from '../components/Icon'
 import { ToyButton } from '../components/ui'
 import { MicButton, StickerBubble, StickerPanel, VoiceBubble } from './features/media'
-import { CHAT_EMOJIS, GESTURES, GESTURE_BY_KIND, QUICK_REPLIES, REACTIONS, WHISPER_RANGE } from './interact'
+import { CHAT_EMOJIS, GESTURES, GESTURE_BY_KIND, QUICK_REPLIES, REACTIONS, SKILL_COOLDOWN_MS, SKILLS, WHISPER_RANGE } from './interact'
+import { levelOf } from './collectibles'
 import Portrait from './Portrait'
 
 const glass = 'border-2 border-white bg-white/80 shadow-soft backdrop-blur-md'
@@ -92,7 +93,7 @@ export function Joystick({ inputRef }) {
 export function NearbyCard({ peer, touch, onChat, onInteract, onDismiss }) {
   return (
     <div
-      className={`absolute left-1/2 z-10 w-[min(94vw,24rem)] -translate-x-1/2 animate-pop ${touch ? 'bottom-44' : 'bottom-4'}`}
+      className={`absolute left-1/2 z-10 w-[min(94vw,24rem)] -translate-x-1/2 animate-pop ${touch ? 'bottom-44' : 'bottom-[6.75rem]'}`}
       role="status"
     >
       <div className={`flex items-center gap-3 rounded-3xl p-2.5 pr-3 ${glass}`}>
@@ -123,7 +124,7 @@ export function NearbyCard({ peer, touch, onChat, onInteract, onDismiss }) {
 export function DoorPrompt({ emoji, label, action, touch, raised, onGo }) {
   return (
     <div
-      className={`pointer-events-auto absolute left-1/2 z-10 w-[min(92vw,20rem)] -translate-x-1/2 animate-pop ${touch ? (raised ? 'bottom-64' : 'bottom-44') : raised ? 'bottom-24' : 'bottom-4'}`}
+      className={`pointer-events-auto absolute left-1/2 z-10 w-[min(92vw,20rem)] -translate-x-1/2 animate-pop ${touch ? (raised ? 'bottom-64' : 'bottom-44') : raised ? 'bottom-[11rem]' : 'bottom-[6.75rem]'}`}
       role="status"
     >
       <div className={`flex items-center gap-3 rounded-3xl p-2.5 pl-4 ${glass}`}>
@@ -176,6 +177,82 @@ export function ReactionBar({ onReact, touch }) {
         className={`grid ${touch ? 'h-16 w-16 text-3xl' : 'h-14 w-14 text-2xl'} place-items-center rounded-full transition hover:bg-white ${glass}`}
       >
         <Ico name="smile" size={touch ? 34 : 32} />
+      </button>
+    </div>
+  )
+}
+
+// ---------- alt beceri ve EXP çubuğu (Skill 1-4 · 5 sn bekleme) ----------
+export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch }) {
+  const [now, setNow] = useState(() => Date.now())
+  const hasCd = SKILLS.some((s) => (cooldowns[s.id] ?? 0) > now)
+
+  useEffect(() => {
+    if (!hasCd) return
+    const t = setInterval(() => setNow(Date.now()), 100)
+    return () => clearInterval(t)
+  }, [hasCd])
+
+  const lv = levelOf(xp)
+  const pct = Math.min(100, Math.round((lv.into / (lv.span || 1)) * 100))
+
+  return (
+    <div
+      className={`pointer-events-auto absolute left-1/2 z-10 flex w-[min(92vw,21rem)] -translate-x-1/2 flex-col gap-1.5 rounded-3xl px-2.5 py-2 ${glass} ${touch ? 'bottom-[6.25rem] sm:bottom-3' : 'bottom-3'}`}
+      aria-label="Beceri ve deneyim çubuğu"
+    >
+      <div className="grid grid-cols-4 gap-1.5">
+        {SKILLS.map((sk) => {
+          const rem = Math.min(SKILL_COOLDOWN_MS, Math.max(0, (cooldowns[sk.id] ?? 0) - now))
+          const onCd = rem > 0
+          const fillPct = onCd ? Math.min(100, (rem / SKILL_COOLDOWN_MS) * 100) : 0
+          const secs = Math.ceil(rem / 1000)
+          return (
+            <button
+              key={sk.id}
+              type="button"
+              disabled={onCd}
+              onClick={() => onSkill(sk)}
+              title={`${sk.label} (${sk.key}) · 5 sn`}
+              aria-label={`${sk.label}${onCd ? ` (${secs} saniye bekle)` : ''}`}
+              className={`relative flex h-12 flex-col items-center justify-center overflow-hidden rounded-2xl border-2 transition ${
+                onCd ? 'cursor-not-allowed border-white/70 bg-[#ede6fa]' : 'border-white bg-[#faf6ff] shadow-sm hover:-translate-y-0.5 hover:bg-white active:scale-95'
+              }`}
+            >
+              {!touch && (
+                <span className="absolute left-1.5 top-0.5 text-[9px] font-black text-[#8a7a9c]">
+                  {sk.key}
+                </span>
+              )}
+              <span className={`text-xl leading-none ${onCd ? 'opacity-45 grayscale-[35%]' : ''}`}>{sk.emoji}</span>
+              <span className="mt-0.5 text-[10px] font-extrabold leading-none text-[#5b4a70]">{sk.label}</span>
+              {onCd && (
+                <>
+                  <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-[#4a3b5c]/35 transition-[height] duration-100" style={{ height: `${fillPct}%` }} />
+                  <span className="pointer-events-none absolute inset-0 grid place-items-center text-sm font-black text-white drop-shadow-[0_1px_3px_rgba(74,59,92,0.85)] tabular-nums">
+                    {secs}
+                  </span>
+                </>
+              )}
+            </button>
+          )
+        })}
+      </div>
+      <button
+        type="button"
+        onClick={onOpenExp}
+        title="Koleksiyon ve seviye ilerlemesini aç"
+        className="flex items-center gap-2 rounded-2xl bg-[#faf6ff]/90 px-2 py-1 text-left transition hover:bg-white active:scale-[0.99]"
+      >
+        <span className="shrink-0 rounded-full bg-[#ffe48f] px-2 py-0.5 text-[10px] font-black text-[#7a5b00]">
+          Sv. {lv.level}
+        </span>
+        <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#eadfff]">
+          <div className="h-full rounded-full bg-gradient-to-r from-[#ffe48f] via-[#fdb252] to-[#ff9248] transition-[width] duration-500" style={{ width: `${pct}%` }} />
+        </div>
+        <span className="shrink-0 text-[10px] font-black tabular-nums text-[#6b4fc0]">
+          EXP {lv.into}/{lv.span}
+        </span>
       </button>
     </div>
   )
