@@ -1,4 +1,4 @@
-// Hız halkasından geçince geçici hız efekti (yalnızca benim avatarımın yanında): arkaya akan rüzgâr çizgileri, ayakta yayılan halka, "⚡ Hız!" etiketi.
+// Hız halkasından geçince geçici hız efekti (yalnızca benim avatarımın yanında): arkaya akan rüzgâr çizgileri, ayakta yayılan halka, "HIZ!" yazısı (kartsız).
 // Süre bikeStore.speedBoost.until'den okunur (cityLife.jsx halkaya girince ayarlar).
 import { memo, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
@@ -69,7 +69,7 @@ export default memo(function SpeedFx() {
       </mesh>
       {tag > 0 && (
         <Html key={tag} position={[0.55, 1.45, 0]} center distanceFactor={9 * screenK()} zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}>
-          <div className="whitespace-nowrap rounded-full border-2 border-white bg-[#fdb252] px-3 py-1 text-xs font-black text-white shadow-soft [animation:speed-tag_1.6s_ease-out_forwards]">⚡ Hız!</div>
+          <div className="whitespace-nowrap text-lg font-black italic tracking-wider text-white [text-shadow:0_2px_0_#e8952c,0_0_10px_rgba(255,176,64,0.9)] [animation:speed-tag_1.6s_ease-out_forwards]">HIZ!</div>
         </Html>
       )}
     </group>
