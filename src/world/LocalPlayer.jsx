@@ -8,6 +8,7 @@ import { work } from './features/jobStore'
 import { playerPos } from './cull'
 import { BIKE_POSE, BIKE_SPEED, bike, speedBoost, useRiding } from './bikeStore'
 import BikeModel from './Bike'
+import SpeedFx from './SpeedFx'
 
 const WALK_SPEED = 3.2 // m/sn
 const RUN_SPEED = 6.5
@@ -210,6 +211,7 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
   return (
     <group ref={group}>
       <AvatarRig slug={slug} anim={anim} pose={pose} cosId="self" />
+      <SpeedFx />
       {riding && (
         <Suspense fallback={null}>
           <BikeModel />
