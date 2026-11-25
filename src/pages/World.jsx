@@ -997,7 +997,6 @@ function WorldScene({ avatar }) {
       {inTutorial && !panel && !help && (
         <AirportTutorialHud
           step={tutStep}
-          focusRef={focusRef}
           near={tutNear}
           touch={touch}
           celebrate={tutCelebrate}

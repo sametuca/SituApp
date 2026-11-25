@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useRef, useState } from 'react'
+import { Suspense, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Html, useGLTF } from '@react-three/drei'
 import { screenK } from './screenK'
@@ -56,7 +56,7 @@ function Beacon({ x, z, color, label, children }) {
         <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.7} roughness={0.5} />
       </mesh>
       <Html position={[0, 1.45, 0]} center distanceFactor={9 * screenK()} zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}>
-        <div className="venue-pin whitespace-nowrap rounded-full border-2 border-white bg-white/95 px-3.5 py-1.5 text-sm font-black text-[#4a3b5c] shadow-soft">
+        <div className="venue-pin inline-flex w-max min-w-max items-center gap-1.5 whitespace-nowrap rounded-full border-2 border-white bg-white/95 px-5 py-1.5 text-sm font-black leading-none text-[#4a3b5c] shadow-soft">
           {label}
         </div>
       </Html>
@@ -110,25 +110,10 @@ export function AirportTutorialScene({ step, focusRef, onNear }) {
   )
 }
 
-const TARGETS = { collect: TUT_STAR, door: TUT_DOOR, exit: TUT_EXIT }
-
 /** Üst görev takip kartı, konfeti kutlaması ve yakın istemi. */
-export function AirportTutorialHud({ step, focusRef, near, touch, celebrate, onCollect, onDoor, onOpenWardrobe, onSkip }) {
+export function AirportTutorialHud({ step, near, touch, celebrate, onCollect, onDoor, onOpenWardrobe, onSkip }) {
   const idx = STEPS.findIndex((s) => s.id === step)
   const cur = STEPS[idx]
-  const [dist, setDist] = useState(null)
-  useEffect(() => {
-    const tg = TARGETS[step]
-    if (!tg || !focusRef) {
-      setDist(null)
-      return undefined
-    }
-    const id = setInterval(() => {
-      const f = focusRef.current
-      setDist(Math.round(Math.hypot(f.x - tg.x, f.z - tg.z)))
-    }, 250)
-    return () => clearInterval(id)
-  }, [step, focusRef])
   if (!cur) return null
 
   return (
@@ -170,13 +155,7 @@ export function AirportTutorialHud({ step, focusRef, near, touch, celebrate, onC
             <button onClick={onOpenWardrobe} className="shrink-0 rounded-2xl border-b-4 border-[#7a5fd0] bg-[#a88bff] px-4 py-2.5 text-sm font-black text-white shadow-soft active:translate-y-[2px] active:border-b-2">
               👗 Aç
             </button>
-          ) : (
-            dist != null && (
-              <span className="shrink-0 rounded-2xl bg-[#fff3c8] px-2.5 py-1.5 text-center text-xs font-black leading-tight text-[#8a5a00]">
-                <span className="block text-lg tabular-nums">{dist}</span>m
-              </span>
-            )
-          )}
+          ) : null}
         </div>
       </div>
 
