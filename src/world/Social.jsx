@@ -198,7 +198,7 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch }) {
 
   return (
     <div
-      className={`pointer-events-auto absolute left-1/2 z-10 flex w-[min(92vw,25rem)] -translate-x-1/2 flex-col gap-2 rounded-3xl px-3 py-2.5 ${glass} ${touch ? 'bottom-[6.25rem] sm:bottom-3' : 'bottom-3'}`}
+      className={`pointer-events-auto absolute left-1/2 z-10 flex w-[min(92vw,23rem)] -translate-x-1/2 flex-col gap-2 rounded-3xl px-3 py-2.5 ${glass} ${touch ? 'bottom-[6.25rem] sm:bottom-3' : 'bottom-3'}`}
       aria-label="Beceri ve deneyim çubuğu"
     >
       <div className="grid grid-cols-4 gap-1.5">
