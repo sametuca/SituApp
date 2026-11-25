@@ -29,7 +29,7 @@ function Typed({ text }) {
 
 function NpcSheet({ npc, text, onOption, onClose, touch }) {
   return (
-    <div className={`pointer-events-auto absolute inset-x-0 bottom-0 z-30 mx-auto w-[min(100vw,max(30rem,38vw))] animate-pop rounded-t-[2rem] p-4 pb-5 text-[clamp(1rem,0.3vw+0.75rem,1.3rem)] ${glass}`} role="dialog" aria-label={npc.name}>
+    <div className={`pointer-events-auto absolute inset-0 z-30 m-auto h-fit w-[min(100vw,max(30rem,38vw))] animate-pop rounded-[2rem] p-4 pb-5 text-[clamp(1rem,0.3vw+0.75rem,1.3rem)] ${glass}`} role="dialog" aria-label={npc.name}>
       <div className="flex items-start gap-3">
         <img src={`/avatars/${npc.avatar}.png`} alt="" width="64" height="64" className="h-[4em] w-[4em] shrink-0 rounded-2xl border-2 border-white bg-[#fff8f0] object-cover object-top shadow" />
         <div className="min-w-0 flex-1">
