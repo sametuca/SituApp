@@ -9,8 +9,9 @@ const AssetStudio = lazy(() => import('./pages/AssetStudio'))
 const Admin = lazy(() => import('./pages/Admin.jsx'))
 
 const PageFallback = (
-  <div className="grid min-h-svh place-items-center bg-gradient-to-br from-[#fff2e3] via-[#f1e6ff] to-[#dff3ff]">
-    <div className="h-11 w-11 animate-spin rounded-full border-4 border-candy-pink/50 border-t-candy-pink-deep" />
+  <div className="flex min-h-svh flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#fff2e3] via-[#f1e6ff] to-[#dff3ff]">
+    <img src="/logo.png" alt="SituApp" draggable={false} className="h-20 w-auto select-none drop-shadow-[0_8px_18px_rgba(74,59,92,0.18)]" />
+    <div className="h-10 w-10 animate-spin rounded-full border-4 border-candy-pink/50 border-t-candy-pink-deep" />
   </div>
 )
 

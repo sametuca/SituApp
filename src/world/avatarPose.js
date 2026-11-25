@@ -228,5 +228,17 @@ export function applyPose(rig, pose, dt) {
     turn(rig, bones.rArm, AY, -0.16 * b)
     turn(rig, bones.lForeArm, AX, -0.22 * b)
     turn(rig, bones.rForeArm, AX, -0.22 * b)
+  } else if (rig.kind === 'guard') {
+    // kulüp bodyguard duruşu: dik göğüs, eller önde kavuşturulmuş, ayaklar omuz hizasında hafif açık
+    model.position.z = 0
+    turn(rig, bones.spine, AX, -0.05 * b)
+    turn(rig, bones.lArm, AX, -0.42 * b)
+    turn(rig, bones.rArm, AX, -0.42 * b)
+    turn(rig, bones.lArm, AY, 0.34 * b)
+    turn(rig, bones.rArm, AY, -0.34 * b)
+    turn(rig, bones.lForeArm, AX, -0.38 * b)
+    turn(rig, bones.rForeArm, AX, -0.38 * b)
+    turn(rig, bones.lUp, AZ, -0.06 * b)
+    turn(rig, bones.rUp, AZ, 0.06 * b)
   }
 }

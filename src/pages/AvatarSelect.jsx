@@ -70,7 +70,13 @@ export default function AvatarSelect() {
     <PastelBackground tone={tone}>
       <main className="mx-auto grid min-h-svh w-full max-w-5xl content-center gap-6 px-5 py-8 lg:grid-cols-[1.1fr_1fr] lg:gap-x-12">
         <header className="flex flex-col items-center text-center lg:col-span-2">
-            <h1 className="mt-4 text-3xl font-black text-ink sm:text-4xl">Karakterini Seç</h1>
+          <img
+            src="/logo.png"
+            alt="SituApp"
+            draggable={false}
+            className="h-14 w-auto select-none drop-shadow-[0_6px_14px_rgba(74,59,92,0.16)] sm:h-16"
+          />
+          <h1 className="mt-2 text-3xl font-black text-ink sm:text-4xl">Karakterini Seç</h1>
           <p className="mt-1 text-sm font-bold text-ink-soft">Dünyada bu karakterle dolaşacak ve yeni insanlarla tanışacaksın.</p>
         </header>
 

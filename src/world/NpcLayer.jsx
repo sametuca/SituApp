@@ -238,10 +238,10 @@ const NpcView = memo(function NpcView({ npc, focusRef, onTalk }) {
   const pose = useMemo(() => (npc.pose ? { current: npc.pose } : undefined), [npc.pose])
   const Prop = npc.prop && PROPS[npc.prop]
 
-  // NPC aksesuarı (cosStore: oda değişiminde silinirse yeniden yazılır)
+  // NPC aksesuarı ve özel kıyafet görünümü (cosStore: oda değişiminde silinirse yeniden yazılır)
   useEffect(() => {
     const id = `npc:${npc.id}`
-    const put = () => !cosStore.get(id) && cosStore.set(id, { acc: npcAccessory(npc), pet: null })
+    const put = () => !cosStore.get(id) && cosStore.set(id, { acc: npcAccessory(npc), pet: null, look: npc.look ?? null })
     put()
     return cosStore.subscribe(put)
   }, [npc])
@@ -324,7 +324,7 @@ const NpcView = memo(function NpcView({ npc, focusRef, onTalk }) {
       >
         {active && (
           <Suspense fallback={null}>
-            <group scale={NPC_SCALE}>
+            <group scale={npc.scale ?? NPC_SCALE}>
               <AvatarRig slug={npc.avatar} anim={anim} pose={pose} cosId={`npc:${npc.id}`} />
             </group>
             {/* yumuşak, zeminle çakışmayan (y=0.085) etkileşim halesi — satıcılar altın, şehir sakinleri lavanta */}

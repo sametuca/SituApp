@@ -477,7 +477,7 @@ const SPINE_PARTS = { wings: Wings, bag: Bag }
 /** Tek bir aksesuar parçası (önizleme veya sahne için). */
 export function AccessoryMesh({ id, color }) {
   const Part = HEAD_PARTS[id] ?? SPINE_PARTS[id]
-  const hex = PASTEL_BY_ID[color]?.hex ?? '#fec071'
+  const hex = typeof color === 'string' && color.startsWith('#') ? color : (PASTEL_BY_ID[color]?.hex ?? '#fec071')
   return Part ? <Part color={hex} /> : null
 }
 

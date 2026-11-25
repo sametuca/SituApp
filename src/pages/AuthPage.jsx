@@ -146,11 +146,15 @@ export default function AuthPage() {
     <PastelBackground>
       <main className="mx-auto flex min-h-svh w-full max-w-md flex-col items-center justify-center px-5 py-8">
         {/* marka */}
-        <header className="animate-pop text-center">
-          <h1 className="text-5xl font-black tracking-tight text-ink">
-            Situ<span className="text-candy-pink-deep">App</span>
-          </h1>
-          <span className="mx-auto mt-1 inline-block rounded-full border-2 border-white bg-[#fff3c8] px-3 py-0.5 text-[0.6875rem] font-black uppercase tracking-widest text-[#8a5a00] shadow-soft">Pre-alpha</span>
+        <header className="animate-pop flex flex-col items-center text-center">
+          <h1 className="sr-only">SituApp</h1>
+          <img
+            src="/logo.png"
+            alt="SituApp"
+            draggable={false}
+            className="mx-auto h-24 w-auto select-none drop-shadow-[0_8px_18px_rgba(74,59,92,0.18)] sm:h-28"
+          />
+          <span className="mx-auto mt-1.5 inline-block rounded-full border-2 border-white bg-[#fff3c8] px-3 py-0.5 text-[0.6875rem] font-black uppercase tracking-widest text-[#8a5a00] shadow-soft">Pre-alpha</span>
           <p className="mt-1 text-sm font-bold tracking-wide text-ink-soft">
             Avatarını seç. Mekânı bul. Bağlantını kur. 💫
           </p>

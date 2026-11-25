@@ -15,6 +15,8 @@ export const SERVER_RADIUS = 13 // m: sunucu denetimi (gecikme payı dahil)
 
 const SOLO = { kind: 'dance', lead: false, t0: 0 }
 const SIT = { kind: 'sit', style: 'chair' }
+const GUARD = { kind: 'guard' }
+const BLACK_SUIT = { h: 0, e: -1, o: '#1a1b22' }
 
 // avatar: zeynep, elif, mira (pembe) | deniz, kaan, ege (mavi)
 const CITY = [
@@ -101,11 +103,21 @@ const CITY = [
     ],
   },
   {
-    id: 'guvenlik', avatar: 'kaan', name: 'Güvenlik Görevlisi Kaan', role: '🕶️', x: 23, z: -4.1, ry: 0,
-    lines: ['Burada herkese yer var, kavga yok! 🕶️', 'Kapıdaki kuyruğa dikkat, sıra sıra 😄', 'Rahatsız eden olursa şikâyet düğmesi var, ben de bakarım 👀', 'Kulüpte iyi eğlenceler, ama nazik ol 🪩'],
+    id: 'guvenlik', avatar: 'kaan', name: 'Bodyguard Kaan', role: '🕶️', x: 24.15, z: -4.95, ry: 0,
+    pose: GUARD, look: BLACK_SUIT, scale: 1.12,
+    lines: ['Hoş geldin, içeride herkese yer var ama kavga yok! 🕶️', 'Kapıdaki düzene dikkat, sıra sıra geçelim 😄', 'Rahatsız eden olursa haber ver, ben buradayım 👀', 'Kulüp Babil’de iyi eğlenceler 🪩'],
     options: [
-      { label: 'Öneri iste', reply: ['İçerideki pist akşamları çok canlı, DJ’e istek şarkı söyle 🎶', 'Kalabalık sevmezsen önce Bar’da bir şey iç, sonra piste geç 🍹'] },
+      { label: 'Öneri iste', reply: ['İçerideki pist akşamları çok canlı, DJ’e istek şarkı söyle 🎶', 'Kalabalık sevmezsen önce Hard Rök’te bir şey iç, sonra piste geç 🍹'] },
       { label: 'Hikâye anlat', reply: ['Bir gece iki kişi pistte aynı anda aynı adımı yaptı. Sonra dans bütün gece sürdü 💃', 'Yıllardır kapıdayım, en güzel manzara içeriden dışarı sızan kahkaha 🪩'] },
+    ],
+  },
+  {
+    id: 'guvenlik2', avatar: 'deniz', name: 'Bodyguard Deniz', role: '🕶️', x: 27.85, z: -4.95, ry: 0,
+    pose: GUARD, look: BLACK_SUIT, scale: 1.12,
+    lines: ['İyi akşamlar, buyurun içeri 🕶️', 'Kıyafet tamam, enerji tamam — geçebilirsin ✨', 'Pist bu gece alev alıyor, keyfine bak 🪩', 'Gözüm kapıda, içeride rahatça eğlen 👀'],
+    options: [
+      { label: 'İçeride ne var?', reply: ['DJ Kaan kabinde, pist kalabalık ve ışıklar yanıyor 🪩', 'Arkadaşlarınla dans edip müzik seçebilirsin 🎶'] },
+      { label: 'Hikâye anlat', reply: ['Geçen hafta biri kapıda adını unuttu, heyecanla “VIP” dedi. Gülüştük, içeri aldık 😄', 'Kaan’la yıllardır bu kapıyı tutuyoruz, içeriden mutsuz çıkan görmedim 🕶️'] },
     ],
   },
   {
@@ -287,7 +299,7 @@ export const AFK_BOTS = [
 // NPC görünümü: oyunculardan ayırt edilsin diye her NPC'nin rolüne göre aksesuarı (şapka, gözlük, kulaklık…) ve ayağında rol halkası vardır.
 const NPC_ACC = {
   gazeteci: ['hat', 'blue'], balon: ['hat', 'yellow'], muzisyen: ['headphones', 'lilac'], cicekci: ['flowers', 'mint'], bahcivan: ['hat', 'mint'],
-  kopekci: ['shades', 'blue'], cankurtaran: ['shades', 'yellow'], dondurmaci: ['hat', 'peach'], guvenlik: ['shades', 'lilac'], hayran: ['headphones', 'mint'],
+  kopekci: ['shades', 'blue'], cankurtaran: ['shades', 'yellow'], dondurmaci: ['hat', 'peach'], guvenlik: ['shades', '#18181f'], guvenlik2: ['shades', '#18181f'], hayran: ['headphones', 'mint'],
   kediler: ['bunny', 'peach'], turist: ['hat', 'blue'],
 }
 const VENUE_ACC = [['hat', 'mint'], ['hat', 'peach'], ['hat', 'yellow'], ['hat', 'blue'], ['hat', 'lilac']]

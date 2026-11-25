@@ -277,9 +277,12 @@ export function trimBase(model, slug) {
 
 /** Klonlanmış model üzerine renk uygular; look boşsa (hepsi -1) hiçbir şey yapmaz. */
 const matCache = new Map()
+const hasVal = (v) => (typeof v === 'string' && v.startsWith('#')) || (Number.isInteger(v) && v >= 0)
+const pickHex = (v, arr) => (typeof v === 'string' ? v : arr[v])
+
 export function applyLook(model, slug, look) {
-  if (!look || (look.h < 0 && look.e < 0 && look.o < 0)) return // renk seçilmemiş: orijinal malzeme, ek maliyet yok
-  const useH = look.h >= 0, useE = look.e >= 0, useO = look.o >= 0
+  if (!look || (!hasVal(look.h) && !hasVal(look.e) && !hasVal(look.o))) return // renk seçilmemiş: orijinal malzeme, ek maliyet yok
+  const useH = hasVal(look.h), useE = hasVal(look.e), useO = hasVal(look.o)
   model.traverse((o) => {
     if (!o.isSkinnedMesh || !o.material) return
     const ck = `${slug}:${look.h}.${look.e}.${look.o}`
@@ -304,9 +307,9 @@ export function applyLook(model, slug, look) {
       uHairRef: { value: toVec(refs.hair, HAIR_N) },
       uSkinRef: { value: toVec(refs.skin, 3) },
       uOutRef: { value: toVec(refs.outfit, OUT_N) },
-      uHairTo: { value: useH ? lin(HAIR_COLORS[look.h]) : new Color() },
-      uOutTo: { value: useO ? lin(OUTFIT_COLORS[look.o]) : new Color() },
-      uEyeTo: { value: useE ? lin(EYE_COLORS[look.e]) : new Color() },
+      uHairTo: { value: useH ? lin(pickHex(look.h, HAIR_COLORS)) : new Color() },
+      uOutTo: { value: useO ? lin(pickHex(look.o, OUTFIT_COLORS)) : new Color() },
+      uEyeTo: { value: useE ? lin(pickHex(look.e, EYE_COLORS)) : new Color() },
       uUseHair: { value: useH ? 1 : 0 },
       uUseOut: { value: useO ? 1 : 0 },
       uUseEye: { value: useE && eyes?.eyes.length === 2 ? 1 : 0 },

@@ -100,7 +100,13 @@ function LoadingOverlay({ ready }) {
   if (hidden) return null
   return (
     <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#fff2e3] via-[#f1e6ff] to-[#dff3ff]">
-      <div className="h-12 w-12 animate-spin rounded-full border-4 border-candy-pink/50 border-t-candy-pink-deep" />
+      <img
+        src="/logo.png"
+        alt="SituApp"
+        draggable={false}
+        className="h-20 w-auto select-none drop-shadow-[0_8px_18px_rgba(74,59,92,0.18)] sm:h-24"
+      />
+      <div className="h-10 w-10 animate-spin rounded-full border-4 border-candy-pink/50 border-t-candy-pink-deep" />
       <p className="text-sm font-extrabold text-ink-soft">Şehir yükleniyor… %{Math.round(progress)}</p>
     </div>
   )
