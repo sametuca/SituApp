@@ -13,7 +13,7 @@ const NAMES = {
 }
 
 // Oturan avatar ayakta olduğu yüksekliğin bu kadar altına iner (m); negatif değer koltuk/sele üstüne çıkarır.
-export const SIT_DROP = { bench: -0.08, chair: -0.05, lounger: 0.24, floor: 0.42, bike: -0.27 }
+export const SIT_DROP = { bench: -0.08, chair: -0.05, stool: 0.14, lounger: 0.24, floor: 0.42, bike: -0.27 }
 
 const q1 = new Quaternion()
 const q2 = new Quaternion()

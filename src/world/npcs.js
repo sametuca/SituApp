@@ -14,7 +14,7 @@ export const CLICK_RADIUS = 9 // m: tıklayarak konuşma
 export const SERVER_RADIUS = 13 // m: sunucu denetimi (gecikme payı dahil)
 
 const SOLO = { kind: 'dance', lead: false, t0: 0 }
-const SIT = { kind: 'sit', style: 'chair' }
+const SIT_STOOL = { kind: 'sit', style: 'stool' }
 const GUARD = { kind: 'guard' }
 const BLACK_SUIT = { h: 0, e: -1, o: '#1a1b22' }
 
@@ -46,7 +46,7 @@ const CITY = [
     ],
   },
   {
-    id: 'muzisyen', avatar: 'deniz', name: 'Sokak Müzisyeni Deniz', role: '🎸', x: 4.4, z: -20.8, ry: 0.5, pose: SIT, prop: 'stool',
+    id: 'muzisyen', avatar: 'deniz', name: 'Sokak Müzisyeni Deniz', role: '🎸', x: 5.35, z: -17.2, ry: -1.45, pose: SIT_STOOL, prop: 'stool',
     lines: ['Bu şarkıyı sana çalıyorum 🎶', 'Kafe Sokağı’nın sesi benim 🎸', 'Müzik, sohbetin en tatlı başlangıcı 😉', 'Dinleyene bir kahve ısmarlarım… yarın 😄'],
     options: [
       { label: 'Öneri iste', reply: ['Müzik dinleyerek kahve içmek için Starbucket’in pencere kenarı ideal ☕', 'Dans etmek istersen Gece Kulübü’ne uğra, pist hiç boş kalmıyor 🪩'] },

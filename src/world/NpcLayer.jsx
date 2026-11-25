@@ -41,10 +41,32 @@ function Balloons() {
 
 function Stool() {
   return (
-    <mesh position={[0, 0.2, -0.12]} castShadow>
-      <cylinderGeometry args={[0.24, 0.2, 0.4, 14]} />
-      <M color="#ffd5bf" />
-    </mesh>
+    <group position={[0, 0, -0.05]}>
+      {/* ahşap tabure gövdesi + üst pofuduk minder (y = 0..0.37) */}
+      <mesh position={[0, 0.16, 0]} castShadow>
+        <cylinderGeometry args={[0.21, 0.24, 0.32, 16]} />
+        <M color="#d89b67" />
+      </mesh>
+      <mesh position={[0, 0.34, 0]} castShadow>
+        <cylinderGeometry args={[0.23, 0.22, 0.07, 16]} />
+        <M color="#b79cff" />
+      </mesh>
+      {/* taburenin yanında yaslı mini akustik gitar */}
+      <group position={[0.38, 0.22, 0.04]} rotation={[0.12, -0.4, -0.28]}>
+        <mesh position={[0, -0.05, 0]} castShadow>
+          <cylinderGeometry args={[0.12, 0.13, 0.06, 14]} />
+          <M color="#f0b26b" />
+        </mesh>
+        <mesh position={[0, 0.06, 0]} castShadow>
+          <cylinderGeometry args={[0.09, 0.1, 0.06, 14]} />
+          <M color="#f0b26b" />
+        </mesh>
+        <mesh position={[0, 0.28, 0]}>
+          <boxGeometry args={[0.04, 0.36, 0.03]} />
+          <M color="#7c4d2e" />
+        </mesh>
+      </group>
+    </group>
   )
 }
 

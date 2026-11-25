@@ -256,15 +256,41 @@ export function useHomeCare({ net, home, focusRef, touch, say, panel }) {
   const careDone = (care.plant ? 1 : 0) + (care.water ? 1 : 0) + (care.harvest ? 1 : 0)
 
   const waterAll = () => {
+    const next = plots.slice()
     let count = 0
     for (let i = 0; i < activeCount; i++) {
-      const s = plots[i]
+      const s = next[i]
       if (s && !s.wateredAt && !cropProgress(s, now).ready) {
-        waterPlot(i)
+        if (!send({ t: 'garden_water', idx: i })) next[i] = { ...s, wateredAt: Date.now() }
         count++
       }
     }
-    if (count > 0) say(`💧 ${count} bitki topluca sulandı!`)
+    if (count > 0) {
+      commitPlots(next)
+      markCare('water')
+      say(`💧 ${count} bitki topluca sulandı!`)
+    }
+  }
+
+  const harvestAll = () => {
+    const next = plots.slice()
+    let count = 0
+    let totalCoins = 0
+    for (let i = 0; i < activeCount; i++) {
+      const s = next[i]
+      if (s && cropProgress(s, now).ready) {
+        const c = CROP_BY_ID[s.crop]
+        totalCoins += c?.coins ?? 0
+        if (!send({ t: 'garden_harvest', idx: i })) next[i] = null
+        count++
+      }
+    }
+    if (count > 0) {
+      commitPlots(next)
+      markCare('harvest')
+      say(`🧺 ${count} ürün topluca hasat edildi! (+${totalCoins} 🪙)`)
+      window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'collect' }))
+    }
   }
 
   const claimCareBonus = () => {
@@ -313,8 +339,13 @@ export function useHomeCare({ net, home, focusRef, touch, say, panel }) {
                 <span>Bahçene tohum ek!</span>
               )}
             </div>
+            {readyCount > 1 && (
+              <button onClick={harvestAll} className="rounded-full bg-[#fff3c4] px-2.5 py-0.5 text-[0.6875rem] font-black text-[#8a5a00] transition hover:bg-[#ffe899] active:scale-95">
+                🧺 Hepsini Topla
+              </button>
+            )}
             {needWater > 1 && (
-              <button onClick={waterAll} className="rounded-full bg-[#dbeafe] px-2 py-0.5 text-[0.625rem] font-black text-[#1d4ed8] transition hover:bg-[#bfdbfe] active:scale-95">
+              <button onClick={waterAll} className="rounded-full bg-[#dbeafe] px-2.5 py-0.5 text-[0.6875rem] font-black text-[#1d4ed8] transition hover:bg-[#bfdbfe] active:scale-95">
                 💧 Hepsini Sula
               </button>
             )}
