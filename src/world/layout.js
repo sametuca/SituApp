@@ -112,7 +112,7 @@ export const BUILDINGS = [
   b(41.5, -9.7, 7, 8, 6, 'pink', 's', '🍹 Hard Rök', { shop: true }),
   b(19, 9.7, 7, 6, 5, 'blue', 'n', '🎮 Playstasyon', { shop: true }),
   b(30, 9.7, 8, 6, 6, 'yellow', 'n', '🍔 Burger Kral', { shop: true }),
-  b(41, 9.7, 7, 6, 5, 'mint', 'n'),
+  b(41, 9.7, 7, 6, 5, 'mint', 'n', '🏋️ MakFit', { shop: true }),
 
   // Plaj Yolu (güney)
   b(-9.7, 19, 6, 7, 5, 'blue', 'e', '🍦 Nevarlanda', { shop: true }),
@@ -132,8 +132,8 @@ export const BUILDINGS = [
   b(28, 41, 10, 8, 11, 'peach', 'n'),
   b(41, 41, 8, 8, 9, 'yellow', 'n'),
 
-  // Herkesin kendi evine girdiği kapı (lobi meydanının güneybatısı)
-  b(-9, 10, 5, 5, 4.6, 'mint', 'e', '🏠 Evim', { homeDoor: true }),
+  // Herkesin kendi evine girdiği kapı (lobi halkasının batısında, park çiminde — asfalta binmesin)
+  b(-19.5, 8.5, 5, 5, 4.6, 'mint', 'e', '🏠 Evim', { homeDoor: true }),
 
   // Park çardağı
   { x: G(-30, 0)[0], z: 0, gazebo: true },
@@ -193,24 +193,24 @@ const LAMP = ROAD_HALF + 0.75
 // mekan kapılarının tam önüne gelen lambaları kapıdan uzağa kaydır (bar, fastfood, dondurma, surf)
 for (let t = 20; t <= 90; t += 10) {
   PROPS.push(p('lamp', LAMP, -t, 3, 0.35), p('lamp', -LAMP, -t, 3, 0.35)) // kuzey uzantısı
-  const eSouth = t === 30 ? 25.5 : t // Burger Kral kapısından (x=31.6) uzak
+  const eSouth = t === 30 ? 25.5 : t === 40 ? 35.5 : t // Burger Kral (31.6) ve MakFit (41) kapılarından uzak
   const eNorth = t === 40 ? 35.5 : t // Hard Rök kapısından (x=40.45) uzak
   PROPS.push(p('lamp', eSouth, LAMP, 3, 0.35), p('lamp', eNorth, -LAMP, 3, 0.35)) // doğu uzantısı
   if (t <= 20) PROPS.push(p('lamp', LAMP, 23.2, 3, 0.35), p('lamp', -LAMP, 23.2, 3, 0.35)) // güney: Nevarlanda & Quicksörf kapılarından uzak
 }
-// dönel kavşak lambaları: halkanın dış kaldırımında, yol bağlantılarından ve Evim binasından uzakta
+// dönel kavşak lambaları: halkanın dış kaldırımında, yol bağlantılarından uzakta
 for (const a of [Math.PI / 4, (3 * Math.PI) / 4, (5 * Math.PI) / 4, (7 * Math.PI) / 4, Math.PI / 8, (7 * Math.PI) / 8, (9 * Math.PI) / 8, (15 * Math.PI) / 8]) PROPS.push(pw('lamp', Math.cos(a) * (RING.r1 + 0.7), Math.sin(a) * (RING.r1 + 0.7), 3, 0.35))
-// lobi (geniş meydan): ortada büyük çeşme, çevresinde çiçeklikler, ağaçlar ve banklar halkası (binalara ve Evim kapısına yaklaşmaz)
+// lobi (geniş meydan): ortada büyük çeşme, çevresinde çiçeklikler, ağaçlar ve banklar halkası (binalara yaklaşmaz)
 PROPS.push(pw('fountain', 0, 0, 9.7))
 for (const [fx, fz] of [[6.4, 6.4], [-6.4, 6.4], [6.4, -6.4], [-6.4, -6.4]]) PROPS.push(pw('flowerbed', fx, fz, 2.4))
-PROPS.push(pw('tree', 10, 10, 4.2, 0.9), pw('tree', 10, -10, 4.2, 0.9), pw('tree', -10, -10, 4.2, 0.9))
+PROPS.push(pw('tree', 10, 10, 4.2, 0.9), pw('tree', 10, -10, 4.2, 0.9), pw('tree', -10, -10, 4.2, 0.9), pw('tree', -10, 10, 4.2, 0.9))
 {
   const nearBuilding = (x, z, pad) => BUILDINGS.some((bd) => !bd.gazebo && Math.abs(x - bd.x) < (bd.facing === 'e' || bd.facing === 'w' ? bd.d : bd.w) / 2 + pad && Math.abs(z - bd.z) < (bd.facing === 'e' || bd.facing === 'w' ? bd.w : bd.d) / 2 + pad)
   for (let i = 0; i < 12; i++) {
     const a = (i / 12) * Math.PI * 2 + Math.PI / 12
     const bx = Math.cos(a) * 12.8
     const bz = Math.sin(a) * 12.8
-    if (nearBuilding(bx, bz, 2.5) || Math.hypot(bx + 5.4, bz - 10) < 4) continue // Evim kapısı ve binalar
+    if (nearBuilding(bx, bz, 2.5)) continue
     PROPS.push(pw('bench', bx, bz, 1.7, 0, -a - Math.PI / 2))
   }
 }
@@ -224,7 +224,7 @@ for (const side of [-1, 1]) {
 PROPS.push(p('speaker', 21.8, -5.1, 2, 0.6), p('speaker', 31.6, -5.1, 2, 0.6))
 PROPS.push(p('speaker', 38, 5.3, 1.8, 0.5))
 // park: ağaçlar, banklar
-for (const [x, z] of [[-18, -9], [-24, -10], [-36, -10], [-44, -8], [-20, 9], [-26, 10], [-37, 9], [-44, 6], [-42, -1], [-16, 7]]) PROPS.push(p('tree', x, z, 3.6, 0.7))
+for (const [x, z] of [[-18, -9], [-24, -10], [-36, -10], [-44, -8], [-23.5, 6], [-26, 10], [-37, 9], [-44, 6], [-42, -1], [-15.8, 4.2]]) PROPS.push(p('tree', x, z, 3.6, 0.7))
 PROPS.push(p('bench', -22, -5, 1.7, 0, 0), p('bench', -22, 5, 1.7, 0, Math.PI), p('bench', -36, -5, 1.7, 0, 0), p('bench', -36, 5, 1.7, 0, Math.PI))
 // park patikası (x -15…-26, z ±1,6): lambalar patikanın iki yanında, aynı hizada
 for (const x of [-19.5, -24.5]) PROPS.push(p('lamp', x, 2.6, 3, 0.35), p('lamp', x, -2.6, 3, 0.35))
@@ -412,7 +412,7 @@ export const GUIDE = { x: -3.8, z: 30.2, ry: 0.3, avatar: 'mira', name: 'Rehber'
 
 // ---------- ev kapısı ve iç mekan ----------
 // Kapının önündeki nokta (şehirde): buraya gelince "Eve gir" çıkar, dışarı çıkınca buraya dönülür.
-export const HOME_DOOR = { x: -5.4, z: 10, radius: 2.6 }
+export const HOME_DOOR = { x: G(-16, 8.5)[0], z: G(-16, 8.5)[1], radius: 2.6 }
 
 // Ev odası: orijin = oda merkezi; giriş kapısı güney duvarında (+z). Şehir çizilmez, aynı koordinat sistemi.
 export const HOME_ROOM = {
