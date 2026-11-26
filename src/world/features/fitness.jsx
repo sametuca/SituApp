@@ -1,6 +1,7 @@
 // Fitness Kulübü (MakFit): 4 karakter statı, günlük enerji, ağırlık & koşu bandı mini oyunları,
 // 60 FPS ritim-zamanlama boks arenası (PvP + Koç Kaan), otomatik boks kıyafeti ve haftalık şampiyon kemeri.
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useGLTF } from '@react-three/drei'
 import { BLOCK_MS, BOX, CUE_META, CUE_TYPES, STAT_KEYS, STAT_META, STAT_MAX, STAT_START, boxCues, coinBonusPct, energyMax, gradeWindow, hitDamage, matchDuration, roundStart } from '../boxing'
 import BoxingArena3D from './BoxingArena3D'
 import { cosStore } from '../cosStore'
@@ -116,6 +117,9 @@ function WeightWorkoutModal({ ski, energy, energyMaxVal, onDone, onClose }) {
   const halfGood = Math.min(22, 13 + Math.round(ski * 0.08))
   const halfPerf = Math.min(10, 5 + Math.round(ski * 0.04))
 
+  const onDoneRef = useRef(onDone)
+  onDoneRef.current = onDone
+
   useEffect(() => {
     if (phase !== 'play') return undefined
     let raf = 0
@@ -144,7 +148,7 @@ function WeightWorkoutModal({ ski, energy, energyMaxVal, onDone, onClose }) {
           if (!stRef.current.done) {
             stRef.current.done = true
             setPhase('done')
-            onDone(stRef.current.reps, stRef.current.perfects)
+            onDoneRef.current(stRef.current.reps, stRef.current.perfects)
           }
           return 0
         }
@@ -155,7 +159,7 @@ function WeightWorkoutModal({ ski, energy, energyMaxVal, onDone, onClose }) {
       cancelAnimationFrame(raf)
       clearInterval(tid)
     }
-  }, [phase, onDone])
+  }, [phase])
 
   const tapLift = useCallback(() => {
     if (phase !== 'play') return
@@ -279,11 +283,17 @@ function CardioWorkoutModal({ energy, energyMaxVal, onDone, onClose }) {
   const [pos, setPos] = useState(10)
   const [left, setLeft] = useState(16)
   const [pace, setPace] = useState(40)
+  const [streak, setStreak] = useState(0)
+  const [hitFx, setHitFx] = useState(null) // { key, kind, label }
   const [feedback, setFeedback] = useState('İmleç parlak alana gelince bas!')
-  const stRef = useRef({ pos: 10, dir: 1, steps: 0, perfects: 0, pace: 40, done: false })
+  const stRef = useRef({ pos: 10, dir: 1, steps: 0, perfects: 0, streak: 0, pace: 40, done: false })
+  const fxTimer = useRef(null)
 
   const halfGood = 18
   const halfPerf = 7
+
+  const onDoneRef = useRef(onDone)
+  onDoneRef.current = onDone
 
   useEffect(() => {
     if (phase !== 'play') return undefined
@@ -319,7 +329,7 @@ function CardioWorkoutModal({ energy, energyMaxVal, onDone, onClose }) {
             stRef.current.done = true
             setPhase('done')
             const reps = Math.max(1, Math.round(stRef.current.steps / 2))
-            onDone(reps, stRef.current.perfects)
+            onDoneRef.current(reps, stRef.current.perfects)
           }
           return 0
         }
@@ -331,7 +341,13 @@ function CardioWorkoutModal({ energy, energyMaxVal, onDone, onClose }) {
       clearInterval(decay)
       clearInterval(tid)
     }
-  }, [phase, onDone])
+  }, [phase])
+
+  const triggerFx = useCallback((kind, label) => {
+    clearTimeout(fxTimer.current)
+    setHitFx({ key: Math.random(), kind, label })
+    fxTimer.current = setTimeout(() => setHitFx(null), 360)
+  }, [])
 
   const tapStep = useCallback(() => {
     if (phase !== 'play') return
@@ -339,25 +355,34 @@ function CardioWorkoutModal({ energy, energyMaxVal, onDone, onClose }) {
     if (dist <= halfPerf) {
       stRef.current.steps += 2
       stRef.current.perfects += 1
+      stRef.current.streak += 1
       stRef.current.pace = Math.min(100, stRef.current.pace + 18)
       setSteps(stRef.current.steps)
       setPerfects(stRef.current.perfects)
+      setStreak(stRef.current.streak)
       setPace(stRef.current.pace)
-      setFeedback('⚡ Mükemmel tempo (+2 adım)')
+      setFeedback(stRef.current.streak >= 3 ? `🔥 ${stRef.current.streak}x Seri! Mükemmel tempo (+2)` : '⚡ Mükemmel tempo (+2 adım)')
+      triggerFx('perf', stRef.current.streak >= 3 ? `🔥 ${stRef.current.streak}x MÜKEMMEL +2` : '⚡ MÜKEMMEL +2!')
       window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'collect' }))
     } else if (dist <= halfGood) {
       stRef.current.steps += 1
+      stRef.current.streak += 1
       stRef.current.pace = Math.min(100, stRef.current.pace + 10)
       setSteps(stRef.current.steps)
+      setStreak(stRef.current.streak)
       setPace(stRef.current.pace)
       setFeedback('🏃 İyi adım (+1)')
+      triggerFx('good', '✨ İYİ +1!')
       window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'pop' }))
     } else {
+      stRef.current.streak = 0
       stRef.current.pace = Math.max(0, stRef.current.pace - 8)
+      setStreak(0)
       setPace(stRef.current.pace)
       setFeedback('Kaçırdın — parlak alanı bekle!')
+      triggerFx('miss', 'KAÇTI!')
     }
-  }, [phase, halfPerf, halfGood])
+  }, [phase, halfPerf, halfGood, triggerFx])
 
   useEffect(() => {
     if (phase !== 'play') return undefined
@@ -374,9 +399,11 @@ function CardioWorkoutModal({ energy, energyMaxVal, onDone, onClose }) {
   }, [phase, tapStep])
 
   const start = () => {
-    stRef.current = { pos: 10, dir: 1, steps: 0, perfects: 0, pace: 40, done: false }
+    stRef.current = { pos: 10, dir: 1, steps: 0, perfects: 0, streak: 0, pace: 40, done: false }
     setSteps(0)
     setPerfects(0)
+    setStreak(0)
+    setHitFx(null)
     setPos(10)
     setLeft(16)
     setPace(40)
@@ -397,20 +424,50 @@ function CardioWorkoutModal({ energy, energyMaxVal, onDone, onClose }) {
         </div>
       </div>
 
-      <div className="mt-3 rounded-2xl bg-white/10 p-3">
+      <div className="relative mt-3 rounded-2xl bg-white/10 p-3">
+        {hitFx && (
+          <div
+            key={hitFx.key}
+            className={`pointer-events-none absolute -top-3 left-1/2 z-10 -translate-x-1/2 animate-pop rounded-full px-3 py-0.5 text-xs font-black shadow-lg ${
+              hitFx.kind === 'perf' ? 'bg-[#ffd35e] text-[#4a3b5c]' : hitFx.kind === 'good' ? 'bg-[#7fcdf3] text-white' : 'bg-[#ff7e70] text-white'
+            }`}
+          >
+            {hitFx.label}
+          </div>
+        )}
         <div className="flex items-center justify-between text-xs font-black text-white/90">
           <span>Adım: {steps}</span>
           <span>Mükemmel: {perfects}</span>
-          <span>Tempo: %{pace}</span>
+          <span>{streak >= 2 ? `🔥 x${streak}` : `Tempo: %${pace}`}</span>
           <span className="tabular-nums">⏱ {left} sn</span>
         </div>
         {/* Zamanlama çubuğu */}
-        <div className="relative mt-2.5 h-8 w-full overflow-hidden rounded-full border-2 border-white/25 bg-white/10">
+        <div
+          className={`relative mt-2.5 h-8 w-full overflow-hidden rounded-full border-2 bg-white/10 transition-all duration-100 ${
+            hitFx?.kind === 'perf'
+              ? 'scale-[1.02] border-[#ffd35e] ring-4 ring-[#ffd35e]/55 shadow-[0_0_22px_rgba(255,211,94,0.75)]'
+              : hitFx?.kind === 'good'
+                ? 'border-[#7fcdf3] ring-4 ring-[#7fcdf3]/45 shadow-[0_0_16px_rgba(127,205,243,0.65)]'
+                : hitFx?.kind === 'miss'
+                  ? 'border-[#ff7e70] ring-2 ring-[#ff7e70]/50'
+                  : 'border-white/25'
+          }`}
+        >
           <div className="absolute top-0 h-full bg-[#7fcdf3]/65" style={{ left: `${50 - halfGood}%`, width: `${halfGood * 2}%` }} />
           <div className="absolute top-0 h-full bg-[#ffd35e]" style={{ left: `${50 - halfPerf}%`, width: `${halfPerf * 2}%` }} />
+          {hitFx && hitFx.kind !== 'miss' && (
+            <div
+              key={`r-${hitFx.key}`}
+              className={`absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 animate-ping rounded-full ${
+                hitFx.kind === 'perf' ? 'bg-[#ffd35e]/70' : 'bg-[#7fcdf3]/60'
+              }`}
+            />
+          )}
           <div className="absolute top-0.5 h-6 w-3 -translate-x-1/2 rounded-full border-2 border-[#221b38] bg-white shadow" style={{ left: `${pos}%` }} />
         </div>
-        <p className="mt-2 text-center text-xs font-bold text-[#7fcdf3]">{feedback}</p>
+        <p className={`mt-2 text-center text-xs font-bold ${hitFx?.kind === 'perf' ? 'text-[#ffd35e]' : hitFx?.kind === 'miss' ? 'text-[#ff8a7a]' : 'text-[#7fcdf3]'}`}>
+          {feedback}
+        </p>
       </div>
 
       <div className="mt-4">
@@ -937,6 +994,12 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
     return () => window.removeEventListener('keydown', onKey)
   }, [nearEq, panel, workout, match, atDoor, openNearEq])
 
+  useEffect(() => {
+    if (!inGym) return
+    useGLTF.preload('/models/venues/boxer-red.glb')
+    useGLTF.preload('/models/venues/boxer-blue.glb')
+  }, [inGym])
+
   const finishWorkout = useCallback(
     (kind, reps, perfects) => {
       if (send({ t: 'box_train', kind, reps, perfects })) return
@@ -988,7 +1051,7 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
   useEffect(() => {
     if (!workout) return undefined
     if (venue === 'fitness' && focusRef.current) {
-      focusRef.current.teleport = workout === 'str' ? [3.55, -2.4, Math.PI / 2] : [4.4, 1.5, Math.PI]
+      focusRef.current.teleport = workout === 'str' ? [3.55, -2.4, Math.PI / 2] : [4.4, 1.5, 0]
     }
     work.self.current = { kind: 'work', style: workout === 'str' ? 'bench' : 'cardio', t0: performance.now() / 1000 }
     return () => {
@@ -1068,7 +1131,7 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
         <Modal onClose={closeBoxing} label="MakFit Boks Ringi" theme="gym">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <h2 className="text-xl font-black text-white">🥊 MakFit Ringi</h2>
+              <h2 className="text-xl font-black text-white">MakFit Ringi</h2>
               <p className="text-xs font-semibold text-white/65">Ritmi yakala, haftalık kemeri al.</p>
             </div>
             <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-black text-[#ffd35e]">⚡ {energy}/{eMax}</span>
@@ -1076,9 +1139,9 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
 
           <div className="mt-3 grid grid-cols-3 gap-1.5 rounded-2xl bg-white/10 p-1">
             {[
-              ['lobby', '🥊 Ring'],
-              ['train', '💪 Antrenman'],
-              ['board', '🏆 Sıralama'],
+              ['lobby', 'Ring'],
+              ['train', 'Antrenman'],
+              ['board', 'Sıralama'],
             ].map(([id, lbl]) => (
               <button
                 key={id}
@@ -1144,7 +1207,7 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
                   className="flex items-center justify-between rounded-2xl border-2 border-[#ffd4cd] bg-[#fff5f3] p-3.5 text-left transition hover:bg-[#ffebe7]"
                 >
                   <div>
-                    <p className="text-sm font-black text-[#4a3b5c]">💪 Ağırlık Sehpası (+Güç)</p>
+                    <p className="text-sm font-black text-[#4a3b5c]">Ağırlık Sehpası (+Güç)</p>
                     <p className="text-xs font-bold text-[#8a7a9c]">Boks yumruk hasarını artırır · Mevcut: {Math.floor(attr.str)}</p>
                   </div>
                   <span className="rounded-xl bg-[#ff8a7a] px-3 py-1.5 text-xs font-black text-white">Çalış</span>
@@ -1158,7 +1221,7 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
                   className="flex items-center justify-between rounded-2xl border-2 border-[#cbe8ff] bg-[#f2faff] p-3.5 text-left transition hover:bg-[#e5f4ff]"
                 >
                   <div>
-                    <p className="text-sm font-black text-[#4a3b5c]">🏃 Koşu Bandı (+Kondisyon)</p>
+                    <p className="text-sm font-black text-[#4a3b5c]">Koşu Bandı (+Kondisyon)</p>
                     <p className="text-xs font-bold text-[#8a7a9c]">Savunma, enerji ve koşu hızı · Mevcut: {Math.floor(attr.sta)}</p>
                   </div>
                   <span className="rounded-xl bg-[#7fcdf3] px-3 py-1.5 text-xs font-black text-white">Koş</span>
@@ -1166,9 +1229,6 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
               </div>
             ) : (
               <div className="flex flex-col gap-3">
-                <div className="rounded-2xl bg-[#fff5f3] p-3 text-center text-xs font-black text-[#b54141]">
-                  🥊 Boks eldivenlerin ve şortun otomatik giyildi!
-                </div>
                 <div className="rounded-2xl border-2 border-[#efe6ff] bg-[#fcfaff] p-3.5">
                   <div className="flex items-center justify-between text-xs font-black text-[#4a3b5c]">
                     <span>1v1 Oyuncu Lobisi</span>
@@ -1195,7 +1255,7 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
                         }}
                         className="w-full rounded-2xl border-b-4 border-[#d96c5b] bg-[#ff8a7a] py-2.5 text-sm font-black text-white shadow-soft active:translate-y-[2px]"
                       >
-                        🥊 Başka Oyuncuyla Maç Ara (1v1)
+                        Başka Oyuncuyla Maç Ara (1v1)
                       </button>
                     )}
                   </div>

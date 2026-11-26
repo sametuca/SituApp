@@ -38,7 +38,8 @@ export function TopBar({ online, status, dnd, onExit, onHelp, onSettings, extraB
         <div className="pointer-events-auto flex flex-col gap-1.5 sm:gap-2.5">
           <button
             onClick={onExit}
-            aria-label="Karakter seçimine dön"
+            aria-label="Çıkış yap"
+            title="Çıkış yap"
             className={`grid h-11 w-11 place-items-center rounded-full text-xl font-black text-[#4a3b5c] transition hover:bg-white active:scale-95 sm:h-14 sm:w-14 sm:text-2xl ${glass} ${hasSpotlight ? 'opacity-40' : ''}`}
           >
             <Ico name="back" size={28} />

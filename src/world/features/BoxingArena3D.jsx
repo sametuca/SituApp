@@ -28,7 +28,27 @@ function BoxerModel({ model, height = 1.65 }) {
   )
 }
 
-function Boxer3D({ x, facing, model, stateRef, isSelf }) {
+function FallbackBoxer({ bodyCol, gloveCol }) {
+  return (
+    <group>
+      <RoundedBox args={[0.58, 0.72, 0.4]} radius={0.14} smoothness={2} position={[0, 0.78, 0]} castShadow>
+        <meshStandardMaterial color={bodyCol} roughness={0.55} />
+      </RoundedBox>
+      <mesh position={[0, 1.38, 0]} castShadow>
+        <sphereGeometry args={[0.28, 14, 12]} />
+        <meshStandardMaterial color="#ffe0c2" roughness={0.58} />
+      </mesh>
+      {[-0.28, 0.28].map((gx, i) => (
+        <mesh key={i} position={[gx, 1.12, 0.36]} castShadow>
+          <sphereGeometry args={[0.15, 12, 10]} />
+          <meshStandardMaterial color={gloveCol} roughness={0.38} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+function Boxer3D({ x, facing, model, bodyCol, gloveCol, stateRef, isSelf }) {
   const root = useRef()
   const body = useRef()
   const shield = useRef()
@@ -64,7 +84,7 @@ function Boxer3D({ x, facing, model, stateRef, isSelf }) {
   return (
     <group ref={root} position={[x, 0.22, 0]}>
       <group ref={body}>
-        <Suspense fallback={null}>
+        <Suspense fallback={<FallbackBoxer bodyCol={bodyCol} gloveCol={gloveCol} />}>
           <BoxerModel model={model} />
         </Suspense>
       </group>
@@ -184,8 +204,8 @@ export default function BoxingArena3D({ stateRef }) {
       <pointLight position={[2.2, 4.0, 1.5]} intensity={4} color="#7fcdf3" distance={12} />
       <ArenaCamera stateRef={stateRef} />
       <RingStage />
-      <Boxer3D x={-1.15} facing={1} model="/models/venues/boxer-red.glb" stateRef={stateRef} isSelf />
-      <Boxer3D x={1.15} facing={-1} model="/models/venues/boxer-blue.glb" stateRef={stateRef} isSelf={false} />
+      <Boxer3D x={-1.15} facing={1} model="/models/venues/boxer-red.glb" bodyCol="#ff8a7a" gloveCol="#ff595e" stateRef={stateRef} isSelf />
+      <Boxer3D x={1.15} facing={-1} model="/models/venues/boxer-blue.glb" bodyCol="#7fcdf3" gloveCol="#3b82f6" stateRef={stateRef} isSelf={false} />
       <HitSparks stateRef={stateRef} />
     </Canvas>
   )

@@ -1066,7 +1066,10 @@ function WorldScene({ avatar }) {
           extraNodes={inTutorial ? null : feat.extraNodes}
           menuNodes={feat.menuNodes}
           menuBadge={inTutorial ? 0 : feat.menuBadge}
-          onExit={() => navigate('/avatar')}
+          onExit={async () => {
+            await signOut()
+            navigate('/', { replace: true })
+          }}
           onHelp={() => setHelp(true)}
         />
       )}
