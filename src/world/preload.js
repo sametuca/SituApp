@@ -13,6 +13,10 @@ const CITY = [...new Set([...PROPS.map((p) => p.model), '/models/venues/picnic-b
 const VENUE_ITEMS = [
   'arcade-cabinet', 'bakery-oven', 'bar-stool', 'bottle-shelf', 'cake-display', 'camera-tripod', 'cash-register', 'claw-machine', 'clothes-rack', 'coffee-machine',
   'counter', 'dj-stand', 'icecream-freezer', 'karaoke-mic', 'salon-chair', 'salon-mirror', 'samovar', 'softbox-light', 'stage-podium', 'surfboard-a', 'surfboard-b', 'world-globe',
+  'cafe-neon-cup', 'cafe-pastry-cart', 'tea-wall-carpet', 'tea-backgammon-table', 'bakery-bread-rack', 'bakery-flour-barrel', 'dessert-donut-wall', 'dessert-macaron-tower',
+  'icecream-cone-lamp', 'icecream-menu-board', 'fastfood-burger-statue', 'fastfood-soda-fountain', 'books-reading-ladder', 'books-globe-lamp', 'club-neon-wings', 'club-velvet-rope',
+  'bar-guitar-wall', 'bar-neon-cocktail', 'arcade-prize-shelf', 'arcade-neon-joystick', 'salon-dryer-chair', 'salon-perfume-shelf', 'studio-ring-light', 'studio-polaroid-wall',
+  'surf-tiki-mask', 'surf-wetsuit-rack', 'guide-postcard-rack', 'guide-compass-plaque', 'airport-departure-clock', 'airport-dutyfree-shelf', 'gym-trophy-case', 'teknel-cheese-case',
 ].map((n) => `/models/venues/${n}.glb`)
 const AIRPORT = ['suitcases', 'luggage-cart', 'toy-plane'].map((n) => `/models/airport/${n}.glb`).concat('/models/bike/bike.glb')
 const COLLECT = ['star', 'heartstone', 'flower', 'balloon', 'shell', 'chest'].map((n) => `/models/collectibles/${n}.glb`)

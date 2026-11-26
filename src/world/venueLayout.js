@@ -534,29 +534,30 @@ function build(v) {
       }
     }
   }
-  // --- her mekân türü için 2 tematik Meshy GLB dekor öğesi (duvar köşelerinde, çakışmasız) ---
+  // --- her mekân türü için 2 tematik Meshy GLB dekor öğesi (duvar + köşe yerleşimi) ---
+  const V = (n) => `/models/venues/${n}.glb`
   const F = (n) => `/models/furniture/${n}.glb`
   const VENUE_ACCENTS = {
-    cafe: [{ model: F('record-player'), h: 1.15, w: 0.9, d: 0.7 }, { model: F('plant-stand'), h: 1.55, w: 0.8, d: 0.8 }],
-    tea: [{ model: F('fireplace'), h: 1.75, w: 1.5, d: 0.7 }, { model: F('floor-lamp'), h: 1.85, w: 0.65, d: 0.65 }],
-    bakery: [{ model: F('flower-shelf'), h: 1.65, w: 1.1, d: 0.65 }, { model: F('picnic-basket'), h: 0.72, w: 0.75, d: 0.65 }],
-    dessert: [{ model: F('bubble-lamp'), h: 1.55, w: 0.7, d: 0.7 }, { model: F('rose-vase'), h: 1.05, w: 0.65, d: 0.65 }],
-    icecream: [{ model: F('bunny-lamp'), h: 1.25, w: 0.7, d: 0.7 }, { model: F('beanbag'), h: 0.85, w: 1.1, d: 1.1 }],
-    fastfood: [{ model: F('jukebox'), h: 1.85, w: 1.1, d: 0.8 }, { model: F('retro-tv'), h: 1.35, w: 1.0, d: 0.75 }],
-    books: [{ model: F('fireplace'), h: 1.75, w: 1.5, d: 0.7 }, { model: F('velvet-armchair'), h: 1.15, w: 1.0, d: 0.95 }],
-    club: [{ model: F('jukebox'), h: 1.85, w: 1.1, d: 0.8 }, { model: F('bubble-lamp'), h: 1.6, w: 0.7, d: 0.7 }],
-    bar: [{ model: F('jukebox'), h: 1.85, w: 1.1, d: 0.8 }, { model: F('record-player'), h: 1.15, w: 0.9, d: 0.7 }],
-    arcade: [{ model: F('pinball'), h: 1.55, w: 0.95, d: 1.35 }, { model: F('retro-tv'), h: 1.35, w: 1.0, d: 0.75 }],
-    salon: [{ model: F('heart-mirror'), h: 1.75, w: 0.95, d: 0.55 }, { model: F('flower-shelf'), h: 1.65, w: 1.1, d: 0.65 }],
-    studio: [{ model: F('velvet-armchair'), h: 1.15, w: 1.0, d: 0.95 }, { model: F('rose-vase'), h: 1.05, w: 0.65, d: 0.65 }],
-    shop: [{ model: F('hammock'), h: 1.25, w: 1.8, d: 0.95 }, { model: F('plant-stand'), h: 1.55, w: 0.8, d: 0.8 }],
-    guide: [{ model: F('bookshelf'), h: 1.8, w: 1.2, d: 0.55 }, { model: F('floor-lamp'), h: 1.85, w: 0.65, d: 0.65 }],
-    airport: [{ model: F('plant-stand'), h: 1.6, w: 0.8, d: 0.8 }, { model: F('floor-lamp'), h: 1.85, w: 0.65, d: 0.65 }],
-    gym: [{ model: F('retro-tv'), h: 1.35, w: 1.0, d: 0.75 }, { model: F('plant-stand'), h: 1.55, w: 0.8, d: 0.8 }],
-    teknel: [{ model: F('retro-tv'), h: 1.35, w: 1.0, d: 0.75 }, { model: F('plant-stand'), h: 1.55, w: 0.8, d: 0.8 }],
+    cafe: [{ model: V('cafe-neon-cup'), h: 1.15, wall: true, y: 1.7 }, { model: V('cafe-pastry-cart'), h: 1.25, w: 1.0, d: 0.75 }],
+    tea: [{ model: V('tea-wall-carpet'), h: 1.55, wall: true, y: 1.45 }, { model: V('tea-backgammon-table'), h: 1.0, w: 1.05, d: 0.9 }],
+    bakery: [{ model: V('bakery-bread-rack'), h: 1.75, w: 1.1, d: 0.65 }, { model: V('bakery-flour-barrel'), h: 1.05, w: 0.85, d: 0.85 }],
+    dessert: [{ model: V('dessert-donut-wall'), h: 1.45, wall: true, y: 1.4 }, { model: V('dessert-macaron-tower'), h: 1.3, w: 0.8, d: 0.8 }],
+    icecream: [{ model: V('icecream-cone-lamp'), h: 1.65, w: 0.75, d: 0.75 }, { model: V('icecream-menu-board'), h: 1.35, w: 0.9, d: 0.65 }],
+    fastfood: [{ model: V('fastfood-burger-statue'), h: 1.55, w: 0.95, d: 0.95 }, { model: V('fastfood-soda-fountain'), h: 1.45, w: 1.0, d: 0.75 }],
+    books: [{ model: V('books-reading-ladder'), h: 1.95, w: 0.9, d: 0.7 }, { model: V('books-globe-lamp'), h: 1.25, w: 0.8, d: 0.8 }],
+    club: [{ model: V('club-neon-wings'), h: 1.75, wall: true, y: 1.35 }, { model: V('club-velvet-rope'), h: 1.15, w: 1.2, d: 0.6 }],
+    bar: [{ model: V('bar-guitar-wall'), h: 1.35, wall: true, y: 1.55 }, { model: V('bar-neon-cocktail'), h: 1.15, wall: true, y: 1.7 }],
+    arcade: [{ model: V('arcade-prize-shelf'), h: 1.75, w: 1.15, d: 0.7 }, { model: V('arcade-neon-joystick'), h: 1.15, wall: true, y: 1.7 }],
+    salon: [{ model: V('salon-dryer-chair'), h: 1.55, w: 0.95, d: 0.95 }, { model: V('salon-perfume-shelf'), h: 1.15, wall: true, y: 1.6 }],
+    studio: [{ model: V('studio-ring-light'), h: 1.85, w: 0.8, d: 0.8 }, { model: V('studio-polaroid-wall'), h: 1.35, wall: true, y: 1.55 }],
+    shop: [{ model: V('surf-tiki-mask'), h: 1.35, wall: true, y: 1.6 }, { model: V('surf-wetsuit-rack'), h: 1.65, w: 1.1, d: 0.7 }],
+    guide: [{ model: V('guide-postcard-rack'), h: 1.65, w: 0.85, d: 0.85 }, { model: V('guide-compass-plaque'), h: 1.2, wall: true, y: 1.65 }],
+    airport: [{ model: V('airport-departure-clock'), h: 1.15, wall: true, y: 1.8 }, { model: V('airport-dutyfree-shelf'), h: 1.65, w: 1.15, d: 0.7 }],
+    gym: [{ model: V('gym-trophy-case'), h: 1.8, w: 1.15, d: 0.7 }, { model: F('plant-stand'), h: 1.55, w: 0.8, d: 0.8 }],
+    teknel: [{ model: V('teknel-cheese-case'), h: 1.35, w: 1.25, d: 0.8 }, { model: F('plant-stand'), h: 1.55, w: 0.8, d: 0.8 }],
   }
   const accents = VENUE_ACCENTS[v.type] ?? VENUE_ACCENTS.cafe
-  const spots = [
+  const floorSpots = [
     [-hw + 1.05, -hd + 0.95, 0.35],
     [hw - 1.05, -hd + 0.95, -0.35],
     [-hw + 1.05, hd - 1.1, Math.PI / 2],
@@ -564,8 +565,18 @@ function build(v) {
     [-hw + 1.05, 0.9, Math.PI / 2],
     [hw - 1.05, 0.9, -Math.PI / 2],
   ]
+  const wallSpots = [
+    [-hw + 0.24, -0.2, Math.PI / 2],
+    [hw - 0.24, -0.2, -Math.PI / 2],
+  ]
+  let wallIdx = 0
   for (const ac of accents) {
-    for (const [sx, sz, sry] of spots) {
+    if (ac.wall) {
+      const [wx, wz, wry] = wallSpots[wallIdx++ % wallSpots.length]
+      add({ t: 'decor', model: ac.model, x: wx, y: ac.y ?? 1.6, z: wz, ry: wry, h: ac.h })
+      continue
+    }
+    for (const [sx, sz, sry] of floorSpots) {
       if (Math.hypot(sx, sz - hd) < 2.2) continue // çıkış kapısı önünü kapatma
       if (!hit(sx, sz, ac.w / 2, ac.d / 2) && !inNpc(sx, sz)) {
         add({ t: 'decor', model: ac.model, x: sx, z: sz, ry: sry, h: ac.h, w: ac.w, d: ac.d }, true)
