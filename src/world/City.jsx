@@ -3,7 +3,7 @@ import { screenK } from './screenK'
 import { useFrame, useLoader } from '@react-three/fiber'
 import { CanvasTexture, Color, DataTexture, MeshStandardMaterial, Object3D, ExtrudeGeometry, Shape, LinearFilter, RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
 import { Html, RoundedBox } from '@react-three/drei'
-import { BEACH, BLANKETS, BUILDINGS, GAZEBO, ISLAND, PIER, PLAY_BOUNDS, PLAZA_R, PROPS, RIM, RING, ROAD_END, ROAD_HALF, ROAD_START, TOWELS } from './layout'
+import { BEACH, BLANKETS, BUILDINGS, GAP, GAZEBO, ISLAND, PIER, PLAY_BOUNDS, PLAZA_R, PROPS, RIM, RING, ROAD_END, ROAD_HALF, ROAD_START, SPEED_RING_POS, TOWELS } from './layout'
 import { CULL_R, playerPos, useCull } from './cull'
 import Facade from './Facade'
 import { facadeOf } from './facadeData'
@@ -920,8 +920,8 @@ function Sea() {
   )
 }
 
-const DASHES = Array.from({ length: 49 }, (_, i) => -96 + i * 4).filter((t) => Math.abs(t) > RING.r1 + 1.5 && t <= 96)
-const RING_DASHES = Array.from({ length: 36 }, (_, i) => (i / 36) * Math.PI * 2 + 0.087).filter((a) => [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2].every((c) => Math.abs(Math.atan2(Math.sin(a - c), Math.cos(a - c))) > 0.3))
+const DASHES = Array.from({ length: 51 }, (_, i) => -100 + i * 4).filter((t) => Math.abs(t) > RING.r1 + 1.5 && t <= ROAD_END.east)
+const RING_DASHES = Array.from({ length: 52 }, (_, i) => (i / 52) * Math.PI * 2 + 0.06).filter((a) => [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2].every((c) => Math.abs(Math.atan2(Math.sin(a - c), Math.cos(a - c))) > 0.3))
 const PARK_X = -12 // batıya doğru asfalt biter; parkta patika başlar
 
 /** Gölet: Meshy su dokusu + kum kıyısı + nilüfer yaprakları. */
@@ -1059,7 +1059,7 @@ function FountainFx() {
     }
   })
   return (
-    <group position={[0, 0, 0]}>
+    <group position={[0, 0, 0]} scale={1.8}>
       <mesh ref={top} position={[0, 2.05, 0]}>
         <sphereGeometry args={[0.28, 10, 8]} />
         <meshStandardMaterial color="#d8f6ff" emissive="#9be4ff" emissiveIntensity={0.45} roughness={0.1} transparent opacity={0.85} />
@@ -1098,12 +1098,6 @@ function SkyBalloon() {
     </group>
   )
 }
-
-const SPEED_RING_POS = [
-  [0, 22, 0],
-  [22, 0, Math.PI / 2],
-  [-19, 0, Math.PI / 2],
-]
 
 /** Şehir yollarında içinden geçince hız artışı veren parlayan halkalar. */
 function SpeedRings() {
@@ -1153,20 +1147,21 @@ function RoadMarkings() {
     }
     // yol kenar çizgileri (kaldırım bordürünün 0,42 m içi)
     const edgeOff = ROAD_HALF - 0.42
-    const nLen = -15.4 - ROAD_END.north
-    const sLen = ROAD_END.south - 15.4
-    const eLen = ROAD_END.east - 15.4
+    const RE = RING.r1 + 0.2 // halkanın dış kenarı
+    const nLen = -RE - ROAD_END.north
+    const sLen = ROAD_END.south - RE
+    const eLen = ROAD_END.east - RE
     for (const s of [-1, 1]) {
-      push(s * edgeOff, (-15.4 + ROAD_END.north) / 2, 0.13, nLen, 0, EDGE)
-      push(s * edgeOff, (15.4 + ROAD_END.south) / 2, 0.13, sLen, 0, EDGE)
-      push((15.4 + ROAD_END.east) / 2, s * edgeOff, eLen, 0.13, 0, EDGE)
+      push(s * edgeOff, (-RE + ROAD_END.north) / 2, 0.13, nLen, 0, EDGE)
+      push(s * edgeOff, (RE + ROAD_END.south) / 2, 0.13, sLen, 0, EDGE)
+      push((RE + ROAD_END.east) / 2, s * edgeOff, eLen, 0.13, 0, EDGE)
     }
     // yaya geçitleri
     for (const ox of [-1.8, -0.9, 0, 0.9, 1.8]) {
-      push(ox, -17.2, 0.44, 2.25, 0, WHITE)
-      push(ox, 17.2, 0.44, 2.25, 0, WHITE)
-      push(ox, 26.4, 0.44, 2.25, 0, WHITE)
-      push(17.2, ox, 2.25, 0.44, 0, WHITE)
+      push(ox, -(RING.r1 + 2), 0.44, 2.25, 0, WHITE)
+      push(ox, RING.r1 + 2, 0.44, 2.25, 0, WHITE)
+      push(ox, ROAD_END.south - 1.6, 0.44, 2.25, 0, WHITE)
+      push(RING.r1 + 2, ox, 2.25, 0.44, 0, WHITE)
     }
     return list
   }, [])
@@ -1205,30 +1200,31 @@ function RoadCurbs() {
     const cx = ROAD_HALF + 0.12
     const step = 2.05
     let k = 0
-    for (let z = -15.6; z >= ROAD_END.north + 0.5; z -= step) {
+    const CS = RING.r1 + 0.4 // kaldırım bordürü halkanın dış kenarından başlar
+    for (let z = -CS; z >= ROAD_END.north + 0.5; z -= step) {
       push(-cx, z - step / 2, step - 0.08, 0, k++)
       push(cx, z - step / 2, step - 0.08, 0, k++)
     }
-    for (let z = 15.6; z <= ROAD_END.south - 0.5; z += step) {
+    for (let z = CS; z <= ROAD_END.south - 0.5; z += step) {
       push(-cx, z + step / 2, step - 0.08, 0, k++)
       push(cx, z + step / 2, step - 0.08, 0, k++)
     }
-    for (let x = 15.6; x <= ROAD_END.east - 0.5; x += step) {
+    for (let x = CS; x <= ROAD_END.east - 0.5; x += step) {
       push(x + step / 2, -cx, step - 0.08, Math.PI / 2, k++)
       push(x + step / 2, cx, step - 0.08, Math.PI / 2, k++)
     }
     // dönel kavşak iç ve dış bordürü
-    const inN = 32
+    const inN = Math.round((2 * Math.PI * RING.r0) / 1.8)
     for (let i = 0; i < inN; i++) {
       const a = (i / inN) * Math.PI * 2
-      push(Math.cos(a) * (RING.r0 - 0.1), Math.sin(a) * (RING.r0 - 0.1), 1.72, -a, k++)
+      push(Math.cos(a) * (RING.r0 - 0.1), Math.sin(a) * (RING.r0 - 0.1), (2 * Math.PI * RING.r0) / inN - 0.08, -a, k++)
     }
-    const outN = 48
+    const outN = Math.round((2 * Math.PI * RING.r1) / 2)
     for (let i = 0; i < outN; i++) {
       const a = (i / outN) * Math.PI * 2
       const blocked = [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2].some((c) => Math.abs(Math.atan2(Math.sin(a - c), Math.cos(a - c))) < 0.31)
       if (blocked) continue
-      push(Math.cos(a) * (RING.r1 + 0.1), Math.sin(a) * (RING.r1 + 0.1), 1.88, -a, k++)
+      push(Math.cos(a) * (RING.r1 + 0.1), Math.sin(a) * (RING.r1 + 0.1), (2 * Math.PI * RING.r1) / outN - 0.08, -a, k++)
     }
     return list
   }, [])
@@ -1258,9 +1254,9 @@ function RoadDetails() {
   const tex = useMemo(() => getManholeTex(), [])
   const pts = useMemo(() => {
     const list = []
-    for (let z = -22; z >= -86; z -= 18) list.push([z % 36 === 0 ? 2.1 : -2.1, z])
-    list.push([2.0, 21.5])
-    for (let x = 22; x <= 86; x += 18) list.push([x, x % 36 === 0 ? 2.1 : -2.1])
+    for (let z = -22 - GAP; z >= -86 - GAP; z -= 18) list.push([Math.round(z) % 36 === 0 ? 2.1 : -2.1, z])
+    list.push([2.0, 21.5 + GAP])
+    for (let x = 22 + GAP; x <= 86 + GAP; x += 18) list.push([x, Math.round(x) % 36 === 0 ? 2.1 : -2.1])
     return list
   }, [])
   useEffect(() => {
@@ -1337,13 +1333,13 @@ export default function City({ focusRef }) {
       <Flat x={cx} z={ISLAND.z1 + RIM / 2} w={W + RIM * 2} d={RIM} y={Y.floor} tex="sand" />
       <Flat x={ISLAND.x0 - RIM / 2} z={cz} w={RIM} d={D} y={Y.floor} tex="sand" />
       <Flat x={ISLAND.x1 + RIM / 2} z={cz} w={RIM} d={D} y={Y.floor} tex="sand" />
-      <Pond x={-30} z={30} r={7} />
-      <Flat x={0} z={-30} w={28} d={36} y={Y.floor} tex="cobble" color="#fff3ea" feather={3} /> {/* kafe: sıcak kaldırım taşı */}
-      <Flat x={30} z={0} w={36} d={28} y={Y.floor} tex="cobble" color="#e3d6ff" feather={3} /> {/* kulüp */}
+      <Pond x={-30 - GAP} z={30 + GAP} r={7} />
+      <Flat x={0} z={-34.3} w={28} d={34.6} y={Y.floor} tex="cobble" color="#fff3ea" feather={3} /> {/* kafe: sıcak kaldırım taşı */}
+      <Flat x={34.3} z={0} w={34.6} d={28} y={Y.floor} tex="cobble" color="#e3d6ff" feather={3} /> {/* kulüp */}
       <Flat x={BEACH.x} z={BEACH.z} round={BEACH.r + 4} y={Y.floor} tex="sand" feather={6} /> {/* yuvarlak plaj: yumuşak kenarlı */}
       <Flat x={BEACH.x} z={BEACH.z} round={BEACH.r - 2} y={Y.floor + 0.004} tex="sand" color="#fff6dc" feather={5} />
       
-      <mesh position={[-33, 0.04, -6]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[-33 - GAP, 0.04, -6]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[3.6, 40]} />
         <meshStandardMaterial color="#a9ddf5" roughness={0.15} />
       </mesh>
@@ -1354,7 +1350,7 @@ export default function City({ focusRef }) {
       <Flat x={ewE.cx} z={0} w={ewE.len} d={swW} y={Y.sidewalk} tex="cobble" color="#fdf6ff" />
       <TexRing r0={PLAZA_R - 0.8} r1={RING.r0} y={Y.sidewalk + 0.004} tex="cobble" color="#fdf6ff" />
       <TexRing r0={RING.r1} r1={RING.r1 + RING.side} y={Y.sidewalk + 0.004} tex="cobble" color="#fdf6ff" />
-      <Flat x={-19} z={0} w={14} d={3.4} y={Y.sidewalk} tex="cobble" color="#fff8f0" /> {/* park patikası: lobiden çardağa */}
+      <Flat x={-25} z={0} w={12} d={3.4} y={Y.sidewalk} tex="cobble" color="#fff8f0" /> {/* park patikası: lobiden çardağa */}
       <Flat x={0} z={nsN.cz} w={road} d={nsN.len} y={Y.road} tex="asphalt" />
       <Flat x={0} z={nsS.cz} w={road} d={nsS.len} y={Y.road} tex="asphalt" />
       <Flat x={ewE.cx} z={0} w={ewE.len} d={road} y={Y.road} tex="asphalt" />
@@ -1365,8 +1361,8 @@ export default function City({ focusRef }) {
 
       {/* lobi meydanı */}
       <Flat round={PLAZA_R} y={Y.plaza} tex="cobble" color="#fff7ee" />
-      <Ring r0={6.6} r1={7.1} y={Y.mark} color="#ffebd3" />
-      <Flat round={3.4} y={Y.mark} color="#ffebd3" />
+      <Ring r0={12.2} r1={13.1} y={Y.mark} color="#ffebd3" />
+      <Flat round={6.3} y={Y.mark} color="#ffebd3" />
       <Gazebo />
 
       {BUILDINGS.filter((b) => !b.gazebo).map((b, i) => (

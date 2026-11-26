@@ -3,9 +3,9 @@ import { TopDock } from '../../components/Dock'
 import { useEffect, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { DoorPrompt } from '../Social'
-import { BEACH } from '../layout'
+import { BEACH, VOLLEY_NET } from '../layout'
 
-const NET = { x: 5.5, z: 37, r: 5 }
+const NET = VOLLEY_NET
 const glass = 'border-2 border-white bg-white/90 shadow-soft backdrop-blur-md'
 const mmss = (ms) => {
   const s = Math.max(0, Math.ceil(ms / 1000))

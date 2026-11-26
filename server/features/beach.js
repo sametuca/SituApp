@@ -4,12 +4,12 @@
 //     sunucu → istemci: { t:'meetup', phase:'idle'|'soon'|'on', start, end, n }  (welcome.meetup da)   { t:'meetup_end', coins, secs }
 // (2) { t:'vb_join' } (net yakınında ≤ 5 m) / { t:'vb_leave' } / { t:'vb_hit' }; sunucu → { t:'vb', ... } durum.
 //     Top sırayla oyunculara "gelir"; arrive zamanından ±HIT_WINDOW içinde vb_hit gelmezse rakip puan alır. 5 puana ilk ulaşan kazanır (+15 🪙, kaybeden +3).
-import { BEACH } from '../../src/world/layout.js'
+import { BEACH, VOLLEY_NET } from '../../src/world/layout.js'
 
 const CYCLE_MS = Number(process.env.SITUAPP_MEETUP_CYCLE_MS) || 30 * 60 * 1000
 const ANNOUNCE_MS = Math.min(3 * 60 * 1000, CYCLE_MS / 3)
 const ACTIVE_MS = Math.min(3 * 60 * 1000, CYCLE_MS / 4)
-const NET = { x: 5.5, z: 37, r: 5 } // voleybol filesi (layout.js volleyball prop'u)
+const NET = VOLLEY_NET // voleybol filesi (layout.js volleyball prop'u)
 const WIN_SCORE = 5
 const HIT_WINDOW = 420 // ms
 const TURN_MS = [1700, 1500, 1350, 1200, 1100]

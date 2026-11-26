@@ -1,13 +1,14 @@
 // Serbest meslekler (sunucu): meslek seçme zorunluluğu yok; herkes istediği zaman balık tutabilir veya posta dağıtabilir.
 // İstemci → sunucu: { t: 'job_fish', spot } · { t: 'job_post_start' } · { t: 'job_post_deliver' }
 import { VENUE_DOORS } from '../../src/world/venueDoors.js'
+import { GAP, ISLAND, PIER } from '../../src/world/layout.js'
 import { FISH_BY_ID as MODEL_FISH } from '../../src/world/jobsData.js'
 
 const FISH_SPOTS = [
-  { id: 'pier', x: 0, z: 51.2, r: 10 },
-  { id: 'pond', x: -30, z: 30, r: 12 },
+  { id: 'pier', x: PIER.x, z: PIER.z0 + 1.8, r: 10 },
+  { id: 'pond', x: -30 - GAP, z: 30 + GAP, r: 12 },
 ]
-const canFishAt = (x, z) => (z >= 47 && Math.abs(x) <= 28) || FISH_SPOTS.some((s) => Math.hypot(x - s.x, z - s.z) <= s.r)
+const canFishAt = (x, z) => (z >= ISLAND.z1 - 3 && Math.abs(x) <= 40) || FISH_SPOTS.some((s) => Math.hypot(x - s.x, z - s.z) <= s.r)
 const MAILBOX = { x: 6.6, z: -6.2, r: 7 }
 const POST_VENUES = ['kafe', 'kitapkafe', 'firin', 'cayevi', 'tatli', 'kuafor', 'foto', 'dondurma', 'plajbar'].filter((id) => VENUE_DOORS[id])
 

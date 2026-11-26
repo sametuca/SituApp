@@ -81,7 +81,7 @@ import { sanitizeLook } from '../src/world/lookData.js'
 import { loadProfile, saveAvatar, setName, uidByName } from './auth.js'
 import { VENUE_BY_ID, isVenueRoom, venueIdOf, venueRoom } from '../src/world/venues.js'
 
-const WORLD_HALF = 110 // dünya sınırı (±m); istemci layout.js WORLD_HALF ile aynı
+const WORLD_HALF = 125 // dünya sınırı (±m); istemci layout.js WORLD_HALF ile aynı
 const MAX_PLAYERS = 600
 const TICK_MS = 100
 const MAX_SPEED = 13 // m/sn (bisiklet 8,4; ağ gecikmesi payı dahil)

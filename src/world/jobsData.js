@@ -97,7 +97,7 @@ export const FISH_SPOTS = [-60, -45, -31, 31, 46, 60].map((x, i) => ({ id: `fs${
 export const FISH_CAST_DIST = 5.2 // can şamandırası oyuncunun +z yönünde bu kadar uzağa düşer
 
 /** Posta Merkezi (parkın şehir tarafında) ve kargo türleri. */
-export const POST_CENTER = { x: -25, z: 14, ry: Math.PI / 2, radius: 4.4 }
+export const POST_CENTER = { x: -28.6, z: 14, ry: Math.PI / 2, radius: 4.4 }
 export const PARCEL_KINDS = [
   { id: 'letter', emoji: '✉️', name: 'Mektup', pay: 0, color: '#fff6e0' },
   { id: 'box', emoji: '📦', name: 'Paket', pay: 4, color: '#e8c99a' },

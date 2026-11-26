@@ -4,7 +4,7 @@
 // `room`: 'city' | 'venue:<id>' (ev odalarında toplanabilir yok).
 // Her toplanabilir OYUNCU BAŞINA bağımsızdır: toplayınca o oyuncu için yeniden doğma süresi kadar kaybolur (`respawn`: 'half' = 12 sa, 'day' = ertesi Türkiye günü).
 import { VENUES } from './venues.js'
-import { resolveCollisions } from './layout.js'
+import { BEACH, G, resolveCollisions } from './layout.js'
 import { resolveVenueRoom, venueLayout } from './venueLayout.js'
 
 export const COLLECT_RADIUS = 1.8 // m: sunucu denetimi (oyuncunun sunucudaki konumuna göre)
@@ -28,28 +28,30 @@ export const KIND_ORDER = ['star', 'heart', 'flower', 'balloon', 'shell', 'chest
 export const HIDDEN_ALL_BONUS = 15 // tüm gizli sandıklar bulununca bir kerelik ⭐
 
 const list = []
-const add = (kind, room, pts, extra) => pts.forEach(([x, z], i) => list.push({ id: `${kind}:${room === 'city' ? 'c' : room.slice(6)}${extra?.tag ?? ''}${i}`, kind, x, z, room }))
+// Şehir konumları eski (v1) koordinatla yazıldı: harita genişleyince layout.js G() ile yeni haritaya oturur; plaj öğeleri yeni plaja göre ayrıca yerleştirilir.
+const add = (kind, room, pts, extra) => pts.forEach(([x0, z0], i) => { const [x, z] = room === 'city' && !extra?.raw ? G(x0, z0) : [x0, z0]; list.push({ id: `${kind}:${room === 'city' ? 'c' : room.slice(6)}${extra?.tag ?? ''}${i}`, kind, x, z, room }) })
 
 // ---------------------------------------------------------------- şehir
 add('star', 'city', [[0, 16], [-5.5, 33], [5.5, 30], [-3, 22], [8, 36], [-2, -10], [4, -12], [-5, -29], [4.6, -34], [-5, -42], [4, -46], [20, -4.5], [34, 3.6], [44, -2], [24, 5], [-18.5, -3], [-30, 8.5], [-44, 4], [-8, 4.6], [17, 4.6], [36, 14], [-20, 14.6], [-35, 14.5], [30, -15]])
 add('heart', 'city', [[-15.5, -34], [15.5, 33], [-33, -8], [11.5, -9.5], [-4.5, 40], [38, 5]])
 add('flower', 'city', [[-16, -6], [-21, -9], [-26, 3.5], [-32, -9], [-38.5, 2], [-41, -6.5], [-26, 9], [-34, 4.2], [-17.5, 8], [-45, -3], [-14.5, 0.5], [-30, -4.7], [-8, -9.5], [8.5, 8], [-8, -4.8]])
 add('balloon', 'city', [[0, -17], [0, -35], [-12.5, -22], [12.5, -33], [21, -2], [32, 0], [0, 25], [-10, 14], [10, -14], [-24, 0]])
-add('shell', 'city', [[-10, 44], [-6, 44.6], [-2, 43.5], [2, 44.8], [6, 44], [10, 44.2], [-8, 38.5], [4, 38], [0, 32]])
+// deniz kabukları: büyük plajın güney kıyısı boyunca (yarım daire) + kum meydanında birkaç tane
+add('shell', 'city', [...Array.from({ length: 14 }, (_, i) => { const a = 0.35 + (i / 13) * (Math.PI - 0.7); return [+(BEACH.x + Math.cos(a) * 29).toFixed(1), +(BEACH.z + Math.sin(a) * 29).toFixed(1)] }), [-8, BEACH.z - 6], [6, BEACH.z + 8], [0, BEACH.z - 14]], { raw: true })
 // gizli hazine sandıkları: hint = panelde görünen ipucu (yeri vermez, yönlendirir)
 const HIDDEN = [
   { x: -15.5, z: -45, area: 'Kafe Sokağı', name: 'Sokağın sonundaki arka bahçe', hint: 'Kafe Sokağı’nın en ucunda, binaların arkasında bir şey parlıyor 🧰' },
   { x: -45, z: 2.8, area: 'Park', name: 'Yalnız ağacın dibi', hint: 'Parkın uzak ucunda, bir ağacın dibinde parıldıyor 🌳' },
   { x: -30, z: -4.7, area: 'Park', name: 'Çardağın arkası', hint: 'Parktaki çardağın çevresinde saklanmış bir hazine var 🌸' },
-  { x: -13, z: 45.2, area: 'Plaj', name: 'Sahilin ucu', hint: 'Plajın en uç köşesinde, dalgaların yanında parlıyor 🌊' },
+  { x: -30, z: BEACH.z + 22, area: 'Plaj', name: 'Sahilin ucu', hint: 'Plajın en uç köşesinde, dalgaların yanında parlıyor 🌊' },
   { x: 22.3, z: 19.2, area: 'Lobi arkası', name: 'Stüdyonun yan sokağı', hint: 'Fotoğraf Stüdyosu’nun yan sokağına bak 📸' },
   { x: 26, z: -16.5, area: 'Gece Kulübü', name: 'Kulübün arka kapısı', hint: 'Kulüp Babil’in arkasında bir ışıltı seçiliyor 🪩' },
   { x: -22.5, z: -16, area: 'Lobi arkası', name: 'Kuaför’ün yan duvarı', hint: 'Toni & Güy’ün yanındaki daracık geçitte parlıyor 💇' },
   { x: -34, z: 34, area: 'Güneybatı', name: 'Güneybatı mahallesi aralığı', hint: 'Güneybatı mahallesinin iki binası arasında bir yerde parlıyor 🏘️' },
   { x: 45, z: -45, area: 'Kuzeydoğu', name: 'Şehrin köşesi', hint: 'Kuzeydoğu köşesinde, haritanın en ucunda bir sandık gizleniyor 🗺️' },
-  { x: 14.5, z: 44.5, area: 'Plaj', name: 'Palmiyenin dibi', hint: 'Plajın doğu köşesinde palmiyelerin arasında parıldıyor 🌴' },
+  { x: 29, z: BEACH.z + 19, area: 'Plaj', name: 'Palmiyenin dibi', hint: 'Plajın doğu köşesinde palmiyelerin arasında parıldıyor 🌴' },
 ]
-HIDDEN.forEach((h, i) => list.push({ id: `chest:${i}`, kind: 'chest', x: h.x, z: h.z, room: 'city', hidden: true, area: h.area, name: h.name, hint: h.hint }))
+HIDDEN.forEach((h, i) => list.push({ id: `chest:${i}`, kind: 'chest', x: h.area === 'Plaj' ? h.x : G(h.x, h.z)[0], z: h.area === 'Plaj' ? h.z : G(h.x, h.z)[1], room: 'city', hidden: true, area: h.area, name: h.name, hint: h.hint }))
 
 // ---------------------------------------------------------------- mekân içleri (her mekâna köşede 1 yıldız; bazılarına kalp taşı)
 const VENUE_STAR = {

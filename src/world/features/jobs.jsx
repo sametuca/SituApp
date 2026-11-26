@@ -10,16 +10,17 @@ import { VENUE_BY_ID } from '../venues'
 import { VENUE_DOORS } from '../venueDoors'
 import { FISH_BY_ID as MODEL_FISH } from '../jobsData'
 import { mkPose, work } from './jobStore'
+import { GAP, ISLAND, PIER } from '../layout'
 
 const FISH_SPOTS = [
-  { id: 'pier', label: 'Sahil İskelesi · Balık Tut', x: 0, z: 51.2, wx: 0, wz: 58.6, r: 6.5 },
-  { id: 'pond', label: 'Park Göleti · Balık Tut', x: -30, z: 23.0, wx: -30, wz: 28.2, r: 5.5 },
+  { id: 'pier', label: 'Sahil İskelesi · Balık Tut', x: PIER.x, z: PIER.z0 + 1.8, wx: PIER.x, wz: PIER.z1, r: 6.5 },
+  { id: 'pond', label: 'Park Göleti · Balık Tut', x: -30 - GAP, z: 23.0 + GAP, wx: -30 - GAP, wz: 28.2 + GAP, r: 5.5 },
 ]
-const SHORE_SPOT = { id: 'shore', label: 'Deniz Kenarı · Balık Tut', wx: 0, wz: 58.6 }
+const SHORE_SPOT = { id: 'shore', label: 'Deniz Kenarı · Balık Tut', wx: PIER.x, wz: PIER.z1 }
 function fishSpotAt(x, z) {
   const fixed = FISH_SPOTS.find((s) => Math.hypot(x - s.x, z - s.z) < s.r)
   if (fixed) return fixed
-  if (z >= 48.5 && Math.abs(x) <= 26) return SHORE_SPOT
+  if (z >= ISLAND.z1 - 1.5 && Math.abs(x) <= 34) return SHORE_SPOT
   return null
 }
 const MAILBOX = { x: 6.6, z: -6.2, r: 3.0 }

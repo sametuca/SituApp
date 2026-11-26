@@ -2,13 +2,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { DoorPrompt } from '../Social'
 import { speedBoost } from '../bikeStore'
-import { zoneAt } from '../layout'
+import { SPEED_RING_POS, zoneAt } from '../layout'
 
-const SPEED_RINGS = [
-  [0, 22],
-  [22, 0],
-  [-19, 0],
-]
+const SPEED_RINGS = SPEED_RING_POS.map(([x, z]) => [x, z])
 const WISHES = [
   '✨ Bugün şehirde yeni bir arkadaşla tanışacaksın!',
   '🍀 Şans seninle — plajda sürpriz hazine seni bekliyor!',

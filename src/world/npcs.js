@@ -7,6 +7,7 @@
 // Rota: { pts: [[x,z],...], mode: 'loop' | 'pingpong', speed (m/sn), pause (her noktada bekleme sn) }
 // Seçenek: { label, reply: [metin, ...] }  (cevaplardan biri rastgele gösterilir)
 import { VENUES } from './venues.js'
+import { G } from './layout.js'
 
 export const TALK_RADIUS = 2.8 // m: "Konuş" istemi
 export const GREET_RADIUS = 5 // m: yaklaşınca selam balonu, oyuncuya döner
@@ -213,7 +214,7 @@ const venueNpcs = VENUES.filter((v) => v.npc).map((v) => ({
 }))
 
 // AFK oyuncular: gerçekçi profilleriyle şehirde dinlenen oyuncular (kimisi dolu, kimisi sade profil).
-export const AFK_BOTS = [
+const AFK_RAW = [
   {
     id: 'afk1',
     avatar: 'zeynep',
@@ -312,6 +313,7 @@ export const AFK_BOTS = [
     },
   },
 ]
+export const AFK_BOTS = AFK_RAW.map((b) => ({ ...b, x: G(b.x, b.z)[0], z: G(b.x, b.z)[1] }))
 
 // NPC görünümü: oyunculardan ayırt edilsin diye her NPC'nin rolüne göre aksesuarı (şapka, gözlük, kulaklık…) ve ayağında rol halkası vardır.
 const NPC_ACC = {
@@ -326,7 +328,13 @@ export const npcAccessory = (n) => {
 }
 export const NPC_SCALE = 1.06 // oyuncu avatarlarından biraz büyük
 
-export const NPCS = [...CITY.map((n) => ({ where: 'city', ...n })), ...venueNpcs]
+// Şehir NPC'leri eski (v1) koordinatla yazıldı: harita genişleyince (layout.js G) konum ve rotalar yeni haritaya oturur.
+const toMap = (n) => ({
+  ...n,
+  ...(n.x != null ? { x: G(n.x, n.z)[0], z: G(n.x, n.z)[1] } : {}),
+  ...(n.route ? { route: { ...n.route, pts: n.route.pts.map(([x, z]) => G(x, z)) } } : {}),
+})
+export const NPCS = [...CITY.map((n) => ({ where: 'city', ...toMap(n) })), ...venueNpcs]
 export const NPC_BY_ID = Object.fromEntries(NPCS.map((n) => [n.id, n]))
 export const npcsFor = (where) => NPCS.filter((n) => n.where === where)
 export const displayName = (n) => n.name // ikonsuz: NPC adı sade gösterilir
