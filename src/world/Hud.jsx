@@ -379,16 +379,27 @@ export function Minimap({ focusRef, remotes, compact }) {
     cv.width = S * dpr
     cv.height = S * dpr
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-    const draw = () => {
+    let raf = 0
+    let lastT = 0
+    let lx = Infinity
+    let lz = Infinity
+    let lry = Infinity
+    const draw = (now = performance.now()) => {
+      raf = requestAnimationFrame(draw)
       const f = focusRef.current
+      const moved = Math.abs(f.x - lx) > 0.02 || Math.abs(f.z - lz) > 0.02 || Math.abs((f.ry ?? 0) - lry) > 0.015
+      if (!moved && now - lastT < 140) return
+      lastT = now
+      lx = f.x
+      lz = f.z
+      lry = f.ry ?? 0
       drawMap(ctx, S, big, f, remotes)
       const z = zoneAt(f.x, f.z)
       const short = z.name.replace(' Meydanı', '').replace(' Sokağı', '').replace('Gece ', '')
       setZoneName((prev) => (prev === short ? prev : short))
     }
-    draw()
-    const timer = setInterval(draw, 250)
-    return () => clearInterval(timer)
+    raf = requestAnimationFrame(draw)
+    return () => cancelAnimationFrame(raf)
   }, [focusRef, remotes, big, S])
 
   useEffect(() => {

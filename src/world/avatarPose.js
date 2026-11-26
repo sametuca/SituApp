@@ -15,7 +15,7 @@ const NAMES = {
 
 // Oturan avatar ayakta olduğu yüksekliğin bu kadar altına iner (m); negatif değer koltuk/sele üstüne çıkarır.
 const TOWEL_DROP = 0.25
-export const SIT_DROP = { bench: -0.08, chair: -0.05, stool: 0.14, lounger: 0.04, floor: 0.42, bike: -0.27 }
+export const SIT_DROP = { bench: -0.08, chair: -0.05, stool: 0.14, lounger: 0.04, floor: 0.42, bike: -0.22 }
 
 const q1 = new Quaternion()
 const q2 = new Quaternion()
@@ -169,15 +169,17 @@ export function applyPose(rig, pose, dt) {
       turn(rig, bones.rUp, AX, (-0.95 + Math.sin(pR) * 0.38) * b)
       turn(rig, bones.lLeg, AX, (1.15 - Math.cos(pL) * 0.34) * b)
       turn(rig, bones.rLeg, AX, (1.15 - Math.cos(pR) * 0.34) * b)
-      turn(rig, bones.spine, AX, 0.24 * b)
-      turn(rig, bones.lArm, AX, -1.38 * b)
-      turn(rig, bones.rArm, AX, -1.38 * b)
-      turn(rig, bones.lArm, AY, -0.14 * b)
-      turn(rig, bones.rArm, AY, 0.14 * b)
-      turn(rig, bones.lArm, AZ, -0.06 * b)
-      turn(rig, bones.rArm, AZ, 0.06 * b)
-      turn(rig, bones.lForeArm, AX, -0.22 * b)
-      turn(rig, bones.rForeArm, AX, -0.22 * b)
+      turn(rig, bones.spine, AX, 0.28 * b)
+      turn(rig, bones.lArm, AX, -0.98 * b)
+      turn(rig, bones.rArm, AX, -0.98 * b)
+      turn(rig, bones.lArm, AY, 0.18 * b)
+      turn(rig, bones.rArm, AY, -0.18 * b)
+      turn(rig, bones.lArm, AZ, -0.04 * b)
+      turn(rig, bones.rArm, AZ, 0.04 * b)
+      turn(rig, bones.lForeArm, AX, -0.08 * b)
+      turn(rig, bones.rForeArm, AX, -0.08 * b)
+      turn(rig, bones.lHand, AX, 0.28 * b)
+      turn(rig, bones.rHand, AX, 0.28 * b)
     } else {
       turn(rig, bones.lUp, AX, -1.45 * b)
       turn(rig, bones.rUp, AX, -1.45 * b)

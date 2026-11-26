@@ -72,7 +72,7 @@ const CITY = [
     ],
   },
   {
-    id: 'cankurtaran', worldPos: true, avatar: 'ege', name: 'Kendini Mafya Sanan Hırtcan', role: '🕶️', x: 5.8, z: 24.4, ry: -1.1,
+    id: 'cankurtaran', worldPos: true, avatar: 'ege', name: 'Kendini Mafya Sanan Hırtcan', role: '🕶️', x: 5.55, z: 28.6, ry: -1.3,
     pose: GUARD, look: BLACK_SUIT, scale: 1.08,
     lines: [
       'Şezlongun yoksa plajı terket burası bizim! 🕶️',

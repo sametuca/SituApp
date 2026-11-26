@@ -1,12 +1,13 @@
 // Kasaba detayları: çeşitli meyve/kiraz/çam ağaçları, pastel çalılıklar, çöp kutuları,
 // plaj çeşitliliği, yemlenen martı/kuşlar ve fiziksel kocaman plaj topu.
-import { useMemo, useRef, useState } from 'react'
+import { Suspense, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { RoundedBox } from '@react-three/drei'
 import { BEACH, G } from './layout'
 import { getClayPlasterPair } from './pastelTex'
 import { skyLive } from './Sky'
 import { playerPos } from './cull'
+import Prop from './Prop'
 
 // Tüm prosedürel kasaba objelerinde GLB modellerle uyumlu yumuşak kil-oyuncak kabartma malzemesi
 function ClayMat({ color, roughness = 0.62, bumpScale = 0.018 }) {
@@ -256,8 +257,6 @@ const TIKI_SPOTS = [
 ]
 
 function BeachEveningDecor() {
-  const flame1 = useRef()
-  const flame2 = useRef()
   const fireLight = useRef()
   const torchFlames = useRef([])
   const [lightOn, setLightOn] = useState(false)
@@ -272,14 +271,6 @@ function BeachEveningDecor() {
       lightOnRef.current = wantLight
       setLightOn(wantLight)
     }
-    const vis = 0.55 + lit * 0.65
-    if (flame1.current) {
-      flame1.current.scale.set(1 + Math.sin(t * 9) * 0.08, (1 + Math.sin(t * 13) * 0.14) * vis, 1 + Math.cos(t * 8) * 0.08)
-      flame1.current.rotation.y = t * 1.4
-    }
-    if (flame2.current) {
-      flame2.current.scale.set(1 + Math.cos(t * 11) * 0.08, (1 + Math.cos(t * 15) * 0.16) * vis, 1 + Math.sin(t * 10) * 0.08)
-    }
     if (fireLight.current) {
       fireLight.current.intensity = lit * (6.2 + Math.sin(t * 11) * 0.85 + Math.cos(t * 17) * 0.5)
     }
@@ -291,44 +282,13 @@ function BeachEveningDecor() {
     })
   })
 
-  const stones = useMemo(
-    () => Array.from({ length: 10 }, (_, i) => {
-      const a = (i / 10) * Math.PI * 2
-      return [Math.cos(a) * 0.72, Math.sin(a) * 0.72, 0.2 + (i % 3) * 0.04]
-    }),
-    [],
-  )
-
   return (
     <group>
-      {/* Sahil yaz akşamı şenlik ateşi */}
-      <group position={[BONFIRE_POS[0], 0.02, BONFIRE_POS[1]]}>
-        <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <circleGeometry args={[0.7, 16]} />
-          <meshStandardMaterial color="#594740" roughness={0.95} />
-        </mesh>
-        {stones.map(([sx, sz, sr], i) => (
-          <mesh key={i} position={[sx, sr * 0.5, sz]} castShadow>
-            <dodecahedronGeometry args={[sr, 0]} />
-            <ClayMat color={i % 2 === 0 ? '#d8cfc6' : '#c4b7ac'} roughness={0.82} />
-          </mesh>
-        ))}
-        {[0.3, -0.55, 1.45].map((ry, i) => (
-          <mesh key={i} position={[0, 0.16, 0]} rotation={[Math.PI / 2 - 0.18, ry, 0]} castShadow>
-            <cylinderGeometry args={[0.08, 0.1, 1.05, 8]} />
-            <ClayMat color="#8d6242" roughness={0.85} />
-          </mesh>
-        ))}
-        <mesh ref={flame1} position={[0, 0.45, 0]}>
-          <coneGeometry args={[0.28, 0.72, 7]} />
-          <meshStandardMaterial color="#ff9248" emissive="#ff6e26" emissiveIntensity={1.65} roughness={0.3} />
-        </mesh>
-        <mesh ref={flame2} position={[0.04, 0.38, -0.03]}>
-          <coneGeometry args={[0.16, 0.48, 6]} />
-          <meshStandardMaterial color="#ffe478" emissive="#ffd147" emissiveIntensity={2.0} roughness={0.25} />
-        </mesh>
-        {lightOn && <pointLight ref={fireLight} position={[0, 0.9, 0]} color="#ff9f45" intensity={0} distance={14} decay={2} />}
-      </group>
+      {/* Sahil yaz akşamı şenlik ateşi (Meshy GLB + titreyen ışık) */}
+      <Suspense fallback={null}>
+        <Prop model="/models/beach/campfire.glb" x={BONFIRE_POS[0]} z={BONFIRE_POS[1]} scale={1.75} />
+      </Suspense>
+      {lightOn && <pointLight ref={fireLight} position={[BONFIRE_POS[0], 0.95, BONFIRE_POS[1]]} color="#ff9f45" intensity={0} distance={14} decay={2} />}
 
       {/* Bambu sahil fenerleri */}
       {TIKI_SPOTS.map(([tx, tz], i) => (
