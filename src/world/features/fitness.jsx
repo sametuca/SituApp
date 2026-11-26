@@ -995,10 +995,10 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
   }, [nearEq, panel, workout, match, atDoor, openNearEq])
 
   useEffect(() => {
-    if (!inGym) return
+    if (venue !== 'fitness') return
     useGLTF.preload('/models/venues/boxer-red.glb')
     useGLTF.preload('/models/venues/boxer-blue.glb')
-  }, [inGym])
+  }, [venue])
 
   const finishWorkout = useCallback(
     (kind, reps, perfects) => {

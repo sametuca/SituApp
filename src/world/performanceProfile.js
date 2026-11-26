@@ -1,6 +1,6 @@
 export function getGraphicsProfile() {
   if (typeof navigator === 'undefined') {
-    return { lowPower: false, dpr: [1, 1.5], antialias: true, shadows: true }
+    return { lowPower: false, dpr: [1, 1.5], antialias: true, shadows: true, ao: true, bloom: true }
   }
 
   const cores = Number(navigator.hardwareConcurrency) || 8
@@ -9,8 +9,8 @@ export function getGraphicsProfile() {
   const lowPower = cores <= 4 || memory <= 4 || (coarsePointer && cores <= 6)
 
   return lowPower
-    ? { lowPower: true, dpr: [0.75, 1], antialias: false, shadows: false }
-    : { lowPower: false, dpr: [1, 1.5], antialias: true, shadows: true }
+    ? { lowPower: true, dpr: [0.75, 1], antialias: false, shadows: false, ao: false, bloom: false }
+    : { lowPower: false, dpr: [1, 1.5], antialias: true, shadows: true, ao: !coarsePointer, bloom: true }
 }
 
 export function canUseBackgroundPreload() {

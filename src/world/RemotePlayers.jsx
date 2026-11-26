@@ -92,7 +92,11 @@ function useLiveFlags(id, reactions, whispering) {
   const [reaction, setReaction] = useState([])
   const [whisper, setWhisper] = useState(false)
   const last = useRef({ key: '', whisper: false })
-  useFrame(() => {
+  const elapsed = useRef(0)
+  useFrame((_, dt) => {
+    elapsed.current += dt
+    if (elapsed.current < 0.1) return
+    elapsed.current %= 0.1
     const now = Date.now()
     const raw = reactions?.current.get(id)
     const live = Array.isArray(raw) ? raw.filter((r) => r.until > now) : raw && raw.until > now ? [raw] : []
@@ -124,7 +128,7 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
   const halfRateRef = useRef(false)
   const [hovered, setHovered] = useState(false)
   const shadowRef = useRef(null)
-  const meshCountRef = useRef(0)
+  const shadowCheckRef = useRef(0)
   const [afk, setAfk] = useState(false)
   const idleRef = useRef({ since: Date.now(), x: 0, z: 0, afk: false })
   const { reaction, whisper } = useLiveFlags(id, reactions, whispering)
@@ -162,14 +166,14 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
       setNear(nn)
     }
 
-    // gölge bütçesi: yalnızca en yakın 8 oyuncu gölge düşürür (Suspense yüklenince mesh sayısı değişirse tekrar uygula)
+    // Gölge değişince hemen uygula; model ağacını oyuncu yakındayken 4 Hz tara.
+    shadowCheckRef.current += dt
     const sh = nn && (budget?.ready ? budget.shadow.has(id) : d2 < SHADOW_RANGE_SQ)
-    let meshCount = 0
-    if (nn) g.traverse((o) => { if (o.isMesh) meshCount += 1 })
-    if (sh !== shadowRef.current || meshCount !== meshCountRef.current) {
+    const shadowChanged = sh !== shadowRef.current
+    if (shadowChanged || (nn && shadowCheckRef.current >= 0.25)) {
+      if (nn || shadowChanged) g.traverse((o) => { if (o.isMesh) o.castShadow = sh })
       shadowRef.current = sh
-      meshCountRef.current = meshCount
-      g.traverse((o) => { if (o.isMesh) o.castShadow = sh })
+      shadowCheckRef.current = 0
     }
 
     const sn = nn && (budget?.ready ? budget.tag.has(id) : true)

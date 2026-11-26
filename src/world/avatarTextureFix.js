@@ -16,7 +16,7 @@ export function fixPropMaterialSeams(mat) {
     mat.normalMap = null
     mat.needsUpdate = true
   }
-  if (typeof mat.roughness === 'number') mat.roughness = Math.max(mat.roughness, 0.58)
+  if (typeof mat.roughness === 'number') mat.roughness = Math.max(mat.roughness, 0.46)
   if (typeof mat.metalness === 'number') mat.metalness = Math.min(mat.metalness, 0.12)
   for (const key of ['map', 'emissiveMap', 'roughnessMap', 'metalnessMap']) {
     const tex = mat[key]
@@ -165,6 +165,8 @@ export function getCleanAvatarTexture(mesh, origTex) {
 export function applyPastelShading(mat) {
   if (!mat || mat.userData.pastelDone) return
   mat.userData.pastelDone = true
+  if (typeof mat.roughness === 'number') mat.roughness = Math.max(0.46, Math.min(mat.roughness, 0.78))
+  if (typeof mat.metalness === 'number') mat.metalness = Math.min(mat.metalness, 0.05)
   const prev = mat.onBeforeCompile
   const prevKey = mat.customProgramCacheKey
   mat.onBeforeCompile = (shader, renderer) => {

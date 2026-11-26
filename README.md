@@ -80,6 +80,7 @@ cp server/.env.example server/.env  # server (optional)
 
 > Without Supabase keys the app runs in **demo mode** — accounts live in `localStorage` and data in `server/data/`.
 > Both `.env` files are gitignored; only the `.example` files are committed.
+> Username/password registration is created server-side with `SUPABASE_SERVICE_KEY` and marks the internal auth account confirmed, so users do not need to provide an email and no verification email is sent. Keep the service key only in `server/.env`; the Supabase email-confirm setting can remain enabled.
 
 ### Build & Run for Production
 

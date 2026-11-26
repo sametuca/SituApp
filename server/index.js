@@ -15,6 +15,7 @@ import { initNames } from './auth.js'
 import * as supa from './supa.js'
 import { assertSealed } from './guard.js'
 import { internalMode, requireInternal } from './internalAuth.js'
+import { registerHandler } from './register.js'
 assertSealed() // hile koruması çalışmıyorsa sunucu hiç açılmaz
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -162,6 +163,7 @@ app.post('/api/assets/import', async (req, res) => {
 })
 
 import { feedbackHandler } from './feedback.js'
+app.post('/api/auth/register', registerHandler)
 app.post('/api/feedback', feedbackHandler)
 import { consentHandler } from './consent.js'
 app.post('/api/consent', consentHandler)

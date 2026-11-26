@@ -727,6 +727,8 @@ export default function Sky({ home: homeProp, interior = null, focusRef }) {
   const scene = useThree((s) => s.scene)
   const amb = useRef()
   const hemi = useRef()
+  const warmFill = useRef()
+  const coolRim = useRef()
   const st = useRef({ dh: null, rain: 0, snow: 0, fog: 0, leaves: 0 })
 
   useFrame((_, dtRaw) => {
@@ -789,6 +791,8 @@ export default function Sky({ home: homeProp, interior = null, focusRef }) {
 
     // ev içi: gün-geceden bağımsız sabit değerler
     const dimK = interior ? 1 - (interior.dim ?? 0) * 0.75 : 1
+    if (warmFill.current) warmFill.current.intensity = (home ? 0.08 : 0.2) * (1 - over * 0.35) * (1 - night * 0.4) * dimK
+    if (coolRim.current) coolRim.current.intensity = (home ? 0.06 : 0.24) * (1 - over * 0.45) * (1 - night * 0.55) * dimK
     const bg = interior ? tmp.set(interior.bg) : home ? tmp.set(HOME_BG) : k.bg
     skyBase.bg.copy(bg)
     if (home) {
@@ -825,6 +829,8 @@ export default function Sky({ home: homeProp, interior = null, focusRef }) {
     <>
       <ambientLight ref={amb} intensity={0.7} />
       <hemisphereLight ref={hemi} args={['#ffffff', '#ffedd6', 1.1]} />
+      <directionalLight ref={warmFill} position={[8, 12, 6]} color="#fff0dc" intensity={0.2} />
+      <directionalLight ref={coolRim} position={[-8, 7, -8]} color="#c8e8ff" intensity={0.24} />
       {!home && (
         <>
           <SkyDome />

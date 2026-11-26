@@ -56,6 +56,35 @@ export const patch = (table, filter, values) => call('PATCH', `/rest/v1/${table}
 export const del = (table, filter) => call('DELETE', `/rest/v1/${table}?${filter}`)
 export const rpc = (fn, args = {}) => call('POST', `/rest/v1/rpc/${fn}`, { body: args })
 
+/** Admin API ile doğrulanmış kullanıcı açar; bu işlem doğrulama e-postası göndermez. */
+export async function createConfirmedAuthUser({ email, password, metadata }) {
+  if (!enabled) {
+    const error = new Error('Supabase sunucu kimlik bilgileri yapılandırılmamış.')
+    error.code = 'supabase_not_configured'
+    throw error
+  }
+  const res = await fetch(`${URL_BASE}/auth/v1/admin/users`, {
+    method: 'POST',
+    headers: { ...svcHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password, email_confirm: true, user_metadata: metadata }),
+    signal: AbortSignal.timeout(10000),
+  })
+  const text = await res.text()
+  let data = null
+  try {
+    data = text ? JSON.parse(text) : null
+  } catch {
+    data = null
+  }
+  if (!res.ok) {
+    const error = new Error('Supabase kullanıcı oluşturma isteği başarısız.')
+    error.status = res.status
+    error.code = data?.code ?? data?.error_code ?? 'auth_user_create_failed'
+    throw error
+  }
+  return data
+}
+
 // ---- Auth: token doğrulama (kısa süreli önbellek) ----
 const tokenCache = new Map() // token → { user, exp }
 const TOKEN_TTL_MS = 60_000

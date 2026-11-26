@@ -3,7 +3,7 @@ import { DockSlot, TopDockSlot } from '../components/Dock'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Environment, Lightformer, OrbitControls, useProgress } from '@react-three/drei'
-import { NeutralToneMapping, PCFShadowMap } from 'three'
+import { NeutralToneMapping, PCFSoftShadowMap } from 'three'
 import { useAuth } from '../lib/AuthContext'
 import City from '../world/City'
 import HomeRoom from '../world/HomeRoom'
@@ -36,6 +36,7 @@ import { HOME_TIERS, applyHomeTier } from '../world/homeTiers'
 import { bike } from '../world/bikeStore'
 import { BEACH_START, HOME_DOOR, HOME_ROOM, HOME_ZONE, SPAWN, TELEPORTS, ZONES, resolveCollisions, resolveRoom, zoneAt } from '../world/layout'
 import { getGraphicsProfile } from '../world/performanceProfile'
+import GraphicsEffects from '../world/GraphicsEffects'
 
 const NO_ITEMS = []
 const START_VENUE = 'havalimani'
@@ -51,6 +52,26 @@ const GUIDE_TIPS = [
   'Enter’a basıp yazarsan mesajın başının üstünde balon olur.',
   'Alttaki 1–4 tuşlarıyla selam, dans, kalp ve kutlama tepkilerini kullanabilirsin.',
 ]
+const WORLD_LOADING_MESSAGES = [
+  'Şehir hazırlanıyor, kaldırımlar son rötuşta…',
+  'Pofuduk bulutlar kabartılıyor…',
+  'Meydana biraz neşe serpiştiriliyor…',
+  'Sokaklar toparlanıyor, az kaldı!',
+  'Dükkânlar kapılarını açmaya hazırlanıyor…',
+  'Macera çantana son atıştırmalıklar ekleniyor…',
+]
+const TRAVEL_LOADING_MESSAGES = [
+  'Hop, yeni bir köşeye geçiyoruz…',
+  'Yeni mekân, yeni hikâyeler…',
+  'Manzara değişiyor, keyif aynı!',
+  'Bir kapıdan kocaman bir maceraya…',
+  'Yeni yer hazırlanıyor, az kaldı…',
+  'Yol kısacık, merak uzun…',
+]
+const randomLoadingMessage = (messages, previous = '') => {
+  const choices = messages.filter((message) => message !== previous)
+  return choices[Math.floor(Math.random() * choices.length)] ?? messages[0]
+}
 
 function readAvatar() {
   try {
@@ -97,11 +118,22 @@ function SceneReady({ onReady }) {
 function LoadingOverlay({ ready }) {
   const { progress } = useProgress()
   const [hidden, setHidden] = useState(false)
+  const [message, setMessage] = useState(() => randomLoadingMessage(WORLD_LOADING_MESSAGES))
+  const messageRef = useRef(message)
   useEffect(() => {
     // sahne hazır olunca (ya da 60 sn sonra, takılma olursa) kapat
     const t = setTimeout(() => setHidden(true), ready ? 250 : 60000)
     return () => clearTimeout(t)
   }, [ready])
+  useEffect(() => {
+    if (ready || hidden) return undefined
+    const timer = setInterval(() => {
+      const next = randomLoadingMessage(WORLD_LOADING_MESSAGES, messageRef.current)
+      messageRef.current = next
+      setMessage(next)
+    }, 2200)
+    return () => clearInterval(timer)
+  }, [ready, hidden])
   if (hidden) return null
   const pct = Math.min(100, Math.max(0, Math.round(progress)))
   return (
@@ -117,7 +149,7 @@ function LoadingOverlay({ ready }) {
         />
         <div className="w-full">
           <div className="mb-1.5 flex items-center justify-between text-xs font-extrabold text-[#6b5a80]">
-            <span>Şehir hazırlanıyor…</span>
+            <span className="transition-opacity duration-300">{message}</span>
             <span className="tabular-nums text-[#8b6be6]">%{pct}</span>
           </div>
           <div className="h-3 w-full overflow-hidden rounded-full border border-white bg-[#efe6ff] p-0.5 shadow-inner">
@@ -264,6 +296,11 @@ function WorldScene({ avatar }) {
   const [nearVenue, setNearVenue] = useState(null) // şehirde kapısına yaklaştığımız mekân
   const venueRef = useRef(startAirport ? START_VENUE : null)
   const [fade, setFade] = useState(false)
+  const [transitionLine, setTransitionLine] = useState(() => randomLoadingMessage(TRAVEL_LOADING_MESSAGES))
+  const beginTransition = useCallback(() => {
+    setTransitionLine(randomLoadingMessage(TRAVEL_LOADING_MESSAGES))
+    setFade(true)
+  }, [])
   const [sceneReady, setSceneReady] = useState(false) // ilk yükleme bitti mi (yükleme ekranı için)
   const onSceneReady = useCallback(() => setSceneReady(true), [])
   // Havalimanı başlangıç eğitim holü: yıldız topla → çanta (envanter) → örnek kapı → gardırop → çıkış
@@ -338,7 +375,7 @@ function WorldScene({ avatar }) {
   // Şehir ↔ ev geçişi: ekran kısa süre kararır, sonra oyuncu yeni yere ışınlanır.
   const swapScene = useCallback((target) => {
     moveTargetRef.current = null
-    setFade(true)
+    beginTransition()
     setEditing(false)
     setSelected(null)
     setTimeout(() => {
@@ -356,13 +393,13 @@ function WorldScene({ avatar }) {
       }
       setTimeout(() => setFade(false), 120)
     }, 220)
-  }, [])
+  }, [beginTransition])
 
   // Şehir ↔ mekân geçişi (ev geçişinin paralelidir). Girerken kamera güneye sıfırlanır (oyuncak evi kesiti).
   const swapVenue = useCallback((target) => {
     moveTargetRef.current = null
     const from = venueRef.current
-    setFade(true)
+    beginTransition()
     setEditing(false)
     setSelected(null)
     setTimeout(() => {
@@ -397,7 +434,7 @@ function WorldScene({ avatar }) {
       }
       setTimeout(() => setFade(false), 160)
     }, 220)
-  }, [seenKey])
+  }, [beginTransition, seenKey])
 
   // Başkasının evine girerken sahne, sunucu izin verince ('room' mesajı) değişir; reddedilirse olduğun yerde kalırsın.
   // Mekân girişinde/salon değişiminde sunucunun verdiği dağılımlı kapı konumu uygulanır (üst üste binmeyi önler).
@@ -483,12 +520,12 @@ function WorldScene({ avatar }) {
   const switchVenueChannel = useCallback(
     (ch) => {
       if (!venue || ch === net.venueChannel) return
-      setFade(true)
+      beginTransition()
       setInteractId(null)
       net.enterRoom({ venue, ch })
       setTimeout(() => setFade(false), 260)
     },
-    [venue, net],
+    [beginTransition, venue, net],
   )
   const leaveVenue = useCallback(() => {
     swapVenue('city')
@@ -725,14 +762,14 @@ function WorldScene({ avatar }) {
   const onTutDoor = useCallback(() => {
     if (tutStep !== 'door' || fade) return
     setTutNear(null)
-    setFade(true)
+    beginTransition()
     window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'quest' }))
     setTimeout(() => {
       setFade(false)
       setTutStep('wardrobe')
       flashTutCelebrate('🚪 Süper! Soldaki 👗 Gardırop açıldı (3/5)')
     }, 420)
-  }, [tutStep, fade, flashTutCelebrate])
+  }, [beginTransition, tutStep, fade, flashTutCelebrate])
   useEffect(() => {
     if (!inTutorial || tutStep !== 'wardrobe') return
     if (panel === 'wardrobe') {
@@ -904,7 +941,7 @@ function WorldScene({ avatar }) {
     <div className="fixed inset-0 touch-none select-none overflow-hidden bg-[#cfeaff]">
       <WorldErrorBoundary>
       <Canvas
-        shadows={graphics.shadows ? PCFShadowMap : false}
+        shadows={graphics.shadows ? PCFSoftShadowMap : false}
         dpr={graphics.lowPower ? graphics.dpr : (touch ? [1, 1.25] : graphics.dpr)}
         gl={{ powerPreference: graphics.lowPower ? 'default' : 'high-performance', antialias: graphics.antialias, toneMapping: NeutralToneMapping, toneMappingExposure: 1.02 }}
         camera={{ fov: 55, near: 0.3, far: 300, position: [start.x, 6.4, start.z + 9.4] }}
@@ -1007,6 +1044,7 @@ function WorldScene({ avatar }) {
           minPolarAngle={0.35}
           maxPolarAngle={Math.PI / 2.15}
         />
+        <GraphicsEffects ao={graphics.ao} bloom={graphics.bloom} />
       </Canvas>
       </WorldErrorBoundary>
 
@@ -1301,7 +1339,7 @@ function WorldScene({ avatar }) {
       >
         <div className="flex flex-col items-center gap-3 rounded-[1.75rem] border-2 border-white bg-white/85 px-7 py-5 shadow-[0_14px_36px_rgba(104,79,145,0.16)] backdrop-blur-md">
           <div className="h-9 w-9 animate-spin rounded-full border-[3.5px] border-[#efe6ff] border-r-[#ff9ec7] border-t-[#a88bff]" />
-          <p className="text-sm font-black tracking-wide text-[#5b4678]">Mekâna geçiliyor…</p>
+          <p className="text-sm font-black tracking-wide text-[#5b4678]">{transitionLine}</p>
         </div>
       </div>
       <LoadingOverlay ready={sceneReady} />
