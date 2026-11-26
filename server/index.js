@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import compression from 'compression'
 import dotenv from 'dotenv'
 import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
@@ -23,6 +24,7 @@ const CHARACTERS_FILE = path.join(DATA_DIR, 'characters.json')
 
 const app = express()
 app.use(cors())
+app.use(compression({ level: 6, threshold: 1024 }))
 app.use(express.json({ limit: '32kb' }))
 
 const MESHY_API_KEY = process.env.MESHY_API_KEY
@@ -183,7 +185,17 @@ app.get('/api/health', (_req, res) => {
 // Üretim: derlenmiş ön yüzü (dist/) aynı sunucudan ver → tek servis = oyun + API + WebSocket aynı adreste (CORS/VITE_WS_URL gerekmez).
 const DIST = path.join(__dirname, '..', 'dist')
 if (existsSync(path.join(DIST, 'index.html'))) {
-  app.use(express.static(DIST, { maxAge: '1h', setHeaders: (res, f) => f.endsWith('index.html') && res.setHeader('Cache-Control', 'no-cache') }))
+  app.use(express.static(DIST, {
+    maxAge: '1h',
+    setHeaders: (res, file) => {
+      const normalized = file.replaceAll('\\', '/')
+      if (normalized.endsWith('/index.html')) {
+        res.setHeader('Cache-Control', 'no-cache')
+      } else if (normalized.includes('/assets/') || normalized.includes('/models/') || normalized.includes('/textures/') || normalized.includes('/icons/fluent/')) {
+        res.setHeader('Cache-Control', 'public, max-age=604800, immutable')
+      }
+    },
+  }))
   app.get(/^\/(?!api\/|ws).*/, (_req, res) => res.sendFile(path.join(DIST, 'index.html'))) // SPA yönlendirmesi (/avatar, /world, /admin)
   console.log('Ön yüz dist/ klasöründen sunuluyor.')
 }
