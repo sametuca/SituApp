@@ -10,10 +10,12 @@ import {
   CanvasTexture,
   Color,
   Float32BufferAttribute,
+  LatheGeometry,
   MeshStandardMaterial,
   Object3D,
   ShaderMaterial,
   SRGBColorSpace,
+  Vector2,
   Vector3,
 } from 'three'
 import { BEACH, GAP, PIER, PROPS, ROAD_HALF } from './layout'
@@ -319,10 +321,28 @@ const FESTOON_SPANS = (() => {
 
 function SummerFestoons() {
   const bulbsRef = useRef()
+  const socketsRef = useRef()
+  const filamentsRef = useRef()
   const halosRef = useRef()
   const wiresRef = useRef()
   const tex = useMemo(() => glowTexture(SOFT), [])
-  useEffect(() => () => tex.dispose(), [tex])
+  const bulbGeo = useMemo(() => {
+    const pts = [
+      new Vector2(0.0, -0.115),
+      new Vector2(0.048, -0.105),
+      new Vector2(0.088, -0.065),
+      new Vector2(0.095, -0.015),
+      new Vector2(0.068, 0.045),
+      new Vector2(0.042, 0.09),
+      new Vector2(0.036, 0.115),
+      new Vector2(0.0, 0.115),
+    ]
+    return new LatheGeometry(pts, 16)
+  }, [])
+  useEffect(() => () => {
+    tex.dispose()
+    bulbGeo.dispose()
+  }, [tex, bulbGeo])
   const camera = useThree((s) => s.camera)
   const dummy = useMemo(() => new Object3D(), [])
 
@@ -345,7 +365,8 @@ function SummerFestoons() {
           const len = Math.hypot(x - prev.x, y - prev.y, z - prev.z)
           wList.push({ p: new Vector3(mx, my, mz), to: new Vector3(x, y, z), len })
         }
-        bList.push({ x, y: y - 0.08, z, col: cols[(si + i) % cols.length], phase: si * 0.7 + i * 0.9 })
+        // Duy telden aşağı sarkar, ampul duyun altında asılı durur
+        bList.push({ x, wireY: y, y: y - 0.19, z, col: cols[(si + i) % cols.length], phase: si * 0.7 + i * 0.9 })
         prev = { x, y, z }
       }
     })
@@ -354,6 +375,8 @@ function SummerFestoons() {
 
   useEffect(() => {
     const bm = bulbsRef.current
+    const sm = socketsRef.current
+    const fm = filamentsRef.current
     const wm = wiresRef.current
     if (bm) {
       bulbs.forEach((b, i) => {
@@ -367,6 +390,26 @@ function SummerFestoons() {
       bm.instanceMatrix.needsUpdate = true
       if (bm.instanceColor) bm.instanceColor.needsUpdate = true
     }
+    if (sm) {
+      bulbs.forEach((b, i) => {
+        dummy.position.set(b.x, b.wireY - 0.05, b.z)
+        dummy.rotation.set(0, 0, 0)
+        dummy.scale.set(1, 1, 1)
+        dummy.updateMatrix()
+        sm.setMatrixAt(i, dummy.matrix)
+      })
+      sm.instanceMatrix.needsUpdate = true
+    }
+    if (fm) {
+      bulbs.forEach((b, i) => {
+        dummy.position.set(b.x, b.y - 0.015, b.z)
+        dummy.rotation.set(0, 0, 0)
+        dummy.scale.set(1, 1, 1)
+        dummy.updateMatrix()
+        fm.setMatrixAt(i, dummy.matrix)
+      })
+      fm.instanceMatrix.needsUpdate = true
+    }
     if (wm) {
       wires.forEach((w, i) => {
         dummy.position.copy(w.p)
@@ -379,23 +422,30 @@ function SummerFestoons() {
     }
   }, [bulbs, wires, dummy])
 
-  useFrame(({ clock }) => {
+  const acc = useRef(0)
+  useFrame(({ clock }, dt) => {
     const lit = skyLive.lit
     const on = lit > 0.02
     if (bulbsRef.current?.material) {
-      bulbsRef.current.material.emissiveIntensity = 0.05 + lit * 2.1
+      bulbsRef.current.material.emissiveIntensity = 0.08 + lit * 1.45
+    }
+    if (filamentsRef.current?.material) {
+      filamentsRef.current.material.emissiveIntensity = 0.15 + lit * 3.2
     }
     const hm = halosRef.current
     if (!hm) return
     hm.visible = on
     if (!on) return
+    acc.current += dt
+    if (acc.current < 0.04) return
+    acc.current = 0
     const t = clock.elapsedTime
     for (let i = 0; i < bulbs.length; i++) {
       const b = bulbs[i]
       const pulse = 0.85 + Math.sin(t * 2.2 + b.phase) * 0.15
-      dummy.position.set(b.x, b.y, b.z)
+      dummy.position.set(b.x, b.y - 0.02, b.z)
       dummy.quaternion.copy(camera.quaternion)
-      dummy.scale.setScalar(1.15 * pulse)
+      dummy.scale.setScalar(1.25 * pulse)
       dummy.updateMatrix()
       hm.setMatrixAt(i, dummy.matrix)
     }
@@ -406,12 +456,22 @@ function SummerFestoons() {
   return (
     <group>
       <instancedMesh ref={wiresRef} args={[undefined, undefined, wires.length]} frustumCulled={false}>
-        <boxGeometry args={[0.028, 0.028, 1]} />
-        <meshStandardMaterial color="#3c314e" roughness={0.85} />
+        <boxGeometry args={[0.026, 0.026, 1]} />
+        <meshStandardMaterial color="#352b47" roughness={0.85} />
       </instancedMesh>
-      <instancedMesh ref={bulbsRef} args={[undefined, undefined, bulbs.length]} frustumCulled={false}>
-        <sphereGeometry args={[0.1, 8, 6]} />
-        <meshStandardMaterial color="#fff8e0" emissive="#ffc46b" emissiveIntensity={0.05} roughness={0.25} />
+      {/* Siyah/antrasit duy ve kısa askı kordonu */}
+      <instancedMesh ref={socketsRef} args={[undefined, undefined, bulbs.length]} frustumCulled={false}>
+        <cylinderGeometry args={[0.042, 0.048, 0.1, 10]} />
+        <meshStandardMaterial color="#2b2338" roughness={0.55} metalness={0.25} />
+      </instancedMesh>
+      {/* İç filaman çekirdeği */}
+      <instancedMesh ref={filamentsRef} args={[undefined, undefined, bulbs.length]} frustumCulled={false}>
+        <capsuleGeometry args={[0.014, 0.045, 4, 8]} />
+        <meshStandardMaterial color="#fff8d6" emissive="#ffe07d" emissiveIntensity={0.15} roughness={0.2} toneMapped={false} />
+      </instancedMesh>
+      {/* Damla formunda yarı saydam sıcak cam ampul */}
+      <instancedMesh ref={bulbsRef} args={[bulbGeo, undefined, bulbs.length]} frustumCulled={false}>
+        <meshStandardMaterial color="#fff6dc" emissive="#ffc46b" emissiveIntensity={0.08} roughness={0.18} metalness={0.05} transparent opacity={0.86} />
       </instancedMesh>
       <instancedMesh ref={halosRef} args={[undefined, undefined, bulbs.length]} frustumCulled={false} renderOrder={4}>
         <planeGeometry args={[1, 1]} />
@@ -467,12 +527,16 @@ function Fireflies() {
   }, [seeds])
   useEffect(() => () => geo.dispose(), [geo])
 
-  useFrame(({ clock }) => {
+  const ffAcc = useRef(0)
+  useFrame(({ clock }, dt) => {
     const p = ref.current
     if (!p) return
     const vis = skyLive.lit > 0.15
     p.visible = vis
     if (!vis) return
+    ffAcc.current += dt
+    if (ffAcc.current < 0.04) return
+    ffAcc.current = 0
     const t = clock.elapsedTime
     const arr = geo.attributes.position.array
     for (let i = 0; i < count; i++) {

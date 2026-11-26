@@ -600,7 +600,7 @@ export function ChatPanel({ feed, onSend, status, onAddFriend, onOpenDm, onInspe
             key={`${m.ts}-${i}`}
             className={`w-fit max-w-full break-words rounded-2xl px-3 py-1 text-sm font-semibold ${
               m.kind === 'system'
-                ? 'bg-[#2b2042]/75 text-[#fff6eb] backdrop-blur-sm'
+                ? 'bg-[#2b2042]/88 text-[#fff6eb]'
                 : m.whisper
                   ? 'border border-[#c9b6f5] bg-[#f4edff]/95 italic text-[#5b3fa8]'
                   : m.self

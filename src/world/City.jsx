@@ -311,7 +311,7 @@ function Label({ text, y, x, z, zOff = 0, focusRef, accent = '#fdbb63' }) {
     <Html position={[0, y, zOff]} center distanceFactor={18 * screenK()} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
       <div className="venue-pin flex flex-col items-center" style={{ '--pin': accent }}>
         {mode === 2 && (
-          <div className="mb-1 whitespace-nowrap rounded-full bg-[#3d2f4f]/85 px-3 py-[3px] text-[13px] font-extrabold tracking-wide text-white shadow-lg backdrop-blur-sm">
+          <div className="mb-1 whitespace-nowrap rounded-full bg-[#3d2f4f]/92 px-3 py-[3px] text-[13px] font-extrabold tracking-wide text-white shadow-lg">
             {name}
           </div>
         )}
@@ -699,6 +699,48 @@ function Gazebo() {
           </group>
         )
       })}
+      {/* İçeride yuvarlak pastel masa, saksı çiçekler ve sarkan sıcak fener */}
+      <mesh position={[0, 0.56, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.14, 0.22, 0.58, 12]} />
+        <primitive object={stdMat('#f4d8bc', 0.55)} attach="material" />
+      </mesh>
+      <mesh position={[0, 0.88, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.78, 0.72, 0.12, 24]} />
+        <primitive object={stdMat('#fffaf2', 0.45)} attach="material" />
+      </mesh>
+      <mesh position={[0, 0.99, 0]}>
+        <cylinderGeometry args={[0.16, 0.12, 0.14, 10]} />
+        <primitive object={stdMat('#ff9ec7', 0.5)} attach="material" />
+      </mesh>
+      <mesh position={[0, 1.12, 0]}>
+        <dodecahedronGeometry args={[0.16, 0]} />
+        <primitive object={stdMat('#8fdcb4', 0.55)} attach="material" />
+      </mesh>
+      {/* Tavan feneri */}
+      <mesh position={[0, 3.12, 0]}>
+        <cylinderGeometry args={[0.025, 0.025, 0.65, 8]} />
+        <primitive object={stdMat('#8a7a9c', 0.5)} attach="material" />
+      </mesh>
+      <mesh position={[0, 2.74, 0]}>
+        <sphereGeometry args={[0.2, 14, 12]} />
+        <meshStandardMaterial color="#fff3c4" emissive="#ffc86b" emissiveIntensity={1.4} roughness={0.25} />
+      </mesh>
+      {/* Sütun aralarında yarım korkuluk ve pastel çiçeklikler (doğu girişi açık) */}
+      {posts.slice(1).map((a, i) => {
+        const mx = Math.cos(a - Math.PI / 6) * 2.7
+        const mz = Math.sin(a - Math.PI / 6) * 2.7
+        return (
+          <group key={i} position={[mx, 0.42, mz]} rotation={[0, -(a - Math.PI / 6) + Math.PI / 2, 0]}>
+            <RoundedBox args={[2.1, 0.16, 0.22]} radius={0.06} smoothness={2} castShadow>
+              <meshStandardMaterial color="#ffe3c6" roughness={0.55} />
+            </RoundedBox>
+            <mesh position={[0, 0.14, 0]}>
+              <sphereGeometry args={[0.16, 10, 8]} />
+              <meshStandardMaterial color={i % 2 ? '#ff9ec7' : '#ffd35e'} roughness={0.5} />
+            </mesh>
+          </group>
+        )
+      })}
       {/* pofuduk kubbemsi kiremit çatı + yumuşak saçak halkası + tepe topuzu */}
       <mesh position={[0, 3.45, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
         <torusGeometry args={[3.55, 0.2, 12, 36]} />
@@ -821,16 +863,16 @@ function Sun({ focusRef }) {
       ref={light}
       castShadow
       intensity={1.6}
-      shadow-mapSize={[2048, 2048]}
-      shadow-camera-left={-26}
-      shadow-camera-right={26}
-      shadow-camera-top={26}
-      shadow-camera-bottom={-26}
+      shadow-mapSize={[1024, 1024]}
+      shadow-camera-left={-20}
+      shadow-camera-right={20}
+      shadow-camera-top={20}
+      shadow-camera-bottom={-20}
       shadow-camera-near={1}
-      shadow-camera-far={65}
-      shadow-bias={-0.0004}
+      shadow-camera-far={56}
+      shadow-bias={-0.0005}
       shadow-normalBias={0.032}
-      shadow-radius={3.5}
+      shadow-radius={2}
     />
   )
 }
@@ -1532,10 +1574,7 @@ function RoadDetails() {
 // PROPS ve BLANKETS'i model adına göre grupla (≥ 2 örnek → InstancedPropGroup, tekil → Prop)
 const { INSTANCED_PROPS, SINGLE_PROPS } = (() => {
   const byModel = new Map()
-  const all = [
-    ...PROPS,
-    ...BLANKETS.map((b) => ({ model: '/models/venues/picnic-blanket.glb', x: b.x, z: b.z, scale: 2.0, ry: b.ry })),
-  ]
+  const all = PROPS
   for (const p of all) {
     let arr = byModel.get(p.model)
     if (!arr) {
@@ -1591,10 +1630,7 @@ export default function City({ focusRef }) {
       <Flat x={BEACH.x} z={BEACH.z} round={BEACH.r + 4} y={Y.floor} tex="sand" feather={6} /> {/* yuvarlak plaj: yumuşak kenarlı */}
       <Flat x={BEACH.x} z={BEACH.z} round={BEACH.r - 2} y={Y.floor + 0.004} tex="sand" color="#fff6dc" feather={5} />
       
-      <mesh position={[-33 - GAP, 0.04, -6]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[3.6, 40]} />
-        <meshStandardMaterial color="#a9ddf5" roughness={0.15} />
-      </mesh>
+      <Pond x={-42.5} z={-12.5} r={4.2} />
 
       {/* kaldırım + yollar */}
       <Flat x={0} z={nsN.cz} w={swW} d={nsN.len} y={Y.sidewalk} tex="cobble" color="#fdf6ff" />

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { VENUE_SOFT_CAP } from './venues'
 
-const glass = 'border-2 border-white bg-white/92 shadow-soft backdrop-blur-md'
+const glass = 'border-2 border-white bg-white/95 shadow-soft'
 const NEARBY_PICK_RANGE = 8.5
 
 /**

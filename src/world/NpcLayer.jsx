@@ -7,7 +7,6 @@ import { useFrame } from '@react-three/fiber'
 import { Html, RoundedBox } from '@react-three/drei'
 import { MathUtils } from 'three'
 import AvatarRig, { AVATAR_HEIGHT } from './AvatarRig'
-import { Ico } from '../components/Icon'
 import { PetModel } from './Pet'
 import { AFK_BOTS, CLICK_RADIUS, GREET_RADIUS, NPC_SCALE, TALK_RADIUS, displayName, npcAccessory, npcsFor, posAt } from './npcs'
 import { cosStore } from './cosStore'
@@ -210,36 +209,27 @@ function splitNpcName(full) {
   return { role: parts.slice(0, -1).join(' '), person: parts[parts.length - 1] }
 }
 
-function NpcTag({ name, bubble, nearTalk, isVendor }) {
+export function NpcTag({ name, bubble, nearTalk, isVendor }) {
   const { role, person } = splitNpcName(name)
   return (
     <Html position={[0, AVATAR_HEIGHT + 0.5, 0]} center distanceFactor={9 * screenK()} zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}>
-      <div className="relative flex flex-col items-center gap-1">
+      <div className="relative flex flex-col items-center gap-1.5">
         {nearTalk && !bubble && (
-          <div className={`rounded-full border border-white px-2.5 py-0.5 text-[10px] font-black shadow ${isVendor ? 'bg-[#fff3c4] text-[#8a5a00]' : 'bg-[#f1ebff] text-[#5e42a8]'}`}>
+          <div className="w-max min-w-max whitespace-nowrap rounded-full border border-[#ffd35e]/80 bg-[#fff8e6]/95 px-3 py-0.5 text-[10px] font-black tracking-wide text-[#7a4b00] shadow-md">
             {isVendor ? 'E · Göz At' : 'E · Konuş'}
           </div>
         )}
         {bubble && (
-          <div className="w-max min-w-[160px] max-w-[340px] break-words rounded-2xl rounded-bl-md border-2 border-white bg-white px-3.5 py-1.5 text-center text-sm font-bold leading-snug text-[#4a3b5c] shadow-lg">{bubble}</div>
+          <div className="w-max min-w-[160px] max-w-[340px] break-words rounded-2xl rounded-bl-md border-2 border-white bg-white/95 px-3.5 py-1.5 text-center text-sm font-bold leading-snug text-[#4a3b5c] shadow-lg">{bubble}</div>
         )}
-        {/* Oyun içi doğal karakter kartı: "NPC" yazısı yerine ünvan + isim + satıcı/sohbet rozeti */}
-        <div
-          className={`inline-flex items-center gap-2 whitespace-nowrap rounded-2xl border-2 border-white bg-[#fffdf9]/95 py-1 pl-1.5 pr-3 shadow-[0_5px_14px_rgba(74,59,92,0.18)] ${
-            isVendor ? 'ring-1 ring-[#fdb252]/70' : 'ring-1 ring-[#d6c7ff]/80'
-          }`}
-        >
-          <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-xl ${isVendor ? 'bg-[#fdb252]' : 'bg-[#9b7be8]'}`}>
-            <Ico name={isVendor ? 'shop' : 'chat'} size={14} color="#ffffff" weight="fill" />
-          </span>
-          <span className="flex flex-col leading-tight">
-            {role && (
-              <span className={`text-[9px] font-black uppercase tracking-wider ${isVendor ? 'text-[#d98a1c]' : 'text-[#8467c9]'}`}>
-                {role}
-              </span>
-            )}
-            <span className="text-[13px] font-black text-[#4a3b5c]">{person}</span>
-          </span>
+        {/* Fantastik, ikonsuz ve tüm NPC'lerde tek tip isim kartı */}
+        <div className="inline-flex w-max min-w-max flex-col items-center whitespace-nowrap rounded-2xl border-2 border-[#fff7e6] bg-gradient-to-b from-[#3d2b63]/95 via-[#2e204f]/95 to-[#23173f]/95 px-3.5 py-1.5 text-center shadow-[0_6px_18px_rgba(35,23,63,0.42),0_0_12px_rgba(255,211,94,0.24)] ring-1 ring-[#ffd35e]/55">
+          {role && (
+            <span className="text-[9px] font-black uppercase tracking-[0.14em] text-[#ffd35e]">
+              {role}
+            </span>
+          )}
+          <span className="text-[13px] font-black leading-tight tracking-wide text-white">{person}</span>
         </div>
       </div>
     </Html>

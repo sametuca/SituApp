@@ -10,7 +10,7 @@ import { CHAT_EMOJIS, GESTURES, GESTURE_BY_KIND, QUICK_REPLIES, REACTIONS, SKILL
 import { levelOf } from './collectibles'
 import Portrait from './Portrait'
 
-const glass = 'border-2 border-white bg-white/80 shadow-soft backdrop-blur-md'
+const glass = 'border-2 border-white bg-white/92 shadow-soft'
 
 
 // ---------- sanal joystick (dokunmatik cihazlar) ----------

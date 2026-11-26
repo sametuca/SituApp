@@ -320,13 +320,8 @@ const SEAT_DEFS = {
   [M.lounger]: { kind: 'lounger', cap: 1, gap: 0, face: 0, along: 'z' },
   [M.chair]: { kind: 'chair', cap: 1, gap: 0, face: 0, along: 'x' },
 }
-// Park piknik battaniyeleri (procedural, City.jsx çizer): 2 kişilik, yere oturulur (style 'floor').
-export const BLANKETS = [
-  { x: -21, z: -7.5, ry: 0.2, c: '#fec172', c2: '#fff8f0' },
-  { x: -40, z: -4.5, ry: -0.5, c: '#7fcdf3', c2: '#fff8f0' },
-  { x: -33, z: 7.6, ry: 0.4, c: '#ffd35e', c2: '#fff7dc' },
-  { x: -28, z: -7.6, ry: -0.2, c: '#8fdcb4', c2: '#f3fff8' },
-].map((bl) => ({ ...bl, x: G(bl.x, bl.z)[0], z: G(bl.x, bl.z)[1] }))
+// Park piknik battaniyeleri kaldırıldı (yerinde sade çim/oturma alanları kalsın)
+export const BLANKETS = []
 const slotsOf = (x, z, ry, d) => {
   const ax = d.along === 'x' ? [Math.cos(ry), -Math.sin(ry)] : [Math.sin(ry), Math.cos(ry)]
   return Array.from({ length: d.cap }, (_, k) => {
@@ -348,7 +343,7 @@ loungers.forEach((a, i) => {
     if (Math.hypot(a.x - c.x, a.z - c.z) < 3.2) a.group = c.group = a.group ?? c.group ?? `lg${i}`
   })
 })
-export const SEATS = [...SEATS_PROPS, ...SEATS_BLANKET, ...SEATS_TOWEL]
+export const SEATS = [...SEATS_PROPS, ...SEATS_TOWEL]
 export const SEAT_LABEL = { bench: 'Banka otur', lounger: 'Şezlonga uzan', towel: 'Havluya uzan', chair: 'Sandalyeye otur', blanket: 'Battaniyeye otur', table: 'Masaya otur', stool: 'Taburede otur', sofa: 'Kanepeye otur' }
 
 // Fotoğraf Stüdyosu'nun (MakFit yanı; kapısı güneye bakar) kapı önü: "Fotoğraf çek" istemi burada çıkar.

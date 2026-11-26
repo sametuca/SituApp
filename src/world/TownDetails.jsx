@@ -68,15 +68,15 @@ function DiverseTrees() {
               <ClayMat color="#b9865c" roughness={0.78} />
             </mesh>
             <mesh position={[0, 2.3, 0]} castShadow>
-              <sphereGeometry args={[1.18, 16, 14]} />
+              <sphereGeometry args={[1.18, 14, 12]} />
               <ClayMat color={leaf} roughness={0.66} />
             </mesh>
-            <mesh position={[0.55, 2.6, 0.3]} castShadow>
-              <sphereGeometry args={[0.75, 14, 12]} />
+            <mesh position={[0.55, 2.6, 0.3]}>
+              <sphereGeometry args={[0.75, 12, 10]} />
               <ClayMat color={leaf2} roughness={0.66} />
             </mesh>
-            <mesh position={[-0.52, 2.45, -0.35]} castShadow>
-              <sphereGeometry args={[0.72, 14, 12]} />
+            <mesh position={[-0.52, 2.45, -0.35]}>
+              <sphereGeometry args={[0.72, 12, 10]} />
               <ClayMat color={leaf2} roughness={0.66} />
             </mesh>
             {/* Meyveler / çiçekler */}
@@ -115,16 +115,16 @@ function TownBushes() {
     <group>
       {BUSH_SPOTS.map(([x, z], i) => (
         <group key={i} position={[x, 0, z]}>
-          <mesh position={[0, 0.36, 0]} castShadow>
-            <sphereGeometry args={[0.48, 10, 8]} />
+          <mesh position={[0, 0.36, 0]}>
+            <sphereGeometry args={[0.48, 9, 7]} />
             <meshStandardMaterial color={i % 2 === 0 ? '#7fd69a' : '#8ee0a8'} roughness={0.8} />
           </mesh>
-          <mesh position={[0.32, 0.28, 0.14]} castShadow>
-            <sphereGeometry args={[0.34, 10, 8]} />
+          <mesh position={[0.32, 0.28, 0.14]}>
+            <sphereGeometry args={[0.34, 9, 7]} />
             <meshStandardMaterial color="#9ae8b4" roughness={0.8} />
           </mesh>
-          <mesh position={[-0.28, 0.26, -0.12]} castShadow>
-            <sphereGeometry args={[0.32, 10, 8]} />
+          <mesh position={[-0.28, 0.26, -0.12]}>
+            <sphereGeometry args={[0.32, 9, 7]} />
             <meshStandardMaterial color="#72cc8e" roughness={0.8} />
           </mesh>
           {[

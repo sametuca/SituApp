@@ -211,7 +211,7 @@ export function useAudio({ net, focusRef, home, panel }) {
       }}
       aria-label={st.muted ? 'Sesi aç' : 'Sesi kapat'}
       title={st.muted ? 'Sesi aç' : 'Sesi kapat'}
-      className="grid h-12 w-12 place-items-center rounded-full border-2 border-white bg-white/85 shadow-soft backdrop-blur-md transition hover:bg-white active:scale-95"
+      className="grid h-12 w-12 place-items-center rounded-full border-2 border-white bg-white/92 shadow-soft transition hover:bg-white active:scale-95"
     >
       <Ico name={st.muted ? 'soundOff' : 'soundOn'} size={24} />
     </button>

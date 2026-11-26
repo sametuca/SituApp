@@ -10,11 +10,12 @@ const NAMES = {
   hips: 'Hips', spine: 'Spine01', head: 'Head',
   lUp: 'LeftUpLeg', lLeg: 'LeftLeg', rUp: 'RightUpLeg', rLeg: 'RightLeg',
   lArm: 'LeftArm', rArm: 'RightArm', lForeArm: 'LeftForeArm', rForeArm: 'RightForeArm',
+  lHand: 'LeftHand', rHand: 'RightHand',
 }
 
 // Oturan avatar ayakta olduğu yüksekliğin bu kadar altına iner (m); negatif değer koltuk/sele üstüne çıkarır.
 const TOWEL_DROP = 0.38
-export const SIT_DROP = { bench: -0.08, chair: -0.05, stool: 0.14, lounger: 0.06, floor: 0.42, bike: -0.27 }
+export const SIT_DROP = { bench: -0.08, chair: -0.05, stool: 0.14, lounger: -0.22, floor: 0.42, bike: -0.27 }
 
 const q1 = new Quaternion()
 const q2 = new Quaternion()
@@ -59,8 +60,19 @@ export function applyUprightIdle(rig) {
     b.position.copy(p)
   }
   model.updateWorldMatrix(true, true)
-  turn(rig, bones.lArm, AZ, -1.25)
-  turn(rig, bones.rArm, AZ, 1.25)
+  // Gerçekçi, rahat ayakta duruş: kollar gövdeye yakın, dirsek ve bilekler hafif kırık
+  turn(rig, bones.lArm, AZ, -1.37)
+  turn(rig, bones.rArm, AZ, 1.37)
+  turn(rig, bones.lArm, AX, -0.04)
+  turn(rig, bones.rArm, AX, -0.04)
+  turn(rig, bones.lForeArm, AX, -0.18)
+  turn(rig, bones.rForeArm, AX, -0.18)
+  turn(rig, bones.lForeArm, AZ, 0.06)
+  turn(rig, bones.rForeArm, AZ, -0.06)
+  turn(rig, bones.lHand, AZ, 0.08)
+  turn(rig, bones.rHand, AZ, -0.08)
+  turn(rig, bones.lHand, AX, -0.06)
+  turn(rig, bones.rHand, AX, -0.06)
 }
 
 /** Olta tutuşu: kol açısı (AX, negatif = öne/yukarı) ve gövde eğimi. phase: cast | wait | bite | reel; t: fazın başından beri sn; now: saat sn. */
@@ -116,12 +128,17 @@ export function applyPose(rig, pose, dt) {
     // kanepe (seat kimliği 'sofa…', stil bench): oturak/ön panel yüzünden ayaklar kaybolmasın diye biraz yukarı ve ileri
     const onSofa = rig.style === 'bench' && /(^|\/)sofa/i.test(String(rig.seat ?? ''))
     if (onSofa) model.position.y += 0.07 * b
-    model.position.z = rig.style === 'bike' ? -0.28 * b : onSofa ? 0.1 * b : 0
+    model.position.z = rig.style === 'bike' ? -0.28 * b : rig.style === 'lounger' && !onTowel ? 0.16 * b : onSofa ? 0.1 * b : 0
     if (rig.style === 'lounger') {
-      // şezlong / havlu: keyifle arkaya uzan, baş hafif yukarıda, kollar yanlarda rahat
-      // havlu yere düz serilir (neredeyse yatay); şezlongun arkalığı eğimlidir (≈55°): daha dik yaslan ki gövde arkalığa gömülmesin
-      turn(rig, bones.hips, AX, (onTowel ? -1.25 : -0.98) * b)
-      turn(rig, bones.head, AX, (onTowel ? 0.48 : 0.3) * b)
+      // şezlong / havlu: keyifle arkaya uzan, baş hafif yukarıda, kollar yanlarda rahat, ayaklar şezlongun üstünde görünür
+      turn(rig, bones.hips, AX, (onTowel ? -1.25 : -0.82) * b)
+      if (!onTowel) {
+        turn(rig, bones.lUp, AX, -0.45 * b)
+        turn(rig, bones.rUp, AX, -0.45 * b)
+        turn(rig, bones.lLeg, AX, 0.24 * b)
+        turn(rig, bones.rLeg, AX, 0.24 * b)
+      }
+      turn(rig, bones.head, AX, (onTowel ? 0.48 : 0.26) * b)
       turn(rig, bones.lArm, AX, -0.28 * b)
       turn(rig, bones.rArm, AX, -0.28 * b)
       turn(rig, bones.lArm, AZ, 0.22 * b)
@@ -237,13 +254,13 @@ export function applyPose(rig, pose, dt) {
       turn(rig, bones.spine, AZ, -sway * 0.14 * b)
       turn(rig, bones.head, AZ, sway * 0.16 * b)
       turn(rig, bones.head, AX, -0.08 * b)
-      // kollar baş üstünde yumuşak dalga
-      turn(rig, bones.lArm, AX, (-2.35 + Math.sin(beat) * 0.18) * b)
-      turn(rig, bones.rArm, AX, (-2.35 - Math.sin(beat) * 0.18) * b)
-      turn(rig, bones.lArm, AZ, (0.3 + sway * 0.35) * b)
-      turn(rig, bones.rArm, AZ, (-0.3 + sway * 0.35) * b)
-      turn(rig, bones.lForeArm, AX, -0.45 * b)
-      turn(rig, bones.rForeArm, AX, -0.45 * b)
+      // kollar başın iki yanında geniş V şeklinde yumuşakça dalgalanır (yüze girmez)
+      turn(rig, bones.lArm, AX, (-1.78 + Math.sin(beat) * 0.16) * b)
+      turn(rig, bones.rArm, AX, (-1.78 - Math.sin(beat) * 0.16) * b)
+      turn(rig, bones.lArm, AZ, (-0.48 + sway * 0.22) * b)
+      turn(rig, bones.rArm, AZ, (0.48 + sway * 0.22) * b)
+      turn(rig, bones.lForeArm, AX, -0.22 * b)
+      turn(rig, bones.rForeArm, AX, -0.22 * b)
       // hafif diz yaylanması
       const knee = (1 - hop) * 0.22
       turn(rig, bones.lUp, AX, -knee * b)

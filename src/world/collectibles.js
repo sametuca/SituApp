@@ -17,12 +17,12 @@ export const HALF_DAY_MS = 12 * 3600 * 1000
 
 // model: public/models/collectibles/<id>.glb (en büyük boyut `size` metreye ölçeklenir), y: yerden yükseklik (süzülme ortası); ground: tabanı yere oturur, süzülmez
 export const KINDS = {
-  star: { id: 'star', emoji: '⭐', name: 'Yıldız parçası', plural: 'Yıldız parçaları', model: '/models/collectibles/star.glb', size: 0.62, y: 0.85, stars: 1, respawn: 'half', glow: '#ffe48f', series: { goal: 25, bonus: 5, name: 'Yıldız Avcısı' } },
-  heart: { id: 'heart', emoji: '💗', name: 'Kalp taşı', plural: 'Kalp taşları', model: '/models/collectibles/heartstone.glb', size: 0.6, y: 0.8, stars: 2, respawn: 'day', glow: '#fec172', series: { goal: 10, bonus: 6, name: 'Kalp Koleksiyoncusu' } },
+  star: { id: 'star', emoji: '⭐', name: 'Yıldız Parçası', plural: 'Yıldız Parçaları', model: '/models/collectibles/star.glb', size: 0.62, y: 0.85, stars: 1, respawn: 'half', glow: '#ffe48f', series: { goal: 25, bonus: 5, name: 'Yıldız Avcısı' } },
+  heart: { id: 'heart', emoji: '💗', name: 'Kalp Taşı', plural: 'Kalp Taşları', model: '/models/collectibles/heartstone.glb', size: 0.6, y: 0.8, stars: 2, respawn: 'day', glow: '#fec172', series: { goal: 10, bonus: 6, name: 'Kalp Koleksiyoncusu' } },
   flower: { id: 'flower', emoji: '🌸', name: 'Çiçek', plural: 'Çiçekler', model: '/models/collectibles/flower.glb', size: 0.7, y: 0, ground: true, stars: 1, respawn: 'half', glow: '#fed095', series: { goal: 30, bonus: 6, name: 'Çiçek Bahçıvanı' } },
   balloon: { id: 'balloon', emoji: '🎈', name: 'Balon', plural: 'Balonlar', model: '/models/collectibles/balloon.glb', size: 0.95, y: 1.45, stars: 1, respawn: 'half', glow: '#a9ddf5', series: { goal: 10, bonus: 5, name: 'Balon Ustası' } },
-  shell: { id: 'shell', emoji: '🐚', name: 'Deniz kabuğu', plural: 'Deniz kabukları', model: '/models/collectibles/shell.glb', size: 0.5, y: 0.5, stars: 1, respawn: 'half', glow: '#ffd5bf', series: { goal: 10, bonus: 5, name: 'Kabuk Toplayıcı' } },
-  chest: { id: 'chest', emoji: '🧰', name: 'Hazine sandığı', plural: 'Hazine sandıkları', model: '/models/collectibles/chest.glb', size: 0.9, y: 0, ground: true, stars: 5, respawn: 'day', glow: '#ffe48f', series: { goal: 5, bonus: 10, name: 'Hazine Avcısı' } },
+  shell: { id: 'shell', emoji: '🐚', name: 'Deniz Kabuğu', plural: 'Deniz Kabukları', model: '/models/collectibles/shell.glb', size: 0.5, y: 0.5, stars: 1, respawn: 'half', glow: '#ffd5bf', series: { goal: 10, bonus: 5, name: 'Kabuk Toplayıcı' } },
+  chest: { id: 'chest', emoji: '🧰', name: 'Hazine Sandığı', plural: 'Hazine Sandıkları', model: '/models/collectibles/chest.glb', size: 0.9, y: 0, ground: true, stars: 5, respawn: 'day', glow: '#ffe48f', series: { goal: 5, bonus: 10, name: 'Hazine Avcısı' } },
 }
 export const KIND_ORDER = ['star', 'heart', 'flower', 'balloon', 'shell', 'chest']
 export const HIDDEN_ALL_BONUS = 15 // tüm gizli sandıklar bulununca bir kerelik ⭐

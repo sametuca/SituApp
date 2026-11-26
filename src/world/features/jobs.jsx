@@ -15,6 +15,7 @@ import { GAP, ISLAND, PIER } from '../layout'
 const FISH_SPOTS = [
   { id: 'pier', label: 'Sahil İskelesi · Balık Tut', x: PIER.x, z: PIER.z0 + 1.8, wx: PIER.x, wz: PIER.z1, r: 6.5 },
   { id: 'pond', label: 'Park Göleti · Balık Tut', x: -30 - GAP, z: 30 + GAP, wx: -30 - GAP, wz: 30 + GAP, r: 11.5 },
+  { id: 'pond2', label: 'Çardak Göleti · Balık Tut', x: -42.5, z: -12.5, wx: -42.5, wz: -12.5, r: 8.5 },
 ]
 const SHORE_SPOT = { id: 'shore', label: 'Su Kenarı · Balık Tut', wx: PIER.x, wz: PIER.z1 }
 function fishSpotAt(x, z) {

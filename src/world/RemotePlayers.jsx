@@ -6,6 +6,7 @@ import { MathUtils } from 'three'
 import AvatarRig, { AVATAR_HEIGHT } from './AvatarRig'
 import { Em } from '../components/emoji'
 import { GUIDE, groundY } from './layout'
+import { NpcTag } from './NpcLayer'
 import { together } from './features/togetherStore'
 import { work } from './features/jobStore'
 import { BIKE_POSE } from './bikeStore'
@@ -352,7 +353,7 @@ export function GuideNpc({ focusRef, tips, onOpen, onNear }) {
       onPointerOut={() => (document.body.style.cursor = '')}
     >
       <AvatarRig slug={GUIDE.avatar} anim="idle" />
-      <Tag name="Rehber" bubble={bubble} accent="bg-[#ffa94d]" showName />
+      <NpcTag name="Kasaba Rehberi Mira" bubble={bubble} />
     </group>
   )
 }

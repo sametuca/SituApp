@@ -76,8 +76,12 @@ function WavingFlag({ x, z, ry = 0, phase = 0, tex }) {
   }, [])
   const basePos = useMemo(() => new Float32Array(geo.attributes.position.array), [geo])
   const meshRef = useRef()
+  const acc = useRef(0)
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock }, dt) => {
+    acc.current += dt
+    if (acc.current < 0.04) return
+    acc.current = 0
     const pos = geo.attributes.position
     const arr = pos.array
     const t = clock.elapsedTime
@@ -91,7 +95,6 @@ function WavingFlag({ x, z, ry = 0, phase = 0, tex }) {
       arr[i * 3 + 1] = by + Math.sin(u * 4.0 - t * 3.2 + phase) * 0.03 * u
     }
     pos.needsUpdate = true
-    geo.computeVertexNormals()
   })
 
   return (
@@ -112,7 +115,7 @@ function WavingFlag({ x, z, ry = 0, phase = 0, tex }) {
         <meshStandardMaterial color="#ffd35e" roughness={0.28} metalness={0.35} />
       </mesh>
       {/* Dalgalanan bayrak kumaşı */}
-      <mesh ref={meshRef} geometry={geo} position={[0.05, POLE_H - FLAG_H / 2 - 0.08, 0]} castShadow>
+      <mesh ref={meshRef} geometry={geo} position={[0.05, POLE_H - FLAG_H / 2 - 0.08, 0]}>
         <meshStandardMaterial
           map={tex}
           side={DoubleSide}
