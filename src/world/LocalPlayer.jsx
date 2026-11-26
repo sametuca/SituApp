@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
-import { MathUtils, Vector3 } from 'three'
+import { MathUtils, Spherical, Vector3 } from 'three'
 import AvatarRig from './AvatarRig'
 import { groundY, resolveCollisions } from './layout'
 import { together } from './features/togetherStore'
@@ -29,13 +29,13 @@ const isTyping = (e) => e.target instanceof HTMLElement && (e.target.tagName ===
  * focusRef.current = { x, z, ry, anim, teleport } paylaşılan durumdur (HUD, güneş ışığı, minimap okur).
  * focusRef.current.teleport = [x, z, ry?] atanırsa bir sonraki karede oyuncu oraya ışınlanır.
  */
-export default function LocalPlayer({ slug, start, focusRef, controlsRef, joystickRef, moveTargetRef, onMove, collide = resolveCollisions, camOffset = [4.2, 8], locked = false, children }) {
+export default function LocalPlayer({ slug, start, focusRef, controlsRef, joystickRef, lookJoystickRef, moveTargetRef, onMove, collide = resolveCollisions, camOffset = [4.2, 8], locked = false, children }) {
   const camera = useThree((s) => s.camera)
   const group = useRef()
   const keys = useRef({})
   const [anim, setAnim] = useState('idle')
   const animRef = useRef('idle')
-  const v = useMemo(() => ({ fwd: new Vector3(), right: new Vector3(), dir: new Vector3(), up: new Vector3(0, 1, 0) }), [])
+  const v = useMemo(() => ({ fwd: new Vector3(), right: new Vector3(), dir: new Vector3(), up: new Vector3(0, 1, 0), offset: new Vector3(), sph: new Spherical() }), [])
   const placed = useRef(false)
   const riding = useRiding()
   const movingRef = useRef(false)
@@ -241,6 +241,19 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
     const targetY = groundY(g.position.x, g.position.z)
     g.position.y = MathUtils.lerp(g.position.y, targetY, Math.min(1, dt * 16))
     controlsRef.current?.target.set(g.position.x, g.position.y + 0.8, g.position.z)
+
+    // Mobil görünüm joystick'i: kamerayı hedef çevresinde yumuşakça döndürür
+    const lj = lookJoystickRef?.current
+    if (!locked && lj && controlsRef.current && Math.hypot(lj.x, lj.y) > 0.08) {
+      const target = controlsRef.current.target
+      v.offset.copy(camera.position).sub(target)
+      v.sph.setFromVector3(v.offset)
+      v.sph.theta -= lj.x * stepDt * 2.35
+      v.sph.phi = MathUtils.clamp(v.sph.phi - lj.y * stepDt * 1.45, 0.35, Math.PI / 2.15)
+      v.offset.setFromSpherical(v.sph)
+      camera.position.copy(target).add(v.offset)
+      controlsRef.current.update()
+    }
     f.x = g.position.x
     f.z = g.position.z
     playerPos.x = f.x

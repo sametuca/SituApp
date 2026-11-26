@@ -15,7 +15,7 @@ import TurkishFlags from './TurkishFlags'
 import { Em } from '../components/emoji'
 import { SKY_MATS, skyLive } from './Sky'
 import { worldClock } from './worldClock'
-import { getPuffyPaverPair, getPuffySandPair, getPuffyShinglePair, getWallPair } from './pastelTex'
+import { getPuffyGrassPair, getPuffyPaverPair, getPuffySandPair, getPuffyShinglePair, getWallPair } from './pastelTex'
 
 const FACING = { s: 0, n: Math.PI, e: Math.PI / 2, w: -Math.PI / 2 }
 
@@ -31,7 +31,7 @@ function sharedTexture(base, key, setup) {
     t = base.clone()
     t.wrapS = t.wrapT = RepeatWrapping
     t.colorSpace = SRGBColorSpace
-    t.anisotropy = 4
+    t.anisotropy = 8
     setup(t)
     t.needsUpdate = true
     texCache.set(k, t)
@@ -215,7 +215,8 @@ function Flat({ x = 0, z = 0, w, d, y, color = '#ffffff', round, tex, feather = 
   const isAsphalt = tex === 'asphalt'
   const isSand = tex === 'sand'
   const isCobble = tex === 'cobble'
-  const pair = isAsphalt ? getAsphaltPair() : isSand ? getPuffySandPair() : isCobble ? getPuffyPaverPair() : null
+  const isGrass = tex === 'grass'
+  const pair = isAsphalt ? getAsphaltPair() : isSand ? getPuffySandPair() : isCobble ? getPuffyPaverPair() : isGrass ? getPuffyGrassPair() : null
   const base = pair ? pair.map : loaded
   const { map, bumpMap } = useMemo(() => {
     if (!tex) return { map: null, bumpMap: null }
@@ -238,7 +239,7 @@ function Flat({ x = 0, z = 0, w, d, y, color = '#ffffff', round, tex, feather = 
   return (
     <mesh position={[x, y, z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow renderOrder={alpha ? 1 : 0}>
       {round ? <circleGeometry args={[round, 64]} /> : <planeGeometry args={[w, d]} />}
-      <meshStandardMaterial color={color} map={map} bumpMap={bumpMap} bumpScale={isAsphalt ? 0.032 : isSand ? 0.025 : isCobble ? 0.02 : 0} alphaMap={alpha} transparent={Boolean(alpha)} depthWrite={!alpha} roughness={isAsphalt ? 0.84 : isSand ? 0.78 : isCobble ? 0.85 : 0.92} />
+      <meshStandardMaterial color={color} map={map} bumpMap={bumpMap} bumpScale={isAsphalt ? 0.032 : isSand ? 0.028 : isGrass ? 0.026 : isCobble ? 0.024 : 0} alphaMap={alpha} transparent={Boolean(alpha)} depthWrite={!alpha} roughness={isAsphalt ? 0.82 : isSand ? 0.76 : isCobble ? 0.8 : 0.88} />
     </mesh>
   )
 }
@@ -820,14 +821,16 @@ function Sun({ focusRef }) {
       ref={light}
       castShadow
       intensity={1.6}
-      shadow-mapSize={[1024, 1024]}
-      shadow-camera-left={-20}
-      shadow-camera-right={20}
-      shadow-camera-top={20}
-      shadow-camera-bottom={-20}
+      shadow-mapSize={[2048, 2048]}
+      shadow-camera-left={-26}
+      shadow-camera-right={26}
+      shadow-camera-top={26}
+      shadow-camera-bottom={-26}
       shadow-camera-near={1}
-      shadow-camera-far={55}
+      shadow-camera-far={65}
       shadow-bias={-0.0004}
+      shadow-normalBias={0.032}
+      shadow-radius={3.5}
     />
   )
 }
@@ -904,7 +907,7 @@ function Sea() {
       const t = src.clone()
       t.wrapS = t.wrapT = RepeatWrapping
       t.colorSpace = SRGBColorSpace
-      t.anisotropy = 4
+      t.anisotropy = 8
       t.repeat.set(size / m, size / m)
       t.needsUpdate = true
       return t
@@ -973,7 +976,7 @@ function Sea() {
     <group>
       <mesh ref={plane} position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[2200, 2200]} />
-        <meshStandardMaterial ref={mat} map={deep} roughness={0.22} metalness={0.05} emissive="#3aa9c9" emissiveIntensity={0.06} />
+        <meshStandardMaterial ref={mat} map={deep} roughness={0.14} metalness={0.22} envMapIntensity={1.45} emissive="#3aa9c9" emissiveIntensity={0.07} />
       </mesh>
       <mesh position={[0, -0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[2200, 2200]} />

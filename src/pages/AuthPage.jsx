@@ -147,15 +147,15 @@ export default function AuthPage() {
       <main className="mx-auto flex min-h-svh w-full max-w-[390px] flex-col items-center justify-center px-4 py-3 sm:py-4">
         {/* marka */}
         <header className="animate-pop flex flex-col items-center text-center">
-          <h1 className="sr-only">Plaka82</h1>
+          <h1 className="sr-only">Rastla</h1>
           <img
             src="/logo.png"
-            alt="Plaka82"
+            alt="Rastla"
             draggable={false}
             className="mx-auto h-14 w-auto select-none drop-shadow-[0_6px_14px_rgba(74,59,92,0.18)] sm:h-16"
           />
           <p className="mt-1 text-xs font-bold tracking-wide text-ink-soft">
-            Türkiye’nin 82. İli. Hep yaz, hep sahil. ☀️
+            Hayatının aşkına rastla. 💫
           </p>
           <div className="mt-1.5 flex items-center justify-center gap-2">
             <span className="inline-block rounded-full border-2 border-white bg-[#fff3c8] px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-[#8a5a00] shadow-soft">

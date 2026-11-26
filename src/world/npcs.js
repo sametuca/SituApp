@@ -169,7 +169,7 @@ const CITY = [
   },
   {
     id: 'beach_dancer2', worldPos: true, avatar: 'ege', name: 'Arda', role: '🌴', x: 11.4, z: 61.8, ry: -0.9, pose: { kind: 'dance', style: 'groove', t0: 1.9 },
-    lines: ['Plaka82’ye hoş geldin! 🌴🔥', 'Plajda tanışmak çok kolay, selam vermekten çekinme 👋', 'Akşam da Kulüp’e geçiyoruz, unutma 🪩'],
+    lines: ['Rastla’ya hoş geldin! 🌴🔥', 'Plajda tanışmak çok kolay, selam vermekten çekinme 👋', 'Akşam da Kulüp’e geçiyoruz, unutma 🪩'],
     options: [
       { label: 'Burada neler var?', reply: ['Hemen arkada voleybol, karşıda Teknel, sağda MakFit… Ada dopdolu! 🏖️'] },
     ],

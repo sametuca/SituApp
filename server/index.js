@@ -183,5 +183,5 @@ const PORT = Number(process.env.PORT) || 3001
 // Supabase ortamı varsa kalıcı veri belleğe yüklenmeden dinlemeye başlama
 await Promise.all([initStore(), initHomes(), initNames()])
 supa.hookShutdown()
-const server = app.listen(PORT, () => console.log(`Plaka82 sunucusu: http://localhost:${PORT} (WebSocket: /ws) — ${supa.enabled ? 'Supabase modu' + (supa.allowGuest ? ' (misafirlere açık)' : '') : 'demo/dosya modu'}`))
+const server = app.listen(PORT, () => console.log(`Rastla sunucusu: http://localhost:${PORT} (WebSocket: /ws) — ${supa.enabled ? 'Supabase modu' + (supa.allowGuest ? ' (misafirlere açık)' : '') : 'demo/dosya modu'}`))
 game = attachGameServer(server)

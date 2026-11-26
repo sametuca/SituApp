@@ -2,8 +2,8 @@ import { Component, Suspense, useCallback, useEffect, useMemo, useRef, useState 
 import { DockSlot, TopDockSlot } from '../components/Dock'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { OrbitControls, useProgress } from '@react-three/drei'
-import { PCFShadowMap } from 'three'
+import { Environment, Lightformer, OrbitControls, useProgress } from '@react-three/drei'
+import { ACESFilmicToneMapping, PCFShadowMap } from 'three'
 import { useAuth } from '../lib/AuthContext'
 import City from '../world/City'
 import HomeRoom from '../world/HomeRoom'
@@ -26,7 +26,7 @@ import LocalPlayer, { ClickToMoveGround } from '../world/LocalPlayer'
 import RemotePlayers, { GuideNpc, SelfTag } from '../world/RemotePlayers'
 import { useMultiplayer } from '../world/net'
 import { ChatPanel, HelpModal, Minimap, StartGuide, TopBar } from '../world/Hud'
-import { ChatFab, ChatSheet, DoorPrompt, GestureChip, IncomingChip, InteractSheet, InviteChip, Joystick, MatchOverlay, NearbyCard, SkillBar } from '../world/Social'
+import { ChatFab, ChatSheet, DoorPrompt, GestureChip, IncomingChip, InteractSheet, InviteChip, Joystick, LookJoystick, MatchOverlay, NearbyCard, SkillBar } from '../world/Social'
 import { GESTURE_BY_KIND, REACTIONS, SKILL_COOLDOWN_MS, WHISPER_RANGE, loadSlots, saveSlots, skillFor } from '../world/interact'
 import SkillEditor from '../components/SkillEditor'
 import { useIsTouch } from '../world/useIsTouch'
@@ -104,7 +104,7 @@ function LoadingOverlay({ ready }) {
     <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#fff2e3] via-[#f1e6ff] to-[#dff3ff]">
       <img
         src="/logo.png"
-        alt="Plaka82"
+        alt="Rastla"
         draggable={false}
         className="h-20 w-auto select-none drop-shadow-[0_8px_18px_rgba(74,59,92,0.18)] sm:h-24"
       />
@@ -208,6 +208,7 @@ function WorldScene({ avatar }) {
   const focusRef = useRef({ x: SPAWN.x, z: SPAWN.z, ry: Math.PI, anim: 'idle', teleport: null })
   const controlsRef = useRef(null)
   const joystickRef = useRef({ x: 0, y: 0 })
+  const lookJoystickRef = useRef({ x: 0, y: 0 })
   const moveTargetRef = useRef(null)
   const touch = useIsTouch()
   const [nearId, setNearId] = useState(null)
@@ -863,8 +864,8 @@ function WorldScene({ avatar }) {
       <WorldErrorBoundary>
       <Canvas
         shadows={PCFShadowMap}
-        dpr={[1, 1.15]}
-        gl={{ powerPreference: 'high-performance' }}
+        dpr={touch ? [1, 1.5] : [1, 2]}
+        gl={{ powerPreference: 'high-performance', antialias: true, toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1.05 }}
         camera={{ fov: 55, near: 0.3, far: 300, position: [start.x, 6.4, start.z + 9.4] }}
         onCreated={({ gl }) => {
           gl.domElement.addEventListener('webglcontextlost', (e) => {
@@ -875,6 +876,13 @@ function WorldScene({ avatar }) {
       >
         <color attach="background" args={[sceneBase.bg]} />
         <fog attach="fog" args={sceneBase.fog} />
+        {/* Tek karede üretilen hafif PBR ışık haritası (IBL): tüm kil/plastik/cam/su yüzeylerine modern yansıma ve derinlik katar */}
+        <Environment resolution={256} frames={1} environmentIntensity={home || venue ? 0.52 : 0.65}>
+          <Lightformer form="ring" intensity={1.8} color="#fff6e0" position={[10, 14, 8]} scale={14} target={[0, 0, 0]} />
+          <Lightformer form="rect" intensity={1.4} color="#bfe8ff" position={[0, 12, 0]} rotation={[Math.PI / 2, 0, 0]} scale={[26, 26, 1]} />
+          <Lightformer form="rect" intensity={0.9} color="#ffe0c2" position={[-12, 4, -8]} scale={[14, 8, 1]} target={[0, 0, 0]} />
+          <Lightformer form="rect" intensity={0.65} color="#c9f0e2" position={[0, -6, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[24, 24, 1]} />
+        </Environment>
         <Sky home={Boolean(home)} interior={venueTh ? { bg: venueTh.bg, fog: sceneBase.fog, dim: venueDim } : null} focusRef={focusRef} />
 
         <TogetherScene focusRef={focusRef} home={Boolean(home || venue)} base={skyBase} />
@@ -906,6 +914,7 @@ function WorldScene({ avatar }) {
             focusRef={focusRef}
             controlsRef={controlsRef}
             joystickRef={joystickRef}
+            lookJoystickRef={lookJoystickRef}
             moveTargetRef={moveTargetRef}
             onMove={net.sendMove}
             camOffset={[6.4, 9.4]}
@@ -1016,6 +1025,7 @@ function WorldScene({ avatar }) {
       {!introActive && (touch ? (
         <>
           <Joystick inputRef={joystickRef} />
+          <LookJoystick inputRef={lookJoystickRef} />
           {!inTutorial && !chatTarget && !editing && <ChatFab onClick={() => openChat('public')} />}
         </>
       ) : (

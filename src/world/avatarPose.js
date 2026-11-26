@@ -127,8 +127,8 @@ export function applyPose(rig, pose, dt) {
       turn(rig, bones.lArm, AZ, 0.22 * b)
       turn(rig, bones.rArm, AZ, -0.22 * b)
     } else if (rig.style === 'bike') {
-      // bisiklet: sele üstüne otur, gövde öne eğilir, eller gidon elciklerine tam kavuşur
-      model.position.z = -0.14 * b
+      // bisiklet: sele üstüne otur, gövde öne eğilir, eller iki yandaki gidon elciklerine tam oturur
+      model.position.z = -0.10 * b
       if (rig.moving) rig.pedal += Math.min(dt, 0.1) * 10
       const pL = rig.pedal
       const pR = rig.pedal + Math.PI
@@ -138,15 +138,16 @@ export function applyPose(rig, pose, dt) {
       turn(rig, bones.rUp, AX, (-0.95 + Math.sin(pR) * 0.38) * b)
       turn(rig, bones.lLeg, AX, (1.15 - Math.cos(pL) * 0.34) * b)
       turn(rig, bones.rLeg, AX, (1.15 - Math.cos(pR) * 0.34) * b)
-      turn(rig, bones.spine, AX, 0.34 * b)
-      turn(rig, bones.lArm, AX, -1.72 * b)
-      turn(rig, bones.rArm, AX, -1.72 * b)
-      turn(rig, bones.lArm, AZ, 0.12 * b)
-      turn(rig, bones.rArm, AZ, -0.12 * b)
-      turn(rig, bones.lArm, AY, -0.08 * b)
-      turn(rig, bones.rArm, AY, 0.08 * b)
-      turn(rig, bones.lForeArm, AX, -0.18 * b)
-      turn(rig, bones.rForeArm, AX, -0.18 * b)
+      turn(rig, bones.spine, AX, 0.36 * b)
+      // kolları elcik yüksekliğine indir (-1.26) ve omuzdan elcik genişliğine dışa aç (lArm +AY, rArm -AY)
+      turn(rig, bones.lArm, AX, -1.26 * b)
+      turn(rig, bones.rArm, AX, -1.26 * b)
+      turn(rig, bones.lArm, AY, 0.36 * b)
+      turn(rig, bones.rArm, AY, -0.36 * b)
+      turn(rig, bones.lArm, AZ, 0.16 * b)
+      turn(rig, bones.rArm, AZ, -0.16 * b)
+      turn(rig, bones.lForeArm, AX, 0.12 * b)
+      turn(rig, bones.rForeArm, AX, 0.12 * b)
     } else {
       turn(rig, bones.lUp, AX, -1.45 * b)
       turn(rig, bones.rUp, AX, -1.45 * b)

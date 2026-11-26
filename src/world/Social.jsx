@@ -94,6 +94,87 @@ export function Joystick({ inputRef }) {
   )
 }
 
+const LOOK_BASE = 92
+const LOOK_KNOB = 40
+const LOOK_MAX = (LOOK_BASE - LOOK_KNOB) / 2 + 5
+
+/**
+ * Hareket joystick'inin hemen yanında kamera/görünüm joystick'i (dokunmatik cihazlar).
+ * inputRef.current = { x, y } (-1..1; x = yatay dönüş, y = dikey açı).
+ */
+export function LookJoystick({ inputRef }) {
+  const base = useRef(null)
+  const pointer = useRef(null)
+  const [knob, setKnob] = useState({ x: 0, y: 0 })
+  const [dragging, setDragging] = useState(false)
+
+  const apply = (e) => {
+    const r = base.current.getBoundingClientRect()
+    let dx = e.clientX - (r.left + r.width / 2)
+    let dy = e.clientY - (r.top + r.height / 2)
+    const d = Math.hypot(dx, dy)
+    if (d > LOOK_MAX) {
+      dx = (dx / d) * LOOK_MAX
+      dy = (dy / d) * LOOK_MAX
+    }
+    setKnob({ x: dx, y: dy })
+    inputRef.current.x = dx / LOOK_MAX
+    inputRef.current.y = dy / LOOK_MAX
+  }
+  const release = (e) => {
+    if (pointer.current !== e.pointerId) return
+    pointer.current = null
+    inputRef.current.x = 0
+    inputRef.current.y = 0
+    setKnob({ x: 0, y: 0 })
+    setDragging(false)
+  }
+
+  return (
+    <div
+      ref={base}
+      role="application"
+      aria-label="Görünüm joystick'i"
+      className={`absolute z-10 touch-none select-none rounded-full ${glass} ${dragging ? 'ring-4 ring-[#d6c7ff]' : ''}`}
+      style={{
+        width: LOOK_BASE,
+        height: LOOK_BASE,
+        left: 'calc(max(0.85rem, env(safe-area-inset-left)) + 126px)',
+        bottom: 'max(1.75rem, env(safe-area-inset-bottom))',
+      }}
+      onPointerDown={(e) => {
+        if (pointer.current !== null) return
+        pointer.current = e.pointerId
+        setDragging(true)
+        try {
+          e.currentTarget.setPointerCapture(e.pointerId)
+        } catch {
+          /* ignore */
+        }
+        apply(e)
+      }}
+      onPointerMove={(e) => pointer.current === e.pointerId && apply(e)}
+      onPointerUp={release}
+      onPointerCancel={release}
+    >
+      <div
+        className="absolute rounded-full border-2 border-white bg-[#a88bff] shadow-md"
+        style={{
+          width: LOOK_KNOB,
+          height: LOOK_KNOB,
+          left: (LOOK_BASE - LOOK_KNOB) / 2,
+          top: (LOOK_BASE - LOOK_KNOB) / 2,
+          transform: `translate(${knob.x}px, ${knob.y}px)`,
+          transition: dragging ? 'none' : 'transform 120ms ease-out',
+        }}
+      />
+      <span aria-hidden className="pointer-events-none absolute inset-0 grid place-items-center text-lg font-black text-white/90">
+        ⟳
+      </span>
+    </div>
+  )
+}
+
 // ---------- yakındaki oyuncu kartı ----------
 export function NearbyCard({ peer, touch, onChat, onInteract, onDismiss }) {
   return (

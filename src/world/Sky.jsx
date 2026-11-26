@@ -41,11 +41,11 @@ export const skyLive = {
 
 /** Şehir binalarının/çeşmenin paylaşılan malzemeleri (City.jsx kullanır; Sky gece parlatır). */
 export const SKY_MATS = {
-  window: new MeshStandardMaterial({ color: '#fff6cf', emissive: '#ffe49a', emissiveIntensity: 0.35, roughness: 0.12, metalness: 0.25 }),
+  window: new MeshStandardMaterial({ color: '#fff6cf', emissive: '#ffe49a', emissiveIntensity: 0.35, roughness: 0.08, metalness: 0.45, envMapIntensity: 1.6 }),
   neonPink: new MeshStandardMaterial({ color: '#fdb15e', emissive: '#fd9c33', emissiveIntensity: 1.4 }),
   neonBlue: new MeshStandardMaterial({ color: '#8fd8ff', emissive: '#4fc3ff', emissiveIntensity: 1.4 }),
-  water: new MeshStandardMaterial({ color: '#9fdcff', roughness: 0.1, metalness: 0.1, emissive: '#6cc7f5', emissiveIntensity: 0.25 }),
-  fountainTop: new MeshStandardMaterial({ color: '#a9ddf5', roughness: 0.2, emissive: '#6cc7f5', emissiveIntensity: 0.3 }),
+  water: new MeshStandardMaterial({ color: '#9fdcff', roughness: 0.06, metalness: 0.25, envMapIntensity: 1.5, emissive: '#6cc7f5', emissiveIntensity: 0.25 }),
+  fountainTop: new MeshStandardMaterial({ color: '#a9ddf5', roughness: 0.14, metalness: 0.2, envMapIntensity: 1.4, emissive: '#6cc7f5', emissiveIntensity: 0.3 }),
 }
 
 // ---------------------------------------------------------------- anahtar kareler (saat → renkler)
@@ -322,12 +322,16 @@ const EASE_WX = 3 // sn: hava geçişi
 const MAX_HOUR_SPEED = 3.5 // saat/sn: mod değişiminde saatin akış hızı
 
 // home: ev içi (sabit ışık). interior: mekân içi { bg, fog: [renk, near, far], dim } (gün-geceden bağımsız, temaya göre loş).
-const ZENITH_DAY = new Color('#62baff')
-const ZENITH_NIGHT = new Color('#1d225c')
-const ZENITH_DUSK = new Color('#b47aea')
+const ZENITH_DAY = new Color('#3694f5')
+const MID_DAY = new Color('#86d2ff')
+const ZENITH_NIGHT = new Color('#161b4f')
+const MID_NIGHT = new Color('#2e3878')
+const ZENITH_DUSK = new Color('#7e57c2')
+const MID_DUSK = new Color('#ff9e7d')
 
-/** Ufuktan tepeye yumuşak pastel gökyüzü kubbesi (sıfır doku, tek shader). */
+/** Atmosferik 3 katmanlı gökyüzü + güneş saçılımı + rüzgârda süzülen yumuşak pastel bulutlar (tek shader, 0 doku). */
 function SkyDome() {
+  const meshRef = useRef()
   const mat = useMemo(
     () =>
       new ShaderMaterial({
@@ -335,24 +339,100 @@ function SkyDome() {
         depthWrite: false,
         fog: false,
         uniforms: {
-          uTop: { value: new Color('#62baff') },
-          uHorizon: { value: new Color('#d4eeff') },
+          uTop: { value: new Color('#3694f5') },
+          uMid: { value: new Color('#86d2ff') },
+          uHorizon: { value: new Color('#dff2ff') },
+          uSunDir: { value: new Vector3(0.5, 0.72, 0.35).normalize() },
+          uSunCol: { value: new Color('#fff3cc') },
+          uTime: { value: 0 },
+          uNight: { value: 0 },
+          uOver: { value: 0 },
         },
         vertexShader: `
-          varying vec3 vPos;
+          varying vec3 vDir;
           void main() {
-            vPos = position;
+            vDir = position;
             gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
           }
         `,
         fragmentShader: `
           uniform vec3 uTop;
+          uniform vec3 uMid;
           uniform vec3 uHorizon;
-          varying vec3 vPos;
+          uniform vec3 uSunDir;
+          uniform vec3 uSunCol;
+          uniform float uTime;
+          uniform float uNight;
+          uniform float uOver;
+          varying vec3 vDir;
+
+          float hash(vec2 p) {
+            p = fract(p * vec2(123.34, 456.21));
+            p += dot(p, p + 45.32);
+            return fract(p.x * p.y);
+          }
+          float noise(vec2 p) {
+            vec2 i = floor(p);
+            vec2 f = fract(p);
+            vec2 u = f * f * (3.0 - 2.0 * f);
+            return mix(
+              mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
+              mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x),
+              u.y
+            );
+          }
+          float fbm(vec2 p) {
+            float v = 0.0;
+            float a = 0.52;
+            mat2 rot = mat2(0.8, 0.6, -0.6, 0.8);
+            for (int i = 0; i < 4; i++) {
+              v += a * noise(p);
+              p = rot * p * 2.03 + vec2(7.3, 3.1);
+              a *= 0.5;
+            }
+            return v;
+          }
+
           void main() {
-            float h = clamp(normalize(vPos).y, 0.0, 1.0);
-            vec3 col = mix(uHorizon, uTop, pow(h, 0.65));
-            gl_FragColor = vec4(col, 1.0);
+            vec3 d = normalize(vDir);
+            float h = clamp(d.y, 0.0, 1.0);
+
+            // 3 katmanlı atmosferik gradyan (ufuk → orta gök → derin tepe)
+            vec3 sky = mix(uHorizon, uMid, smoothstep(0.0, 0.32, h));
+            sky = mix(sky, uTop, smoothstep(0.22, 0.88, h));
+
+            // Ufukta sıcak güneşli pastel parlaklık
+            float horizonBand = pow(1.0 - h, 5.5) * (1.0 - uNight * 0.8);
+            sky = mix(sky, mix(uHorizon, vec3(1.0, 0.96, 0.88), 0.45), horizonBand * 0.55);
+
+            // Güneş saçılımı (Mie halesi + yumuşak güneş diski)
+            float sunDot = max(dot(d, normalize(uSunDir)), 0.0);
+            float sunHalo = pow(sunDot, 10.0) * 0.34 + pow(sunDot, 64.0) * 0.45;
+            float sunCore = smoothstep(0.9965, 0.9992, sunDot) * 0.85;
+            sky += uSunCol * (sunHalo + sunCore) * (1.0 - uNight * 0.85) * (1.0 - uOver * 0.6);
+
+            // Rüzgârda süzülen yumuşak ressam-stili bulutlar
+            if (d.y > 0.02) {
+              vec2 uv = d.xz / (d.y + 0.24) * 1.35;
+              vec2 wind = vec2(uTime * 0.016, uTime * 0.007);
+              float n1 = fbm(uv + wind);
+              float n2 = fbm(uv * 1.9 - wind * 0.6 + 11.4);
+              float c = n1 * 0.72 + n2 * 0.28;
+              float cover = mix(0.49, 0.34, uOver);
+              float cloud = smoothstep(cover, cover + 0.24, c);
+              // Ufka yaklaştıkça bulutlar yumuşakça sise karışır
+              cloud *= smoothstep(0.02, 0.22, h) * (1.0 - smoothstep(0.82, 0.98, h) * 0.35);
+
+              // Bulut gölgeleme: üstü krem-beyaz, altı yumuşak pastel mavi-lila, güneş kenarı altın parlama
+              float shade = smoothstep(cover, cover + 0.35, fbm(uv + wind + normalize(uSunDir).xz * 0.14));
+              vec3 cLit = mix(vec3(1.0, 0.995, 0.97), uSunCol, 0.15 + pow(sunDot, 6.0) * 0.28);
+              vec3 cShd = mix(vec3(0.76, 0.86, 0.97), uMid, 0.28);
+              vec3 cCol = mix(cShd, cLit, 0.38 + shade * 0.62);
+              cCol = mix(cCol, vec3(0.24, 0.28, 0.52), uNight * 0.85);
+              sky = mix(sky, cCol, cloud * 0.88);
+            }
+
+            gl_FragColor = vec4(sky, 1.0);
           }
         `,
       }),
@@ -360,16 +440,24 @@ function SkyDome() {
   )
   useEffect(() => () => mat.dispose(), [mat])
   const tmpZ = useMemo(() => new Color(), [])
-  useFrame(({ scene }) => {
+  const tmpM = useMemo(() => new Color(), [])
+  useFrame(({ scene, camera, clock }) => {
+    if (meshRef.current) meshRef.current.position.copy(camera.position)
     if (scene.fog) mat.uniforms.uHorizon.value.copy(scene.fog.color)
     const night = Number.isFinite(skyLive.night) ? skyLive.night : 0
     const sun = sunsetAt(skyLive.hour)
     tmpZ.copy(ZENITH_DAY).lerp(ZENITH_DUSK, sun).lerp(ZENITH_NIGHT, night)
+    tmpM.copy(MID_DAY).lerp(MID_DUSK, sun).lerp(MID_NIGHT, night)
     mat.uniforms.uTop.value.copy(tmpZ)
+    mat.uniforms.uMid.value.copy(tmpM)
+    mat.uniforms.uSunDir.value.copy(skyLive.dir)
+    mat.uniforms.uTime.value = clock.elapsedTime
+    mat.uniforms.uNight.value = night
+    mat.uniforms.uOver.value = Number.isFinite(skyLive.over) ? skyLive.over : 0
   })
   return (
-    <mesh material={mat} frustumCulled={false}>
-      <sphereGeometry args={[210, 20, 14]} />
+    <mesh ref={meshRef} material={mat} frustumCulled={false}>
+      <sphereGeometry args={[210, 28, 18]} />
     </mesh>
   )
 }

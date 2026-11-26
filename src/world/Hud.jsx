@@ -10,19 +10,9 @@ const glass = 'border-2 border-white bg-white/92 shadow-soft'
 // ---------- üst çubuk ----------
 // extraButtons: özellik modüllerinin düğmeleri [{ key, emoji, label, onClick, badge? }] (sol sütunda, geri düğmesinin altında)
 // extraNodes: hazır JSX düğmeler (sağ grupta, ⚙️'nin solunda)
-export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings, extraButtons = [], extraNodes = null, menuNodes = null, menuBadge = 0 }) {
+export function TopBar({ online, status, dnd, onExit, onHelp, onSettings, extraButtons = [], extraNodes = null, menuNodes = null, menuBadge = 0 }) {
   const [menu, setMenu] = useState(false)
-  const [showDesc, setShowDesc] = useState(false)
   const menuRef = useRef(null)
-  useEffect(() => {
-    if (!zone?.desc) {
-      setShowDesc(false)
-      return undefined
-    }
-    setShowDesc(true)
-    const t = setTimeout(() => setShowDesc(false), 4200)
-    return () => clearTimeout(t)
-  }, [zone?.id, zone?.desc])
   useEffect(() => {
     if (!menu) return
     const off = (e) => { if (!menuRef.current?.contains(e.target)) setMenu(false) }
@@ -66,14 +56,7 @@ export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings, 
         ))}
       </div>
       <div className="flex min-w-0 flex-col items-center gap-1.5 sm:gap-2">
-        <div className={`flex max-w-[52vw] flex-col items-center px-3.5 py-1.5 text-center transition-all sm:max-w-[22rem] sm:px-5 sm:py-2 ${showDesc ? 'rounded-3xl' : 'rounded-full'} ${glass}`}>
-          <div className="flex max-w-full items-center gap-1.5 sm:gap-2">
-            <span className="shrink-0 text-base sm:text-lg">{zone.emoji}</span>
-            <span className="truncate text-sm font-extrabold text-[#4a3b5c] sm:text-base">{zone.name}</span>
-          </div>
-          {showDesc && zone.desc && <p className="mt-0.5 hidden text-xs font-semibold leading-snug text-[#8a7a9c] sm:block">{zone.desc}</p>}
-        </div>
-        {/* çevrimiçi sayısı yalnızca giriş ekranında; burada yalnızca bağlantı sorunu ya da rahatsız etme açıkken bilgi çıkar */}
+        {/* yalnızca bağlantı sorunu ya da rahatsız etme açıkken bilgi çıkar */}
         {(status !== 'online' || dnd) && (
           <div className={`flex items-center gap-1.5 rounded-full px-3 py-0.5 text-[11px] font-extrabold text-[#8a7a9c] sm:px-3.5 sm:py-1 sm:text-xs ${glass}`}>
             {status !== 'online' && <span className={`h-2 w-2 rounded-full ${dot}`} />}
