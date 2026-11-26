@@ -454,6 +454,41 @@ function Bag({ color }) {
   )
 }
 
+function BoxingGlove({ color = '#ff6b6b' }) {
+  return (
+    <group position={[0, 0.24, 0]}>
+      <mesh>
+        <sphereGeometry args={[0.17, 14, 14]} />
+        <Mat color={color} roughness={0.32} />
+      </mesh>
+      <mesh position={[0, -0.14, 0]}>
+        <cylinderGeometry args={[0.11, 0.12, 0.14, 14]} />
+        <Mat color="#fffaf2" roughness={0.5} />
+      </mesh>
+    </group>
+  )
+}
+
+function ChampBelt() {
+  return (
+    <group position={[0, 0.02, 0]}>
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.31, 0.065, 10, 28]} />
+        <Mat color="#4a3b5c" roughness={0.45} />
+      </mesh>
+      {/* Ön altın şampiyon plakası */}
+      <mesh position={[0, 0, 0.34]}>
+        <boxGeometry args={[0.34, 0.2, 0.06]} />
+        <Mat color="#ffd35e" roughness={0.22} metalness={0.35} emissive="#ffbe3b" emissiveIntensity={0.25} />
+      </mesh>
+      <mesh position={[0, 0, 0.38]}>
+        <octahedronGeometry args={[0.075, 0]} />
+        <Mat color="#fffaf2" emissive="#ffe58a" emissiveIntensity={0.6} />
+      </mesh>
+    </group>
+  )
+}
+
 const HEAD_PARTS = {
   crown: Crown,
   tiara: Tiara,
@@ -481,30 +516,39 @@ export function AccessoryMesh({ id, color }) {
   return Part ? <Part color={hex} /> : null
 }
 
-/** Klonlanmış skinned modelde kafa (Head) ve gövde (Spine02) kemiklerini bulur. */
+/** Klonlanmış skinned modelde kafa (Head), gövde (Spine02), kalça (Hips) ve önkol kemiklerini bulur. */
 function findRigBones(model) {
   let head = null
   let end = null
   let spine = null
+  let hips = null
+  let lHand = null
+  let rHand = null
   model.traverse((o) => {
     if (!o.isBone) return
     if (!head && o.name === 'Head') head = o
     if (!end && o.name === 'head_end') end = o
     if (!spine && o.name === 'Spine02') spine = o
+    if (!hips && o.name === 'Hips') hips = o
+    if (!lHand && (o.name === 'LeftHand' || o.name === 'LeftForeArm')) lHand = o
+    if (!rHand && (o.name === 'RightHand' || o.name === 'RightForeArm')) rHand = o
   })
   if (!head) return null
   model.updateMatrixWorld(true)
   const ws = head.getWorldScale(new Vector3()).x || 0.01
   const h = (end ? end.position.length() : 35) * ws // kafa yüksekliği (m)
   const sws = spine ? spine.getWorldScale(new Vector3()).x || ws : ws
-  return { head, ws, h, spine, sws }
+  const hws = hips ? hips.getWorldScale(new Vector3()).x || ws : ws
+  const lws = lHand ? lHand.getWorldScale(new Vector3()).x || ws : ws
+  const rws = rHand ? rHand.getWorldScale(new Vector3()).x || ws : ws
+  return { head, ws, h, spine, sws, hips, hws, lHand, lws, rHand, rws }
 }
 
-/** Kozmetik deposundaki (cosStore) seçime göre baş ve sırt aksesuarlarını takar. AvatarRig içinden çizilir. */
+/** Kozmetik deposundaki (cosStore) seçime göre baş, sırt, eldiven ve kemer aksesuarlarını takar. AvatarRig içinden çizilir. */
 export function HeadAccessory({ model, cosId }) {
   const cos = useSyncExternalStore(cosStore.subscribe, () => cosStore.get(cosId))
   const rig = useMemo(() => findRigBones(model), [model])
-  if (!rig || (!cos?.acc && !cos?.acc2)) return null
+  if (!rig || (!cos?.acc && !cos?.acc2 && !cos?.gloves && !cos?.belt)) return null
   const headScale = rig.h / rig.ws
   const spineScale = rig.h / rig.sws
   const items = [cos.acc, cos.acc2].filter(Boolean)
@@ -531,6 +575,30 @@ export function HeadAccessory({ model, cosId }) {
             ))}
           </group>,
           rig.spine,
+        )}
+      {cos.belt &&
+        rig.hips &&
+        createPortal(
+          <group scale={rig.h / rig.hws}>
+            <ChampBelt />
+          </group>,
+          rig.hips,
+        )}
+      {cos.gloves &&
+        rig.lHand &&
+        createPortal(
+          <group scale={rig.h / rig.lws}>
+            <BoxingGlove />
+          </group>,
+          rig.lHand,
+        )}
+      {cos.gloves &&
+        rig.rHand &&
+        createPortal(
+          <group scale={rig.h / rig.rws}>
+            <BoxingGlove />
+          </group>,
+          rig.rHand,
         )}
     </>
   )

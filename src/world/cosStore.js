@@ -16,6 +16,8 @@ const same = (a, b) =>
   (a?.acc2?.id ?? null) === (b?.acc2?.id ?? null) &&
   (a?.acc2?.color ?? null) === (b?.acc2?.color ?? null) &&
   (a?.pet ?? null) === (b?.pet ?? null) &&
+  Boolean(a?.gloves) === Boolean(b?.gloves) &&
+  Boolean(a?.belt) === Boolean(b?.belt) &&
   JSON.stringify(a?.look ?? null) === JSON.stringify(b?.look ?? null)
 
 export const cosStore = {
@@ -28,12 +30,12 @@ export const cosStore = {
   ids: () => [...map.keys()].filter((k) => k !== 'self' && k !== 'preview'),
   version: () => version,
   set(id, cos) {
-    if (!cos || (!cos.acc && !cos.acc2 && !cos.pet && !cos.look)) {
+    if (!cos || (!cos.acc && !cos.acc2 && !cos.pet && !cos.look && !cos.gloves && !cos.belt)) {
       if (map.delete(id)) emit()
       return
     }
     if (same(map.get(id), cos)) return
-    map.set(id, { acc: cos.acc ?? null, acc2: cos.acc2 ?? null, pet: cos.pet ?? null, look: cos.look ?? null })
+    map.set(id, { acc: cos.acc ?? null, acc2: cos.acc2 ?? null, pet: cos.pet ?? null, look: cos.look ?? null, gloves: Boolean(cos.gloves), belt: Boolean(cos.belt) })
     emit()
   },
   /** Başkalarının kayıtlarını sil (oda değişince); self ve preview kalır. */

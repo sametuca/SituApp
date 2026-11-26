@@ -33,9 +33,8 @@ const CITY = [
     ],
   },
   {
-    id: 'balon', avatar: 'ege', name: 'Balon Satıcısı Ege', role: '🎈', x: 5, z: 0, ry: 0, prop: 'balloons',
-    route: { pts: [[5, 0], [3.5, 3.5], [0, 5], [-3.5, 3.5], [-5, 0], [-3.5, -3.5], [0, -5], [3.5, -3.5]], mode: 'loop', speed: 0.9, pause: 3 },
-    lines: ['Balon, balon! Rengârenk balon! 🎈', 'Kalp şeklinde olanı birine hediye edebilirsin 💗', 'Çeşmenin etrafında tur atıyorum, yorulmuyorum bile 😄', 'Pembe mi mavi mi? İkisi de olur 🎀'],
+    id: 'balon', avatar: 'ege', name: 'Balon Satıcısı Ege', role: '🎈', x: 5.4, z: 4.8, ry: -0.7, prop: 'balloons',
+    lines: ['Balon, balon! Rengârenk balon! 🎈', 'Kalp şeklinde olanı birine hediye edebilirsin 💗', 'Meydandaki yerimdeyim, her zaman taze balon var 😄', 'Pembe mi mavi mi? İkisi de olur 🎀'],
     shop: [
       { id: 'balloon_pink', label: 'Pembe Balon', emoji: '🎈', price: 5, style: 'hold', color: '#ff9ec7', reply: 'Uçup gitmesin, sıkı tut! 🎈😄' },
       { id: 'balloon_blue', label: 'Mavi Balon', emoji: '🎈', price: 5, style: 'hold', color: '#7fcdf3', reply: 'Gökyüzü rengi balonun hazır! 🎈✨' },
@@ -85,17 +84,22 @@ const CITY = [
     ],
   },
   {
-    id: 'cankurtaran', avatar: 'ege', name: 'Cankurtaran Ege', role: '🛟', x: 3.8, z: 31, ry: 0.4,
-    lines: ['Bugün deniz sakin, ama yine de dikkatli ol 🌊', 'Gün batımında şezlongda yan yana oturmak bir klasik 🌅', 'Gözüm üstünüzde, rahat edin 🛟', 'Şemsiyenin altı en serin yer, bence 😎'],
+    id: 'cankurtaran', avatar: 'ege', name: 'Sahil Mafyası Keko', role: '🕶️', x: 4.2, z: 44, ry: -0.35,
+    pose: GUARD, look: BLACK_SUIT, scale: 1.08,
+    lines: [
+      'Şezlongun yoksa plajı terket burası bizim! 🕶️',
+      'Havlunu serdin 500 TL işgaliye alayım hemşerim 😎',
+      'Deniz herkesin ama kum bizim koçum, ona göre!',
+      'Valeye bırakmadın mı terlikleri? Ayıp oluyor 😤',
+    ],
     options: [
-      { label: 'Öneri iste', reply: ['Gün batımını izlemek için iki şezlong yan yana, tam senlik 🌅', 'Kokabana’da serin bir şey içip sohbet et 🥤'] },
-      { label: 'Hikâye anlat', reply: ['Bir yaz akşamı iki kişi aynı kum kalesini kurmaya çalıştı. Sonunda kale yıkıldı, ama arkadaşlık sağlam kaldı 🏰', 'Bir gün kayıp bir terlik buldum, sahibi de bulundu. Bir teşekkür bir sohbet… gerisi malum 😉'] },
+      { label: 'Plaj halkın değil mi?', reply: ['Halk da biziz hemşerim, şezlong fişini göster yoksa yürü! 😎', 'Kanun var nizam var… ama şemsiye benim 🏖️'] },
+      { label: 'Şezlong ne kadar?', reply: ['Sana özel 499,99 TL, yanında bir de sert bakış bedava 🕶️', 'Müzik açarsan ekstra tarife yazarım koçum 😄'] },
     ],
   },
   {
-    id: 'dondurmaci', avatar: 'zeynep', name: 'Dondurmacı Zeynep', role: '🍦', x: -5.6, z: 32, ry: 0.2, prop: 'icecart', pose: { kind: 'push' },
-    route: { pts: [[-5.6, 32], [-5.6, 39]], mode: 'pingpong', speed: 0.8, pause: 5 },
-    lines: ['Dondurmaaa! Çilekli, vanilyalı, çikolatalı! 🍦', 'İki top alana üçüncüsü benden 😉', 'Arabamın zili çalınca herkes koşuyor 🔔', 'Dondurma paylaşmak flörtün en tatlı yolu 🍓'],
+    id: 'dondurmaci', avatar: 'zeynep', name: 'Dondurmacı Zeynep', role: '🍦', x: -5.8, z: 42, ry: 0.35, prop: 'icecart', pose: { kind: 'push' },
+    lines: ['Dondurmaaa! Çilekli, vanilyalı, çikolatalı! 🍦', 'İki top alana üçüncüsü benden 😉', 'Arabam hep burada, sıcak bastırınca hemen uğra 🔔', 'Dondurma paylaşmak flörtün en tatlı yolu 🍓'],
     shop: [
       { id: 'ice_strawberry', label: 'Çilekli Dondurma', emoji: '🍦', price: 5, style: 'eat', color: '#ff9ec7', color2: '#fff3c8', reply: 'Afiyet olsun! Çilekli külahın hazır 🍦🍓' },
       { id: 'ice_choco', label: 'Çikolatalı Dondurma', emoji: '🍦', price: 5, style: 'eat', color: '#7a4b32', color2: '#f5d7b0', reply: 'Bol çikolatalı dondurman hazır, afiyet olsun! 🍫🍦' },
@@ -108,7 +112,7 @@ const CITY = [
   {
     id: 'guvenlik', avatar: 'kaan', name: 'Bodyguard Kaan', role: '🕶️', x: 24.15, z: -4.95, ry: 0,
     pose: GUARD, look: BLACK_SUIT, scale: 1.12,
-    lines: ['Hoş geldin, içeride herkese yer var ama kavga yok! 🕶️', 'Kapıdaki düzene dikkat, sıra sıra geçelim 😄', 'Rahatsız eden olursa haber ver, ben buradayım 👀', 'Kulüp Babil’de iyi eğlenceler 🪩'],
+    lines: ['Hoş geldin, içeride herkese yer var ama kavga yok! 🕶️', 'Kapıdaki düzene dikkat, sıra sıra geçelim 😄', 'Rahatsız eden olursa haber ver, ben buradayım 👀', 'Klüp’te iyi eğlenceler 🪩'],
     options: [
       { label: 'Öneri iste', reply: ['İçerideki pist akşamları çok canlı, DJ’e istek şarkı söyle 🎶', 'Kalabalık sevmezsen önce Hard Rök’te bir şey iç, sonra piste geç 🍹'] },
       { label: 'Hikâye anlat', reply: ['Bir gece iki kişi pistte aynı anda aynı adımı yaptı. Sonra dans bütün gece sürdü 💃', 'Yıllardır kapıdayım, en güzel manzara içeriden dışarı sızan kahkaha 🪩'] },
@@ -166,11 +170,14 @@ const TYPE_TIPS = {
   fastfood: ['İki kişilik menü avantajlı, patatesi paylaşın 🍟', 'Hızlı bir mola, uzun bir sohbet için iyi başlangıç 🍔'],
   icecream: ['Çilek ve vanilya birlikte en iyisi 🍦', 'Dondurmayı sahilde yemek bir başka güzel 🏖️'],
   shop: ['Dalgalı bir günde sahile git, huzur orada 🌊', 'Gün batımında şezlonglar çok güzel 🌅'],
+  gym: ['Önce birkaç set ağırlık çalış, sonra ringe çık — yumrukların çok daha sert olur! 💪', 'Koşu bandı kondisyonunu ve günlük antrenman enerjini artırır 🏃', 'Haftalık boks lideri altın şampiyon kemerini belinde taşır 🏆'],
+  teknel: ['Buz gibi içecekler dolapta, aldıkların çantana (Envanter) düşer 🎒', 'İstersen bir arkadaşına içki ısmarlayıp gönderebilirsin 🍻'],
 }
 const TYPE_STORY = {
   club: 'Bir gece pistte iki kişi aynı anda aynı şarkıya bağırdı, gerisi tarih 🪩',
   bar: 'Bir gün tezgâhta iki yabancı aynı içeceği isteyince birlikte gülüp paylaştılar 🍹',
   cafe: 'Bir sabah iki kişi son masa için anlaştı, kahvelerini birlikte içtiler ☕',
+  gym: 'Geçen hafta son rauntta 1 canla aparkat atıp kemeri kapan bir çaylak hâlâ konuşuluyor 🥊',
 }
 
 const venueNpcs = VENUES.filter((v) => v.npc).map((v) => ({
@@ -183,6 +190,15 @@ const venueNpcs = VENUES.filter((v) => v.npc).map((v) => ({
   z: v.npc.z,
   ry: v.npc.ry ?? 0,
   lines: v.npc.lines,
+  shop: v.type === 'teknel'
+    ? [
+        { id: 'teknel_beer', label: 'Soğuk Bira', emoji: '🍺', price: 8, style: 'eat', alcohol: true, toInv: true, reply: 'Buz gibi bira çantana eklendi! Envanterden içebilir veya ısmarlayabilirsin 🍺' },
+        { id: 'teknel_wine', label: 'Kırmızı Şarap', emoji: '🍷', price: 12, style: 'eat', alcohol: true, toInv: true, reply: 'Kırmızı şarap çantana eklendi! 🍷' },
+        { id: 'teknel_raki', label: 'Teknel Rakısı', emoji: '🥃', price: 14, style: 'eat', alcohol: true, toInv: true, reply: 'Teknel rakısı çantana eklendi — afiyet olsun! 🥃' },
+        { id: 'teknel_soda', label: 'Soğuk Gazoz', emoji: '🥤', price: 5, style: 'eat', alcohol: false, toInv: true, reply: 'Serin gazoz çantana eklendi! 🥤' },
+        { id: 'teknel_cheese', label: 'Peynir Tabağı', emoji: '🧀', price: 9, style: 'eat', alcohol: false, toInv: true, reply: 'Taze şarküteri peynir tabağı çantana eklendi! 🧀' },
+      ]
+    : undefined,
   options: [
     ...(v.id === 'sorf'
       ? [
@@ -201,6 +217,14 @@ const venueNpcs = VENUES.filter((v) => v.npc).map((v) => ({
       : []),
     ...(v.type === 'salon'
       ? [{ label: '👗 Gardırobu aç', action: 'open_wardrobe', reply: ['İşte ayna hazır! Saç, kıyafet ve aksesuarlarını dilediğin gibi seç ✨'] }]
+      : []),
+    ...(v.type === 'gym'
+      ? [
+          { label: '🥊 Boks Ringine Çık', action: 'open_boxing', reply: ['Eldivenlerini giydin! Ringe çık, ritmi yakala ve şampiyon ol 🥊🔥'] },
+          { label: '💪 Ağırlık Çalış (+Güç)', action: 'open_workout:str', reply: ['Sehpa hazır! Yeşil bölgede kaldır, gücünü katla 💪'] },
+          { label: '🏃 Koşu Bandı (+Kondisyon)', action: 'open_workout:sta', reply: ['Koşu bandı açıldı! Ritmik adımlarla kondisyonunu artır 🏃⚡'] },
+          { label: '🏆 Boks Sıralaması', action: 'open_boxing_board', reply: ['İşte MakFit’in haftalık şampiyonları! 🏆🥊'] },
+        ]
       : []),
     ...(v.type === 'guide'
       ? [

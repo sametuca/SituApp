@@ -435,8 +435,8 @@ const AfkView = memo(function AfkView({ bot, focusRef }) {
       </mesh>
       {ready && showTag && (
         <Html position={[0, AVATAR_HEIGHT + 0.45, 0]} center distanceFactor={9 * screenK()} zIndexRange={[7, 0]} style={{ pointerEvents: 'none' }}>
-          <div className="whitespace-nowrap rounded-full border-2 border-white bg-gradient-to-r from-[#f3e8ff] via-[#ede9fe] to-[#fce7f3] px-3.5 py-0.5 text-[11px] font-black tracking-[0.18em] text-[#5b4678] shadow-[0_4px_14px_rgba(168,139,255,0.45)]">
-            AFK
+          <div className="whitespace-nowrap rounded-full border-2 border-white bg-gradient-to-r from-[#f3e8ff] via-[#ede9fe] to-[#fce7f3] px-3.5 py-0.5 text-[11px] font-black tracking-wide text-[#5b4678] shadow-[0_4px_14px_rgba(168,139,255,0.45)]">
+            {bot.name}
           </div>
         </Html>
       )}

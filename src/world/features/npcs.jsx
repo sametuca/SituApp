@@ -306,6 +306,12 @@ export function useNpcs(ctx) {
           setTalk((t) => (t ? { ...t, text: `🪙 Yeterli altının yok! Bunun için ${m.price ?? item.price} altın gerekiyor.` } : t))
           return
         }
+        if (item.toInv) {
+          setTalk(null)
+          window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'collect' }))
+          say(`🎒 ${item.emoji} ${item.label} envanterine eklendi!`)
+          return
+        }
         enjoyItem(item)
       }),
     [net, enjoyItem],
@@ -314,11 +320,23 @@ export function useNpcs(ctx) {
   const onBuy = useCallback(
     (npc, item) => {
       if (!net.send({ t: 'npc_buy', npcId: npc.id, itemId: item.id })) {
-        // çevrimdışı modda doğrudan keyif animasyonunu oynat
+        // çevrimdışı modda doğrudan envantere ekle veya keyif animasyonunu oynat
+        if (item.toInv) {
+          setTalk(null)
+          window.dispatchEvent(new CustomEvent('situapp:inv-add', { detail: { id: item.id, label: item.label, emoji: item.emoji, alcohol: Boolean(item.alcohol) } }))
+          say(`🎒 ${item.emoji} ${item.label} envanterine eklendi!`)
+        } else {
+          if (item.toInv) {
+          setTalk(null)
+          window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'collect' }))
+          say(`🎒 ${item.emoji} ${item.label} envanterine eklendi!`)
+          return
+        }
         enjoyItem(item)
+        }
       }
     },
-    [net, enjoyItem],
+    [net, enjoyItem, say],
   )
 
   const onOption = (o) => {
@@ -336,6 +354,17 @@ export function useNpcs(ctx) {
       const game = o.action.slice('open_mg:'.length)
       setTalk(null)
       window.dispatchEvent(new CustomEvent('situapp:open-mg', { detail: { game } }))
+      return
+    }
+    if (o.action === 'open_boxing' || o.action === 'open_boxing_board') {
+      setTalk(null)
+      window.dispatchEvent(new CustomEvent('situapp:open-boxing', { detail: { mode: o.action === 'open_boxing_board' ? 'board' : 'lobby' } }))
+      return
+    }
+    if (typeof o.action === 'string' && o.action.startsWith('open_workout:')) {
+      const kind = o.action.slice('open_workout:'.length)
+      setTalk(null)
+      window.dispatchEvent(new CustomEvent('situapp:open-workout', { detail: { kind } }))
       return
     }
     setTalk((t) => (t ? { ...t, text: pick(o.reply) } : t))

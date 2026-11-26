@@ -9,6 +9,7 @@ import Facade from './Facade'
 import { facadeOf } from './facadeData'
 import Prop, { InstancedPropGroup } from './Prop'
 import Plants from './Plants'
+import TownDetails from './TownDetails'
 import { Em } from '../components/emoji'
 import { SKY_MATS, skyLive } from './Sky'
 import { worldClock } from './worldClock'
@@ -478,6 +479,56 @@ function Window({ kind, x, y, z, w, accent, shutters, flowerbox }) {
   )
 }
 
+// Kullanılmayan binalar için esprili Kentsel Dönüşüm afiş dokuları (önbellekli)
+const KENTSEL_LINES = [
+  ['🚧 KENTSEL DÖNÜŞÜM', 'YAKINDA REZİDANS (BELKİ)'],
+  ['📋 MÜTEAHHİT ARANIYOR', '%50 KAT KARŞILIĞI'],
+  ['🧱 RİSKLİ YAPI', 'YIKIM BEKLİYOR · GİRİLMEZ'],
+  ['🏗️ PROJE ALANI', '2029 TESLİM (İNŞALLAH)'],
+]
+const kentselTexCache = new Map()
+function getKentselTex(idx) {
+  const k = idx % KENTSEL_LINES.length
+  if (kentselTexCache.has(k)) return kentselTexCache.get(k)
+  const cv = document.createElement('canvas')
+  cv.width = 512
+  cv.height = 192
+  const g = cv.getContext('2d')
+  g.fillStyle = '#ffd35e'
+  g.fillRect(0, 0, 512, 192)
+  // Üst ve alt siyah-sarı şantiye şeridi
+  g.fillStyle = '#2d243b'
+  for (let x = -40; x < 560; x += 48) {
+    g.beginPath()
+    g.moveTo(x, 0)
+    g.lineTo(x + 24, 0)
+    g.lineTo(x + 12, 22)
+    g.lineTo(x - 12, 22)
+    g.closePath()
+    g.fill()
+    g.beginPath()
+    g.moveTo(x, 170)
+    g.lineTo(x + 24, 170)
+    g.lineTo(x + 12, 192)
+    g.lineTo(x - 12, 192)
+    g.closePath()
+    g.fill()
+  }
+  g.fillStyle = '#fffdf6'
+  g.fillRect(14, 28, 484, 136)
+  g.fillStyle = '#2d243b'
+  g.font = '900 32px system-ui, sans-serif'
+  g.textAlign = 'center'
+  g.fillText(KENTSEL_LINES[k][0], 256, 86)
+  g.fillStyle = '#d9482b'
+  g.font = '900 23px system-ui, sans-serif'
+  g.fillText(KENTSEL_LINES[k][1], 256, 132)
+  const tex = new CanvasTexture(cv)
+  tex.colorSpace = SRGBColorSpace
+  kentselTexCache.set(k, tex)
+  return tex
+}
+
 function Building({ b, i, focusRef }) {
   const { w, d, h, color, roof, facing, label, shop, neon } = b
   const grp = useRef()
@@ -535,6 +586,13 @@ function Building({ b, i, focusRef }) {
             Array.from({ length: count }, (_, ci) => (
               <Window key={`${y}-${ci}`} kind={st.win} x={(ci - (count - 1) / 2) * (w / count)} y={y} z={d / 2 + 0.06} w={st.win === 'wide' ? Math.min(2.0, w / count - 0.6) : ww} accent={roof} shutters={st.shutters && ri === 0} flowerbox={st.flowerbox && ri === 0} />
             )),
+          )}
+          {/* Kullanılmayan binalarda esprili Kentsel Dönüşüm afişi */}
+          {!b.venue && !b.homeDoor && !b.label && (
+            <mesh position={[0, Math.min(h - 1.0, 2.75), d / 2 + 0.16]}>
+              <planeGeometry args={[Math.min(3.4, w - 0.9), 1.25]} />
+              <meshStandardMaterial map={getKentselTex(i)} roughness={0.65} />
+            </mesh>
           )}
         </>
       )}
@@ -973,10 +1031,10 @@ function Pond({ x, z, r }) {
   )
 }
 
-/** Güney plajından denize uzanan pastel ahşap iskele. */
+/** Güney plajının deniz kenarından denize uzanan pastel ahşap iskele. */
 function BeachPier() {
   return (
-    <group position={[0, 0, 54.2]}>
+    <group position={[PIER.x, 0, (PIER.z0 + PIER.z1) / 2]}>
       <RoundedBox args={[3.2, 0.18, 9.6]} radius={0.05} position={[0, 0.28, 0]} castShadow receiveShadow>
         <meshStandardMaterial color="#f2cfa2" roughness={0.75} />
       </RoundedBox>
@@ -1059,7 +1117,7 @@ function FountainFx() {
     }
   })
   return (
-    <group position={[0, 0, 0]} scale={1.8}>
+    <group position={[0, 0, 0]} scale={1.15}>
       <mesh ref={top} position={[0, 2.05, 0]}>
         <sphereGeometry args={[0.28, 10, 8]} />
         <meshStandardMaterial color="#d8f6ff" emissive="#9be4ff" emissiveIntensity={0.45} roughness={0.1} transparent opacity={0.85} />
@@ -1099,23 +1157,66 @@ function SkyBalloon() {
   )
 }
 
-/** Şehir yollarında içinden geçince hız artışı veren parlayan halkalar. */
+/** Şehir yollarında içinden geçince hız artışı veren modern neon-pastel hız kapıları (asfalt üstünde, çift halka + oklar). */
 function SpeedRings() {
-  const refs = useRef([])
+  const outerRefs = useRef([])
+  const innerRefs = useRef([])
   useFrame(({ clock }) => {
     const t = clock.elapsedTime
-    refs.current.forEach((m, i) => {
+    outerRefs.current.forEach((g, i) => {
+      if (!g) return
+      g.position.y = 1.9 + Math.sin(t * 2.8 + i) * 0.12
+    })
+    innerRefs.current.forEach((m, i) => {
       if (!m) return
-      m.position.y = 1.05 + Math.sin(t * 2.5 + i) * 0.1
+      m.rotation.z = t * (i % 2 === 0 ? 1.8 : -1.8)
     })
   })
   return (
     <group>
       {SPEED_RING_POS.map(([x, z, ry], i) => (
-        <mesh key={i} ref={(el) => (refs.current[i] = el)} position={[x, 1.05, z]} rotation={[0, ry, 0]}>
-          <torusGeometry args={[1.05, 0.09, 10, 24]} />
-          <meshStandardMaterial color="#ffe066" emissive="#ffb703" emissiveIntensity={0.85} roughness={0.25} />
-        </mesh>
+        <group key={i} position={[x, 0, z]} rotation={[0, ry, 0]}>
+          {/* Sol ve sağ parlak kapı dikmeleri (asfalt üstüne temiz oturur) */}
+          {[-1.55, 1.55].map((px) => (
+            <group key={px} position={[px, 0, 0]}>
+              <mesh position={[0, 0.14, 0]} castShadow>
+                <cylinderGeometry args={[0.22, 0.28, 0.28, 12]} />
+                <meshStandardMaterial color="#4a3b5c" roughness={0.5} />
+              </mesh>
+              <mesh position={[0, 0.85, 0]} castShadow>
+                <cylinderGeometry args={[0.09, 0.11, 1.35, 10]} />
+                <meshStandardMaterial color="#fffaf2" roughness={0.35} />
+              </mesh>
+              <mesh position={[0, 1.56, 0]}>
+                <sphereGeometry args={[0.16, 12, 10]} />
+                <meshStandardMaterial color="#38bdf8" emissive="#38bdf8" emissiveIntensity={1.1} roughness={0.2} />
+              </mesh>
+            </group>
+          ))}
+          {/* Yüzen çift neon hız halkası + hız okları */}
+          <group ref={(el) => (outerRefs.current[i] = el)} position={[0, 1.9, 0]}>
+            <mesh>
+              <torusGeometry args={[1.38, 0.11, 12, 32]} />
+              <meshStandardMaterial color="#ffd35e" emissive="#ff9f1c" emissiveIntensity={0.95} roughness={0.2} />
+            </mesh>
+            <mesh ref={(el) => (innerRefs.current[i] = el)}>
+              <torusGeometry args={[1.12, 0.055, 10, 28]} />
+              <meshStandardMaterial color="#7ef9ff" emissive="#38bdf8" emissiveIntensity={1.1} roughness={0.18} />
+            </mesh>
+            {/* Üstte parlak şimşek/yıldız rozeti */}
+            <mesh position={[0, 1.56, 0]} rotation={[0, 0, Math.PI / 4]}>
+              <octahedronGeometry args={[0.24, 0]} />
+              <meshStandardMaterial color="#fff3c4" emissive="#ffd35e" emissiveIntensity={1.2} />
+            </mesh>
+            {/* Yanlarda hız oku konileri */}
+            {[-0.65, 0.65].map((ax) => (
+              <mesh key={ax} position={[ax, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                <coneGeometry args={[0.16, 0.34, 8]} />
+                <meshStandardMaterial color="#8fdcb4" emissive="#4ade80" emissiveIntensity={0.9} />
+              </mesh>
+            ))}
+          </group>
+        </group>
       ))}
     </group>
   )
@@ -1323,6 +1424,7 @@ export default function City({ focusRef }) {
       <SkyBalloon />
       <SpeedRings />
       <BeachPier />
+      <TownDetails focusRef={focusRef} />
 
       {/* zemin ve mahalle zeminleri */}
       <Sea />

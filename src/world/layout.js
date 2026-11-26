@@ -94,46 +94,45 @@ export const BUILDINGS = [
   // lobi meydanındaki dört önemli yapı
   b(17, -17, 8, 8, 6, 'blue', 's', '🧭 Tripadvisör'),
   b(-17, -17, 8, 8, 6, 'pink', 's', '💇 Toni & Güy'),
-  b(17, 17, 8, 8, 6, 'lilac', 's', '📸 Kodakk Foto'),
+  b(17, 17, 8, 8, 6, 'lilac', 's', '📸 Sinepsot Foto'),
   b(-17, 17, 8, 8, 6, 'peach', 'n', '🍰 Tatlı Kafası'),
 
-  // Kafe Sokağı (kuzey)
-  b(-9.7, -18, 6, 7, 5, 'yellow', 'e', '☕ Starbucket', { shop: true }),
-  b(9.7, -18, 6, 7, 5, 'mint', 'w', '📚 D&Rüya', { shop: true }),
+  // Kafe Sokağı (kuzey) — Kokabana ile Starbucket yer değiştirdi
+  b(-9.7, -18, 6, 7, 5, 'yellow', 'e', '🥤 Kokabana', { shop: true }),
+  b(9.7, -18, 6, 7, 5, 'mint', 'w', '📚 Di and Ar', { shop: true }),
   b(-9.7, -27, 6, 8, 6, 'pink', 'e', '🥐 Simit Sarayım', { shop: true }),
   b(9.7, -27, 6, 8, 5, 'blue', 'w', '🍵 Çaykurt', { shop: true }),
-  b(-9.7, -36, 6, 8, 7, 'lilac', 'e'),
-  b(9.7, -36, 6, 8, 6, 'peach', 'w'),
+  b(-9.7, -36, 6, 8, 5.5, 'lilac', 'e'),
+  b(9.7, -36, 6, 8, 5.5, 'peach', 'w'),
   b(-9.7, -44, 6, 7, 5, 'mint', 'e'),
-  b(9.7, -44, 6, 7, 7, 'yellow', 'w'),
+  b(9.7, -44, 6, 7, 5.5, 'yellow', 'w'),
 
   // Gece Kulübü (doğu)
-  b(26, -9.7, 14, 8, 7, 'lilac', 's', '🪩 Kulüp Babil', { neon: true }),
-  b(41.5, -9.7, 7, 8, 6, 'pink', 's', '🍹 Hard Rök', { shop: true }),
+  b(26, -9.7, 14, 8, 6.5, 'lilac', 's', '🪩 Klüp', { neon: true }),
+  b(41.5, -9.7, 7, 8, 5.5, 'pink', 's', '🍹 Hard Rök', { shop: true }),
   b(19, 9.7, 7, 6, 5, 'blue', 'n', '🎮 Playstasyon', { shop: true }),
-  b(30, 9.7, 8, 6, 6, 'yellow', 'n', '🍔 Burger Kral', { shop: true }),
+  b(30, 9.7, 8, 6, 5.5, 'yellow', 'n', '🍔 Bulgur King', { shop: true }),
   b(41, 9.7, 7, 6, 5, 'mint', 'n', '🏋️ MakFit', { shop: true }),
 
-  // Plaj Yolu (güney)
+  // Plaj Yolu (güney) — Starbucket plaj yolunda, karşısında mavi logolu Teknel
   b(-9.7, 19, 6, 7, 5, 'blue', 'e', '🍦 Nevarlanda', { shop: true }),
   b(9.7, 19, 6, 7, 5, 'pink', 'w', '🏄 Quicksörf', { shop: true }),
-  b(-9.7, 27, 6, 7, 4, 'yellow', 'e', '🥤 Kokabana'),
-  b(9.7, 27, 6, 7, 4, 'mint', 'w'),
+  b(-9.7, 27, 6, 7, 4.8, 'yellow', 'e', '☕ Starbucket', { shop: true }),
+  b(9.7, 27, 6, 7, 4.8, 'blue', 'w', '🍾 Teknel', { shop: true, teknel: true }),
 
-  // Kuzeydoğu mahallesi
-  b(28, -26, 10, 10, 11, 'pink', 's'),
-  b(41, -26, 8, 10, 9, 'blue', 's'),
-  b(28, -41, 10, 8, 8, 'mint', 'w'),
-  b(41, -41, 8, 8, 12, 'lilac', 'w'),
-  // Kuzeybatı/güneybatı bloklar boş: evler şehirde değil, herkesin kendi bağımsız odasında (homeTiers.js). Konut Mahallesi modülü kapalı.
-  // Güneydoğu mahallesi
-  b(28, 26, 10, 10, 8, 'lilac', 'n'),
-  b(41, 26, 8, 10, 10, 'mint', 'n'),
-  b(28, 41, 10, 8, 11, 'peach', 'n'),
-  b(41, 41, 8, 8, 9, 'yellow', 'n'),
+  // Kuzeydoğu mahallesi (kasaba ölçeği: yüksek bloklar yerine 5–6 m alçak yapılar)
+  b(28, -26, 10, 10, 6, 'pink', 's'),
+  b(41, -26, 8, 10, 5.5, 'blue', 's'),
+  b(28, -41, 10, 8, 5.5, 'mint', 'w'),
+  b(41, -41, 8, 8, 6, 'lilac', 'w'),
+  // Güneydoğu mahallesi (kasaba ölçeği)
+  b(28, 26, 10, 10, 5.5, 'lilac', 'n'),
+  b(41, 26, 8, 10, 6, 'mint', 'n'),
+  b(28, 41, 10, 8, 5.5, 'peach', 'n'),
+  b(41, 41, 8, 8, 5.5, 'yellow', 'n'),
 
-  // Herkesin kendi evine girdiği kapı (lobi halkasının batısında, park çiminde — asfalta binmesin)
-  b(-19.5, 8.5, 5, 5, 4.6, 'mint', 'e', '🏠 Evim', { homeDoor: true }),
+  // Herkesin kendi evine girdiği kapı (plaja yakın sakin köşe)
+  bw(-18, 36.5, 5, 5, 4.6, 'mint', 'e', '🏠 Evim', { homeDoor: true }),
 
   // Park çardağı
   { x: G(-30, 0)[0], z: 0, gazebo: true },
@@ -143,20 +142,20 @@ let seed = 1987654
 const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296)
 const rpick = (a) => a[Math.floor(rnd() * a.length)]
 const COLORS = ['pink', 'blue', 'yellow', 'mint', 'lilac', 'peach']
-// Kuzey Caddesi (Kafe Sokağı'nın devamı)
+// Kuzey Caddesi (Kafe Sokağı'nın devamı — kasaba ölçeği)
 for (let i = 0; i < 5; i++) {
   const z = -56 - i * 9
-  BUILDINGS.push(b(-9.7, z, 6, 6 + Math.floor(rnd() * 3), 5 + Math.floor(rnd() * 4), rpick(COLORS), 'e'), b(9.7, z, 6, 6 + Math.floor(rnd() * 3), 5 + Math.floor(rnd() * 4), rpick(COLORS), 'w'))
+  BUILDINGS.push(b(-9.7, z, 6, 6 + Math.floor(rnd() * 3), 4.5 + Math.floor(rnd() * 2), rpick(COLORS), 'e'), b(9.7, z, 6, 6 + Math.floor(rnd() * 3), 4.5 + Math.floor(rnd() * 2), rpick(COLORS), 'w'))
 }
 // Doğu Bulvarı (kulüp caddesinin devamı)
 for (let i = 0; i < 5; i++) {
   const x = 56 + i * 9
-  BUILDINGS.push(b(x, -9.7, 7, 8, 5 + Math.floor(rnd() * 3), rpick(COLORS), 's'), b(x, 9.7, 7, 6 + Math.floor(rnd() * 2), 5 + Math.floor(rnd() * 3), rpick(COLORS), 'n'))
+  BUILDINGS.push(b(x, -9.7, 7, 8, 4.5 + Math.floor(rnd() * 2), rpick(COLORS), 's'), b(x, 9.7, 7, 6 + Math.floor(rnd() * 2), 4.5 + Math.floor(rnd() * 2), rpick(COLORS), 'n'))
 }
-// Kuzeydoğu Mahallesi: ev sıraları
-for (const z of [-30, -44, -58, -72, -86]) for (const x of [62, 76, 90]) BUILDINGS.push(b(x, z, 7 + Math.floor(rnd() * 3), 7, 5 + Math.floor(rnd() * 5), rpick(COLORS), 's'))
+// Kuzeydoğu Mahallesi: alçak kasaba evleri
+for (const z of [-30, -44, -58, -72, -86]) for (const x of [62, 76, 90]) BUILDINGS.push(b(x, z, 7 + Math.floor(rnd() * 3), 7, 4.5 + Math.floor(rnd() * 2), rpick(COLORS), 's'))
 // Liman: kıyı dükkânları
-for (const x of [60, 72, 84, 96 - 2]) BUILDINGS.push(b(x, 24, 8, 6, 5 + Math.floor(rnd() * 3), rpick(COLORS), 'n', undefined, { shop: true }))
+for (const x of [60, 72, 84, 96 - 2]) BUILDINGS.push(b(x, 24, 8, 6, 4.5 + Math.floor(rnd() * 2), rpick(COLORS), 'n', undefined, { shop: true }))
 
 export const GAZEBO = { x: G(-30, 0)[0], z: 0, r: 3.2 }
 
@@ -200,10 +199,10 @@ for (let t = 20; t <= 90; t += 10) {
 }
 // dönel kavşak lambaları: halkanın dış kaldırımında, yol bağlantılarından uzakta
 for (const a of [Math.PI / 4, (3 * Math.PI) / 4, (5 * Math.PI) / 4, (7 * Math.PI) / 4, Math.PI / 8, (7 * Math.PI) / 8, (9 * Math.PI) / 8, (15 * Math.PI) / 8]) PROPS.push(pw('lamp', Math.cos(a) * (RING.r1 + 0.7), Math.sin(a) * (RING.r1 + 0.7), 3, 0.35))
-// lobi (geniş meydan): ortada büyük çeşme, çevresinde çiçeklikler, ağaçlar ve banklar halkası (binalara yaklaşmaz)
-PROPS.push(pw('fountain', 0, 0, 9.7))
-for (const [fx, fz] of [[6.4, 6.4], [-6.4, 6.4], [6.4, -6.4], [-6.4, -6.4]]) PROPS.push(pw('flowerbed', fx, fz, 2.4))
-PROPS.push(pw('tree', 10, 10, 4.2, 0.9), pw('tree', 10, -10, 4.2, 0.9), pw('tree', -10, -10, 4.2, 0.9), pw('tree', -10, 10, 4.2, 0.9))
+// lobi (geniş meydan): dengeli boyutta çeşme, çevresinde çiçeklikler, ağaçlar ve banklar halkası
+PROPS.push(pw('fountain', 0, 0, 6.2))
+for (const [fx, fz] of [[6.4, 6.4], [-6.4, 6.4], [6.4, -6.4], [-6.4, -6.4]]) PROPS.push(pw('flowerbed', fx, fz, 2.2))
+PROPS.push(pw('tree', 10, 10, 4.0, 0.9), pw('tree', -10, -10, 4.0, 0.9))
 {
   const nearBuilding = (x, z, pad) => BUILDINGS.some((bd) => !bd.gazebo && Math.abs(x - bd.x) < (bd.facing === 'e' || bd.facing === 'w' ? bd.d : bd.w) / 2 + pad && Math.abs(z - bd.z) < (bd.facing === 'e' || bd.facing === 'w' ? bd.w : bd.d) / 2 + pad)
   for (let i = 0; i < 12; i++) {
@@ -223,8 +222,8 @@ for (const side of [-1, 1]) {
 // gece kulübü: girişin önünde hoparlörler (sokak lambalarından uzak; DJ standı içeride)
 PROPS.push(p('speaker', 21.8, -5.1, 2, 0.6), p('speaker', 31.6, -5.1, 2, 0.6))
 PROPS.push(p('speaker', 38, 5.3, 1.8, 0.5))
-// park: ağaçlar, banklar
-for (const [x, z] of [[-18, -9], [-24, -10], [-36, -10], [-44, -8], [-23.5, 6], [-26, 10], [-37, 9], [-44, 6], [-42, -1], [-15.8, 4.2]]) PROPS.push(p('tree', x, z, 3.6, 0.7))
+// park: yarısı klasik ağaç, diğer yarısı City.jsx'te yeni meyve/kiraz/çam ağaçları
+for (const [x, z] of [[-18, -9], [-36, -10], [-23.5, 6], [-37, 9], [-42, -1]]) PROPS.push(p('tree', x, z, 3.6, 0.7))
 PROPS.push(p('bench', -22, -5, 1.7, 0, 0), p('bench', -22, 5, 1.7, 0, Math.PI), p('bench', -36, -5, 1.7, 0, 0), p('bench', -36, 5, 1.7, 0, Math.PI))
 // park patikası (x -15…-26, z ±1,6): lambalar patikanın iki yanında, aynı hizada
 for (const x of [-19.5, -24.5]) PROPS.push(p('lamp', x, 2.6, 3, 0.35), p('lamp', x, -2.6, 3, 0.35))

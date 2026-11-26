@@ -7,6 +7,7 @@ import { together } from './features/togetherStore'
 import { work } from './features/jobStore'
 import { playerPos } from './cull'
 import { BIKE_POSE, BIKE_SPEED, bike, speedBoost, useRiding } from './bikeStore'
+import { fitnessStore } from './fitnessStore'
 import BikeModel from './Bike'
 import SpeedFx from './SpeedFx'
 
@@ -155,7 +156,8 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
       dir.copy(fwd).multiplyScalar(fwdIn).addScaledVector(right, rightIn).normalize()
 
       const boost = Date.now() < speedBoost.until ? 1.55 : 1
-      const baseSpeed = bike.on ? (running ? 7.2 : BIKE_SPEED) : running ? RUN_SPEED : WALK_SPEED
+      const staBonus = 1 + ((fitnessStore.get().attr?.sta ?? 0) / 100) * 0.12
+      const baseSpeed = bike.on ? (running ? 7.2 : BIKE_SPEED) : running ? RUN_SPEED * staBonus : WALK_SPEED
       const speed = baseSpeed * boost * (bike.on ? Math.max(0.65, analog) : analog)
       targetVx = dir.x * speed
       targetVz = dir.z * speed

@@ -32,14 +32,12 @@ const BURST_SLOTS = [
   { rx: 34, rot: -10, size: 56, delay: 0.33 },
 ]
 
-/** Karakterin üstünde isim etiketi, konuşma balonu, uçan emoji tepkisi, AFK rozeti ve (fısıldıyorsa) 🤫. */
-function Tag({ name, bubble: rawBubble, accent, reaction, whisper, afk = false, showName = false }) {
+/** Karakterin üstünde oyuncu adı (tıklamadan görünür), konuşma balonu, uçan emoji tepkisi ve fısıltı göstergesi. */
+function Tag({ name, bubble: rawBubble, reaction, whisper, showName = true }) {
   // bubble: metin ya da { text, big } (çıkartmalar büyük gösterilir)
   const bubble = typeof rawBubble === 'string' ? { text: rawBubble } : rawBubble
   const reacts = Array.isArray(reaction) ? reaction : reaction ? [reaction] : []
-  // oyuncuların kullanıcı adı ekranda yazmaz (kalabalık/okunaksız); isim, karaktere tıklayınca açılan profil penceresinde görünür.
-  // Etiket yalnızca konuşma balonu, emoji tepkisi, AFK durumu ya da fısıltı varken çizilir. İsim göstermek gerekirse (Rehber NPC) `showName`.
-  if (!showName && !bubble && !reacts.length && !whisper && !afk) return null
+  if (!showName && !bubble && !reacts.length && !whisper) return null
   return (
     <Html position={[0, AVATAR_HEIGHT + 0.45, 0]} center distanceFactor={9 * screenK()} zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}>
       <div className="relative flex flex-col items-center gap-1">
@@ -70,13 +68,8 @@ function Tag({ name, bubble: rawBubble, accent, reaction, whisper, afk = false, 
         {whisper && !bubble && (
           <div className="animate-pop rounded-full border-2 border-white bg-[#e9ddff] px-2.5 py-0.5 text-xs font-extrabold text-[#6b4fc0] shadow">🤫 fısıldıyor…</div>
         )}
-        {afk && !bubble && !whisper && (
-          <div className="whitespace-nowrap rounded-full border-2 border-white bg-gradient-to-r from-[#f3e8ff] via-[#ede9fe] to-[#fce7f3] px-3.5 py-0.5 text-[11px] font-black tracking-[0.18em] text-[#5b4678] shadow-[0_4px_14px_rgba(168,139,255,0.45)]">
-            AFK
-          </div>
-        )}
-        {showName && (
-          <div className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full border-2 border-white px-3 py-0.5 text-xs font-extrabold text-white shadow ${accent ?? 'bg-[#a88bff]'}`}>
+        {showName && name && (
+          <div className="whitespace-nowrap rounded-full border-2 border-white bg-gradient-to-r from-[#f3e8ff] via-[#ede9fe] to-[#fce7f3] px-3.5 py-0.5 text-[11px] font-black tracking-wide text-[#5b4678] shadow-[0_4px_14px_rgba(168,139,255,0.45)]">
             {name}
           </div>
         )}

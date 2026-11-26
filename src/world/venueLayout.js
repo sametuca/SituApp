@@ -33,6 +33,8 @@ const TYPE_THEME = {
   shop: { floor: ['#fdf0cf', '#f8e2a8'] },
   guide: { floor: ['#e7f1ff', '#d6e6fb'] },
   airport: { floor: ['#eef2f8', '#dfe6f1'] },
+  gym: { floor: ['#e5f5ef', '#d4ece4'] },
+  teknel: { floor: ['#e8f3ff', '#d6e9ff'] },
 }
 
 /** Mekânın renk teması (bina renklerinden türer). */
@@ -463,6 +465,55 @@ function build(v) {
       windows([-0.6, 2.4])
       break
     }
+    // ================= fitness kulübü (MakFit) =================
+    case 'gym': {
+      sign()
+      // Boks ringi (sol/orta ana alan)
+      add({ t: 'ring', x: -3.2, z: -0.6, w: 4.4, d: 4.4 }, { x: -3.2, z: -0.6, hw: 2.25, hd: 2.25, ry: 0 })
+      // Kum torbası (ringin sağ arkası)
+      add({ t: 'punchbag', x: 1.9, z: -3.6 }, { x: 1.9, z: -3.6, hw: 0.45, hd: 0.45, ry: 0 })
+      // Ağırlık çalışma istasyonu: bench press + dambıl rafı (sağ kuzey)
+      add({ t: 'benchpress', x: 4.5, z: -2.4, ry: -Math.PI / 2 }, { x: 4.5, z: -2.4, hw: 1.0, hd: 0.75, ry: 0 })
+      add({ t: 'dumbbells', x: 6.7, z: -2.4, ry: -Math.PI / 2 }, { x: 6.7, z: -2.4, hw: 0.45, hd: 1.15, ry: 0 })
+      // Koşu bantları (sağ güney)
+      add({ t: 'treadmill', x: 4.4, z: 1.5, ry: Math.PI }, { x: 4.4, z: 1.5, hw: 0.55, hd: 0.95, ry: 0 })
+      add({ t: 'treadmill', x: 6.1, z: 1.5, ry: Math.PI }, { x: 6.1, z: 1.5, hw: 0.55, hd: 0.95, ry: 0 })
+      // Duvar panoları & aynalar
+      add({ t: 'board', x: -3.2, y: 2.15, z: -hd + 0.04, ry: 0, w: 2.5, h: 1.15, lines: ['🥊 BOKS RİNGİ', '← Jab · → Kroşe', '↑ Aparkat · ↓ Blok', 'Haftalık Şampiyon: 🏆'], bg: '#fffaf2', fg: '#4a3b5c', frame: '#ff8a7a' })
+      add({ t: 'board', x: 4.5, y: 2.15, z: -hd + 0.04, ry: 0, w: 2.3, h: 1.1, lines: ['💪 ANTRENMAN', 'Ağırlık → +Güç', 'Koşu → +Kondisyon', 'Enerji her gün yenilenir'], bg: '#fffaf2', fg: '#4a3b5c', frame: '#7fcdf3' })
+      add({ t: 'mirror', x: hw - 0.05, z: -0.4, w: 2.2, h: 1.9, ry: -Math.PI / 2 })
+      add({ t: 'rug', x: 5.2, z: -0.4, w: 3.8, d: 5.4, c: '#c8eadf', round: false })
+      sofaAt('sofaA', -5.4, 3.2, 0, 2.0, '#7fcdf3')
+      plant(-hw + 0.7, -4.2)
+      plant(-hw + 0.7, 4.1)
+      plant(hw - 0.7, 4.1)
+      windows([2.4])
+      L.gym = {
+        ring: { x: -3.2, z: -0.6 },
+        weights: { x: 4.5, z: -2.4 },
+        cardio: { x: 5.2, z: 1.5 },
+      }
+      break
+    }
+    // ================= Teknel (mavi logolu tekel & şarküteri) =================
+    case 'teknel': {
+      add({ t: 'board', x: 0, y: 3.05, z: -hd + 0.04, ry: 0, w: 3.6, h: 0.65, lines: ['🍾 TEKNEL · ŞARKÜTERİ'], bg: '#1d74d8', fg: '#ffffff', big: true })
+      counter(0, 4.6, { c: '#d6e9ff', top: '#1d74d8' })
+      add({ t: 'register', x: 1.3, z: counterZ, y: 1.0 })
+      add({ t: 'display', x: -1.3, z: counterZ, y: 1.0, w: 1.6, mode: 'cakes' })
+      // soğuk içecek dolapları ve şarküteri rafları
+      add({ t: 'bottles', x: -3.6, z: -hd + 0.28, w: 2.6 })
+      add({ t: 'bottles', x: 3.6, z: -hd + 0.28, w: 2.6 })
+      add({ t: 'neon', x: -4.8, y: 2.45, z: -hd + 0.05, w: 1.6, c: '#38bdf8' })
+      add({ t: 'neon', x: 4.8, y: 2.45, z: -hd + 0.05, w: 1.6, c: '#38bdf8' })
+      add({ t: 'board', x: -4.2, y: 2.0, z: -hd + 0.04, ry: 0, w: 1.8, h: 1.15, lines: ['❄️ SOĞUK DOLAP', '🍺 Bira · 🍷 Şarap', '🥃 Rakı · 🥤 Gazoz', '🧀 Peynir Tabağı'], bg: '#eef7ff', fg: '#1e3a5f', frame: '#1d74d8' })
+      // 2 küçük samimi şarküteri masası
+      ;[[-3.6, 1.4], [3.6, 1.4]].forEach(([x, z], i) => tableSet(i, x, z))
+      add({ t: 'rug', x: 0, z: 1.4, w: 2.4, d: 2.6, c: '#cfe6ff', round: false })
+      windows()
+      corners()
+      break
+    }
     default:
       sign()
       counter(npc.x, 4)
@@ -478,7 +529,7 @@ function build(v) {
       const x = sx * (hw - 1.7)
       if (CAFE_LIKE.includes(v.type)) {
         if (!hit(x, z, 1.5, 0.7) && !inNpc(x, z)) tableSet(`fx${fi++}`, x, z, 'x')
-      } else if (v.type !== 'airport') {
+      } else if (v.type !== 'airport' && v.type !== 'gym') {
         if (!hit(sx * (hw - 1.0), z, 0.5, 1.1) && !inNpc(x, z)) sofaAt(`fs${fi++}`, sx * (hw - 1.0), z, sx < 0 ? Math.PI / 2 : -Math.PI / 2, 2.0, th.accent)
       }
     }
