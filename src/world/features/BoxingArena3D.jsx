@@ -1,13 +1,36 @@
-import { useMemo, useRef } from 'react'
+import { Suspense, useMemo, useRef } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { RoundedBox } from '@react-three/drei'
+import { RoundedBox, useGLTF } from '@react-three/drei'
+import { Box3, Vector3 } from 'three'
+import { fixPropMaterialSeams } from '../avatarTextureFix'
 
-function Boxer3D({ x, facing, bodyCol, gloveCol, stateRef, isSelf }) {
+function BoxerModel({ model, height = 1.65 }) {
+  const { scene } = useGLTF(model)
+  const { obj, sc } = useMemo(() => {
+    const clone = scene.clone(true)
+    const box = new Box3().setFromObject(clone)
+    const size = box.getSize(new Vector3())
+    const c = box.getCenter(new Vector3())
+    clone.position.set(-c.x, -box.min.y, -c.z)
+    clone.traverse((o) => {
+      if (o.isMesh) {
+        o.castShadow = o.receiveShadow = true
+        fixPropMaterialSeams(o.material)
+      }
+    })
+    const k = size.y > 0.001 ? height / size.y : 1
+    return { obj: clone, sc: k }
+  }, [scene, height])
+  return (
+    <group scale={sc}>
+      <primitive object={obj} />
+    </group>
+  )
+}
+
+function Boxer3D({ x, facing, model, stateRef, isSelf }) {
   const root = useRef()
   const body = useRef()
-  const head = useRef()
-  const lGlove = useRef()
-  const rGlove = useRef()
   const shield = useRef()
 
   useFrame(({ clock }) => {
@@ -21,29 +44,16 @@ function Boxer3D({ x, facing, bodyCol, gloveCol, stateRef, isSelf }) {
     const bob = Math.sin(t * 4.5) * 0.05
 
     if (root.current) {
-      const lunge = punch > 0 ? Math.sin(punch * Math.PI) * 0.52 * facing : 0
-      const recoil = hit > 0.25 ? -Math.sin(((hit - 0.25) / 0.75) * Math.PI) * 0.28 * facing : 0
-      root.current.position.set(x + lunge + recoil, 0.22 + Math.abs(bob) * 0.4, 0)
+      const lunge = punch > 0 ? Math.sin(punch * Math.PI) * 0.56 * facing : 0
+      const recoil = hit > 0.25 ? -Math.sin(((hit - 0.25) / 0.75) * Math.PI) * 0.3 * facing : 0
+      root.current.position.set(x + lunge + recoil, 0.22 + Math.abs(bob) * 0.45, 0)
       root.current.rotation.y = facing > 0 ? Math.PI / 2 : -Math.PI / 2
     }
     if (body.current) {
-      body.current.rotation.x = punch * 0.22 - (hit > 0.25 ? 0.2 : 0)
-      body.current.rotation.y = pType === 'hook' ? punch * 0.42 : 0
-    }
-    if (head.current) {
-      head.current.rotation.x = hit > 0.25 ? -0.35 * hit : Math.sin(t * 2.2) * 0.04
-    }
-    if (lGlove.current && rGlove.current) {
-      const guardY = shielded ? 1.38 : 1.16 + bob * 0.5
-      const guardZ = shielded ? 0.48 : 0.44
-      // Sol el (Jab)
-      const jabExt = pType === 'jab' ? Math.sin(punch * Math.PI) * 0.95 : 0
-      lGlove.current.position.set(-0.3 + (shielded ? 0.14 : 0), guardY, guardZ + jabExt)
-      // Sağ el (Kroşe / Aparkat)
-      const hookX = pType === 'hook' ? Math.sin(punch * Math.PI) * -0.26 : 0
-      const hookZ = pType === 'hook' ? Math.sin(punch * Math.PI) * 0.9 : pType === 'upper' ? Math.sin(punch * Math.PI) * 0.68 : 0
-      const upperY = pType === 'upper' ? Math.sin(punch * Math.PI) * 0.52 : 0
-      rGlove.current.position.set(0.3 - (shielded ? 0.14 : 0) + hookX, guardY + upperY, guardZ + hookZ)
+      const punchLean = pType === 'upper' ? -punch * 0.18 : punch * 0.28
+      body.current.rotation.x = punchLean - (hit > 0.25 ? 0.24 : 0)
+      body.current.rotation.y = pType === 'hook' ? punch * 0.45 : pType === 'jab' ? -punch * 0.2 : Math.sin(t * 2.2) * 0.05
+      body.current.position.y = pType === 'upper' ? Math.sin(punch * Math.PI) * 0.16 : 0
     }
     if (shield.current) {
       shield.current.visible = shielded
@@ -54,56 +64,13 @@ function Boxer3D({ x, facing, bodyCol, gloveCol, stateRef, isSelf }) {
   return (
     <group ref={root} position={[x, 0.22, 0]}>
       <group ref={body}>
-        {/* Boks şortu & gövde */}
-        <RoundedBox args={[0.62, 0.72, 0.44]} radius={0.16} smoothness={3} position={[0, 0.78, 0]} castShadow>
-          <meshStandardMaterial color={bodyCol} roughness={0.55} />
-        </RoundedBox>
-        <mesh position={[0, 0.62, 0]}>
-          <boxGeometry args={[0.64, 0.14, 0.46]} />
-          <meshStandardMaterial color="#fffaf2" roughness={0.5} />
-        </mesh>
-        {/* Bacaklar & boks ayakkabıları */}
-        {[-0.17, 0.17].map((lx, i) => (
-          <group key={i} position={[lx, 0.24, 0]}>
-            <mesh castShadow>
-              <capsuleGeometry args={[0.1, 0.28, 6, 10]} />
-              <meshStandardMaterial color="#ffe0c2" roughness={0.62} />
-            </mesh>
-            <RoundedBox args={[0.2, 0.14, 0.3]} radius={0.05} position={[0, -0.2, 0.04]} castShadow>
-              <meshStandardMaterial color={gloveCol} roughness={0.45} />
-            </RoundedBox>
-          </group>
-        ))}
-        {/* Kafa & saç bandı */}
-        <group ref={head} position={[0, 1.42, 0]}>
-          <mesh castShadow>
-            <sphereGeometry args={[0.3, 16, 14]} />
-            <meshStandardMaterial color="#ffe0c2" roughness={0.58} />
-          </mesh>
-          <mesh position={[0, 0.14, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[0.295, 0.045, 8, 20]} />
-            <meshStandardMaterial color={gloveCol} roughness={0.45} />
-          </mesh>
-          {[-0.1, 0.1].map((ex, i) => (
-            <mesh key={i} position={[ex, 0.02, 0.27]}>
-              <sphereGeometry args={[0.042, 8, 8]} />
-              <meshStandardMaterial color="#2f2247" roughness={0.3} />
-            </mesh>
-          ))}
-        </group>
+        <Suspense fallback={null}>
+          <BoxerModel model={model} />
+        </Suspense>
       </group>
-      {/* Sol ve sağ 3B boks eldivenleri */}
-      <mesh ref={lGlove} position={[-0.3, 1.16, 0.44]} castShadow>
-        <sphereGeometry args={[0.17, 14, 12]} />
-        <meshStandardMaterial color={gloveCol} roughness={0.36} />
-      </mesh>
-      <mesh ref={rGlove} position={[0.3, 1.16, 0.44]} castShadow>
-        <sphereGeometry args={[0.17, 14, 12]} />
-        <meshStandardMaterial color={gloveCol} roughness={0.36} />
-      </mesh>
       {/* Blok kalkanı */}
       <mesh ref={shield} position={[0, 1.0, 0.25]} visible={false}>
-        <sphereGeometry args={[0.85, 18, 14]} />
+        <sphereGeometry args={[0.92, 18, 14]} />
         <meshStandardMaterial color="#b79cff" emissive="#9b7be8" emissiveIntensity={0.65} transparent opacity={0.28} wireframe />
       </mesh>
     </group>
@@ -217,8 +184,8 @@ export default function BoxingArena3D({ stateRef }) {
       <pointLight position={[2.2, 4.0, 1.5]} intensity={4} color="#7fcdf3" distance={12} />
       <ArenaCamera stateRef={stateRef} />
       <RingStage />
-      <Boxer3D x={-1.15} facing={1} bodyCol="#ff8a7a" gloveCol="#ff595e" stateRef={stateRef} isSelf />
-      <Boxer3D x={1.15} facing={-1} bodyCol="#7fcdf3" gloveCol="#3b82f6" stateRef={stateRef} isSelf={false} />
+      <Boxer3D x={-1.15} facing={1} model="/models/venues/boxer-red.glb" stateRef={stateRef} isSelf />
+      <Boxer3D x={1.15} facing={-1} model="/models/venues/boxer-blue.glb" stateRef={stateRef} isSelf={false} />
       <HitSparks stateRef={stateRef} />
     </Canvas>
   )

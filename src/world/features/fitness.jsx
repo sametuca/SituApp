@@ -275,17 +275,41 @@ function WeightWorkoutModal({ ski, energy, energyMaxVal, onDone, onClose }) {
 function CardioWorkoutModal({ energy, energyMaxVal, onDone, onClose }) {
   const [phase, setPhase] = useState('ready')
   const [steps, setSteps] = useState(0)
-  const [nextFoot, setNextFoot] = useState('L') // L | R
+  const [perfects, setPerfects] = useState(0)
+  const [pos, setPos] = useState(10)
   const [left, setLeft] = useState(16)
   const [pace, setPace] = useState(40)
-  const stRef = useRef({ steps: 0, foot: 'L', pace: 40, done: false })
+  const [feedback, setFeedback] = useState('İmleç parlak alana gelince bas!')
+  const stRef = useRef({ pos: 10, dir: 1, steps: 0, perfects: 0, pace: 40, done: false })
+
+  const halfGood = 18
+  const halfPerf = 7
 
   useEffect(() => {
     if (phase !== 'play') return undefined
+    let raf = 0
+    let last = performance.now()
+    const tick = (now) => {
+      const dt = Math.min(0.05, (now - last) / 1000)
+      last = now
+      const s = stRef.current
+      const speed = 105 + Math.min(70, s.steps * 2.5)
+      s.pos += s.dir * speed * dt
+      if (s.pos >= 96) {
+        s.pos = 96
+        s.dir = -1
+      } else if (s.pos <= 4) {
+        s.pos = 4
+        s.dir = 1
+      }
+      setPos(s.pos)
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
     const decay = setInterval(() => {
-      stRef.current.pace = Math.max(0, stRef.current.pace - 4)
+      stRef.current.pace = Math.max(0, stRef.current.pace - 3)
       setPace(stRef.current.pace)
-    }, 150)
+    }, 200)
     const tid = setInterval(() => {
       setLeft((l) => {
         if (l <= 1) {
@@ -294,8 +318,8 @@ function CardioWorkoutModal({ energy, energyMaxVal, onDone, onClose }) {
           if (!stRef.current.done) {
             stRef.current.done = true
             setPhase('done')
-            const reps = Math.max(1, Math.round(stRef.current.steps / 4))
-            onDone(reps, Math.floor(reps / 2))
+            const reps = Math.max(1, Math.round(stRef.current.steps / 2))
+            onDone(reps, stRef.current.perfects)
           }
           return 0
         }
@@ -303,52 +327,60 @@ function CardioWorkoutModal({ energy, energyMaxVal, onDone, onClose }) {
       })
     }, 1000)
     return () => {
+      cancelAnimationFrame(raf)
       clearInterval(decay)
       clearInterval(tid)
     }
   }, [phase, onDone])
 
-  const stepFoot = useCallback(
-    (side) => {
-      if (phase !== 'play') return
-      if (side === stRef.current.foot) {
-        stRef.current.steps += 1
-        stRef.current.foot = side === 'L' ? 'R' : 'L'
-        stRef.current.pace = Math.min(100, stRef.current.pace + 14)
-        setSteps(stRef.current.steps)
-        setNextFoot(stRef.current.foot)
-        setPace(stRef.current.pace)
-        window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'pop' }))
-      } else {
-        stRef.current.pace = Math.max(0, stRef.current.pace - 8)
-        setPace(stRef.current.pace)
-      }
-    },
-    [phase],
-  )
+  const tapStep = useCallback(() => {
+    if (phase !== 'play') return
+    const dist = Math.abs(stRef.current.pos - 50)
+    if (dist <= halfPerf) {
+      stRef.current.steps += 2
+      stRef.current.perfects += 1
+      stRef.current.pace = Math.min(100, stRef.current.pace + 18)
+      setSteps(stRef.current.steps)
+      setPerfects(stRef.current.perfects)
+      setPace(stRef.current.pace)
+      setFeedback('⚡ Mükemmel tempo (+2 adım)')
+      window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'collect' }))
+    } else if (dist <= halfGood) {
+      stRef.current.steps += 1
+      stRef.current.pace = Math.min(100, stRef.current.pace + 10)
+      setSteps(stRef.current.steps)
+      setPace(stRef.current.pace)
+      setFeedback('🏃 İyi adım (+1)')
+      window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'pop' }))
+    } else {
+      stRef.current.pace = Math.max(0, stRef.current.pace - 8)
+      setPace(stRef.current.pace)
+      setFeedback('Kaçırdın — parlak alanı bekle!')
+    }
+  }, [phase, halfPerf, halfGood])
 
   useEffect(() => {
     if (phase !== 'play') return undefined
     const onKey = (e) => {
       if (isTyping(e)) return
-      if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+      if (e.code === 'Space' || e.code === 'Enter') {
         e.preventDefault()
-        stepFoot('L')
-      } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
-        e.preventDefault()
-        stepFoot('R')
+        e.stopPropagation()
+        tapStep()
       }
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [phase, stepFoot])
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [phase, tapStep])
 
   const start = () => {
-    stRef.current = { steps: 0, foot: 'L', pace: 35, done: false }
+    stRef.current = { pos: 10, dir: 1, steps: 0, perfects: 0, pace: 40, done: false }
     setSteps(0)
-    setNextFoot('L')
+    setPerfects(0)
+    setPos(10)
     setLeft(16)
-    setPace(35)
+    setPace(40)
+    setFeedback('Hadi! İmleç ortadaki parlak alana gelince bas!')
     setPhase('play')
   }
 
@@ -357,7 +389,7 @@ function CardioWorkoutModal({ energy, energyMaxVal, onDone, onClose }) {
       <div className="flex items-center justify-between gap-2">
         <div>
           <h2 className="text-lg font-black text-white">🏃 Koşu Bandı</h2>
-          <p className="text-xs font-semibold text-white/70">Sol ve sağ adımlara sırayla bas.</p>
+          <p className="text-xs font-semibold text-white/70">Doğru zamanda Boşluk tuşuna bas veya tıkla.</p>
         </div>
         <div className="flex items-center gap-2">
           <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-black text-[#7fcdf3]">⚡ {energy}/{energyMaxVal}</span>
@@ -368,12 +400,17 @@ function CardioWorkoutModal({ energy, energyMaxVal, onDone, onClose }) {
       <div className="mt-3 rounded-2xl bg-white/10 p-3">
         <div className="flex items-center justify-between text-xs font-black text-white/90">
           <span>Adım: {steps}</span>
+          <span>Mükemmel: {perfects}</span>
           <span>Tempo: %{pace}</span>
           <span className="tabular-nums">⏱ {left} sn</span>
         </div>
-        <div className="mt-2 h-3 w-full overflow-hidden rounded-full bg-white/15">
-          <div className="h-full rounded-full bg-gradient-to-r from-[#7fcdf3] to-[#8fdcb4] transition-all duration-100" style={{ width: `${pace}%` }} />
+        {/* Zamanlama çubuğu */}
+        <div className="relative mt-2.5 h-8 w-full overflow-hidden rounded-full border-2 border-white/25 bg-white/10">
+          <div className="absolute top-0 h-full bg-[#7fcdf3]/65" style={{ left: `${50 - halfGood}%`, width: `${halfGood * 2}%` }} />
+          <div className="absolute top-0 h-full bg-[#ffd35e]" style={{ left: `${50 - halfPerf}%`, width: `${halfPerf * 2}%` }} />
+          <div className="absolute top-0.5 h-6 w-3 -translate-x-1/2 rounded-full border-2 border-[#221b38] bg-white shadow" style={{ left: `${pos}%` }} />
         </div>
+        <p className="mt-2 text-center text-xs font-bold text-[#7fcdf3]">{feedback}</p>
       </div>
 
       <div className="mt-4">
@@ -387,28 +424,16 @@ function CardioWorkoutModal({ energy, energyMaxVal, onDone, onClose }) {
             {energy <= 0 ? '⚡ Bugünkü enerjin bitti (Yarın yenilenir)' : '🏃 Koşuya Başla (1 ⚡)'}
           </button>
         ) : phase === 'play' ? (
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onPointerDown={(e) => {
-                e.preventDefault()
-                stepFoot('L')
-              }}
-              className={`select-none rounded-2xl border-b-4 py-5 text-lg font-black text-white transition active:translate-y-[2px] ${nextFoot === 'L' ? 'border-[#4da5d1] bg-[#7fcdf3] ring-4 ring-[#7fcdf3]/40' : 'border-[#c5bdd8] bg-[#d6cef0] text-[#6d6185]'}`}
-            >
-              SOL (A)
-            </button>
-            <button
-              type="button"
-              onPointerDown={(e) => {
-                e.preventDefault()
-                stepFoot('R')
-              }}
-              className={`select-none rounded-2xl border-b-4 py-5 text-lg font-black text-white transition active:translate-y-[2px] ${nextFoot === 'R' ? 'border-[#5aa886] bg-[#7fd3b8] ring-4 ring-[#7fd3b8]/40' : 'border-[#c5bdd8] bg-[#d6cef0] text-[#6d6185]'}`}
-            >
-              SAĞ (D)
-            </button>
-          </div>
+          <button
+            type="button"
+            onPointerDown={(e) => {
+              e.preventDefault()
+              tapStep()
+            }}
+            className="w-full select-none rounded-2xl border-b-4 border-[#4da5d1] bg-[#7fcdf3] py-4 text-base font-black text-white shadow-soft active:translate-y-[2px]"
+          >
+            ADIM AT (Boşluk / Tıkla)
+          </button>
         ) : (
           <button type="button" onClick={onClose} className="w-full rounded-2xl border-b-4 border-[#5aa886] bg-[#7fd3b8] py-3 text-base font-black text-white">
             Süper Tempo! Kapat
@@ -613,7 +638,7 @@ function BoxingArena({ match, selfName, liveState, onSendHit, onSoloEnd, onExit 
         const dtCue = c.t - elapsed
         if (dtCue <= 950 && dtCue >= -240) {
           activeCue = c
-          progress = Math.max(0, Math.min(1, 1 - dtCue / 950))
+          progress = Math.max(0, 1 - dtCue / 950)
           break
         }
       }
@@ -625,7 +650,7 @@ function BoxingArena({ match, selfName, liveState, onSendHit, onSoloEnd, onExit 
         banner: now - s.bannerAt < 750 ? s.banner : '',
         bannerCol: s.bannerCol,
       })
-    }, 33)
+    }, 16)
     return () => clearInterval(tid)
   }, [match, onSoloEnd])
 
@@ -677,11 +702,15 @@ function BoxingArena({ match, selfName, liveState, onSendHit, onSoloEnd, onExit 
             ) : activeMeta ? (
               <div className="relative grid h-20 w-20 place-items-center">
                 <div
-                  className="absolute inset-0 rounded-full border-4 transition-transform duration-75"
-                  style={{ borderColor: activeMeta.color, transform: `scale(${1.9 - cueUi.progress * 0.9})` }}
+                  className="h-16 w-16 rounded-full border-4"
+                  style={{
+                    borderColor: activeMeta.color,
+                    transform: `scale(${Math.max(0.86, 2.1 - cueUi.progress * 1.1)})`,
+                    opacity: cueUi.progress > 1.05 ? 0.5 : 1,
+                  }}
                 />
                 <div
-                  className="grid h-16 w-16 place-items-center rounded-full border-2 border-white text-center shadow-lg"
+                  className={`absolute grid h-16 w-16 place-items-center rounded-full border-2 text-center shadow-lg ${cueUi.progress >= 0.86 && cueUi.progress <= 1.14 ? 'border-[#ffd35e] ring-4 ring-white/75' : 'border-white'}`}
                   style={{ backgroundColor: activeMeta.color }}
                 >
                   <span className="text-[11px] font-black uppercase text-[#2d1f47]">{activeMeta.label}</span>

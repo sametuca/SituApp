@@ -102,16 +102,31 @@ function LoadingOverlay({ ready }) {
     return () => clearTimeout(t)
   }, [ready])
   if (hidden) return null
+  const pct = Math.min(100, Math.max(0, Math.round(progress)))
   return (
-    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#fff2e3] via-[#f1e6ff] to-[#dff3ff]">
-      <img
-        src="/logo.png"
-        alt="Rastla"
-        draggable={false}
-        className="h-20 w-auto select-none drop-shadow-[0_8px_18px_rgba(74,59,92,0.18)] sm:h-24"
-      />
-      <div className="h-10 w-10 animate-spin rounded-full border-4 border-candy-pink/50 border-t-candy-pink-deep" />
-      <p className="text-sm font-extrabold text-ink-soft">Şehir yükleniyor… %{Math.round(progress)}</p>
+    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-[#fff2e3] via-[#f1e6ff] to-[#dff3ff] p-6">
+      <div className="pointer-events-none absolute -left-16 -top-16 h-64 w-64 rounded-full bg-[#ffd7e8]/45 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-20 -right-16 h-72 w-72 rounded-full bg-[#cce9ff]/50 blur-3xl" />
+      <div className="relative flex w-full max-w-xs flex-col items-center gap-4 rounded-[2rem] border-2 border-white bg-white/80 px-7 py-6 shadow-[0_18px_44px_rgba(104,79,145,0.16)] backdrop-blur-md">
+        <img
+          src="/logo.png"
+          alt="Rastla"
+          draggable={false}
+          className="h-20 w-auto select-none drop-shadow-[0_8px_18px_rgba(74,59,92,0.16)]"
+        />
+        <div className="w-full">
+          <div className="mb-1.5 flex items-center justify-between text-xs font-extrabold text-[#6b5a80]">
+            <span>Şehir hazırlanıyor…</span>
+            <span className="tabular-nums text-[#8b6be6]">%{pct}</span>
+          </div>
+          <div className="h-3 w-full overflow-hidden rounded-full border border-white bg-[#efe6ff] p-0.5 shadow-inner">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-[#ff9ec7] via-[#b79cff] to-[#7fcdf3] transition-[width] duration-200"
+              style={{ width: `${Math.max(8, pct)}%` }}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -1275,8 +1290,13 @@ function WorldScene({ avatar }) {
       <IntroCutsceneOverlay active={introActive} onSkip={finishIntro} />
       <div
         aria-hidden
-        className={`pointer-events-none absolute inset-0 z-30 bg-gradient-to-br from-[#fff2e3] via-[#f1e6ff] to-[#dff3ff] transition-opacity duration-200 ${fade ? 'opacity-100' : 'opacity-0'}`}
-      />
+        className={`pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-gradient-to-br from-[#fff2e3] via-[#f1e6ff] to-[#dff3ff] transition-opacity duration-200 ${fade ? 'opacity-100' : 'opacity-0'}`}
+      >
+        <div className="flex flex-col items-center gap-3 rounded-[1.75rem] border-2 border-white bg-white/85 px-7 py-5 shadow-[0_14px_36px_rgba(104,79,145,0.16)] backdrop-blur-md">
+          <div className="h-9 w-9 animate-spin rounded-full border-[3.5px] border-[#efe6ff] border-r-[#ff9ec7] border-t-[#a88bff]" />
+          <p className="text-sm font-black tracking-wide text-[#5b4678]">Mekâna geçiliyor…</p>
+        </div>
+      </div>
       <LoadingOverlay ready={sceneReady} />
     </div>
   )
