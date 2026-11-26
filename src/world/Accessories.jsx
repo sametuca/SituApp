@@ -391,18 +391,18 @@ function RoundGlasses({ color }) {
 function Scarf({ color }) {
   const light = shade(color, 0.08)
   return (
-    <group position={[0, 0.03, 0.04]}>
-      <mesh rotation={[Math.PI / 2 + 0.08, 0, 0]} scale={[1.05, 1, 0.9]}>
-        <torusGeometry args={[0.36, 0.095, 12, 30]} />
+    <group position={[0, -0.04, 0.01]}>
+      <mesh rotation={[Math.PI / 2 + 0.06, 0, 0]} scale={[1.02, 1, 0.9]}>
+        <torusGeometry args={[0.33, 0.058, 12, 30]} />
         <Mat color={color} roughness={0.85} />
       </mesh>
-      <group position={[0.16, -0.18, 0.3]} rotation={[-0.18, 0.12, -0.1]}>
+      <group position={[0.14, -0.18, 0.27]} rotation={[-0.14, 0.1, -0.08]}>
         <mesh>
-          <boxGeometry args={[0.16, 0.36, 0.06]} />
+          <boxGeometry args={[0.13, 0.32, 0.05]} />
           <Mat color={color} roughness={0.85} />
         </mesh>
-        <mesh position={[0, -0.13, 0.005]}>
-          <boxGeometry args={[0.165, 0.055, 0.065]} />
+        <mesh position={[0, -0.11, 0.005]}>
+          <boxGeometry args={[0.135, 0.05, 0.055]} />
           <Mat color={light} roughness={0.85} />
         </mesh>
       </group>

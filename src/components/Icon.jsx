@@ -27,7 +27,7 @@ const ICONS = {
   game: '🎮',
   feedback: '💌',
   hand: '👋',
-  wardrobe: '👗',
+  wardrobe: '👕',
   map: '🗺️',
   compass: '🧭',
   sparkles: '✨',

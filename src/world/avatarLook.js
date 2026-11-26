@@ -162,7 +162,7 @@ function findEyes(slug, mesh) {
   const R = pts.filter((p) => p[0] >= cx)
   if (!L.length || !R.length) return res
   res.eyes = [mean(L), mean(R)]
-  res.r = Math.max(0.015, Math.abs(res.eyes[0][0] - res.eyes[1][0]) * 0.21)
+  res.r = Math.max(0.015, Math.abs(res.eyes[0][0] - res.eyes[1][0]) * 0.255)
   return res
 }
 
@@ -235,15 +235,17 @@ vec3 lookApply(vec3 col){
   }
   if (uUseEye > 0.5 && vHead > 0.9) {
     float d = min(distance(vBind, uEyeC0), distance(vBind, uEyeC1));
-    float inEye = 1.0 - smoothstep(uEyeR*0.78, uEyeR, d);
+    float inEye = 1.0 - smoothstep(uEyeR*0.80, uEyeR, d);
     float ls = lookLum(sc); // algısal (sRGB) parlaklık: koyu irisler doğrusal uzayda 0.02'nin altına düşüp kaybolmasın
     float skinE = 9.0;
     for (int i=0;i<3;i++) skinE = min(skinE, distance(sc, uSkinRef[i]));
     float notSkinE = smoothstep(0.09, 0.17, skinE);
     float notWhite = 1.0 - smoothstep(0.58, 0.78, ls); // beyaz göz akı ve parlama noktası korunur
-    float notPupil = smoothstep(0.015, 0.055, ls);     // tam siyah gözbebeği / kirpik korunur
+    float notPupil = smoothstep(0.01, 0.04, ls);       // tam siyah gözbebeği / kirpik korunur
+    float eyeY = mix(uEyeC0.y, uEyeC1.y, step(distance(vBind, uEyeC1), distance(vBind, uEyeC0)));
+    float notLid = smoothstep(eyeY + uEyeR * 0.62, eyeY + uEyeR * 0.34, vBind.y); // üst göz kapağı / kirpik çizgisi boyanmaz
     vec3 eyeCol = clamp(uEyeTo * (0.62 + ls * 1.15), 0.0, 1.0);
-    res = mix(res, eyeCol, inEye * notWhite * notPupil * notSkinE);
+    res = mix(res, eyeCol, inEye * notWhite * notPupil * notSkinE * notLid);
   }
   return res;
 }
@@ -320,7 +322,7 @@ export function applyLook(model, slug, look) {
       uEyeC0: { value: new Vector3(...(eyes?.eyes[0] ?? [0, 0, 0])) },
       uEyeC1: { value: new Vector3(...(eyes?.eyes[1] ?? [0, 0, 0])) },
       uHairMinY: { value: hairMinY(o) },
-      uBrow: { value: eyes?.eyes.length === 2 ? new Vector3(eyes.eyes[0][1] - 0.07, eyes.eyes[0][1] + 0.125, Math.min(eyes.eyes[0][2], eyes.eyes[1][2]) - 0.07) : new Vector3(9, -9, 9) },
+      uBrow: { value: eyes?.eyes.length === 2 ? new Vector3(eyes.eyes[0][1] - 0.07, eyes.eyes[0][1] + 0.088, Math.min(eyes.eyes[0][2], eyes.eyes[1][2]) - 0.07) : new Vector3(9, -9, 9) },
       uBrowX: { value: eyes?.eyes.length === 2 ? new Vector2((eyes.eyes[0][0] + eyes.eyes[1][0]) / 2, Math.abs(eyes.eyes[0][0] - eyes.eyes[1][0]) / 2 + 0.055) : new Vector2(0, 0) },
       uEyeR: { value: eyes?.r ?? 0.02 },
     }

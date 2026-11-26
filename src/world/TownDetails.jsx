@@ -258,9 +258,15 @@ const TIKI_SPOTS = [
 
 function BeachEveningDecor() {
   const fireLight = useRef()
+  const embersRef = useRef([])
+  const innerRef = useRef()
   const torchFlames = useRef([])
   const [lightOn, setLightOn] = useState(false)
   const lightOnRef = useRef(false)
+  const embers = useMemo(
+    () => Array.from({ length: 8 }, (_, i) => ({ phase: i / 8, rad: 0.14 + (i % 3) * 0.08, spd: 0.48 + (i % 4) * 0.09 })),
+    [],
+  )
 
   useFrame(({ clock }) => {
     const t = clock.elapsedTime
@@ -271,8 +277,31 @@ function BeachEveningDecor() {
       lightOnRef.current = wantLight
       setLightOn(wantLight)
     }
+    if (innerRef.current) {
+      const p = 0.92 + Math.sin(t * 10) * 0.08 + Math.cos(t * 17) * 0.04
+      innerRef.current.scale.set(p, 0.95 + Math.sin(t * 13) * 0.14, p)
+      innerRef.current.rotation.y = t * 1.2
+    }
+    embersRef.current.forEach((m, i) => {
+      if (!m) return
+      const e = embers[i]
+      const k = (t * e.spd + e.phase) % 1
+      const a = e.phase * Math.PI * 2 + t * 1.8
+      m.position.set(
+        BONFIRE_POS[0] + Math.cos(a) * e.rad * (0.4 + k * 0.9),
+        0.38 + k * 1.05,
+        BONFIRE_POS[1] + Math.sin(a) * e.rad * (0.4 + k * 0.9),
+      )
+      const s = Math.sin(k * Math.PI) * (0.7 + lit * 0.4)
+      m.scale.setScalar(Math.max(0.01, s))
+    })
     if (fireLight.current) {
       fireLight.current.intensity = lit * (6.2 + Math.sin(t * 11) * 0.85 + Math.cos(t * 17) * 0.5)
+      fireLight.current.position.set(
+        BONFIRE_POS[0] + Math.sin(t * 13) * 0.05,
+        0.95 + Math.cos(t * 9) * 0.04,
+        BONFIRE_POS[1] + Math.cos(t * 11) * 0.05,
+      )
     }
     torchFlames.current.forEach((m, i) => {
       if (!m) return
@@ -284,10 +313,22 @@ function BeachEveningDecor() {
 
   return (
     <group>
-      {/* Sahil yaz akşamı şenlik ateşi (Meshy GLB + titreyen ışık) */}
+      {/* Sahil yaz akşamı şenlik ateşi (Meshy GLB + hareketli köz/kıvılcım + titreyen ışık) */}
       <Suspense fallback={null}>
         <Prop model="/models/beach/campfire.glb" x={BONFIRE_POS[0]} z={BONFIRE_POS[1]} scale={1.75} />
       </Suspense>
+      <group ref={innerRef} position={[BONFIRE_POS[0], 0.48, BONFIRE_POS[1]]}>
+        <mesh>
+          <sphereGeometry args={[0.16, 10, 8]} />
+          <meshBasicMaterial color="#ff9d47" transparent opacity={0.45} depthWrite={false} />
+        </mesh>
+      </group>
+      {embers.map((_, i) => (
+        <mesh key={i} ref={(m) => (embersRef.current[i] = m)}>
+          <octahedronGeometry args={[0.045, 0]} />
+          <meshBasicMaterial color={i % 2 === 0 ? '#ffd35e' : '#ff8c42'} />
+        </mesh>
+      ))}
       {lightOn && <pointLight ref={fireLight} position={[BONFIRE_POS[0], 0.95, BONFIRE_POS[1]]} color="#ff9f45" intensity={0} distance={14} decay={2} />}
 
       {/* Bambu sahil fenerleri */}

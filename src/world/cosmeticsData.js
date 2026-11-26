@@ -20,15 +20,15 @@ export const PASTEL_BY_ID = Object.fromEntries(PASTELS.map((c) => [c.id, c]))
 
 /** Slot 1 (acc): Baş & saç aksesuarları. */
 export const ACCESSORIES = [
+  { id: 'headphones', name: 'Kulaklık', emoji: '🎧', lv: 1 },
+  { id: 'shades', name: 'Güneş gözlüğü', emoji: '🕶️', lv: 1 },
+  { id: 'hat', name: 'Şapka', emoji: '👒', lv: 1 },
   { id: 'bow', name: 'Fiyonk', emoji: '🎀', lv: 1 },
   { id: 'flowers', name: 'Çiçek tacı', emoji: '🌸', lv: 1 },
-  { id: 'hat', name: 'Şapka', emoji: '👒', lv: 1 },
-  { id: 'shades', name: 'Güneş gözlüğü', emoji: '🕶️', lv: 1 },
   { id: 'beret', name: 'Fransız Bere', emoji: '🎨', lv: 2 },
   { id: 'hairpins', name: 'Yıldız toka', emoji: '⭐', lv: 2 },
   { id: 'cat_ears', name: 'Kedi kulağı', emoji: '🐱', lv: 2 },
   { id: 'bunny', name: 'Tavşan kulağı', emoji: '🐰', lv: 3 },
-  { id: 'headphones', name: 'Kulaklık', emoji: '🎧', lv: 3 },
   { id: 'tiara', name: 'İncili Taç', emoji: '👸', lv: 4 },
   { id: 'crown', name: 'Taç', emoji: '👑', lv: 4 },
   { id: 'halo', name: 'Işıltı halesi', emoji: '😇', lv: 5 },
@@ -38,7 +38,7 @@ export const ACCESSORY_BY_ID = Object.fromEntries(ACCESSORIES.map((a) => [a.id, 
 /** Slot 2 (acc2): Yüz, kulak, sırt & çanta aksesuarları (baş aksesuarıyla birlikte takılabilir). */
 export const STYLE_ACCESSORIES = [
   { id: 'scarf', name: 'Fular', emoji: '🧣', lv: 1 },
-  { id: 'round_glasses', name: 'Retro gözlük', emoji: '🤓', lv: 2 },
+  { id: 'round_glasses', name: 'Retro gözlük', emoji: '🤓', lv: 1 },
   { id: 'bag', name: 'Mini çanta', emoji: '👜', lv: 2 },
   { id: 'heart_shades', name: 'Kalp gözlük', emoji: '🕶️', lv: 3 },
   { id: 'earrings', name: 'İnci küpe', emoji: '💎', lv: 3 },

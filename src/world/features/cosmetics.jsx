@@ -307,7 +307,7 @@ function Wardrobe({ slug, cos, petUntil, coins, playerLv = 1, xp = 0, onLocked, 
       <div className="flex items-center justify-between gap-2">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-black text-[#4a3b5c]">Stüdyo & Gardırop 👗</h2>
+            <h2 className="text-2xl font-black text-[#4a3b5c]">Stüdyo & Gardırop</h2>
             <span className="rounded-full bg-[#efe6ff] px-2.5 py-0.5 text-xs font-black text-[#6b4fc0]">Sv. {playerLv} · ⭐ {xp}</span>
           </div>
           <p className="text-xs font-bold text-[#8a7a9c]">Yıldız toplayıp seviye atlayarak yeni stiller ve aksesuarlar aç</p>

@@ -47,12 +47,12 @@ export const AVATAR_SLUGS = ['zeynep', 'deniz', 'elif', 'kaan', 'mira', 'ege']
 
 /** Gardırop için hazır stil kombinleri (saç + göz + kıyafet + aksesuar çifti). */
 export const OUTFIT_PRESETS = [
-  { id: 'seker', name: 'Tatlı Fiyonk', emoji: '🎀', desc: 'Şampanya ve şeftali kombini', lv: 1, look: { h: 15, e: 0, o: 13 }, acc: { id: 'bow', color: 'peach' }, acc2: { id: 'scarf', color: 'pearl' } },
-  { id: 'bahar', name: 'Bahar Rüyası', emoji: '🌸', desc: 'Çiçek tacı ve adaçayı tonları', lv: 1, look: { h: 3, e: 2, o: 4 }, acc: { id: 'flowers', color: 'mint' }, acc2: { id: 'scarf', color: 'yellow' } },
+  { id: 'lofi', name: 'Şehir & Lofi', emoji: '🎧', desc: 'Kulaklık ve rahat sokak stili', lv: 1, look: { h: 0, e: 0, o: 6 }, acc: { id: 'headphones', color: 'blue' }, acc2: { id: 'scarf', color: 'peach' } },
+  { id: 'tatil', name: 'Sahil Esintisi', emoji: '☀️', desc: 'Hasır şapka ve güneş gözlüğü', lv: 1, look: { h: 3, e: 3, o: 4 }, acc: { id: 'hat', color: 'yellow' }, acc2: { id: 'round_glasses', color: 'blue' } },
+  { id: 'seker', name: 'Tatlı Fiyonk', emoji: '🎀', desc: 'Bal ve şeftali kombini', lv: 1, look: { h: 3, e: 0, o: 0 }, acc: { id: 'bow', color: 'peach' }, acc2: { id: 'scarf', color: 'mint' } },
+  { id: 'bahar', name: 'Bahar Rüyası', emoji: '🌸', desc: 'Çiçek tacı ve nane tonları', lv: 1, look: { h: 3, e: 2, o: 4 }, acc: { id: 'flowers', color: 'mint' }, acc2: { id: 'scarf', color: 'yellow' } },
   { id: 'paris', name: 'Paris Şıklığı', emoji: '🥐', desc: 'Fransız bere ve krem uyum', lv: 2, look: { h: 1, e: 1, o: 9 }, acc: { id: 'beret', color: 'coral' }, acc2: { id: 'bag', color: 'peach' } },
-  { id: 'kedi', name: 'Kedi Şirinliği', emoji: '🐱', desc: 'Kedi kulağı ve pudra tonu', lv: 2, look: { h: 12, e: 8, o: 16 }, acc: { id: 'cat_ears', color: 'coral' }, acc2: { id: 'round_glasses', color: 'pearl' } },
-  { id: 'tatil', name: 'Sahil Esintisi', emoji: '☀️', desc: 'Hasır şapka ve kalp gözlük', lv: 3, look: { h: 11, e: 4, o: 4 }, acc: { id: 'hat', color: 'yellow' }, acc2: { id: 'heart_shades', color: 'coral' } },
-  { id: 'lofi', name: 'Şehir & Lofi', emoji: '🎧', desc: 'Kulaklık ve rahat sokak stili', lv: 3, look: { h: 0, e: 5, o: 6 }, acc: { id: 'headphones', color: 'blue' }, acc2: { id: 'bag', color: 'peach' } },
+  { id: 'kedi', name: 'Kedi Şirinliği', emoji: '🐱', desc: 'Kedi kulağı ve mercan tonu', lv: 2, look: { h: 5, e: 2, o: 1 }, acc: { id: 'cat_ears', color: 'coral' }, acc2: { id: 'round_glasses', color: 'pearl' } },
   { id: 'prenses', name: 'Yıldız Prensesi', emoji: '👸', desc: 'İncili taç ve leylak ışıltı', lv: 4, look: { h: 13, e: 6, o: 8 }, acc: { id: 'tiara', color: 'lilac' }, acc2: { id: 'wings', color: 'lavender' } },
-  { id: 'gece', name: 'Gece Parıltısı', emoji: '🌙', desc: 'Işıltı halesi ve mürdüm stil', lv: 5, look: { h: 14, e: 9, o: 15 }, acc: { id: 'halo', color: 'gold' }, acc2: { id: 'earrings', color: 'pearl' } },
+  { id: 'gece', name: 'Gece Parıltısı', emoji: '🌙', desc: 'Işıltı halesi ve gece stili', lv: 5, look: { h: 14, e: 9, o: 15 }, acc: { id: 'halo', color: 'gold' }, acc2: { id: 'earrings', color: 'pearl' } },
 ]
