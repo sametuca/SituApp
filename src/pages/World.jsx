@@ -411,6 +411,17 @@ function WorldScene({ avatar }) {
     return () => window.removeEventListener('situapp:tp', on)
   }, [net])
 
+  // Biri oyuna/odaya katıldığında sohbet kutusunda "<kullanıcıadı> çevrimiçi" bildirimi göster
+  useEffect(
+    () =>
+      net.on('join', (m) => {
+        const p = m.p
+        if (!p?.id || !p.name || p.id === net.selfId.current) return
+        setFeed((f) => [...f, { kind: 'join', id: p.id, name: p.name, ts: Date.now() }].slice(-100))
+      }),
+    [net],
+  )
+
   const goTo = useCallback(
     (target) => {
       swapScene(target)
@@ -1009,7 +1020,27 @@ function WorldScene({ avatar }) {
         </>
       ) : (
         <>
-          {!inTutorial && chatTarget !== 'public' && !sheetPeer && !editing && <ChatPanel feed={feed} onSend={onSend} status={net.status} />}
+          {!inTutorial && chatTarget !== 'public' && !sheetPeer && !editing && (
+            <ChatPanel
+              feed={feed}
+              onSend={onSend}
+              status={net.status}
+              onAddFriend={(p) => {
+                if (!net.send({ t: 'friend_request', id: p.id })) say('Arkadaş eklemek için çevrimiçi olmalısın.')
+              }}
+              onOpenDm={(id) => {
+                if (peerOf(id)) openChat(id)
+                else say('Bu oyuncu şu an burada değil.')
+              }}
+              onInspect={(id) => {
+                if (peerOf(id)) {
+                  setChatTarget(null)
+                  chatTargetRef.current = null
+                  setInteractId(id)
+                } else say('Bu oyuncu şu an burada değil.')
+              }}
+            />
+          )}
         </>
       ))}
       <DockSlot />

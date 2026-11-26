@@ -292,7 +292,7 @@ export default function HomeRoom({ ownerName, decor, tier = 1, garden, landTier 
           <Html position={[0, 0.55, 0]} center distanceFactor={12} zIndexRange={[6, 0]} style={{ pointerEvents: 'none' }}>
             <div className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border-2 border-white bg-[#f3e8ff] px-2.5 py-0.5 text-[11px] font-black text-[#5b4678] shadow-md">
               <span>{HOME_TIERS[tier + 1].emoji} Ev Büyüt</span>
-              <span className="rounded-full bg-[#fff3c4] px-1.5 py-[1px] text-[#8a5a00]">🪙 {HOME_TIERS[tier + 1].price}</span>
+              <span className="rounded-full bg-[#fff3c4] px-1.5 py-[1px] text-[#8a5a00]">₺ {HOME_TIERS[tier + 1].price}</span>
             </div>
           </Html>
         </group>

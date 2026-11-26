@@ -402,8 +402,8 @@ function build(v) {
     // ================= sörf dükkanı =================
     case 'shop': {
       sign()
-      counter(npc.x + 2.4, 3.4)
-      add({ t: 'register', x: npc.x + 2.4, z: counterZ, y: 1.0 })
+      counter(npc.x, 3.4)
+      add({ t: 'register', x: npc.x + 1.0, z: counterZ, y: 1.0 })
       const bcols = [['#fec172', '#fff8f0'], ['#7fcdf3', '#ffffff'], ['#ffd35e', '#fff7dc'], ['#8fdcb4', '#ffffff'], ['#b79cff', '#fff8f0'], ['#ffb48c', '#ffffff']]
       ;[4.5, 3.4, 2.3, 1.2].forEach((x, i) => add({ t: 'surf', x, z: -hd + 0.5, ry: 0, c: bcols[i][0], c2: bcols[i][1], len: 2.0 }))
       ;[-0.5, 0.3].forEach((z, i) => add({ t: 'surf', x: hw - 0.45, z: z + 0.5, ry: -Math.PI / 2, c: bcols[4 + i][0], c2: bcols[4 + i][1], len: 2.0 }))

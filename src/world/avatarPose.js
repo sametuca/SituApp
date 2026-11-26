@@ -188,15 +188,85 @@ export function applyPose(rig, pose, dt) {
     model.position.z = 0
     const t = performance.now() / 1000 - rig.t0
     const beat = t * Math.PI * 2 * 1.8 // ~108 BPM
-    model.position.y = Math.abs(Math.sin(beat)) * 0.16 * b // zıplama
-    turn(rig, bones.hips, AZ, Math.sin(beat / 2) * 0.22 * b) // sağa sola salınım
-    turn(rig, bones.spine, AZ, -Math.sin(beat / 2) * 0.12 * b)
-    turn(rig, bones.head, AZ, Math.sin(beat / 2) * 0.14 * b)
-    turn(rig, bones.lArm, AZ, (0.9 + Math.sin(beat) * 0.35) * b)
-    turn(rig, bones.rArm, AZ, -(0.9 + Math.cos(beat) * 0.35) * b)
-    // 6 sn'lik döngüde önce davet eden, sonra eşi bir tur döner
-    const k = MathUtils.clamp(((t % 6) - (rig.lead ? 1.5 : 4.5)) / 1.1, 0, 1)
-    model.rotation.y = ease(k) * Math.PI * 2 * b
+    if (rig.style === 'dj') {
+      // DJ kabini performansı: sahne üstünde (+0.34m), sol el pikapta scratch, sağ el havada ritim tutar, baş sallar
+      const bounce = Math.abs(Math.sin(beat))
+      model.position.y = (0.34 + bounce * 0.04) * b
+      model.rotation.y = Math.sin(beat * 0.25) * 0.14 * b
+      turn(rig, bones.spine, AX, (0.14 + bounce * 0.06) * b)
+      turn(rig, bones.spine, AY, Math.sin(beat * 0.5) * 0.16 * b)
+      turn(rig, bones.head, AX, (0.08 + Math.sin(beat * 2) * 0.14) * b)
+      turn(rig, bones.head, AZ, Math.sin(beat * 0.5) * 0.1 * b)
+      // sol el pikap üstünde scratch hareketi
+      turn(rig, bones.lArm, AX, (-1.15 + Math.sin(beat * 2) * 0.12) * b)
+      turn(rig, bones.lArm, AY, (0.18 + Math.sin(beat * 3) * 0.16) * b)
+      turn(rig, bones.lForeArm, AX, -0.55 * b)
+      // sağ el havada kalabalığı coşturur
+      turn(rig, bones.rArm, AX, (-2.35 + Math.sin(beat) * 0.32) * b)
+      turn(rig, bones.rArm, AZ, -0.25 * b)
+      turn(rig, bones.rForeArm, AX, (-0.35 + Math.sin(beat) * 0.2) * b)
+    } else if (rig.style === 'handsup') {
+      // Festival dansı: iki kol havada sağa-sola dalgalanır, kalça ve diz yaylanır
+      const sway = Math.sin(beat * 0.5)
+      const hop = Math.abs(Math.sin(beat))
+      model.position.y = hop * 0.1 * b
+      turn(rig, bones.hips, AZ, sway * 0.16 * b)
+      turn(rig, bones.hips, AY, sway * 0.22 * b)
+      turn(rig, bones.spine, AZ, -sway * 0.14 * b)
+      turn(rig, bones.head, AZ, sway * 0.16 * b)
+      turn(rig, bones.head, AX, -0.08 * b)
+      // kollar baş üstünde yumuşak dalga
+      turn(rig, bones.lArm, AX, (-2.35 + Math.sin(beat) * 0.18) * b)
+      turn(rig, bones.rArm, AX, (-2.35 - Math.sin(beat) * 0.18) * b)
+      turn(rig, bones.lArm, AZ, (0.3 + sway * 0.35) * b)
+      turn(rig, bones.rArm, AZ, (-0.3 + sway * 0.35) * b)
+      turn(rig, bones.lForeArm, AX, -0.45 * b)
+      turn(rig, bones.rForeArm, AX, -0.45 * b)
+      // hafif diz yaylanması
+      const knee = (1 - hop) * 0.22
+      turn(rig, bones.lUp, AX, -knee * b)
+      turn(rig, bones.rUp, AX, -knee * b)
+      turn(rig, bones.lLeg, AX, knee * 1.4 * b)
+      turn(rig, bones.rLeg, AX, knee * 1.4 * b)
+      model.rotation.y = Math.sin(beat * 0.25) * 0.28 * b
+    } else if (rig.style === 'groove') {
+      // Ritmik groove / adım dansı: dirsekler bükülü omuz-gövde salınımı + dönüşümlü adım
+      const step = Math.sin(beat * 0.5)
+      const bounce = Math.abs(Math.sin(beat))
+      model.position.y = bounce * 0.08 * b
+      turn(rig, bones.hips, AY, step * 0.32 * b)
+      turn(rig, bones.spine, AY, -step * 0.2 * b)
+      turn(rig, bones.spine, AX, (0.06 + bounce * 0.06) * b)
+      turn(rig, bones.head, AX, Math.sin(beat * 2) * 0.12 * b)
+      turn(rig, bones.head, AY, -step * 0.12 * b)
+      // dirsekler bükülü dönüşümlü kol pompası
+      turn(rig, bones.lArm, AX, (-0.95 + step * 0.55) * b)
+      turn(rig, bones.rArm, AX, (-0.95 - step * 0.55) * b)
+      turn(rig, bones.lArm, AZ, 0.18 * b)
+      turn(rig, bones.rArm, AZ, -0.18 * b)
+      turn(rig, bones.lForeArm, AX, (-0.85 - step * 0.25) * b)
+      turn(rig, bones.rForeArm, AX, (-0.85 + step * 0.25) * b)
+      // dönüşümlü bacak adımı
+      turn(rig, bones.lUp, AX, Math.min(0, -step * 0.38) * b)
+      turn(rig, bones.rUp, AX, Math.min(0, step * 0.38) * b)
+      turn(rig, bones.lLeg, AX, Math.max(0, step * 0.45) * b)
+      turn(rig, bones.rLeg, AX, Math.max(0, -step * 0.45) * b)
+      model.rotation.y = Math.sin(beat * 0.25) * 0.2 * b
+    } else {
+      model.position.y = Math.abs(Math.sin(beat)) * 0.14 * b // zıplama
+      turn(rig, bones.hips, AZ, Math.sin(beat / 2) * 0.2 * b) // sağa sola salınım
+      turn(rig, bones.spine, AZ, -Math.sin(beat / 2) * 0.12 * b)
+      turn(rig, bones.head, AZ, Math.sin(beat / 2) * 0.14 * b)
+      turn(rig, bones.lArm, AX, (-1.45 + Math.sin(beat) * 0.35) * b)
+      turn(rig, bones.rArm, AX, (-1.45 + Math.cos(beat) * 0.35) * b)
+      turn(rig, bones.lArm, AZ, 0.35 * b)
+      turn(rig, bones.rArm, AZ, -0.35 * b)
+      turn(rig, bones.lForeArm, AX, -0.55 * b)
+      turn(rig, bones.rForeArm, AX, -0.55 * b)
+      // 6 sn'lik döngüde önce davet eden, sonra eşi bir tur döner
+      const k = MathUtils.clamp(((t % 6) - (rig.lead ? 1.5 : 4.5)) / 1.1, 0, 1)
+      model.rotation.y = ease(k) * Math.PI * 2 * b
+    }
   } else if (rig.kind === 'eat') {
     model.position.z = 0
     const t = performance.now() / 1000 - rig.t0

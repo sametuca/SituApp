@@ -519,7 +519,7 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
                 {petLeft > 0 ? `🐾 Bakım süresi: ${petLeft >= 48 ? `${Math.ceil(petLeft / 24)} gün` : `${petLeft} saat`}` : '🐾 Evcil hayvan süresi bitti'}
               </p>
               <button onClick={onRenew} disabled={coins < PET_RENEW_PRICE} className="rounded-full bg-[#ffe48f] px-3 py-1 text-[0.6875rem] font-black text-[#8a5a00] shadow transition active:scale-95 disabled:opacity-50">
-                +1 hafta · {PET_RENEW_PRICE} 🪙
+                +1 hafta · {PET_RENEW_PRICE} ₺
               </button>
             </div>
             <div className="mt-2.5 grid grid-cols-4 gap-2">

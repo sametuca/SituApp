@@ -356,7 +356,7 @@ function FishingCard({ spot, onCatch, onClose, onPhase, result, touch }) {
                 <p className="text-lg font-black text-[#4a3b5c]">{result.name}!</p>
               </div>
               <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-[#fff3c4] px-3 py-0.5 text-xs font-black text-[#8a5a00]">
-                <Ico name="coins" size={14} /> +{result.coins} altın
+                <Ico name="coins" size={14} /> +{result.coins} TL
               </p>
             </>
           ) : (
@@ -421,7 +421,7 @@ export function useJobs({ net, focusRef, home, venue, atDoor, touch, say, panel 
         const v = VENUE_BY_ID[m.target]
         setPostTarget(null)
         window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'quest' }))
-        say(`Posta teslim edildi (${v?.name ?? m.target}): +${m.coins ?? 12} altın!`)
+        say(`Posta teslim edildi (${v?.name ?? m.target}): +${m.coins ?? 12} TL!`)
       }),
     ]
     return () => offs.forEach((off) => off())
@@ -554,7 +554,7 @@ export function useJobs({ net, focusRef, home, venue, atDoor, touch, say, panel 
       const v = VENUE_BY_ID[postTarget]
       setPostTarget(null)
       window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'quest' }))
-      say(`Posta teslim edildi (${v?.name ?? postTarget}): +12 altın!`)
+      say(`Posta teslim edildi (${v?.name ?? postTarget}): +12 TL!`)
     }
   }, [postTarget, send, say])
 

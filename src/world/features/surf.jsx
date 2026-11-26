@@ -58,10 +58,10 @@ function saveLocalScore(name, pts, won, ms) {
   }
 }
 
-/** 60 FPS yüksek kaliteli animasyonlu sörf arenası (dalgalar, köpükler, sörf tahtası, dalgıç kıyafeti, sıçrama ve çarpışma). */
+/** 60 FPS perspektif 3B-hissi veren, dinamik okyanus & animasyonlu sörf arenası. */
 function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLocalOut, onBotFinish, onExit }) {
   const canvasRef = useRef(null)
-  const [hud, setHud] = useState({ countdown: 3, alive: match.players.length, total: match.players.length, ms: 0, speedLv: 1, out: false, jumpReady: 1 })
+  const [hud, setHud] = useState({ countdown: 3, alive: match.players.length, total: match.players.length, ms: 0, speedLv: 1, out: false, jumpReady: 1, combo: 0 })
   const inputRef = useRef({ left: false, right: false, pointerX: null, wantJump: false })
 
   useEffect(() => {
@@ -92,7 +92,6 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
     const rng = makeRng(match.seed)
     const isPractice = Boolean(match.practice)
 
-    // Sörfçüler (kendim + diğer oyuncular veya botlar)
     const surfers = match.players.map((p, i) => ({
       id: p.id,
       name: p.name,
@@ -105,6 +104,7 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
       jump: 0,
       jumpVel: 0,
       jumpCd: 0,
+      spin: 0,
       alive: true,
       outMs: 0,
       botTarget: p.x ?? 0.5,
@@ -116,9 +116,25 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
     const waves = []
     const particles = []
     const splashes = []
+    const callouts = []
+    // Gökyüzü bulutları ve martılar
+    const clouds = Array.from({ length: 6 }, (_, i) => ({
+      x: (i / 6) * 1.15,
+      y: 0.04 + (i % 3) * 0.036,
+      s: 0.7 + (i % 3) * 0.35,
+      sp: 0.008 + (i % 4) * 0.004,
+    }))
+    const birds = Array.from({ length: 4 }, (_, i) => ({
+      x: 0.15 + i * 0.22,
+      y: 0.07 + (i % 2) * 0.04,
+      ph: i * 1.7,
+      sp: 0.025 + i * 0.006,
+    }))
     let nextWaveY = 0
     let waveIdx = 0
     let shake = 0
+    let camShift = 0
+    let combo = 0
     let lastPosSend = 0
     let lastHud = 0
     let finished = false
@@ -126,24 +142,40 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
     let prev = performance.now()
     const matchStart = match.startAt
 
+    // Perspektif izdüşüm: ufuk çizgisinden (y=0) sörfçüye (y=0.78) doğru derinlik ve ölçek kazanır
+    const proj = (nx, ny, W, H, camX) => {
+      const horizonY = H * 0.21
+      const depth = Math.max(0, Math.min(1.25, ny))
+      const persp = Math.pow(Math.max(0, depth), 1.38) // ufukta sıkışık, yakında hızlı akış
+      const sy = horizonY + persp * (H - horizonY)
+      const scale = 0.28 + persp * 0.86
+      const cx = W * 0.5 - camX * W * 0.14 * scale
+      const sx = cx + (nx - 0.5) * W * (0.42 + persp * 0.68)
+      return { x: sx, y: sy, s: scale, persp }
+    }
+
     const spawnSpray = (x, y, vx, vy, n = 6, color = 'rgba(255,255,255,0.92)') => {
       for (let i = 0; i < n; i++) {
         particles.push({
           x,
           y,
-          vx: vx + (Math.random() - 0.5) * 90,
-          vy: vy + (Math.random() - 0.5) * 70,
-          r: 2 + Math.random() * 4.5,
-          life: 0.35 + Math.random() * 0.4,
-          maxLife: 0.75,
+          vx: vx + (Math.random() - 0.5) * 110,
+          vy: vy + (Math.random() - 0.5) * 80 - 20,
+          r: 2 + Math.random() * 5,
+          life: 0.35 + Math.random() * 0.45,
+          maxLife: 0.8,
           color,
         })
       }
     }
 
+    const addCallout = (text, x, y, color = '#ffe48f') => {
+      callouts.push({ text, x, y, vy: -52, life: 1.05, maxLife: 1.05, color })
+    }
+
     const spawnWave = (elapsedSec) => {
       waveIdx++
-      const gapW = Math.max(0.17, 0.31 - elapsedSec * 0.0022)
+      const gapW = Math.max(0.18, 0.31 - elapsedSec * 0.0021)
       const doubleGap = waveIdx % 4 === 0 && elapsedSec > 8
       const gaps = []
       if (doubleGap) {
@@ -156,128 +188,313 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
       }
       waves.push({
         id: waveIdx,
-        y: -0.14,
-        h: 0.065 + rng() * 0.02,
+        y: 0.01,
+        h: 0.065 + rng() * 0.018,
         gaps,
         phase: rng() * Math.PI * 2,
-        crestColor: waveIdx % 3 === 0 ? '#32a8c8' : '#2694b8',
+        cleared: false,
+        crestColor: waveIdx % 3 === 0 ? '#1ea9c9' : '#1390b5',
       })
     }
 
-    const drawSurfer = (s, W, H, time) => {
-      const px = s.x * W
-      const baseY = H * 0.76
-      const jumpLift = s.jump * 44
-      const bob = Math.sin(time * 5.2 + s.x * 9) * 3.5
+    const drawSkyAndHorizon = (W, H, time, camX) => {
+      const horizonY = H * 0.21
+      // Tropikal gökyüzü gradyanı (sıcak güneşli ufuk)
+      const sky = ctx.createLinearGradient(0, 0, 0, horizonY)
+      sky.addColorStop(0, '#5ec2f2')
+      sky.addColorStop(0.55, '#a4e3ff')
+      sky.addColorStop(1, '#fff1cf')
+      ctx.fillStyle = sky
+      ctx.fillRect(0, 0, W, horizonY + 2)
+
+      // Parlayan güneş + ışık halesi
+      const sunX = W * 0.5 - camX * W * 0.04
+      const sunY = horizonY * 0.62
+      const halo = ctx.createRadialGradient(sunX, sunY, 8, sunX, sunY, Math.min(W, H) * 0.26)
+      halo.addColorStop(0, 'rgba(255, 250, 224, 0.98)')
+      halo.addColorStop(0.22, 'rgba(255, 228, 152, 0.65)')
+      halo.addColorStop(0.6, 'rgba(255, 214, 130, 0.16)')
+      halo.addColorStop(1, 'rgba(255, 214, 130, 0)')
+      ctx.fillStyle = halo
+      ctx.beginPath()
+      ctx.arc(sunX, sunY, Math.min(W, H) * 0.26, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = '#fff9df'
+      ctx.beginPath()
+      ctx.arc(sunX, sunY, 22, 0, Math.PI * 2)
+      ctx.fill()
+
+      // Yumuşak pastel bulutlar
+      for (const c of clouds) {
+        const cx = (((c.x + time * c.sp) % 1.25) - 0.12) * W - camX * W * 0.03
+        const cy = c.y * H
+        const r = 18 * c.s
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.82)'
+        ctx.beginPath()
+        ctx.arc(cx, cy, r, 0, Math.PI * 2)
+        ctx.arc(cx + r * 0.9, cy - r * 0.2, r * 0.85, 0, Math.PI * 2)
+        ctx.arc(cx + r * 1.7, cy + r * 0.08, r * 0.72, 0, Math.PI * 2)
+        ctx.fill()
+      }
+
+      // Uzak tropikal adalar (paralaks siluet)
+      const drawIsland = (ix, iw, ih, col) => {
+        const x = ix * W - camX * W * 0.06
+        ctx.fillStyle = col
+        ctx.beginPath()
+        ctx.moveTo(x - iw, horizonY + 1)
+        ctx.quadraticCurveTo(x, horizonY - ih, x + iw, horizonY + 1)
+        ctx.closePath()
+        ctx.fill()
+      }
+      drawIsland(0.16, W * 0.14, 24, '#7ac6c9')
+      drawIsland(0.84, W * 0.16, 28, '#6bbbc2')
+      drawIsland(0.28, W * 0.09, 14, '#8ed4d1')
+
+      // Süzülen martılar
+      ctx.strokeStyle = 'rgba(74, 59, 92, 0.45)'
+      ctx.lineWidth = 1.8
+      ctx.lineCap = 'round'
+      for (const bd of birds) {
+        const bx = (((bd.x + time * bd.sp) % 1.2) - 0.1) * W
+        const by = bd.y * H + Math.sin(time * 3 + bd.ph) * 4
+        const flap = Math.sin(time * 8 + bd.ph) * 4
+        ctx.beginPath()
+        ctx.moveTo(bx - 7, by + flap)
+        ctx.quadraticCurveTo(bx - 3, by - 3, bx, by)
+        ctx.quadraticCurveTo(bx + 3, by - 3, bx + 7, by + flap)
+        ctx.stroke()
+      }
+
+      // Okyanus taban gradyanı (ufukta açık camgöbeği, önde canlı turkuaz)
+      const sea = ctx.createLinearGradient(0, horizonY, 0, H)
+      sea.addColorStop(0, '#49c8e6')
+      sea.addColorStop(0.25, '#25a7cf')
+      sea.addColorStop(0.65, '#198cb8')
+      sea.addColorStop(1, '#116d96')
+      ctx.fillStyle = sea
+      ctx.fillRect(0, horizonY, W, H - horizonY)
+
+      // Güneşin sudaki parıltı yolu
+      for (let i = 0; i < 16; i++) {
+        const f = i / 16
+        const sy = horizonY + 4 + Math.pow(f, 1.55) * (H - horizonY) * 0.85
+        const sw = (20 + f * 95) * (0.75 + 0.25 * Math.sin(time * 4 + i * 1.3))
+        ctx.fillStyle = `rgba(255, 246, 205, ${(0.34 * (1 - f * 0.72)).toFixed(2)})`
+        ctx.beginPath()
+        ctx.roundRect(sunX - sw / 2 + Math.sin(time * 2.4 + i) * 10 * f, sy, sw, 2.5 + f * 3.5, 4)
+        ctx.fill()
+      }
+
+      // Perspektif akıntı şeritleri ve su parıltıları
+      const lanes = 7
+      for (let i = 0; i < lanes; i++) {
+        const lx = 0.08 + (i / (lanes - 1)) * 0.84
+        const p0 = proj(lx, 0.02, W, H, camX)
+        const p1 = proj(lx, 1.05, W, H, camX)
+        ctx.strokeStyle = 'rgba(180, 245, 255, 0.11)'
+        ctx.lineWidth = 1.5
+        ctx.beginPath()
+        ctx.moveTo(p0.x, p0.y)
+        ctx.lineTo(p1.x, p1.y)
+        ctx.stroke()
+      }
+
+      // Akan dalgacık çizgileri (hız hissiyatı)
+      const rippleRows = 12
+      for (let i = 0; i < rippleRows; i++) {
+        const ny = ((i / rippleRows) + (time * 0.34)) % 1
+        const pr = proj(0.5, ny, W, H, camX)
+        const alpha = Math.sin(ny * Math.PI) * 0.22
+        ctx.strokeStyle = `rgba(215, 250, 255, ${alpha.toFixed(2)})`
+        ctx.lineWidth = 1 + pr.s * 2
+        ctx.beginPath()
+        for (let k = 0; k <= 12; k++) {
+          const pt = proj(k / 12, ny, W, H, camX)
+          const yy = pt.y + Math.sin(k * 1.4 + time * 4 + i) * 2.5 * pr.s
+          if (k === 0) ctx.moveTo(pt.x, yy)
+          else ctx.lineTo(pt.x, yy)
+        }
+        ctx.stroke()
+      }
+    }
+
+    const drawSurfer = (s, W, H, time, camX) => {
+      const base = proj(s.x, 0.78, W, H, camX)
+      const px = base.x
+      const baseY = base.y
+      const jumpLift = s.jump * 64 * base.s
+      const bob = Math.sin(time * 5.6 + s.x * 9) * 3.2 * base.s
       const py = baseY + bob - jumpLift
 
-      // Su izi (wake)
-      if (s.wake.length > 1) {
-        for (let i = 1; i < s.wake.length; i++) {
-          const a = s.wake[i - 1]
-          const b = s.wake[i]
-          const alpha = (i / s.wake.length) * 0.5
-          ctx.strokeStyle = `rgba(255,255,255,${alpha.toFixed(2)})`
-          ctx.lineWidth = (i / s.wake.length) * 14
-          ctx.lineCap = 'round'
-          ctx.beginPath()
-          ctx.moveTo(a.x * W, a.y * H)
-          ctx.lineTo(b.x * W, b.y * H)
-          ctx.stroke()
+      // İkili köpük izi (V-wake: sağ/sol kenardan açılan profesyonel sörf izi)
+      if (s.wake.length > 2) {
+        for (const side of [-1, 1]) {
+          for (let i = 1; i < s.wake.length; i++) {
+            const a = proj(s.wake[i - 1].x, s.wake[i - 1].y, W, H, camX)
+            const b = proj(s.wake[i].x, s.wake[i].y, W, H, camX)
+            const frac = i / s.wake.length
+            const spreadA = (1 - frac) * 22 * a.s * side
+            const spreadB = (1 - frac) * 22 * b.s * side
+            ctx.strokeStyle = `rgba(230, 252, 255, ${(frac * 0.55).toFixed(2)})`
+            ctx.lineWidth = Math.max(1.5, frac * 11 * b.s)
+            ctx.lineCap = 'round'
+            ctx.beginPath()
+            ctx.moveTo(a.x + spreadA, a.y + 14 * a.s)
+            ctx.lineTo(b.x + spreadB, b.y + 14 * b.s)
+            ctx.stroke()
+          }
         }
       }
 
-      // Sıçrama gölgesi
+      // Suda yumuşak gölge + temas köpük halkası
       ctx.save()
-      ctx.translate(px, baseY + bob + 14)
-      ctx.fillStyle = `rgba(18, 72, 102, ${(0.28 * (1 - s.jump * 0.5)).toFixed(2)})`
+      ctx.translate(px, baseY + bob + 16 * base.s)
+      const shScale = Math.max(0.45, 1 - s.jump * 0.42) * base.s
+      ctx.fillStyle = `rgba(8, 56, 84, ${(0.34 * shScale).toFixed(2)})`
       ctx.beginPath()
-      ctx.ellipse(0, 0, 15 * (1 - s.jump * 0.2), 26 * (1 - s.jump * 0.2), 0, 0, Math.PI * 2)
+      ctx.ellipse(0, 0, 20 * shScale, 11 * shScale, 0, 0, Math.PI * 2)
       ctx.fill()
+      if (s.jump < 0.08) {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)'
+        ctx.lineWidth = 2.2
+        ctx.beginPath()
+        ctx.ellipse(0, 4, 22 * base.s, 9 * base.s, 0, 0, Math.PI)
+        ctx.stroke()
+      }
       ctx.restore()
 
-      // Sörf tahtası + sörfçü
+      // Sörf tahtası + stilize karakter
       ctx.save()
       ctx.translate(px, py)
-      ctx.rotate(s.tilt * 0.42)
-      const sc = 1 + s.jump * 0.22
+      const airSpin = s.jump > 0.02 ? s.spin : 0
+      ctx.rotate(s.tilt * 0.44 + airSpin)
+      const sc = base.s * (1.06 + s.jump * 0.28)
       ctx.scale(sc, sc)
 
-      // Tahta gövdesi (uzun oval + sivri burun)
-      ctx.fillStyle = s.style.board
+      // Havadayken altın-turkuaz sıçrama halesi
+      if (s.jump > 0.12) {
+        const gAura = ctx.createRadialGradient(0, 0, 6, 0, 0, 44)
+        gAura.addColorStop(0, 'rgba(255, 236, 153, 0.45)')
+        gAura.addColorStop(1, 'rgba(127, 230, 255, 0)')
+        ctx.fillStyle = gAura
+        ctx.beginPath()
+        ctx.arc(0, 0, 44, 0, Math.PI * 2)
+        ctx.fill()
+      }
+
+      // Sörf tahtası (3B parlak gradyan + kuyruk yüzgeci + beyaz parıltı)
+      const bGrad = ctx.createLinearGradient(-16, -34, 16, 32)
+      bGrad.addColorStop(0, '#ffffff')
+      bGrad.addColorStop(0.22, s.style.board)
+      bGrad.addColorStop(1, s.style.board)
+      ctx.fillStyle = bGrad
       ctx.strokeStyle = '#ffffff'
-      ctx.lineWidth = 2.5
+      ctx.lineWidth = 2.6
       ctx.beginPath()
-      ctx.moveTo(0, -34)
-      ctx.bezierCurveTo(17, -18, 16, 20, 8, 30)
-      ctx.quadraticCurveTo(0, 34, -8, 30)
-      ctx.bezierCurveTo(-16, 20, -17, -18, 0, -34)
+      ctx.moveTo(0, -37)
+      ctx.bezierCurveTo(18, -19, 17, 19, 9, 31)
+      ctx.quadraticCurveTo(0, 36, -9, 31)
+      ctx.bezierCurveTo(-17, 19, -18, -19, 0, -37)
       ctx.closePath()
       ctx.fill()
       ctx.stroke()
 
-      // Tahta yarış şeridi
+      // Tahta yarış şeridi + kaymaz ped
       ctx.fillStyle = s.style.stripe
       ctx.beginPath()
-      ctx.roundRect(-3, -26, 6, 54, 3)
+      ctx.roundRect(-3.2, -28, 6.4, 56, 3)
+      ctx.fill()
+      ctx.fillStyle = 'rgba(42, 34, 56, 0.24)'
+      ctx.beginPath()
+      ctx.roundRect(-7, 14, 14, 12, 4)
       ctx.fill()
 
-      // Sörfçü karakteri (sörf kıyafeti / wetsuit + denge kolları)
-      const lean = s.tilt * 7
-      // Bacaklar / şort
-      ctx.fillStyle = s.style.shorts
-      ctx.beginPath()
-      ctx.roundRect(-8 + lean * 0.3, -2, 7, 13, 3)
-      ctx.roundRect(1 + lean * 0.3, -4, 7, 13, 3)
-      ctx.fill()
-
-      // Gövde (wetsuit üst)
-      ctx.fillStyle = s.style.suit
-      ctx.beginPath()
-      ctx.roundRect(-10 + lean * 0.5, -18, 20, 18, 8)
-      ctx.fill()
-      // Wetsuit omuz şeridi
-      ctx.fillStyle = 'rgba(255,255,255,0.45)'
-      ctx.beginPath()
-      ctx.roundRect(-8 + lean * 0.5, -14, 16, 4, 2)
-      ctx.fill()
-
-      // Denge kolları (eğime göre dalgalanır)
-      ctx.strokeStyle = s.style.suit
-      ctx.lineWidth = 5
+      // Atletik sörf duruşu (bükülü dizler, yana yaslı gövde, eklemli denge kolları)
+      const lean = s.tilt * 8
+      const crouch = s.jump > 0.05 ? 4 : 0
+      // Bacaklar & şort
+      ctx.strokeStyle = '#f2be9a'
+      ctx.lineWidth = 5.5
       ctx.lineCap = 'round'
       ctx.beginPath()
-      ctx.moveTo(-9 + lean * 0.5, -13)
-      ctx.lineTo(-22 + lean * 0.4, -8 - s.tilt * 9)
-      ctx.moveTo(9 + lean * 0.5, -13)
-      ctx.lineTo(22 + lean * 0.4, -8 + s.tilt * 9)
+      ctx.moveTo(-5 + lean * 0.3, 1 + crouch)
+      ctx.lineTo(-9 + lean * 0.15, 13)
+      ctx.moveTo(5 + lean * 0.3, -1 + crouch)
+      ctx.lineTo(8 + lean * 0.15, 11)
+      ctx.stroke()
+      ctx.fillStyle = s.style.shorts
+      ctx.beginPath()
+      ctx.roundRect(-10 + lean * 0.35, -5 + crouch, 20, 10, 4)
+      ctx.fill()
+
+      // Gövde (parlak wetsuit)
+      const sGrad = ctx.createLinearGradient(-10, -22, 10, 0)
+      sGrad.addColorStop(0, s.style.suit)
+      sGrad.addColorStop(1, '#184b68')
+      ctx.fillStyle = sGrad
+      ctx.beginPath()
+      ctx.roundRect(-10.5 + lean * 0.55, -21 + crouch, 21, 18, 8)
+      ctx.fill()
+      ctx.fillStyle = 'rgba(255,255,255,0.45)'
+      ctx.beginPath()
+      ctx.roundRect(-8 + lean * 0.55, -16 + crouch, 16, 3.8, 2)
+      ctx.fill()
+
+      // Eklemli denge kolları (dirsek + el)
+      const armWave = Math.sin(time * 8 + s.x * 12) * 2.5
+      ctx.strokeStyle = s.style.suit
+      ctx.lineWidth = 5.2
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
+      ctx.beginPath()
+      // sol kol
+      ctx.moveTo(-9 + lean * 0.55, -15 + crouch)
+      ctx.lineTo(-18 + lean * 0.45, -13 - s.tilt * 7 + armWave + crouch)
+      ctx.lineTo(-25 + lean * 0.35, -18 - s.tilt * 10 - armWave + crouch)
+      // sağ kol
+      ctx.moveTo(9 + lean * 0.55, -15 + crouch)
+      ctx.lineTo(18 + lean * 0.45, -13 + s.tilt * 7 - armWave + crouch)
+      ctx.lineTo(25 + lean * 0.35, -18 + s.tilt * 10 + armWave + crouch)
       ctx.stroke()
 
-      // Kafa + güneş gözlüğü + rüzgârda saç
+      // Baş + rüzgârda uçuşan saç + parlak güneş gözlüğü
+      const hx = lean * 0.65
+      const hy = -28 + crouch
       ctx.fillStyle = '#f6c8a8'
       ctx.beginPath()
-      ctx.arc(lean * 0.6, -24, 9.5, 0, Math.PI * 2)
+      ctx.arc(hx, hy, 10, 0, Math.PI * 2)
       ctx.fill()
       ctx.fillStyle = s.style.hair
       ctx.beginPath()
-      ctx.arc(lean * 0.6, -26, 9.8, Math.PI * 0.95, Math.PI * 2.08)
+      ctx.arc(hx, hy - 2, 10.4, Math.PI * 0.9, Math.PI * 2.12)
       ctx.fill()
-      // Güneş gözlüğü
-      ctx.fillStyle = '#2d233a'
+      // Uçuşan saç tutamları
+      ctx.strokeStyle = s.style.hair
+      ctx.lineWidth = 3.2
       ctx.beginPath()
-      ctx.roundRect(lean * 0.6 - 7, -25, 6, 4, 2)
-      ctx.roundRect(lean * 0.6 + 1, -25, 6, 4, 2)
+      ctx.moveTo(hx - 6, hy - 7)
+      ctx.quadraticCurveTo(hx - 12 - s.tilt * 5, hy - 12 + Math.sin(time * 14) * 2, hx - 14 - s.tilt * 7, hy - 6)
+      ctx.stroke()
+      // Güneş gözlüğü + beyaz parlama
+      ctx.fillStyle = '#241b35'
+      ctx.beginPath()
+      ctx.roundRect(hx - 7.5, hy - 1.5, 6.4, 4.4, 2)
+      ctx.roundRect(hx + 1.1, hy - 1.5, 6.4, 4.4, 2)
       ctx.fill()
+      ctx.fillStyle = 'rgba(255,255,255,0.75)'
+      ctx.fillRect(hx - 6.2, hy - 0.6, 2.2, 1.3)
+      ctx.fillRect(hx + 2.4, hy - 0.6, 2.2, 1.3)
 
       ctx.restore()
 
-      // İsim etiketi (kendimiz altın vurgulu)
+      // İsim etiketi
       ctx.save()
       ctx.font = s.isSelf ? '900 12px Nunito, sans-serif' : '800 11px Nunito, sans-serif'
       const lbl = s.isSelf ? `★ ${s.name}` : s.name
-      const tw = ctx.measureText(lbl).width + 14
-      const tagY = py - 52
-      ctx.fillStyle = s.isSelf ? 'rgba(255, 243, 196, 0.95)' : 'rgba(255, 255, 255, 0.88)'
+      const tw = ctx.measureText(lbl).width + 16
+      const tagY = py - 56 * base.s
+      ctx.fillStyle = s.isSelf ? 'rgba(255, 243, 196, 0.96)' : 'rgba(255, 255, 255, 0.88)'
       ctx.strokeStyle = s.isSelf ? '#fdb252' : '#ffffff'
       ctx.lineWidth = 2
       ctx.beginPath()
@@ -291,10 +508,12 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
       ctx.restore()
     }
 
-    const drawWave = (w, W, H, time) => {
-      const wy = w.y * H
-      const wh = w.h * H
-      // Boşluklar dışındaki dolu dalga segmentlerini çiz
+    const drawWave = (w, W, H, time, camX) => {
+      const pTop = proj(0.5, w.y, W, H, camX)
+      const pBot = proj(0.5, w.y + w.h, W, H, camX)
+      const wy = pTop.y
+      const wh = Math.max(8, pBot.y - pTop.y)
+      const sc = pTop.s
       const sorted = [...w.gaps].sort((a, b) => a[0] - b[0])
       const segs = []
       let cur = 0
@@ -304,53 +523,96 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
       }
       if (cur < 1) segs.push([cur, 1])
 
+      // Güvenli geçiş kanalında parlayan yön okları
+      for (const [g0, g1] of sorted) {
+        const mid = proj((g0 + g1) / 2, w.y + w.h * 0.5, W, H, camX)
+        const pulse = 0.35 + 0.35 * Math.sin(time * 7 + w.phase)
+        ctx.save()
+        ctx.strokeStyle = `rgba(255, 243, 176, ${pulse.toFixed(2)})`
+        ctx.lineWidth = Math.max(2, 3.2 * sc)
+        ctx.lineCap = 'round'
+        ctx.lineJoin = 'round'
+        const aw = 14 * sc
+        const ah = 8 * sc
+        ctx.beginPath()
+        ctx.moveTo(mid.x - aw, mid.y - ah)
+        ctx.lineTo(mid.x, mid.y + ah)
+        ctx.lineTo(mid.x + aw, mid.y - ah)
+        ctx.stroke()
+        ctx.restore()
+      }
+
+      // Kıvrılan 3B dalga duvarları
       for (const [s0, s1] of segs) {
-        const x0 = s0 * W
-        const x1 = s1 * W
+        const a = proj(s0, w.y, W, H, camX)
+        const b = proj(s1, w.y, W, H, camX)
+        const x0 = a.x
+        const x1 = b.x
         const sw = x1 - x0
         if (sw < 4) continue
 
-        // Dalga alt gölgesi
-        ctx.fillStyle = 'rgba(13, 82, 118, 0.28)'
+        // Ön su gölgesi
+        ctx.fillStyle = 'rgba(7, 54, 82, 0.34)'
         ctx.beginPath()
-        ctx.roundRect(x0, wy + 8, sw, wh + 8, 16)
+        ctx.roundRect(x0 - 2, wy + wh * 0.55, sw + 4, wh * 0.85, 16 * sc)
         ctx.fill()
 
-        // Ana turkuaz dalga duvarı
-        const grad = ctx.createLinearGradient(0, wy - 6, 0, wy + wh)
-        grad.addColorStop(0, '#a8f0ff')
-        grad.addColorStop(0.28, w.crestColor)
-        grad.addColorStop(1, '#166f96')
+        // Kıvrılan dalga gövdesi (zengin okyanus gradyanı)
+        const grad = ctx.createLinearGradient(0, wy - wh * 0.25, 0, wy + wh * 1.05)
+        grad.addColorStop(0, '#c8f8ff')
+        grad.addColorStop(0.24, '#56d7ee')
+        grad.addColorStop(0.62, w.crestColor)
+        grad.addColorStop(1, '#0e587d')
         ctx.fillStyle = grad
         ctx.beginPath()
-        ctx.roundRect(x0, wy, sw, wh, 14)
+        ctx.moveTo(x0, wy + wh)
+        ctx.quadraticCurveTo(x0 - 4 * sc, wy + wh * 0.2, x0 + 10 * sc, wy)
+        const steps = Math.max(4, Math.floor(sw / 26))
+        for (let i = 1; i <= steps; i++) {
+          const ux = x0 + (i / steps) * sw
+          const crest = wy + Math.sin(time * 6.5 + i * 1.4 + w.phase) * 3.5 * sc
+          ctx.lineTo(ux, crest)
+        }
+        ctx.quadraticCurveTo(x1 + 4 * sc, wy + wh * 0.2, x1, wy + wh)
+        ctx.closePath()
         ctx.fill()
 
-        // Köpüklü üst dalga sırtı (kıvrımlı beyaz köpük)
-        ctx.fillStyle = 'rgba(255,255,255,0.92)'
-        const bumps = Math.max(3, Math.floor(sw / 22))
+        // Köpüklü kırılan dalga tepesi (çok katmanlı beyaz köpük)
+        const bumps = Math.max(4, Math.floor(sw / (18 * Math.max(0.45, sc))))
         for (let i = 0; i <= bumps; i++) {
           const bx = x0 + (i / bumps) * sw
-          const by = wy + 4 + Math.sin(time * 7 + i * 1.3 + w.phase) * 3.5
-          const br = 7 + Math.sin(time * 5 + i + w.phase) * 2.5
+          const by = wy + 3 * sc + Math.sin(time * 7.5 + i * 1.3 + w.phase) * 3 * sc
+          const br = (6.5 + Math.sin(time * 5 + i + w.phase) * 2.2) * sc
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.94)'
           ctx.beginPath()
           ctx.arc(bx, by, br, 0, Math.PI * 2)
           ctx.fill()
         }
       }
 
-      // Geçiş kanalı kenarlarında şirin pastel şamandıralar
+      // Kanal kenarlarında su halkalı çizgili şamandıralar
       for (const [g0, g1] of sorted) {
-        for (const gx of [g0 * W, g1 * W]) {
-          if (gx < 10 || gx > W - 10) continue
-          const by = wy + wh * 0.45 + Math.sin(time * 6 + gx) * 3
-          ctx.fillStyle = '#ff8b7b'
-          ctx.strokeStyle = '#ffffff'
-          ctx.lineWidth = 2
+        for (const gn of [g0, g1]) {
+          if (gn < 0.03 || gn > 0.97) continue
+          const pt = proj(gn, w.y + w.h * 0.45, W, H, camX)
+          const by = pt.y + Math.sin(time * 6 + gn * 20) * 3 * sc
+          const br = Math.max(4, 9 * sc)
+          ctx.strokeStyle = 'rgba(255,255,255,0.55)'
+          ctx.lineWidth = 1.6
           ctx.beginPath()
-          ctx.arc(gx, by, 7, 0, Math.PI * 2)
+          ctx.ellipse(pt.x, by + br * 0.7, br * 1.4, br * 0.55, 0, 0, Math.PI * 2)
+          ctx.stroke()
+          ctx.fillStyle = '#ff7b6b'
+          ctx.strokeStyle = '#ffffff'
+          ctx.lineWidth = Math.max(1.5, 2.2 * sc)
+          ctx.beginPath()
+          ctx.arc(pt.x, by, br, 0, Math.PI * 2)
           ctx.fill()
           ctx.stroke()
+          ctx.fillStyle = '#ffe48f'
+          ctx.beginPath()
+          ctx.arc(pt.x - br * 0.25, by - br * 0.25, br * 0.28, 0, Math.PI * 2)
+          ctx.fill()
         }
       }
     }
@@ -376,6 +638,9 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
       const elapsedSec = elapsedMs / 1000
       const speed = 0.24 + Math.min(0.32, elapsedSec * 0.0085)
 
+      // Yumuşak kamera paralaksı (sörfçünün yatışını takip eder)
+      camShift += ((me.x - 0.5) - camShift) * Math.min(1, dt * 4.5)
+
       // 1. Uzak oyuncuları güncelle (multiplayer)
       if (!isPractice && remoteRef.current) {
         for (const rp of remoteRef.current) {
@@ -386,8 +651,9 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
           s.jump += ((rp.jump ?? 0) - s.jump) * Math.min(1, dt * 16)
           if (s.alive && !rp.alive) {
             s.alive = false
-            splashes.push({ x: s.x * W, y: H * 0.76, r: 12, life: 0.7 })
-            spawnSpray(s.x * W, H * 0.76, 0, -40, 18)
+            const sp = proj(s.x, 0.78, W, H, camShift)
+            splashes.push({ x: sp.x, y: sp.y, r: 12, life: 0.7 })
+            spawnSpray(sp.x, sp.y, 0, -45, 22)
           }
         }
       }
@@ -406,26 +672,31 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
         me.x = Math.max(0.06, Math.min(0.94, me.x + me.vx * dt))
         me.tilt += (Math.max(-1, Math.min(1, me.vx * 1.9)) - me.tilt) * Math.min(1, dt * 12)
 
+        const mePt = proj(me.x, 0.78, W, H, camShift)
         if (me.jumpCd > 0) me.jumpCd = Math.max(0, me.jumpCd - dt)
         if (inputRef.current.wantJump && me.jump <= 0.001 && me.jumpCd <= 0) {
-          me.jumpVel = 3.2
+          me.jumpVel = 3.25
           me.jumpCd = 2.2
-          spawnSpray(me.x * W, H * 0.76 + 18, 0, 50, 10)
+          me.spin = 0
+          spawnSpray(mePt.x, mePt.y + 18, 0, 50, 14, 'rgba(220,252,255,0.95)')
           window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'pop' }))
         }
         inputRef.current.wantJump = false
         if (me.jump > 0 || me.jumpVel > 0) {
           me.jump += me.jumpVel * dt
           me.jumpVel -= 9.5 * dt
+          me.spin += dt * Math.PI * 2.9 // havada şık 360° dönüş
           if (me.jump <= 0) {
             me.jump = 0
             me.jumpVel = 0
-            spawnSpray(me.x * W, H * 0.76 + 12, 0, 30, 12)
+            me.spin = 0
+            splashes.push({ x: mePt.x, y: mePt.y + 10, r: 8, life: 0.45 })
+            spawnSpray(mePt.x, mePt.y + 14, 0, 30, 14)
           }
         }
 
-        if (Math.abs(me.vx) > 0.16 && me.jump < 0.1 && Math.random() < 0.55) {
-          spawnSpray(me.x * W - Math.sign(me.vx) * 14, H * 0.76 + 22, -me.vx * 85, 65, 2)
+        if (Math.abs(me.vx) > 0.14 && me.jump < 0.1 && Math.random() < 0.65) {
+          spawnSpray(mePt.x - Math.sign(me.vx) * 16, mePt.y + 20, -me.vx * 105, 55, 2, 'rgba(235,253,255,0.92)')
         }
 
         if (!isPractice && now - lastPosSend > 65) {
@@ -472,29 +743,38 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
         }
       }
 
-      // 5. Çarpışma kontrolü + su izi
+      // 5. Çarpışma kontrolü + temiz geçiş ödül efektleri + su izi
       for (const s of surfers) {
         if (!s.alive) continue
         if (s.jump < 0.15) {
-          s.wake.push({ x: s.x, y: 0.79 })
-          if (s.wake.length > 14) s.wake.shift()
+          s.wake.push({ x: s.x, y: 0.8 })
+          if (s.wake.length > 16) s.wake.shift()
         }
-        for (const pt of s.wake) pt.y += speed * dt * 1.1
+        for (const pt of s.wake) pt.y += speed * dt * 1.15
 
         if (!started || finished) continue
         if (!s.isSelf && !isPractice) continue
-        if (s.jump > 0.32) continue // havada dalganın üstünden atladı!
         for (const w of waves) {
+          if (s.isSelf && !w.cleared && w.y > 0.79) {
+            w.cleared = true
+            combo++
+            const mp = proj(me.x, 0.78, W, H, camShift)
+            if (me.jump > 0.2) addCallout('HARİKA ATLAYIŞ! 🌊', mp.x, mp.y - 68, '#ffe48f')
+            else if (combo >= 3) addCallout(`${combo}× SERİ! ✨`, mp.x, mp.y - 64, '#a8f0ff')
+          }
+          if (s.jump > 0.32) continue // havada dalganın üstünden atladı!
           if (w.y + w.h >= 0.735 && w.y <= 0.785) {
             const safe = w.gaps.some(([g0, g1]) => s.x >= g0 + 0.015 && s.x <= g1 - 0.015)
             if (!safe) {
               s.alive = false
               s.outMs = elapsedMs
               outOrder.push(s)
-              splashes.push({ x: s.x * W, y: H * 0.76, r: 14, life: 0.75 })
-              spawnSpray(s.x * W, H * 0.76, 0, -50, 24)
+              const sp = proj(s.x, 0.78, W, H, camShift)
+              splashes.push({ x: sp.x, y: sp.y, r: 16, life: 0.8 })
+              spawnSpray(sp.x, sp.y, 0, -60, 28)
               if (s.isSelf) {
-                shake = 12
+                shake = 14
+                combo = 0
                 window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'pop' }))
                 if (!isPractice) onLocalOut(elapsedMs)
               }
@@ -504,7 +784,7 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
         }
       }
 
-      // Antrenman modu bitiş kontrolü (son sörfçü kalınca ya da elenince 1.2 sn sonra özet)
+      // Antrenman modu bitiş kontrolü
       if (started && isPractice && !finished) {
         const aliveList = surfers.filter((s) => s.alive)
         if (aliveList.length <= 1 || (!me.alive && elapsedMs - me.outMs > 1200)) {
@@ -521,53 +801,39 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
         }
       }
 
-      // 6. ÇİZİM — Okyanus, güneş ışığı, dalgalar, sörfçüler, köpük parçacıkları
+      // 6. ÇİZİM — Gökyüzü, perspektif okyanus, dalgalar, sörfçüler, köpük & hız çizgileri
       ctx.save()
       if (shake > 0.2) {
         ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake)
         shake *= Math.pow(0.05, dt)
       }
 
-      const bg = ctx.createLinearGradient(0, 0, 0, H)
-      bg.addColorStop(0, '#38bce0')
-      bg.addColorStop(0.45, '#5ad4ea')
-      bg.addColorStop(1, '#8ce8f2')
-      ctx.fillStyle = bg
-      ctx.fillRect(0, 0, W, H)
+      drawSkyAndHorizon(W, H, time, camShift)
 
-      // Kayan güneş parıltıları (su dokusu)
-      ctx.strokeStyle = 'rgba(255,255,255,0.22)'
-      ctx.lineWidth = 3
-      const scrollY = (time * speed * H * 1.1) % 64
-      for (let y = scrollY - 64; y < H + 64; y += 64) {
-        ctx.beginPath()
-        for (let x = 0; x <= W; x += 28) {
-          const yy = y + Math.sin(x * 0.025 + time * 2.5) * 6
-          if (x === 0) ctx.moveTo(x, yy)
-          else ctx.lineTo(x, yy)
-        }
-        ctx.stroke()
-      }
-
-      // Dalgalar
-      for (const w of waves) drawWave(w, W, H, time)
+      // Arkadan öne doğru dalgalar (perspektif derinlik sırası)
+      const backWaves = waves.filter((w) => w.y <= 0.78)
+      const frontWaves = waves.filter((w) => w.y > 0.78)
+      for (const w of backWaves) drawWave(w, W, H, time, camShift)
 
       // Sörfçüler
-      for (const s of surfers) if (s.alive) drawSurfer(s, W, H, time)
+      for (const s of surfers) if (s.alive) drawSurfer(s, W, H, time, camShift)
 
-      // Çarpışma dalga halkaları
+      // Sörfçüyü geçmiş ön dalgalar
+      for (const w of frontWaves) drawWave(w, W, H, time, camShift)
+
+      // Çarpışma & iniş dalga halkaları
       for (let i = splashes.length - 1; i >= 0; i--) {
         const sp = splashes[i]
-        sp.r += dt * 115
+        sp.r += dt * 130
         sp.life -= dt
         if (sp.life <= 0) {
           splashes.splice(i, 1)
           continue
         }
         ctx.strokeStyle = `rgba(255,255,255,${Math.max(0, sp.life).toFixed(2)})`
-        ctx.lineWidth = 5
+        ctx.lineWidth = 4.5
         ctx.beginPath()
-        ctx.arc(sp.x, sp.y, sp.r, 0, Math.PI * 2)
+        ctx.ellipse(sp.x, sp.y, sp.r, sp.r * 0.55, 0, 0, Math.PI * 2)
         ctx.stroke()
       }
 
@@ -576,6 +842,7 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
         const p = particles[i]
         p.x += p.vx * dt
         p.y += p.vy * dt
+        p.vy += 120 * dt
         p.life -= dt
         if (p.life <= 0) {
           particles.splice(i, 1)
@@ -588,6 +855,44 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
         ctx.fill()
       }
       ctx.globalAlpha = 1
+
+      // Yüzen başarı yazıları ("HARİKA ATLAYIŞ!", "3× SERİ!")
+      for (let i = callouts.length - 1; i >= 0; i--) {
+        const c = callouts[i]
+        c.y += c.vy * dt
+        c.life -= dt
+        if (c.life <= 0) {
+          callouts.splice(i, 1)
+          continue
+        }
+        ctx.save()
+        ctx.globalAlpha = Math.min(1, c.life * 2)
+        ctx.font = '900 16px Nunito, sans-serif'
+        ctx.textAlign = 'center'
+        ctx.strokeStyle = 'rgba(74, 59, 92, 0.75)'
+        ctx.lineWidth = 4
+        ctx.strokeText(c.text, c.x, c.y)
+        ctx.fillStyle = c.color
+        ctx.fillText(c.text, c.x, c.y)
+        ctx.restore()
+      }
+
+      // Yüksek hızda kenar hız çizgileri
+      const speedLv = 1 + Math.floor(elapsedSec / 8)
+      if (started && speedLv >= 2) {
+        const alpha = Math.min(0.28, (speedLv - 1) * 0.06)
+        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha.toFixed(2)})`
+        ctx.lineWidth = 2
+        for (let i = 0; i < 10; i++) {
+          const leftSide = i % 2 === 0
+          const sx = leftSide ? 10 + (i * 7) % 36 : W - 10 - ((i * 7) % 36)
+          const sy = ((time * 520 + i * 97) % H)
+          ctx.beginPath()
+          ctx.moveTo(sx, sy)
+          ctx.lineTo(sx + (leftSide ? -6 : 6), sy + 38)
+          ctx.stroke()
+        }
+      }
       ctx.restore()
 
       // HUD güncelle (~10 Hz)
@@ -600,9 +905,10 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
           alive: aliveCnt,
           total: surfers.length,
           ms: elapsedMs,
-          speedLv: 1 + Math.floor(elapsedSec / 8),
+          speedLv,
           out: !me.alive,
           jumpReady: Math.max(0, Math.min(1, 1 - me.jumpCd / 2.2)),
+          combo,
         })
       }
 
@@ -633,6 +939,11 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
           <span className="hidden rounded-full bg-[#f6f0ff] px-3 py-1 text-xs font-black tabular-nums text-[#5b4678] sm:inline-block">
             ⏱ {fmtSec(hud.ms)}
           </span>
+          {hud.combo >= 2 && (
+            <span className="rounded-full bg-[#ffe8d1] px-3 py-1 text-xs font-black text-[#c7640a]">
+              🔥 {hud.combo}× Seri
+            </span>
+          )}
         </div>
         <button
           type="button"
@@ -865,9 +1176,7 @@ export function useSurf({ net, panel, setPanel, touch, say, name }) {
           {/* Başlık */}
           <div className="flex items-center justify-between gap-2">
             <div>
-              <h2 className="flex items-center gap-2 text-xl font-black text-[#4a3b5c]">
-                <span>🏄</span> Sörf Yarışı
-              </h2>
+              <h2 className="text-xl font-black text-[#4a3b5c]">Sörf Yarışı</h2>
               <p className="text-xs font-bold text-[#8a7a9c]">Dalgalardan kaç, en sona kalan kazanır! (2–10 kişi)</p>
             </div>
             <button type="button" onClick={closeAll} aria-label="Kapat" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f0ff] text-sm font-black text-[#8a7a9c] hover:bg-[#ffedd6]">
@@ -882,7 +1191,7 @@ export function useSurf({ net, panel, setPanel, touch, say, name }) {
               onClick={() => setView('lobby')}
               className={`rounded-xl py-2 text-xs font-black transition ${view !== 'board' ? 'bg-white text-[#12688a] shadow-sm' : 'text-[#6c8a99]'}`}
             >
-              🌊 Yarış Lobisi
+              Yarış Lobisi
             </button>
             <button
               type="button"
@@ -892,7 +1201,7 @@ export function useSurf({ net, panel, setPanel, touch, say, name }) {
               }}
               className={`rounded-xl py-2 text-xs font-black transition ${view === 'board' ? 'bg-white text-[#8a5a00] shadow-sm' : 'text-[#6c8a99]'}`}
             >
-              🏆 Puan Tablosu
+              Puan Tablosu
             </button>
           </div>
 
@@ -937,7 +1246,7 @@ export function useSurf({ net, panel, setPanel, touch, say, name }) {
                         {s.rank === 1 ? '🥇' : s.rank === 2 ? '🥈' : s.rank === 3 ? '🥉' : `#${s.rank}`} {s.name}
                       </span>
                       <span className="text-[#12688a]">
-                        {fmtSec(s.ms)} · +{s.pts} puan{s.coins ? ` · +${s.coins} 🪙` : ''}
+                        {fmtSec(s.ms)} · +{s.pts} puan{s.coins ? ` · +${s.coins} ₺` : ''}
                       </span>
                     </div>
                   ))}

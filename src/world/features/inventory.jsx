@@ -253,7 +253,7 @@ export function useInventory({ net, say, panel, setPanel, roster, focusRef, clos
         >
           <div className="flex items-center justify-between gap-2">
             <div>
-              <h2 className="text-xl font-black text-[#4a3b5c]">🎒 Envanterim</h2>
+              <h2 className="text-xl font-black text-[#4a3b5c]">Envanterim</h2>
               <p className="text-xs font-bold text-[#8a7a9c]">
                 {targetPeer ? `${targetPeer.name} kişisine ısmarlamak için bir eşya seç!` : 'İçecekler, şarküteri ve hediyelerin burada.'}
               </p>
@@ -302,7 +302,7 @@ export function useInventory({ net, say, panel, setPanel, roster, focusRef, clos
                     <div className="min-w-0">
                       <p className="truncate text-sm font-black text-[#4a3b5c]">{it.label}</p>
                       <p className="text-[11px] font-bold text-[#8a7a9c]">
-                        {it.from ? `🎁 ${it.from} gönderdi` : it.alcohol ? '🍻 5 sn çakırkeyif efekti' : '✨ Taze ürün'}
+                        {it.from ? `${it.from} gönderdi` : it.alcohol ? '5 sn çakırkeyif efekti' : 'Taze ürün'}
                       </p>
                     </div>
                   </div>
@@ -313,7 +313,7 @@ export function useInventory({ net, say, panel, setPanel, roster, focusRef, clos
                         onClick={() => sendGiftTo(it, targetPeer)}
                         className="rounded-xl bg-[#fdb252] px-3 py-1.5 text-xs font-black text-white shadow-sm"
                       >
-                        Ismarla 🎁
+                        Ismarla
                       </button>
                     ) : (
                       <>

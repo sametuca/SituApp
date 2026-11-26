@@ -5,12 +5,8 @@ import { useFrame } from '@react-three/fiber'
 import { CanvasTexture, DoubleSide, PlaneGeometry, SRGBColorSpace } from 'three'
 
 const FLAG_SPOTS = [
-  { x: -7.2, z: -13.5, ry: 0.35, phase: 0 }, // Lobi Meydanı (kuzeybatı)
-  { x: 7.2, z: -13.5, ry: -0.35, phase: 1.4 }, // Lobi Meydanı (kuzeydoğu)
-  { x: -6.8, z: 34.5, ry: 0.25, phase: 2.6 }, // Plaj girişi (sol)
-  { x: 6.8, z: 34.5, ry: -0.25, phase: 3.9 }, // Plaj girişi (sağ)
-  { x: 3.2, z: 99.2, ry: 0.15, phase: 5.1 }, // Güney iskele başı
-  { x: -24.5, z: -5.2, ry: 0.5, phase: 0.8 }, // Park
+  { x: -7.2, z: -13.5, ry: 0.35, phase: 0 }, // Şehir Meydanı (kuzeybatı)
+  { x: 7.2, z: -13.5, ry: -0.35, phase: 1.4 }, // Şehir Meydanı (kuzeydoğu)
 ]
 
 let cachedFlagTex = null

@@ -190,7 +190,7 @@ export function useHomeCare({ net, home, focusRef, touch, say, panel }) {
         commitPlots(next)
       }
       markCare('harvest')
-      if (c) say(`${c.emoji} ${c.name} hasat edildi! +${c.coins} 🪙`)
+      if (c) say(`${c.emoji} ${c.name} hasat edildi! +${c.coins} ₺`)
       window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'collect' }))
     },
     [isOwnHome, plots, commitPlots, markCare, send, say],
@@ -288,7 +288,7 @@ export function useHomeCare({ net, home, focusRef, touch, say, panel }) {
     if (count > 0) {
       commitPlots(next)
       markCare('harvest')
-      say(`🧺 ${count} ürün topluca hasat edildi! (+${totalCoins} 🪙)`)
+      say(`🧺 ${count} ürün topluca hasat edildi! (+${totalCoins} ₺)`)
       window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'collect' }))
     }
   }
@@ -299,7 +299,7 @@ export function useHomeCare({ net, home, focusRef, touch, say, panel }) {
     setCare(next)
     saveCare(ownerKey, next)
     if (!send({ t: 'garden_bonus' })) {
-      say('🏡 Günlük ev bakım ödülü: +25 🪙!')
+      say('🏡 Günlük ev bakım ödülü: +25 ₺!')
     }
   }
 
@@ -396,7 +396,7 @@ export function useHomeCare({ net, home, focusRef, touch, say, panel }) {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-black text-[#4a3b5c]">{c.name}</p>
                   <p className="text-[0.6875rem] font-bold text-[#8a7a9c]">
-                    {Math.round(c.ms / 1000)} sn · +{c.coins} 🪙
+                    {Math.round(c.ms / 1000)} sn · +{c.coins} ₺
                   </p>
                 </div>
               </button>
@@ -448,7 +448,7 @@ export function useHomeCare({ net, home, focusRef, touch, say, panel }) {
       {diaryOpen && (
         <Modal onClose={() => setDiaryOpen(false)} label="Ev Bakım Günlüğü">
           <h2 className="text-xl font-black text-ink">📋 Günlük Ev & Bahçe Bakımı</h2>
-          <p className="mt-1 text-xs font-semibold text-ink-soft">Her gün bahçene uğrayıp 3 bakımı tamamla, +25 altın bonus kazan!</p>
+          <p className="mt-1 text-xs font-semibold text-ink-soft">Her gün bahçene uğrayıp 3 bakımı tamamla, +25 TL bonus kazan!</p>
           <ul className="mt-4 flex flex-col gap-2">
             {[
               { ok: care.plant, emoji: '🌱', title: 'Tohum Ek', desc: 'Bahçedeki boş bir tarha tohum ek' },
@@ -471,7 +471,7 @@ export function useHomeCare({ net, home, focusRef, touch, say, panel }) {
               <span className="rounded-full bg-[#eefcf1] px-3 py-1.5 text-xs font-black text-[#2f7a55]">Bugünkü ödül alındı ✓</span>
             ) : (
               <ToyButton onClick={claimCareBonus} disabled={careDone < 3} className="!w-auto !px-5 !py-2 !text-sm">
-                {careDone < 3 ? '3/3 Tamamla' : '+25 🪙 Ödülü Al'}
+                {careDone < 3 ? '3/3 Tamamla' : '+25 ₺ Ödülü Al'}
               </ToyButton>
             )}
           </div>
@@ -496,13 +496,13 @@ export function useHomeCare({ net, home, focusRef, touch, say, panel }) {
                     <p className="text-xs font-semibold text-[#8a7a9c]">{t.desc}</p>
                   </div>
                   {state === 'done' && <span className="text-lg">✅</span>}
-                  {state === 'next' && <span className="text-xs font-black text-[#8a5a00]">🪙 {t.price}</span>}
+                  {state === 'next' && <span className="text-xs font-black text-[#8a5a00]">₺ {t.price}</span>}
                 </li>
               )
             })}
           </ul>
           <div className="mt-4 flex items-center justify-between gap-3">
-            <span className="rounded-full bg-[#fff3c8] px-3 py-1 text-sm font-black text-[#8a5a00]">🪙 {coins}</span>
+            <span className="rounded-full bg-[#fff3c8] px-3 py-1 text-sm font-black text-[#8a5a00]">₺ {coins}</span>
             {landTier < MAX_LAND_TIER ? (
               <ToyButton
                 onClick={() => {
@@ -518,7 +518,7 @@ export function useHomeCare({ net, home, focusRef, touch, say, panel }) {
                 disabled={net.status === 'online' && coins < LAND_TIERS[landTier + 1].price}
               >
                 {net.status === 'online' && coins < LAND_TIERS[landTier + 1].price
-                  ? `${LAND_TIERS[landTier + 1].price - coins} altın eksik`
+                  ? `${LAND_TIERS[landTier + 1].price - coins} TL eksik`
                   : `${LAND_TIERS[landTier + 1].name}'a geç`}
               </ToyButton>
             ) : (

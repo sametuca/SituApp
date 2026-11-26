@@ -40,7 +40,7 @@ export default function housing(ctx) {
         const cur = clampLandTier(u.stats.landTier ?? 0)
         if (cur >= MAX_LAND_TIER) return send(me.ws, { t: 'info', text: '🌻 Arazin zaten en büyük kademede.' })
         const next = LAND_TIERS[cur + 1]
-        if (!ctx.spendCoins?.(me, next.price, 'land')) return send(me.ws, { t: 'info', text: `🪙 ${next.name} için ${next.price} altın gerekiyor.` })
+        if (!ctx.spendCoins?.(me, next.price, 'land')) return send(me.ws, { t: 'info', text: `₺ ${next.name} için ${next.price} TL gerekiyor.` })
         u.stats.landTier = cur + 1
         save()
         pushGarden(me.homeKey, getGarden(me.homeKey), me)
@@ -102,7 +102,7 @@ export default function housing(ctx) {
         u.stats.gardenBonusDay = day
         save()
         ctx.addCoins?.(me, 25, 'garden_bonus')
-        send(me.ws, { t: 'info', text: '🏡 Günlük ev bakım ödülü: +25 🪙!' })
+        send(me.ws, { t: 'info', text: '🏡 Günlük ev bakım ödülü: +25 ₺!' })
       },
       home_kudos(me, msg) {
         const now = Date.now()
@@ -119,7 +119,7 @@ export default function housing(ctx) {
         const cur = getTier(me.homeKey)
         if (cur >= MAX_TIER) return send(me.ws, { t: 'info', text: '🏰 Evin zaten en büyük kademede.' })
         const next = HOME_TIERS[cur + 1]
-        if (!ctx.spendCoins?.(me, next.price, 'ev')) return send(me.ws, { t: 'info', text: `🪙 ${next.name} için ${next.price} altın gerekiyor.` })
+        if (!ctx.spendCoins?.(me, next.price, 'ev')) return send(me.ws, { t: 'info', text: `₺ ${next.name} için ${next.price} TL gerekiyor.` })
         const tier = setTier(me.homeKey, me.name, cur + 1)
         const msg = { t: 'home_tier', owner: me.homeKey, tier }
         send(me.ws, msg)

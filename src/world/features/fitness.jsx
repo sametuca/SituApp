@@ -946,7 +946,7 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
         setEnergy(m.energy)
         setEMax(m.energyMax)
         const meta = STAT_META[m.kind]
-        say(`${meta.emoji} Antrenman tamam! +${m.gain} ${meta.name} kazandın (+${m.coins} 🪙)`)
+        say(`${meta.emoji} Antrenman tamam! +${m.gain} ${meta.name} kazandın (+${m.coins} ₺)`)
         window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'quest' }))
       }),
     ]
@@ -1168,7 +1168,7 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
                     {result.res === 'win' ? (result.reason === 'ko' ? 'NAKAVT İLE KAZANDIN!' : 'MAÇI KAZANDIN!') : result.res === 'draw' ? 'BERABERE!' : 'İYİ MÜCADELE!'}
                   </p>
                   <p className="mt-1 text-xs font-extrabold text-[#6b4fc0]">
-                    +{result.pts} sıralama puanı{result.coins ? ` · +${result.coins} 🪙` : ''}
+                    +{result.pts} sıralama puanı{result.coins ? ` · +${result.coins} ₺` : ''}
                   </p>
                 </div>
                 <button
@@ -1270,7 +1270,7 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
                   onClick={startSoloBox}
                   className="w-full rounded-2xl border-b-4 border-[#d98a1c] bg-[#fdb252] py-3 text-sm font-black text-white shadow-soft active:translate-y-[2px]"
                 >
-                  🥋 Koç Kaan ile Antrenman Maçı
+                  Koç Kaan ile Antrenman Maçı
                 </button>
               </div>
             )}
@@ -1282,15 +1282,15 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
         <Modal onClose={() => setPanel(null)} label="Karakter Statları">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <h2 className="text-xl font-black text-[#4a3b5c]">💪 Karakter Statları</h2>
+              <h2 className="text-xl font-black text-[#4a3b5c]">Karakter Statları</h2>
               <p className="text-xs font-bold text-[#8a7a9c]">MakFit’te çalış ve şehirde sosyalleşerek güçlen!</p>
             </div>
-            <span className="rounded-full bg-[#fff3c8] px-3 py-1 text-xs font-black text-[#8a5a00]">⚡ {energy}/{eMax}</span>
+            <span className="rounded-full bg-[#fff3c8] px-3 py-1 text-xs font-black text-[#8a5a00]">Enerji {energy}/{eMax}</span>
           </div>
 
           {isChamp && (
             <div className="mt-3 rounded-2xl bg-gradient-to-r from-[#fff3c4] to-[#ffe49e] px-3.5 py-2 text-center text-xs font-black text-[#8a5a00]">
-              🏆 Bu haftanın MakFit Boks Şampiyonusun! Altın kemerin aktif.
+              Bu haftanın MakFit Boks Şampiyonusun! Altın kemerin aktif.
             </div>
           )}
 
@@ -1304,12 +1304,12 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
                   : k === 'sta'
                     ? `-%${Math.round((val / 100) * 30)} hasar · +%${Math.round((val / 100) * 12)} koşu`
                     : k === 'cha'
-                      ? `+%${coinBonusPct(val)} altın bonusu`
+                      ? `+%${coinBonusPct(val)} TL bonusu`
                       : `+${Math.round(val * 0.95)} ms zamanlama`
               return (
                 <div key={k} className="rounded-2xl bg-[#f8f4ff] p-3">
                   <div className="flex items-center justify-between text-xs font-black text-[#4a3b5c]">
-                    <span>{m.emoji} {m.name}</span>
+                    <span>{m.name}</span>
                     <span className="text-[#6b4fc0]">{val}/{STAT_MAX} · {bonus}</span>
                   </div>
                   <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-white">

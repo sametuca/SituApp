@@ -56,7 +56,7 @@ export default function economy(ctx) {
         const p0 = who.ws ? who : [...players.values()].find((o) => o.key === who.key)
         if (p0 && !p0.capTold) {
           p0.capTold = true
-          send(p0.ws, { t: 'info', text: '🪙 Bugünkü altın kazanç sınırına ulaştın, yarın devam!' })
+          send(p0.ws, { t: 'info', text: '₺ Bugünkü TL kazanç sınırına ulaştın, yarın devam!' })
         }
         ledger(who, 0, `${why}:SINIR`, coinsOf(who.key))
         return coinsOf(who.key)

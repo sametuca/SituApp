@@ -53,7 +53,7 @@ export const PETS = [
   { id: 'dog', name: 'Köpek', emoji: '🐶' },
 ]
 export const PET_WEEK_MS = 7 * 24 * 3600 * 1000 // evcil hayvan süresi (ilk hafta ücretsiz)
-export const PET_RENEW_PRICE = 80 // 🪙 / hafta
+export const PET_RENEW_PRICE = 80 // ₺ / hafta
 export const PET_BY_ID = Object.fromEntries(PETS.map((p) => [p.id, p]))
 
 /** İstemciden gelen kozmetik seçimini doğrular. Dönüş: { acc?: {id,color}|null, acc2?: {id,color}|null, pet?: id|null } (verilmeyen alan yok). */

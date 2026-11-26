@@ -60,7 +60,7 @@ function Volley({ vb, me, touch, onHit, onLeave }) {
       </div>
       {over ? (
         <div className="mt-3 text-center">
-          <p className="text-xl font-black text-[#4a3b5c]">{over.winner === me ? '🏆 Kazandın! +15 🪙' : 'Güzel maçtı! +3 🪙'}</p>
+          <p className="text-xl font-black text-[#4a3b5c]">{over.winner === me ? '🏆 Kazandın! +15 ₺' : 'Güzel maçtı! +3 ₺'}</p>
           <button onClick={onLeave} className="mt-2 rounded-full bg-[#fdb252] px-5 py-1.5 text-sm font-black text-white">Tamam</button>
         </div>
       ) : (
@@ -229,14 +229,14 @@ export function useBeach({ net, focusRef, home, venue, touch }) {
             🌅 Gün batımı buluşması · {meetup.phase === 'soon' ? `${mmss(meetup.start - now)} sonra` : `${mmss(meetup.end - now)} kaldı`}
           </p>
           <p className="text-[0.6875rem] font-bold text-[#8a7a9c]">
-            {meetup.phase === 'soon' ? 'Plajın ortasına gel, altın kazan!' : dist <= BEACH.r + 4 ? `Plajdasın 🪙 · ${meetup.n} kişi burada` : `Plaja gel (${dist} m) · ${meetup.n} kişi bekliyor`}
+            {meetup.phase === 'soon' ? 'Plajın ortasına gel, TL kazan!' : dist <= BEACH.r + 4 ? `Plajdasın ₺ · ${meetup.n} kişi burada` : `Plaja gel (${dist} m) · ${meetup.n} kişi bekliyor`}
           </p>
         </div></TopDock>
       )}
       {res && (
         <TopDock><div className={`relative pointer-events-none animate-pop rounded-2xl px-5 py-2 text-center ${glass}`}>
           <p className="text-sm font-black text-[#c9731a]">🌅 Buluşma bitti!</p>
-          <p className="text-xs font-bold text-[#8a7a9c]">{res.secs} sn kaldın{res.bonus ? ' · +10 🪙 bonus' : ''}</p>
+          <p className="text-xs font-bold text-[#8a7a9c]">{res.secs} sn kaldın{res.bonus ? ' · +10 ₺ bonus' : ''}</p>
         </div></TopDock>
       )}
       {near === 'net' && !busy && !home && !venue && (

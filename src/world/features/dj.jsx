@@ -265,7 +265,7 @@ function DjCard({ d, selfId, fire, result, muted, setMuted, onJoin, onLeave, onP
 
             {result && !now && (
               <p className="animate-pop rounded-2xl bg-[#fff3c8] px-3 py-2 text-center text-xs font-black text-[#8a5a00]">
-                🎧 Vardiya bitti: {result.tracks} şarkı, 🔥 {result.fire}, +{result.earned} 🪙
+                🎧 Vardiya bitti: {result.tracks} şarkı, 🔥 {result.fire}, +{result.earned} ₺
               </p>
             )}
           </div>

@@ -100,7 +100,7 @@ export const BUILDINGS = [
   // Kafe Sokağı (kuzey) — Kokabana ile Starbucket yer değiştirdi
   b(-9.7, -18, 6, 7, 5, 'yellow', 'e', '🥤 Kokabana', { shop: true }),
   b(9.7, -18, 6, 7, 5, 'mint', 'w', '📚 Di and Ar', { shop: true }),
-  b(-9.7, -27, 6, 8, 6, 'pink', 'e', '🥐 Simit Sarayım', { shop: true }),
+  b(-9.7, -27, 6, 8, 6, 'pink', 'e', '🥐 Silit Sarayı', { shop: true }),
   b(9.7, -27, 6, 8, 5, 'blue', 'w', '🍵 Çaykurt', { shop: true }),
   b(-9.7, -36, 6, 8, 5.5, 'lilac', 'e'),
   b(9.7, -36, 6, 8, 5.5, 'peach', 'w'),

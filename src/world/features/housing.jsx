@@ -20,7 +20,7 @@ export function useHousing({ net, home, panel, setPanel }) {
     <button onClick={() => setPanel('housing')} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#fff8f0]">
       <Ico name="home" size={22} />
       <span className="flex-1">Evini büyüt</span>
-      {tier < MAX_TIER && <span className="rounded-full bg-[#fff3c8] px-2 py-0.5 text-[0.6875rem] font-black text-[#8a5a00]">🪙 {HOME_TIERS[tier + 1].price}</span>}
+      {tier < MAX_TIER && <span className="rounded-full bg-[#fff3c8] px-2 py-0.5 text-[0.6875rem] font-black text-[#8a5a00]">₺ {HOME_TIERS[tier + 1].price}</span>}
     </button>
   ) : null
 
@@ -44,16 +44,16 @@ export function useHousing({ net, home, panel, setPanel }) {
                   </p>
                 </div>
                 {state === 'done' && <span className="text-lg">✅</span>}
-                {state === 'next' && <span className="text-xs font-black text-[#8a5a00]">🪙 {t.price}</span>}
+                {state === 'next' && <span className="text-xs font-black text-[#8a5a00]">₺ {t.price}</span>}
               </li>
             )
           })}
         </ul>
         <div className="mt-4 flex items-center justify-between gap-3">
-          <span className="rounded-full bg-[#fff3c8] px-3 py-1 text-sm font-black text-[#8a5a00]">🪙 {coins}</span>
+          <span className="rounded-full bg-[#fff3c8] px-3 py-1 text-sm font-black text-[#8a5a00]">₺ {coins}</span>
           {tier < MAX_TIER ? (
             <ToyButton onClick={() => net.send({ t: 'home_upgrade' })} disabled={coins < HOME_TIERS[tier + 1].price}>
-              {coins < HOME_TIERS[tier + 1].price ? `${HOME_TIERS[tier + 1].price - coins} altın eksik` : `${HOME_TIERS[tier + 1].name}'a geç`}
+              {coins < HOME_TIERS[tier + 1].price ? `${HOME_TIERS[tier + 1].price - coins} TL eksik` : `${HOME_TIERS[tier + 1].name}'a geç`}
             </ToyButton>
           ) : (
             <span className="text-sm font-extrabold text-[#8a7a9c]">En büyük kademedesin 🎉</span>

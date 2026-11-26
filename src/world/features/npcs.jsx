@@ -57,7 +57,7 @@ function NpcSheet({ npc, text, onOption, onBuy, onClose, touch }) {
                 <span>{item.emoji}</span>
                 <span className="truncate">{item.label}</span>
               </span>
-              <span className="shrink-0 rounded-full bg-white/25 px-2.5 py-0.5 text-[0.82em] font-black">{item.price} 🪙</span>
+              <span className="shrink-0 rounded-full bg-white/25 px-2.5 py-0.5 text-[0.82em] font-black">{item.price} ₺</span>
             </button>
           ))}
         </div>
@@ -305,7 +305,7 @@ export function useNpcs(ctx) {
         const item = npc?.shop?.find((s) => s.id === m.itemId)
         if (!item) return
         if (!m.ok) {
-          setTalk((t) => (t ? { ...t, text: `🪙 Yeterli altının yok! Bunun için ${m.price ?? item.price} altın gerekiyor.` } : t))
+          setTalk((t) => (t ? { ...t, text: `₺ Yeterli bakiyen yok! Bunun için ${m.price ?? item.price} TL gerekiyor.` } : t))
           return
         }
         if (item.toInv) {

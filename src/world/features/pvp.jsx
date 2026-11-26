@@ -157,10 +157,10 @@ function Match({ match, result, send, now, onBack }) {
           {result.ranked ? (
             <div className="text-sm font-bold text-ink-soft">
               {result.d > 0 ? '+' : ''}
-              {result.d} puan · +{result.coins} 🪙
+              {result.d} puan · +{result.coins} ₺
             </div>
           ) : (
-            <div className="text-xs font-semibold text-ink-soft">Bu maç puan/altın getirmedi (günlük çift sınırı ya da çok kısa).</div>
+            <div className="text-xs font-semibold text-ink-soft">Bu maç puan/TL getirmedi (günlük çift sınırı ya da çok kısa).</div>
           )}
           <button type="button" className={`${btn} mt-3 bg-candy-pink`} onClick={onBack}>
             Tamam

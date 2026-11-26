@@ -462,14 +462,20 @@ export function Minimap({ focusRef, remotes, compact }) {
 }
 
 // ---------- sohbet ----------
-export function ChatPanel({ feed, onSend, status }) {
+export function ChatPanel({ feed, onSend, status, onAddFriend, onOpenDm, onInspect }) {
   const input = useRef(null)
   const list = useRef(null)
+  const popRef = useRef(null)
   const [text, setText] = useState('')
+  const [picked, setPicked] = useState(null) // { id, name }
 
   useEffect(() => {
     const onKey = (e) => {
       const typing = e.target instanceof HTMLElement && ['INPUT', 'TEXTAREA'].includes(e.target.tagName)
+      if (e.key === 'Escape' && picked) {
+        setPicked(null)
+        return
+      }
       if (e.key === 'Enter' && !typing) {
         e.preventDefault()
         input.current?.focus()
@@ -477,7 +483,16 @@ export function ChatPanel({ feed, onSend, status }) {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [picked])
+
+  useEffect(() => {
+    if (!picked) return
+    const off = (e) => {
+      if (!popRef.current?.contains(e.target)) setPicked(null)
+    }
+    window.addEventListener('pointerdown', off)
+    return () => window.removeEventListener('pointerdown', off)
+  }, [picked])
 
   useEffect(() => {
     list.current?.scrollTo({ top: list.current.scrollHeight })
@@ -491,8 +506,79 @@ export function ChatPanel({ feed, onSend, status }) {
     input.current?.blur() // yürümeye devam edebilmek için odağı bırak
   }
 
+  const pickNick = (id, name) => {
+    if (!id || !name) return
+    setPicked((cur) => (cur?.id === id ? null : { id, name }))
+  }
+
+  const startWhisper = (name) => {
+    setPicked(null)
+    setText(`/f ${name} `)
+    requestAnimationFrame(() => input.current?.focus())
+  }
+
   return (
     <div className="absolute bottom-3 left-3 z-10 flex w-[min(92vw,24rem)] flex-col gap-2">
+      {picked && (
+        <div
+          ref={popRef}
+          className={`pointer-events-auto animate-pop flex flex-col gap-1.5 rounded-2xl p-2.5 ${glass}`}
+          role="dialog"
+          aria-label={picked.name}
+        >
+          <div className="flex items-center justify-between gap-2 px-1">
+            <span className="truncate text-sm font-black text-[#4a3b5c]">{picked.name}</span>
+            <button type="button" onClick={() => setPicked(null)} aria-label="Kapat" className="grid h-6 w-6 place-items-center rounded-full bg-[#f6f0ff] text-xs font-black text-[#8a7a9c] hover:bg-[#ffedd6]">
+              ✕
+            </button>
+          </div>
+          <div className="flex flex-col gap-1">
+            {onAddFriend && (
+              <button
+                type="button"
+                onClick={() => {
+                  onAddFriend(picked)
+                  setPicked(null)
+                }}
+                className="flex h-9 w-full items-center justify-center rounded-xl border-b-2 border-[#d98a1c] bg-[#fdb252] px-3 text-xs font-black text-white active:translate-y-[1px]"
+              >
+                Arkadaş olarak ekle
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => startWhisper(picked.name)}
+              className="flex h-9 w-full items-center justify-center rounded-xl border-b-2 border-[#c9bde6] bg-[#efe8ff] px-3 text-xs font-black text-[#5b3fa8] active:translate-y-[1px]"
+            >
+              Fısılda
+            </button>
+            {onOpenDm && (
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenDm(picked.id)
+                  setPicked(null)
+                }}
+                className="flex h-9 w-full items-center justify-center rounded-xl border-b-2 border-[#bde0f2] bg-[#e6f6ff] px-3 text-xs font-black text-[#1f5d7a] active:translate-y-[1px]"
+              >
+                Özel mesaj gönder
+              </button>
+            )}
+            {onInspect && (
+              <button
+                type="button"
+                onClick={() => {
+                  onInspect(picked.id)
+                  setPicked(null)
+                }}
+                className="flex h-9 w-full items-center justify-center rounded-xl bg-[#f8f4ff] px-3 text-xs font-extrabold text-[#4a3b5c] hover:bg-[#efe8ff]"
+              >
+                Profili gör
+              </button>
+            )}
+          </div>
+        </div>
+      )}
       <div
         ref={list}
         className="pointer-events-auto flex max-h-48 flex-col gap-1 overflow-y-auto rounded-2xl p-1 [scrollbar-width:thin]"
@@ -503,26 +589,55 @@ export function ChatPanel({ feed, onSend, status }) {
           <p
             key={`${m.ts}-${i}`}
             className={`w-fit max-w-full break-words rounded-2xl px-3 py-1 text-sm font-semibold ${
-              m.kind === 'system'
-                ? 'bg-[#fdb252]/90 text-white'
-                : m.whisper
-                  ? 'border-2 border-dashed border-[#c9b6f5] bg-[#f4edff]/95 italic text-[#5b3fa8]'
-                  : m.self
-                    ? 'bg-[#a9ddf5]/95 text-[#2f4a5c]'
-                    : 'bg-white/90 text-[#4a3b5c]'
+              m.kind === 'join'
+                ? 'inline-flex items-center gap-1.5 bg-white/92 text-[#2d6a4f] shadow-sm'
+                : m.kind === 'system'
+                  ? 'bg-[#fdb252]/90 text-white'
+                  : m.whisper
+                    ? 'border-2 border-dashed border-[#c9b6f5] bg-[#f4edff]/95 italic text-[#5b3fa8]'
+                    : m.self
+                      ? 'bg-[#a9ddf5]/95 text-[#2f4a5c]'
+                      : 'bg-white/90 text-[#4a3b5c]'
             }`}
           >
-            {m.kind === 'system' ? (
+            {m.kind === 'join' ? (
+              <>
+                <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" />
+                <button type="button" onClick={() => pickNick(m.id, m.name)} className="cursor-pointer font-black text-[#4a3b5c] hover:underline">
+                  {m.name}
+                </button>
+                <span className="text-xs font-bold text-[#4e8a6b]">çevrimiçi</span>
+              </>
+            ) : m.kind === 'system' ? (
               <>🧭 {m.text}</>
             ) : (
               m.whisper ? (
                 <>
-                  🤫 <span className="font-extrabold">{m.self ? `${m.toName ?? ''}’a fısıldadın` : `${m.name} fısıldadı`}: </span>
+                  🤫{' '}
+                  {m.self ? (
+                    <span className="font-extrabold">{`${m.toName ?? ''}’a fısıldadın`}: </span>
+                  ) : (
+                    <>
+                      <button type="button" onClick={() => pickNick(m.id, m.name)} className="cursor-pointer font-extrabold hover:underline">
+                        {m.name}
+                      </button>
+                      <span className="font-extrabold"> fısıldadı: </span>
+                    </>
+                  )}
                   {m.text}
                 </>
               ) : (
                 <>
-                  <span className="font-extrabold">{m.name}: </span>
+                  {m.self ? (
+                    <span className="font-extrabold">{m.name}: </span>
+                  ) : (
+                    <>
+                      <button type="button" onClick={() => pickNick(m.id, m.name)} className="cursor-pointer font-extrabold text-[#6b4fc0] hover:underline">
+                        {m.name}
+                      </button>
+                      <span className="font-extrabold">: </span>
+                    </>
+                  )}
                   {m.text}
                 </>
               )
@@ -768,7 +883,7 @@ export function HelpModal({ onClose, inCity = false, onOpenWardrobe, onGoHome, o
                   <Row k="Koleksiyon">şehirde parlayan yıldız, çiçek ve gizli sandıkları E ile topla</Row>
                   <Row k="EXP & Seviye">topladığın her eşya alttaki EXP çubuğunu doldurur ve yeni ödüller açar</Row>
                   <Row k="Balıkçılık">meslek seçmeden sahil iskelesinde veya park göletinde E ile olta at</Row>
-                  <Row k="Postacılık">lobideki kırmızı posta kutusundan paket alıp mekanlara teslim et (+12 altın)</Row>
+                  <Row k="Postacılık">lobideki kırmızı posta kutusundan paket alıp mekanlara teslim et (+12 TL)</Row>
                   <Row k="Altın">balık tutarak, posta dağıtarak, kulüpte DJ olarak veya plaj etkinlikleriyle kazan</Row>
                   <Row k="Bisiklet">sol çubuktaki bisiklet düğmesiyle şehirde çok daha hızlı gez</Row>
                 </ul>

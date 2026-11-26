@@ -1,6 +1,5 @@
 // Altın göstergesi (üst çubukta 🪙 sayısı) ve kazanç bildirimi. Sunucu: server/features/economy.js.
 import { useEffect, useState } from 'react'
-import { Ico } from '../../components/Icon'
 
 const glass = 'border-2 border-white bg-white/75 shadow-soft backdrop-blur-md'
 const WHY = { dj: 'DJ kazancı', meetup: 'Buluşma', voley: 'Voleybol', kale: 'Kum kalesi', surf: 'Sörf yarışı', minigame: 'Mini oyun', boxing: 'Boks maçı', workout: 'Antrenman', fish: 'Balıkçılık', post: 'Postacılık', job_crop: 'Pazar', job_fish: 'Pazar', job_post: 'Teslimat', job_quest: 'Meslek görevi', pet: '', ev: '', kira: '' }
@@ -27,8 +26,9 @@ export function useEconomy({ net }) {
   }, [on])
 
   const extraNodes = (
-    <div className={`flex h-12 items-center gap-2 rounded-full px-4 text-base font-black text-[#4a3b5c] ${glass}`} title="Altın" aria-label={`${coins} altın`}>
-      <Ico name="coins" size={24} /> <span className="tabular-nums">{coins}</span>
+    <div className={`flex h-12 items-center gap-1.5 rounded-full px-4 text-base font-black text-[#4a3b5c] ${glass}`} title="Türk Lirası (₺)" aria-label={`${coins} TL`}>
+      <span className="text-lg font-black text-[#e8952c]">₺</span>
+      <span className="tabular-nums">{coins}</span>
     </div>
   )
 
@@ -37,7 +37,7 @@ export function useEconomy({ net }) {
       <div className="pointer-events-none absolute right-3 top-[4.5rem] z-30 flex flex-col items-end gap-1">
         {pops.map((p) => (
           <div key={p.k} className="animate-pop rounded-full border-2 border-white bg-[#fff3c8] px-3.5 py-1 text-sm font-black text-[#8a5a00] shadow-soft">
-            +{p.d} 🪙 {WHY[p.why] ?? ''}
+            +{p.d} ₺ {WHY[p.why] ?? ''}
           </div>
         ))}
       </div>

@@ -441,7 +441,7 @@ export default function HomeGarden({ plots = [], landTier = 0, isOwnHome = false
           <Html position={[0, 1.38, 0]} center distanceFactor={12} zIndexRange={[6, 0]} style={{ pointerEvents: 'none' }}>
             <div className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border-2 border-white bg-[#e4f9e8] px-2.5 py-0.5 text-[11px] font-black text-[#256b3d] shadow-md">
               <span>{nextLand.emoji} Arazi Büyüt</span>
-              <span className="rounded-full bg-[#fff3c4] px-1.5 py-[1px] text-[#8a5a00]">🪙 {nextLand.price}</span>
+              <span className="rounded-full bg-[#fff3c4] px-1.5 py-[1px] text-[#8a5a00]">₺ {nextLand.price}</span>
             </div>
           </Html>
         </group>
