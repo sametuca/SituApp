@@ -157,8 +157,8 @@ export function FurnitureSheet({ count, max, selected, selectedName, onAdd, onRo
           </p>
           {selected && (
             <>
-              <button onClick={onRotate} aria-label="Döndür" className="grid h-8 w-8 place-items-center rounded-full border-2 border-white bg-[#e9ddff] text-base shadow-soft transition active:scale-95">
-                ↻
+              <button onClick={onRotate} aria-label="Döndür" className="grid h-8 w-8 place-items-center rounded-full border-2 border-white bg-[#e9ddff] shadow-soft transition active:scale-95">
+                <Ico name="rotate" size={16} />
               </button>
               <button onClick={onRemove} aria-label="Kaldır" className="grid h-8 w-8 place-items-center rounded-full border-2 border-white bg-[#ffe4e6] text-xs font-black text-[#be123c] shadow-soft transition active:scale-95">
                 Sil
@@ -168,9 +168,9 @@ export function FurnitureSheet({ count, max, selected, selectedName, onAdd, onRo
           <button
             onClick={() => setCollapsed(true)}
             aria-label="Döşeme panelini gizle"
-            className="grid h-8 w-8 place-items-center rounded-full border-2 border-white bg-[#f3e8ff] text-sm font-black text-[#6d4aff] shadow-soft transition hover:bg-[#e9ddff] active:scale-95"
+            className="grid h-8 w-8 place-items-center rounded-full border-2 border-white bg-[#f3e8ff] shadow-soft transition hover:bg-[#e9ddff] active:scale-95"
           >
-            ▾
+            <Ico name="down" size={15} />
           </button>
           <button onClick={onClose} className="rounded-full border-b-4 border-[#e8952c] bg-[#fdb252] px-4 py-1.5 text-sm font-extrabold text-white shadow-soft active:translate-y-[2px] active:border-b-2">
             Bitti
@@ -210,9 +210,9 @@ export function FurnitureSheet({ count, max, selected, selectedName, onAdd, onRo
             type="button"
             onClick={() => scrollShelf(-1)}
             aria-label="Sola kaydır"
-            className="grid h-8 w-7 shrink-0 place-items-center rounded-full border border-white bg-[#f6f0ff] text-base font-black text-[#6d4aff] shadow-sm transition hover:bg-white active:scale-95"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-white bg-[#f6f0ff] shadow-sm transition hover:bg-white active:scale-95"
           >
-            ‹
+            <Ico name="prev" size={15} />
           </button>
           <div ref={shelfRef} className="flex flex-1 gap-2 overflow-x-auto py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {FURNITURE.filter((f) => f.set === set).map((f) => (
@@ -230,9 +230,9 @@ export function FurnitureSheet({ count, max, selected, selectedName, onAdd, onRo
             type="button"
             onClick={() => scrollShelf(1)}
             aria-label="Sağa kaydır"
-            className="grid h-8 w-7 shrink-0 place-items-center rounded-full border border-white bg-[#f6f0ff] text-base font-black text-[#6d4aff] shadow-sm transition hover:bg-white active:scale-95"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-white bg-[#f6f0ff] shadow-sm transition hover:bg-white active:scale-95"
           >
-            ›
+            <Ico name="next" size={15} />
           </button>
         </div>
         </>

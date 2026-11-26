@@ -58,10 +58,13 @@ function saveLocalScore(name, pts, won, ms) {
   }
 }
 
+const MAX_LIVES = 2
+const JUMP_CD = 1.8
+
 /** 60 FPS perspektif 3B-hissi veren, dinamik okyanus & animasyonlu sörf arenası. */
 function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLocalOut, onBotFinish, onExit }) {
   const canvasRef = useRef(null)
-  const [hud, setHud] = useState({ countdown: 3, alive: match.players.length, total: match.players.length, ms: 0, speedLv: 1, out: false, jumpReady: 1, combo: 0 })
+  const [hud, setHud] = useState({ countdown: 3, alive: match.players.length, total: match.players.length, ms: 0, speedLv: 1, out: false, jumpReady: 1, combo: 0, lives: MAX_LIVES, wind: 0 })
   const inputRef = useRef({ left: false, right: false, pointerX: null, wantJump: false })
 
   useEffect(() => {
@@ -106,9 +109,11 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
       jumpCd: 0,
       spin: 0,
       alive: true,
+      lives: MAX_LIVES,
+      invuln: 0,
       outMs: 0,
       botTarget: p.x ?? 0.5,
-      botSkill: 0.72 + (i % 4) * 0.06,
+      botSkill: 0.64 + (i % 4) * 0.09,
       wake: [],
     }))
     const me = surfers.find((s) => s.isSelf) ?? surfers[0]
@@ -175,25 +180,34 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
 
     const spawnWave = (elapsedSec) => {
       waveIdx++
-      const gapW = Math.max(0.18, 0.31 - elapsedSec * 0.0021)
-      const doubleGap = waveIdx % 4 === 0 && elapsedSec > 8
+      // Daha uzun ve kademeli zorlaşan parkur: daralan geçişler, kayan kanallar ve tam en zıplama dalgaları
+      const gapW = Math.max(0.135, 0.255 - elapsedSec * 0.0022)
+      const isJumpWall = elapsedSec >= 16 && waveIdx % 6 === 0
+      const doubleGap = !isJumpWall && waveIdx % 4 === 0 && elapsedSec > 8
       const gaps = []
-      if (doubleGap) {
-        const g1 = 0.14 + rng() * 0.24
-        const g2 = 0.58 + rng() * 0.22
-        gaps.push([g1, g1 + gapW * 0.85], [g2, g2 + gapW * 0.85])
-      } else {
-        const g = 0.08 + rng() * (0.84 - gapW)
-        gaps.push([g, g + gapW])
+      if (!isJumpWall) {
+        if (doubleGap) {
+          const g1 = 0.1 + rng() * 0.24
+          const g2 = 0.58 + rng() * 0.22
+          gaps.push([g1, g1 + gapW * 0.84], [g2, g2 + gapW * 0.84])
+        } else {
+          const g = 0.07 + rng() * (0.86 - gapW)
+          gaps.push([g, g + gapW])
+        }
       }
+      // 12. saniyeden sonra bazı dalgaların güvenli geçişi yanlara doğru kayar
+      const canDrift = !isJumpWall && !doubleGap && elapsedSec >= 12 && waveIdx % 2 === 1
+      const driftSpeed = canDrift ? (rng() < 0.5 ? -1 : 1) * (0.07 + Math.min(0.12, elapsedSec * 0.0018)) : 0
       waves.push({
         id: waveIdx,
         y: 0.01,
-        h: 0.065 + rng() * 0.018,
+        h: isJumpWall ? 0.056 : 0.066 + rng() * 0.018,
         gaps,
+        jumpWall: isJumpWall,
+        driftSpeed,
         phase: rng() * Math.PI * 2,
         cleared: false,
-        crestColor: waveIdx % 3 === 0 ? '#1ea9c9' : '#1390b5',
+        crestColor: isJumpWall ? '#e65c4f' : waveIdx % 3 === 0 ? '#1ea9c9' : '#1390b5',
       })
     }
 
@@ -364,8 +378,9 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
       }
       ctx.restore()
 
-      // Sörf tahtası + stilize karakter
+      // Sörf tahtası + stilize karakter (hasar sonrası kısa dokunulmazlık yanıp sönmesi)
       ctx.save()
+      if (s.invuln > 0 && Math.floor(time * 16) % 2 === 0) ctx.globalAlpha = 0.45
       ctx.translate(px, py)
       const airSpin = s.jump > 0.02 ? s.spin : 0
       ctx.rotate(s.tilt * 0.44 + airSpin)
@@ -523,7 +538,19 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
       }
       if (cur < 1) segs.push([cur, 1])
 
-      // Güvenli geçiş kanalında parlayan yön okları
+      // Güvenli geçiş kanalında parlayan yön okları (veya tam en zıplama duvarı uyarısı)
+      if (w.jumpWall) {
+        const mid = proj(0.5, w.y + w.h * 0.35, W, H, camX)
+        ctx.save()
+        ctx.font = `900 ${Math.max(11, Math.round(16 * sc))}px Nunito, sans-serif`
+        ctx.textAlign = 'center'
+        ctx.strokeStyle = 'rgba(74, 24, 24, 0.8)'
+        ctx.lineWidth = 3.5
+        ctx.strokeText('⬆ ZIPLA!', mid.x, mid.y - 8 * sc)
+        ctx.fillStyle = '#ffe48f'
+        ctx.fillText('⬆ ZIPLA!', mid.x, mid.y - 8 * sc)
+        ctx.restore()
+      }
       for (const [g0, g1] of sorted) {
         const mid = proj((g0 + g1) / 2, w.y + w.h * 0.5, W, H, camX)
         const pulse = 0.35 + 0.35 * Math.sin(time * 7 + w.phase)
@@ -636,7 +663,10 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
       const started = nowEpoch >= matchStart
       const elapsedMs = started ? nowEpoch - matchStart : 0
       const elapsedSec = elapsedMs / 1000
-      const speed = 0.24 + Math.min(0.32, elapsedSec * 0.0085)
+      const speed = 0.27 + Math.min(0.45, elapsedSec * 0.0085)
+      // 22. saniyeden sonra periyodik yan akıntı (deterministik: tüm oyuncularda aynı)
+      const windPhase = elapsedSec >= 22 ? Math.sin((elapsedSec - 22) * 0.42 + (match.seed % 7)) : 0
+      const windForce = Math.abs(windPhase) > 0.55 ? Math.sign(windPhase) * (0.09 + Math.min(0.08, (elapsedSec - 22) * 0.0016)) : 0
 
       // Yumuşak kamera paralaksı (sörfçünün yatışını takip eder)
       camShift += ((me.x - 0.5) - camShift) * Math.min(1, dt * 4.5)
@@ -660,6 +690,7 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
 
       // 2. Kendi kontrolüm + fizik
       if (started && me.alive && !finished) {
+        if (me.invuln > 0) me.invuln = Math.max(0, me.invuln - dt)
         let steer = 0
         if (inputRef.current.pointerX !== null) {
           const diff = inputRef.current.pointerX - me.x
@@ -668,15 +699,16 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
           if (inputRef.current.left) steer -= 1
           if (inputRef.current.right) steer += 1
         }
-        me.vx += (steer * 0.72 - me.vx) * Math.min(1, dt * 11)
+        const targetVx = steer * 0.78 + (me.jump < 0.05 ? windForce : 0)
+        me.vx += (targetVx - me.vx) * Math.min(1, dt * 11)
         me.x = Math.max(0.06, Math.min(0.94, me.x + me.vx * dt))
         me.tilt += (Math.max(-1, Math.min(1, me.vx * 1.9)) - me.tilt) * Math.min(1, dt * 12)
 
         const mePt = proj(me.x, 0.78, W, H, camShift)
         if (me.jumpCd > 0) me.jumpCd = Math.max(0, me.jumpCd - dt)
         if (inputRef.current.wantJump && me.jump <= 0.001 && me.jumpCd <= 0) {
-          me.jumpVel = 3.25
-          me.jumpCd = 2.2
+          me.jumpVel = 3.35
+          me.jumpCd = JUMP_CD
           me.spin = 0
           spawnSpray(mePt.x, mePt.y + 18, 0, 50, 14, 'rgba(220,252,255,0.95)')
           window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'pop' }))
@@ -684,7 +716,7 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
         inputRef.current.wantJump = false
         if (me.jump > 0 || me.jumpVel > 0) {
           me.jump += me.jumpVel * dt
-          me.jumpVel -= 9.5 * dt
+          me.jumpVel -= 9.4 * dt
           me.spin += dt * Math.PI * 2.9 // havada şık 360° dönüş
           if (me.jump <= 0) {
             me.jump = 0
@@ -705,45 +737,79 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
         }
       }
 
-      // 3. Dalgaları üret & ilerlet
+      // 3. Dalgaları üret & ilerlet (kayan geçiş kanalları dahil)
       if (started && !finished) {
         nextWaveY -= speed * dt
         if (nextWaveY <= 0) {
           spawnWave(elapsedSec)
-          nextWaveY = Math.max(0.32, 0.54 - elapsedSec * 0.004)
+          nextWaveY = Math.max(0.24, 0.48 - elapsedSec * 0.0038)
         }
-        for (const w of waves) w.y += speed * dt
+        for (const w of waves) {
+          w.y += speed * dt
+          if (w.driftSpeed && w.gaps.length === 1) {
+            const g = w.gaps[0]
+            const gw = g[1] - g[0]
+            let ng0 = g[0] + w.driftSpeed * dt
+            if (ng0 < 0.06) {
+              ng0 = 0.06
+              w.driftSpeed = Math.abs(w.driftSpeed)
+            } else if (ng0 + gw > 0.94) {
+              ng0 = 0.94 - gw
+              w.driftSpeed = -Math.abs(w.driftSpeed)
+            }
+            g[0] = ng0
+            g[1] = ng0 + gw
+          }
+        }
         while (waves.length && waves[0].y > 1.15) waves.shift()
       }
 
-      // 4. Bot yapay zekâsı (antrenman modu)
+      // 4. Bot yapay zekâsı (antrenman modu — zıplama ve gerçekçi hata payı dahil)
       if (started && isPractice && !finished) {
         const incoming = waves.find((w) => w.y + w.h > 0.18 && w.y < 0.8)
         for (const s of surfers) {
           if (!s.isBot || !s.alive) continue
+          if (s.invuln > 0) s.invuln = Math.max(0, s.invuln - dt)
+          if (s.jumpCd > 0) s.jumpCd = Math.max(0, s.jumpCd - dt)
           if (incoming) {
-            let bestGap = incoming.gaps[0]
-            let bestD = 9
-            for (const g of incoming.gaps) {
-              const mid = (g[0] + g[1]) / 2
-              const d = Math.abs(mid - s.x)
-              if (d < bestD) {
-                bestD = d
-                bestGap = g
+            if (incoming.jumpWall) {
+              if (incoming.y > 0.56 && incoming.y < 0.68 && s.jump <= 0.001 && s.jumpCd <= 0 && rng() < s.botSkill * 0.92) {
+                s.jumpVel = 3.3
+                s.jumpCd = JUMP_CD
               }
+            } else if (incoming.gaps.length) {
+              let bestGap = incoming.gaps[0]
+              let bestD = 9
+              for (const g of incoming.gaps) {
+                const mid = (g[0] + g[1]) / 2
+                const d = Math.abs(mid - s.x)
+                if (d < bestD) {
+                  bestD = d
+                  bestGap = g
+                }
+              }
+              const mid = (bestGap[0] + bestGap[1]) / 2
+              const fatigue = Math.min(0.14, elapsedSec * 0.0018)
+              const jitter = Math.sin(time * 2.4 + s.botSkill * 20) * (1 - s.botSkill + fatigue) * 0.22
+              s.botTarget = Math.max(0.08, Math.min(0.92, mid + jitter))
             }
-            const mid = (bestGap[0] + bestGap[1]) / 2
-            const jitter = Math.sin(time * 2 + s.botSkill * 20) * (1 - s.botSkill) * 0.18
-            s.botTarget = Math.max(0.08, Math.min(0.92, mid + jitter))
+          }
+          if (s.jump > 0 || s.jumpVel > 0) {
+            s.jump += s.jumpVel * dt
+            s.jumpVel -= 9.4 * dt
+            if (s.jump <= 0) {
+              s.jump = 0
+              s.jumpVel = 0
+            }
           }
           const diff = s.botTarget - s.x
-          s.vx += (Math.max(-1, Math.min(1, diff * 5)) * 0.58 * s.botSkill - s.vx) * Math.min(1, dt * 8)
+          s.vx += (Math.max(-1, Math.min(1, diff * 5)) * 0.64 * s.botSkill + windForce * 0.55 - s.vx) * Math.min(1, dt * 8)
           s.x = Math.max(0.06, Math.min(0.94, s.x + s.vx * dt))
           s.tilt += (Math.max(-1, Math.min(1, s.vx * 1.8)) - s.tilt) * Math.min(1, dt * 10)
         }
       }
 
-      // 5. Çarpışma kontrolü + temiz geçiş ödül efektleri + su izi
+      // 5. Çarpışma kontrolü (2 can sistemi + kısa toparlanma süresi) + temiz geçiş ödül efektleri
       for (const s of surfers) {
         if (!s.alive) continue
         if (s.jump < 0.15) {
@@ -759,19 +825,31 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
             w.cleared = true
             combo++
             const mp = proj(me.x, 0.78, W, H, camShift)
-            if (me.jump > 0.2) addCallout('HARİKA ATLAYIŞ! 🌊', mp.x, mp.y - 68, '#ffe48f')
+            if (me.jump > 0.2) addCallout(w.jumpWall ? 'MEGA ATLAYIŞ! 🌊' : 'HARİKA ATLAYIŞ! 🌊', mp.x, mp.y - 68, '#ffe48f')
             else if (combo >= 3) addCallout(`${combo}× SERİ! ✨`, mp.x, mp.y - 64, '#a8f0ff')
           }
-          if (s.jump > 0.32) continue // havada dalganın üstünden atladı!
+          if (s.invuln > 0) continue
+          if (s.jump > 0.25) continue // havada dalganın üstünden atladı!
           if (w.y + w.h >= 0.735 && w.y <= 0.785) {
-            const safe = w.gaps.some(([g0, g1]) => s.x >= g0 + 0.015 && s.x <= g1 - 0.015)
+            const safe = !w.jumpWall && w.gaps.some(([g0, g1]) => s.x >= g0 + 0.015 && s.x <= g1 - 0.015)
             if (!safe) {
+              s.lives -= 1
+              const sp = proj(s.x, 0.78, W, H, camShift)
+              splashes.push({ x: sp.x, y: sp.y, r: 16, life: 0.8 })
+              spawnSpray(sp.x, sp.y, 0, -60, 26)
+              if (s.lives > 0) {
+                s.invuln = 1.35
+                if (s.isSelf) {
+                  shake = 10
+                  combo = 0
+                  addCallout('SON CAN! ❤️', sp.x, sp.y - 68, '#ff9c8f')
+                  window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'pop' }))
+                }
+                break
+              }
               s.alive = false
               s.outMs = elapsedMs
               outOrder.push(s)
-              const sp = proj(s.x, 0.78, W, H, camShift)
-              splashes.push({ x: sp.x, y: sp.y, r: 16, life: 0.8 })
-              spawnSpray(sp.x, sp.y, 0, -60, 28)
               if (s.isSelf) {
                 shake = 14
                 combo = 0
@@ -907,8 +985,10 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
           ms: elapsedMs,
           speedLv,
           out: !me.alive,
-          jumpReady: Math.max(0, Math.min(1, 1 - me.jumpCd / 2.2)),
+          jumpReady: Math.max(0, Math.min(1, 1 - me.jumpCd / JUMP_CD)),
           combo,
+          lives: Math.max(0, me.lives),
+          wind: Math.sign(windForce),
         })
       }
 
@@ -929,7 +1009,10 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
     <div className="fixed inset-0 z-50 flex flex-col bg-[#1b7fa3] select-none touch-none">
       {/* Üst canlı skor çubuğu */}
       <div className="flex items-center justify-between gap-2 bg-white/92 px-4 py-2.5 shadow-soft backdrop-blur-md">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-full bg-[#ffe8ee] px-2.5 py-1 text-xs font-black text-[#c93b5a]" title="Kalan can">
+            {Array.from({ length: MAX_LIVES }, (_, i) => (i < hud.lives ? '❤️' : '🤍')).join('')}
+          </span>
           <span className="rounded-full bg-[#dff7ff] px-3 py-1 text-xs font-black text-[#12688a]">
             🏄 {hud.alive}/{hud.total} Ayakta
           </span>
@@ -939,6 +1022,11 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
           <span className="hidden rounded-full bg-[#f6f0ff] px-3 py-1 text-xs font-black tabular-nums text-[#5b4678] sm:inline-block">
             ⏱ {fmtSec(hud.ms)}
           </span>
+          {hud.wind !== 0 && (
+            <span className="rounded-full bg-[#e3f6ff] px-2.5 py-1 text-xs font-black text-[#0f6b8a]">
+              💨 {hud.wind > 0 ? 'Akıntı →' : '← Akıntı'}
+            </span>
+          )}
           {hud.combo >= 2 && (
             <span className="rounded-full bg-[#ffe8d1] px-3 py-1 text-xs font-black text-[#c7640a]">
               🔥 {hud.combo}× Seri
@@ -950,7 +1038,7 @@ function SurfArena({ match, selfId, selfName, touch, remoteRef, onSendPos, onLoc
           onClick={onExit}
           className="rounded-full bg-[#ffe8e8] px-3.5 py-1 text-xs font-black text-[#b54141] active:scale-95"
         >
-          Çık ✕
+          Çık ✖️
         </button>
       </div>
 
@@ -1180,7 +1268,7 @@ export function useSurf({ net, panel, setPanel, touch, say, name }) {
               <p className="text-xs font-bold text-[#8a7a9c]">Dalgalardan kaç, en sona kalan kazanır! (2–10 kişi)</p>
             </div>
             <button type="button" onClick={closeAll} aria-label="Kapat" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f0ff] text-sm font-black text-[#8a7a9c] hover:bg-[#ffedd6]">
-              ✕
+              ✖️
             </button>
           </div>
 

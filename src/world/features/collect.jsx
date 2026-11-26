@@ -25,10 +25,20 @@ function CollectionPanel({ data, onClose, onTab }) {
   const found = new Set(s?.chests ?? [])
   return (
     <Modal onClose={onClose} label="Karakter & Koleksiyon" theme="bag">
-      <div className="mb-3 grid grid-cols-3 gap-1.5 rounded-2xl bg-[#f3ece0] p-1">
-        <button type="button" onClick={() => onTab('inventory')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">🎒 Çanta</button>
-        <button type="button" onClick={() => onTab('stats')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">💪 Statlar</button>
-        <button type="button" className="rounded-xl bg-white py-1.5 text-xs font-black text-[#4a3b5c] shadow-sm">🧺 Koleksiyon</button>
+      <div className="mb-3 flex items-center gap-2">
+        <div className="grid flex-1 grid-cols-3 gap-1.5 rounded-2xl bg-[#f3ece0] p-1">
+          <button type="button" onClick={() => onTab('inventory')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">🎒 Çanta</button>
+          <button type="button" onClick={() => onTab('stats')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">💪 Statlar</button>
+          <button type="button" className="rounded-xl bg-white py-1.5 text-xs font-black text-[#4a3b5c] shadow-sm">🧺 Koleksiyon</button>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Kapat"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#f3ece0] text-sm font-black text-[#6b5a4e] transition hover:bg-[#eadcc8] active:scale-95"
+        >
+          ✖️
+        </button>
       </div>
       <div className="flex items-center gap-2">
         <h2 className="min-w-0 flex-1 text-xl font-black text-[#4a3b5c]">Koleksiyon</h2>

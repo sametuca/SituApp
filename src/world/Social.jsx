@@ -194,8 +194,8 @@ export function NearbyCard({ peer, touch, onChat, onInteract, onDismiss }) {
             </ToyButton>
           </div>
         </div>
-        <button onClick={onDismiss} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
-          ✕
+        <button onClick={onDismiss} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full hover:bg-[#ffedd6]/70">
+          <Ico name="close" size={12} />
         </button>
       </div>
     </div></Dock>
@@ -455,8 +455,8 @@ export function InteractSheet({ peer, near, canInvite, touch, extras = [], heade
             {peer.dnd ? '🌙 rahatsız etme açık · şimdilik ulaşılamaz' : near ? 'yakınında · jestler açık' : 'biraz uzakta · jest için yaklaş'}
           </p>
         </div>
-        <button onClick={onClose} aria-label="Kapat" className="grid h-9 w-9 place-items-center rounded-full text-sm font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
-          ✕
+        <button onClick={onClose} aria-label="Kapat" className="grid h-9 w-9 place-items-center rounded-full hover:bg-[#ffedd6]/70">
+          <Ico name="close" size={14} />
         </button>
       </div>
 
@@ -547,8 +547,8 @@ export function GestureChip({ from, onBack, onChat, onClose }) {
         <p className="min-w-0 flex-1 text-sm font-black text-[#4a3b5c]">
           <span className="text-[#fdb252]">{from.name}</span> {g?.text ?? 'sana bir jest yaptı'}
         </p>
-        <button onClick={onClose} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
-          ✕
+        <button onClick={onClose} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full hover:bg-[#ffedd6]/70">
+          <Ico name="close" size={12} />
         </button>
       </div>
       <div className="mt-2 flex gap-2">
@@ -631,8 +631,8 @@ export function InviteChip({ from, onGo, onClose }) {
           Git
         </ToyButton>
       </div>
-      <button onClick={onClose} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
-        ✕
+      <button onClick={onClose} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full hover:bg-[#ffedd6]/70">
+        <Ico name="close" size={12} />
       </button>
     </div></TopDock>
   )
@@ -704,8 +704,8 @@ export function ChatSheet({ peer, feed, onSend, onClose, touch, typing, onTyping
           <p className="truncate text-base font-black text-[#4a3b5c]">{peer ? peer.name : 'Herkese açık sohbet'}</p>
           <p className="text-xs font-bold text-[#8a7a9c]">{peer ? 'Özel sohbet · sadece ikiniz görürsünüz' : 'Yakındaki herkes duyar'}</p>
         </div>
-        <button onClick={onClose} aria-label="Sohbeti kapat" className="grid h-9 w-9 place-items-center rounded-full text-sm font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
-          ✕
+        <button onClick={onClose} aria-label="Sohbeti kapat" className="grid h-9 w-9 place-items-center rounded-full hover:bg-[#ffedd6]/70">
+          <Ico name="close" size={14} />
         </button>
       </div>
 
@@ -739,7 +739,7 @@ export function ChatSheet({ peer, feed, onSend, onClose, touch, typing, onTyping
                     : 'self-start bg-[#f1e6ff] text-[#4a3b5c]'
             }`}
           >
-            {m.kind === 'system' ? `🧭 ${m.text}` : m.whisper ? `🤫 ${m.text}` : !peer && !m.self ? <><b>{m.name}: </b>{m.text}</> : peer && m.self && m.dm ? <>{m.text}<span className={`ml-1.5 text-[11px] font-black ${m.ts <= readUpTo ? 'text-[#3b8fd6]' : 'text-[#2f4a5c]/50'}`} title={m.ts <= readUpTo ? 'Okundu' : 'Gönderildi'}>{m.ts <= readUpTo ? '✓✓' : '✓'}</span></> : m.text}
+            {m.kind === 'system' ? m.text : m.whisper ? m.text : !peer && !m.self ? <><b>{m.name}: </b>{m.text}</> : peer && m.self && m.dm ? <>{m.text}<span className={`ml-1.5 text-[11px] font-black ${m.ts <= readUpTo ? 'text-[#3b8fd6]' : 'text-[#2f4a5c]/50'}`} title={m.ts <= readUpTo ? 'Okundu' : 'Gönderildi'}>{m.ts <= readUpTo ? '✓✓' : '✓'}</span></> : m.text}
           </p>
           ),
         )}

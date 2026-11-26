@@ -16,7 +16,8 @@ import {
   SRGBColorSpace,
   Vector3,
 } from 'three'
-import { PROPS } from './layout'
+import { BEACH, GAP, PIER, PROPS, ROAD_HALF } from './layout'
+import { playerPos } from './cull'
 import { nightAt, smooth, sunsetAt, worldClock } from './worldClock'
 import { together } from './features/togetherStore'
 
@@ -41,7 +42,7 @@ export const skyLive = {
 
 /** Şehir binalarının/çeşmenin paylaşılan malzemeleri (City.jsx kullanır; Sky gece parlatır). */
 export const SKY_MATS = {
-  window: new MeshStandardMaterial({ color: '#fff6cf', emissive: '#ffe49a', emissiveIntensity: 0.35, roughness: 0.08, metalness: 0.45, envMapIntensity: 1.6 }),
+  window: new MeshStandardMaterial({ color: '#fff4c4', emissive: '#ffc966', emissiveIntensity: 0.4, roughness: 0.08, metalness: 0.35, envMapIntensity: 1.6 }),
   neonPink: new MeshStandardMaterial({ color: '#fdb15e', emissive: '#fd9c33', emissiveIntensity: 1.4 }),
   neonBlue: new MeshStandardMaterial({ color: '#8fd8ff', emissive: '#4fc3ff', emissiveIntensity: 1.4 }),
   water: new MeshStandardMaterial({ color: '#9fdcff', roughness: 0.06, metalness: 0.25, envMapIntensity: 1.5, emissive: '#6cc7f5', emissiveIntensity: 0.25 }),
@@ -51,11 +52,11 @@ export const SKY_MATS = {
 // ---------------------------------------------------------------- anahtar kareler (saat → renkler)
 const C = (s) => new Color(s)
 const KEYS = {
-  night: { bg: C('#2c306b'), fog: C('#3b3f82'), sun: C('#a8b8ff'), sunI: 0.55, amb: C('#7f8df0'), ambI: 0.38, hs: C('#7e90f5'), hg: C('#52428c'), hI: 0.5, fn: 60, ff: 175 },
-  dawn: { bg: C('#ffd9b0'), fog: C('#ffe6c8'), sun: C('#ffba85'), sunI: 1.05, amb: C('#ffeedb'), ambI: 0.34, hs: C('#ffe4c4'), hg: C('#f5d4b0'), hI: 0.65, fn: 72, ff: 195 },
-  day: { bg: C('#a9dcff'), fog: C('#c2e7ff'), sun: C('#ffffff'), sunI: 1.65, amb: C('#ffffff'), ambI: 0.44, hs: C('#f2f9ff'), hg: C('#ffe9d6'), hI: 0.82, fn: 78, ff: 210 },
-  dusk: { bg: C('#ff9f78'), fog: C('#ffbca0'), sun: C('#ff884d'), sunI: 1.12, amb: C('#ffc2a8'), ambI: 0.36, hs: C('#ffb496'), hg: C('#c78ce0'), hI: 0.6, fn: 70, ff: 190 },
-  dusk2: { bg: C('#7554a6'), fog: C('#9070b8'), sun: C('#b885ff'), sunI: 0.78, amb: C('#b492f0'), ambI: 0.36, hs: C('#a384db'), hg: C('#6e4896'), hI: 0.52, fn: 64, ff: 180 },
+  night: { bg: C('#1f2659'), fog: C('#2c356e'), sun: C('#ffe6b8'), sunI: 0.68, amb: C('#9aaaf5'), ambI: 0.44, hs: C('#8ea3ff'), hg: C('#7a5d7e'), hI: 0.58, fn: 64, ff: 185 },
+  dawn: { bg: C('#ffd9b0'), fog: C('#ffe6c8'), sun: C('#ffba85'), sunI: 1.08, amb: C('#ffeedb'), ambI: 0.38, hs: C('#ffe4c4'), hg: C('#f5d4b0'), hI: 0.68, fn: 72, ff: 195 },
+  day: { bg: C('#a9dcff'), fog: C('#c2e7ff'), sun: C('#ffffff'), sunI: 1.65, amb: C('#ffffff'), ambI: 0.48, hs: C('#f2f9ff'), hg: C('#ffe9d6'), hI: 0.85, fn: 78, ff: 210 },
+  dusk: { bg: C('#ff9f78'), fog: C('#ffbca0'), sun: C('#ff945e'), sunI: 1.18, amb: C('#ffd0ba'), ambI: 0.42, hs: C('#ffc4a8'), hg: C('#cfa0e6'), hI: 0.66, fn: 70, ff: 190 },
+  dusk2: { bg: C('#5f4396'), fog: C('#785aa8'), sun: C('#ffd4a3'), sunI: 0.84, amb: C('#bfa8f2'), ambI: 0.44, hs: C('#b096eb'), hg: C('#8a629c'), hI: 0.58, fn: 66, ff: 185 },
 }
 const FRAMES = [
   [0, 'night'],
@@ -212,11 +213,11 @@ function Heavens() {
   )
 }
 
-// ---------------------------------------------------------------- sokak lambaları (sahte parıltı + birkaç gerçek ışık)
+// ---------------------------------------------------------------- sokak lambaları (yumuşak radyal yer ışığı + yakın gerçek ışıklar)
 const LAMP_MODEL = '/models/park/park-lamp.glb'
 const LAMPS = PROPS.filter((p) => p.model === LAMP_MODEL).map((p) => ({ x: p.x, z: p.z }))
 const LAMP_TOP = 2.75
-const REAL_LIGHTS = 3
+const REAL_LIGHTS = 4
 
 function Lamps({ focusRef }) {
   const glow = useRef()
@@ -236,7 +237,7 @@ function Lamps({ focusRef }) {
     LAMPS.forEach((l, i) => {
       dummy.position.set(l.x, 0.13, l.z)
       dummy.rotation.set(-Math.PI / 2, 0, 0)
-      dummy.scale.set(7, 7, 1)
+      dummy.scale.set(9.5, 9.5, 1)
       dummy.updateMatrix()
       m.setMatrixAt(i, dummy.matrix)
     })
@@ -258,13 +259,13 @@ function Lamps({ focusRef }) {
       for (let i = 0; i < LAMPS.length; i++) {
         dummy.position.set(LAMPS[i].x, LAMP_TOP, LAMPS[i].z)
         dummy.quaternion.copy(camera.quaternion)
-        dummy.scale.set(2.6, 2.6, 1)
+        dummy.scale.set(3.4, 3.4, 1)
         dummy.updateMatrix()
         m.setMatrixAt(i, dummy.matrix)
       }
       m.instanceMatrix.needsUpdate = true
-      m.material.opacity = lit * 0.95
-      pool.current.material.opacity = lit * 0.38
+      m.material.opacity = lit * 0.92
+      pool.current.material.opacity = lit * 0.42
     }
     // en yakın lambalara gerçek ışık ata (yarım saniyede bir)
     t.current += dt
@@ -274,25 +275,220 @@ function Lamps({ focusRef }) {
       const near = LAMPS.map((l) => ({ l, d: Math.hypot(l.x - f.x, l.z - f.z) }))
         .sort((a, b) => a.d - b.d)
         .slice(0, REAL_LIGHTS)
-      near.forEach((n, i) => lights.current[i]?.position.set(n.l.x, LAMP_TOP - 0.2, n.l.z))
+      near.forEach((n, i) => lights.current[i]?.position.set(n.l.x, LAMP_TOP - 0.15, n.l.z))
     }
-    lights.current.forEach((l) => l && (l.intensity = lit * 7))
+    lights.current.forEach((l) => l && (l.intensity = lit * 9.5))
   })
 
   return (
     <>
       <instancedMesh ref={glow} args={[null, null, LAMPS.length]} frustumCulled={false} renderOrder={4}>
         <planeGeometry args={[1, 1]} />
-        <meshBasicMaterial map={tex} color="#ffd98a" transparent depthWrite={false} blending={AdditiveBlending} fog={false} toneMapped={false} />
+        <meshBasicMaterial map={tex} color="#ffd788" transparent depthWrite={false} blending={AdditiveBlending} fog={false} toneMapped={false} />
       </instancedMesh>
       <instancedMesh ref={pool} args={[null, null, LAMPS.length]} frustumCulled={false} renderOrder={3}>
-        <circleGeometry args={[0.5, 24]} />
-        <meshBasicMaterial color="#ffd98a" transparent depthWrite={false} blending={AdditiveBlending} fog={false} toneMapped={false} />
+        <planeGeometry args={[1, 1]} />
+        <meshBasicMaterial map={tex} color="#ffc978" transparent depthWrite={false} blending={AdditiveBlending} fog={false} toneMapped={false} />
       </instancedMesh>
       {lampLights && Array.from({ length: REAL_LIGHTS }, (_, i) => (
-        <pointLight key={i} ref={(l) => (lights.current[i] = l)} color="#ffd391" intensity={0} distance={11} decay={2} position={[0, LAMP_TOP, 0]} />
+        <pointLight key={i} ref={(l) => (lights.current[i] = l)} color="#ffca7a" intensity={0} distance={15} decay={2} position={[0, LAMP_TOP, 0]} />
       ))}
     </>
+  )
+}
+
+// ---------------------------------------------------------------- yaz akşamı feston ışık zincirleri + ateşböcekleri
+const FESTOON_SPANS = (() => {
+  const spans = []
+  const edge = ROAD_HALF + 1.05
+  // Kafe Sokağı & Plaj Yolu üstü sıcak ampul zincirleri
+  for (const z of [-20.5, -26.5, -32.5, -38.5, 21.5, 28.5]) {
+    spans.push({ ax: -edge, az: z - GAP * (z < 0 ? 1 : -1), bx: edge, bz: z - GAP * (z < 0 ? 1 : -1), y: 4.15, sag: 0.55, n: 7 })
+  }
+  // Gece Kulübü caddesi üstü sıcak + pastel zincirler
+  for (const x of [22.5, 29.5, 36.5]) {
+    spans.push({ ax: x + GAP, az: -edge, bx: x + GAP, bz: edge, y: 4.25, sag: 0.55, n: 7 })
+  }
+  // Plaj iskelesi iki yanı Edison fener dizisi
+  spans.push(
+    { ax: -1.35, az: PIER.z0 + 1.2, bx: -1.35, bz: PIER.z1 - 0.6, y: 1.55, sag: 0.25, n: 5 },
+    { ax: 1.35, az: PIER.z0 + 1.2, bx: 1.35, bz: PIER.z1 - 0.6, y: 1.55, sag: 0.25, n: 5 },
+  )
+  return spans
+})()
+
+function SummerFestoons() {
+  const bulbsRef = useRef()
+  const halosRef = useRef()
+  const wiresRef = useRef()
+  const tex = useMemo(() => glowTexture(SOFT), [])
+  useEffect(() => () => tex.dispose(), [tex])
+  const camera = useThree((s) => s.camera)
+  const dummy = useMemo(() => new Object3D(), [])
+
+  const { bulbs, wires } = useMemo(() => {
+    const bList = []
+    const wList = []
+    const cols = [C('#ffd980'), C('#ffbf69'), C('#ffe7a8'), C('#ffb09c')]
+    FESTOON_SPANS.forEach((sp, si) => {
+      const segs = sp.n - 1
+      let prev = null
+      for (let i = 0; i < sp.n; i++) {
+        const u = i / segs
+        const x = sp.ax + (sp.bx - sp.ax) * u
+        const z = sp.az + (sp.bz - sp.az) * u
+        const y = sp.y - Math.sin(u * Math.PI) * sp.sag
+        if (prev) {
+          const mx = (prev.x + x) / 2
+          const my = (prev.y + y) / 2
+          const mz = (prev.z + z) / 2
+          const len = Math.hypot(x - prev.x, y - prev.y, z - prev.z)
+          wList.push({ p: new Vector3(mx, my, mz), to: new Vector3(x, y, z), len })
+        }
+        bList.push({ x, y: y - 0.08, z, col: cols[(si + i) % cols.length], phase: si * 0.7 + i * 0.9 })
+        prev = { x, y, z }
+      }
+    })
+    return { bulbs: bList, wires: wList }
+  }, [])
+
+  useEffect(() => {
+    const bm = bulbsRef.current
+    const wm = wiresRef.current
+    if (bm) {
+      bulbs.forEach((b, i) => {
+        dummy.position.set(b.x, b.y, b.z)
+        dummy.rotation.set(0, 0, 0)
+        dummy.scale.set(1, 1, 1)
+        dummy.updateMatrix()
+        bm.setMatrixAt(i, dummy.matrix)
+        bm.setColorAt(i, b.col)
+      })
+      bm.instanceMatrix.needsUpdate = true
+      if (bm.instanceColor) bm.instanceColor.needsUpdate = true
+    }
+    if (wm) {
+      wires.forEach((w, i) => {
+        dummy.position.copy(w.p)
+        dummy.lookAt(w.to)
+        dummy.scale.set(1, 1, w.len)
+        dummy.updateMatrix()
+        wm.setMatrixAt(i, dummy.matrix)
+      })
+      wm.instanceMatrix.needsUpdate = true
+    }
+  }, [bulbs, wires, dummy])
+
+  useFrame(({ clock }) => {
+    const lit = skyLive.lit
+    const on = lit > 0.02
+    if (bulbsRef.current?.material) {
+      bulbsRef.current.material.emissiveIntensity = 0.05 + lit * 2.1
+    }
+    const hm = halosRef.current
+    if (!hm) return
+    hm.visible = on
+    if (!on) return
+    const t = clock.elapsedTime
+    for (let i = 0; i < bulbs.length; i++) {
+      const b = bulbs[i]
+      const pulse = 0.85 + Math.sin(t * 2.2 + b.phase) * 0.15
+      dummy.position.set(b.x, b.y, b.z)
+      dummy.quaternion.copy(camera.quaternion)
+      dummy.scale.setScalar(1.15 * pulse)
+      dummy.updateMatrix()
+      hm.setMatrixAt(i, dummy.matrix)
+    }
+    hm.instanceMatrix.needsUpdate = true
+    hm.material.opacity = lit * 0.72
+  })
+
+  return (
+    <group>
+      <instancedMesh ref={wiresRef} args={[undefined, undefined, wires.length]} frustumCulled={false}>
+        <boxGeometry args={[0.028, 0.028, 1]} />
+        <meshStandardMaterial color="#3c314e" roughness={0.85} />
+      </instancedMesh>
+      <instancedMesh ref={bulbsRef} args={[undefined, undefined, bulbs.length]} frustumCulled={false}>
+        <sphereGeometry args={[0.1, 8, 6]} />
+        <meshStandardMaterial color="#fff8e0" emissive="#ffc46b" emissiveIntensity={0.05} roughness={0.25} />
+      </instancedMesh>
+      <instancedMesh ref={halosRef} args={[undefined, undefined, bulbs.length]} frustumCulled={false} renderOrder={4}>
+        <planeGeometry args={[1, 1]} />
+        <meshBasicMaterial map={tex} color="#ffd588" transparent depthWrite={false} blending={AdditiveBlending} fog={false} toneMapped={false} />
+      </instancedMesh>
+    </group>
+  )
+}
+
+function Fireflies() {
+  const ref = useRef()
+  const tex = useMemo(() => glowTexture(SOFT), [])
+  useEffect(() => () => tex.dispose(), [tex])
+  const count = 96
+  const seeds = useMemo(() => {
+    const r = mulberry(91)
+    const anchors = [
+      { x: -30, z: 0, rad: 18 }, // park
+      { x: 0, z: 0, rad: 14 }, // meydan
+      { x: 0, z: -32, rad: 12 }, // kafe sokağı
+      { x: BEACH.x, z: BEACH.z + 4, rad: 28 }, // plaj palmiyeleri
+    ]
+    return Array.from({ length: count }, (_, i) => {
+      const a = anchors[i % anchors.length]
+      const ang = r() * Math.PI * 2
+      const dist = Math.sqrt(r()) * a.rad
+      return {
+        bx: a.x + Math.cos(ang) * dist,
+        by: 0.75 + r() * 2.1,
+        bz: a.z + Math.sin(ang) * dist,
+        sp: 0.6 + r() * 1.1,
+        ph: r() * Math.PI * 2,
+      }
+    })
+  }, [])
+  const geo = useMemo(() => {
+    const pos = new Float32Array(count * 3)
+    const col = new Float32Array(count * 3)
+    const pal = [C('#ffe796'), C('#ffd180'), C('#d8ff9e')]
+    for (let i = 0; i < count; i++) {
+      const c = pal[i % pal.length]
+      col[i * 3] = c.r
+      col[i * 3 + 1] = c.g
+      col[i * 3 + 2] = c.b
+      pos[i * 3] = seeds[i].bx
+      pos[i * 3 + 1] = seeds[i].by
+      pos[i * 3 + 2] = seeds[i].bz
+    }
+    const g = new BufferGeometry()
+    g.setAttribute('position', new Float32BufferAttribute(pos, 3))
+    g.setAttribute('color', new Float32BufferAttribute(col, 3))
+    return g
+  }, [seeds])
+  useEffect(() => () => geo.dispose(), [geo])
+
+  useFrame(({ clock }) => {
+    const p = ref.current
+    if (!p) return
+    const vis = skyLive.lit > 0.15
+    p.visible = vis
+    if (!vis) return
+    const t = clock.elapsedTime
+    const arr = geo.attributes.position.array
+    for (let i = 0; i < count; i++) {
+      const s = seeds[i]
+      arr[i * 3] = s.bx + Math.sin(t * s.sp + s.ph) * 0.9
+      arr[i * 3 + 1] = s.by + Math.sin(t * s.sp * 1.4 + s.ph) * 0.35
+      arr[i * 3 + 2] = s.bz + Math.cos(t * s.sp * 0.85 + s.ph) * 0.9
+    }
+    geo.attributes.position.needsUpdate = true
+    p.material.opacity = Math.min(0.9, (skyLive.lit - 0.15) * 1.1) * (0.78 + Math.sin(t * 2.5) * 0.18)
+  })
+
+  return (
+    <points ref={ref} geometry={geo} frustumCulled={false} renderOrder={5}>
+      <pointsMaterial map={tex} size={0.55} vertexColors transparent depthWrite={false} blending={AdditiveBlending} toneMapped={false} />
+    </points>
   )
 }
 
@@ -520,10 +716,10 @@ export default function Sky({ home: homeProp, interior = null, focusRef }) {
 
     // paylaşılan malzemeler
     const lit = skyLive.lit
-    SKY_MATS.window.emissiveIntensity = 0.3 + lit * 1.5
-    SKY_MATS.window.emissive.set('#ffe49a').lerp(tmp.set('#ffc65c'), lit)
-    SKY_MATS.neonPink.emissiveIntensity = 1.2 + lit * 2.1
-    SKY_MATS.neonBlue.emissiveIntensity = 1.2 + lit * 2.1
+    SKY_MATS.window.emissiveIntensity = 0.35 + lit * 2.15
+    SKY_MATS.window.emissive.set('#ffe49a').lerp(tmp.set('#ffbe55'), lit)
+    SKY_MATS.neonPink.emissiveIntensity = 1.2 + lit * 2.3
+    SKY_MATS.neonBlue.emissiveIntensity = 1.2 + lit * 2.3
     SKY_MATS.water.emissiveIntensity = 0.25 + night * 0.9
     SKY_MATS.fountainTop.emissiveIntensity = 0.3 + night * 1.1
 
@@ -570,6 +766,8 @@ export default function Sky({ home: homeProp, interior = null, focusRef }) {
           <SkyDome />
           <Heavens />
           <Lamps focusRef={focusRef} />
+          <SummerFestoons />
+          <Fireflies />
           <WetSheen focusRef={focusRef} />
         </>
       )}

@@ -2,7 +2,7 @@
 import { Em } from './emoji'
 
 const ICONS = {
-  back: '⬅️',
+  back: '🚪',
   settings: '⚙️',
   help: '❓',
   friends: '💗',
@@ -42,6 +42,16 @@ const ICONS = {
   user: '👤',
   fish: '🐟',
   parcel: '📦',
+  close: '✖️',
+  add: '➕',
+  rotate: '🌀',
+  reset: '🎨',
+  play: '🎵',
+  stop: '🛑',
+  check: '✔️',
+  prev: '👈',
+  next: '👉',
+  down: '👇',
 }
 
 const TAG_ICONS = {

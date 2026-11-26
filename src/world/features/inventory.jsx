@@ -6,6 +6,17 @@ import { bike } from '../bikeStore'
 
 const LOCAL_KEY = 'situapp_inv_v1'
 const SEEN_KEY = 'situapp_inv_seen_v1'
+const STARTER_KEY = 'situapp_starter_drink_v1'
+const STARTER_DRINK = {
+  uid: 'starter_lemonade',
+  id: 'starter_lemonade',
+  label: 'Buzlu Limonata',
+  emoji: '🍹',
+  style: 'drink',
+  color: '#ffd95e',
+  alcohol: false,
+  from: 'Hoş Geldin İkramı',
+}
 const hasSeenInv = () => {
   try {
     return Boolean(localStorage.getItem(SEEN_KEY))
@@ -23,7 +34,16 @@ const markSeenInv = () => {
 const readLocal = () => {
   try {
     const a = JSON.parse(localStorage.getItem(LOCAL_KEY))
-    return Array.isArray(a) ? a : []
+    const list = Array.isArray(a) ? a : []
+    if (!localStorage.getItem(STARTER_KEY)) {
+      localStorage.setItem(STARTER_KEY, '1')
+      if (list.length === 0) {
+        const seeded = [STARTER_DRINK]
+        localStorage.setItem(LOCAL_KEY, JSON.stringify(seeded))
+        return seeded
+      }
+    }
+    return list
   } catch {
     return []
   }
@@ -133,6 +153,9 @@ export function useInventory({ net, say, panel, setPanel, roster, focusRef, clos
   }, [])
 
   const consumeItem = (item) => {
+    setGiftPick(null)
+    setTargetPeer(null)
+    setPanel(null)
     if (!send({ t: 'inv_use', uid: item.uid })) {
       setItems((prev) => {
         const next = prev.filter((x) => x.uid !== item.uid)
@@ -252,10 +275,24 @@ export function useInventory({ net, say, panel, setPanel, roster, focusRef, clos
           label="Karakter ve Çanta"
           theme="bag"
         >
-          <div className="mb-3 grid grid-cols-3 gap-1.5 rounded-2xl bg-[#f3ece0] p-1">
-            <button type="button" className="rounded-xl bg-white py-1.5 text-xs font-black text-[#4a3b5c] shadow-sm">🎒 Çanta</button>
-            <button type="button" onClick={() => setPanel('stats')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">💪 Statlar</button>
-            <button type="button" onClick={() => setPanel('collection')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">🧺 Koleksiyon</button>
+          <div className="mb-3 flex items-center gap-2">
+            <div className="grid flex-1 grid-cols-3 gap-1.5 rounded-2xl bg-[#f3ece0] p-1">
+              <button type="button" className="rounded-xl bg-white py-1.5 text-xs font-black text-[#4a3b5c] shadow-sm">🎒 Çanta</button>
+              <button type="button" onClick={() => setPanel('stats')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">💪 Statlar</button>
+              <button type="button" onClick={() => setPanel('collection')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">🧺 Koleksiyon</button>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setGiftPick(null)
+                setTargetPeer(null)
+                setPanel(null)
+              }}
+              aria-label="Kapat"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#f3ece0] text-sm font-black text-[#6b5a4e] transition hover:bg-[#eadcc8] active:scale-95"
+            >
+              ✖️
+            </button>
           </div>
           <div className="flex items-center justify-between gap-2">
             <div>
@@ -290,7 +327,7 @@ export function useInventory({ net, say, panel, setPanel, roster, focusRef, clos
                 </div>
               )}
               <button type="button" onClick={() => setGiftPick(null)} className="mt-1 rounded-xl bg-[#f3ecff] py-2 text-xs font-black text-[#6b4fc0]">
-                ← Geri
+                👈 Geri
               </button>
             </div>
           ) : items.length === 0 ? (
@@ -344,6 +381,17 @@ export function useInventory({ net, say, panel, setPanel, roster, focusRef, clos
               ))}
             </div>
           )}
+          <button
+            type="button"
+            onClick={() => {
+              setGiftPick(null)
+              setTargetPeer(null)
+              setPanel(null)
+            }}
+            className="mt-4 w-full rounded-2xl bg-[#f3ece0] py-2.5 text-sm font-black text-[#5b4678] transition hover:bg-[#eadcc8] active:scale-[0.99]"
+          >
+            Kapat
+          </button>
         </Modal>
       )}
     </>

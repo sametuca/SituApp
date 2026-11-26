@@ -47,4 +47,4 @@ export function isTrack(t) {
   return false
 }
 
-export const trackLabel = (t) => (t?.p === 'yt' ? '▶ YouTube' : t?.p === 'sp' ? '🎵 Spotify' : '')
+export const trackLabel = (t) => (t?.p === 'yt' ? '🎬 YouTube' : t?.p === 'sp' ? '🎵 Spotify' : '')

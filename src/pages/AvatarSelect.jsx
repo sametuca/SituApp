@@ -135,8 +135,8 @@ export default function AvatarSelect() {
                   />
                   <span className="mt-1 block text-center text-sm font-extrabold text-ink">{a.name}</span>
                   {active && (
-                    <span className={`absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full text-xs font-black text-white ${TONES[toneOf(a)].badge}`}>
-                      ✓
+                    <span className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-white text-xs shadow-sm">
+                      ✔️
                     </span>
                   )}
                 </button>

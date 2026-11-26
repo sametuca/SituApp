@@ -46,7 +46,7 @@ export function useCityLife({ focusRef, home, venue, touch, say, panel }) {
       const fd = Math.hypot(f.x, f.z)
       setNearFountain(fd < 4.5 && fd > 1.8)
 
-      // Hız halkaları kontrolü
+      // Hız halkaları kontrolü (sesle geri bildirim verir; sohbete mesaj basmaz)
       const now = Date.now()
       if (now - lastRing.current > 4000) {
         for (const [rx, rz] of SPEED_RINGS) {
@@ -54,7 +54,6 @@ export function useCityLife({ focusRef, home, venue, touch, say, panel }) {
             lastRing.current = now
             speedBoost.until = now + 3500
             window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'pop' }))
-            say('⚡ Hız artışı!')
             break
           }
         }
@@ -72,9 +71,7 @@ export function useCityLife({ focusRef, home, venue, touch, say, panel }) {
             /* ignore */
           }
           if (next.length === TOUR_ZONES.length) {
-            say('🏆 Tebrikler! Bugün şehrin 5 ana bölgesini de keşfettin!')
-          } else {
-            say(`🧭 Şehir turu: ${z.name} keşfedildi (${next.length}/${TOUR_ZONES.length})`)
+            say('Şehrin 5 ana bölgesini de keşfettin.')
           }
           return next
         })

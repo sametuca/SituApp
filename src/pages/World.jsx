@@ -25,6 +25,7 @@ import { findFreeSpot, furnitureColliders, isValid, loadHome, newUid, saveHome }
 import LocalPlayer, { ClickToMoveGround } from '../world/LocalPlayer'
 import RemotePlayers, { GuideNpc, SelfTag } from '../world/RemotePlayers'
 import { NearbyPicker, VenueChannelPill } from '../world/CrowdHud'
+import WhisperInbox from '../world/WhisperInbox'
 import { useMultiplayer } from '../world/net'
 import { ChatPanel, HelpModal, Minimap, StartGuide, TopBar } from '../world/Hud'
 import { ChatFab, ChatSheet, DoorPrompt, GestureChip, IncomingChip, InteractSheet, InviteChip, Joystick, LookJoystick, MatchOverlay, NearbyCard, SkillBar } from '../world/Social'
@@ -298,14 +299,22 @@ function WorldScene({ avatar }) {
   const nearGuideRef = useRef(false)
   const tipsKey = `situapp_tips_seen_${user?.id ?? 'guest'}`
   const [showTips, setShowTips] = useState(() => !localStorage.getItem(tipsKey))
-  const [feed, setFeed] = useState(() => [
-    { kind: 'system', ts: 0, text: `Hoş geldin ${name}! 🌳` },
-  ])
+  const [feed, setFeed] = useState([])
+  const [whisperInbox, setWhisperInbox] = useState([])
+  const [whisperUnread, setWhisperUnread] = useState(0)
 
   const addFeed = useCallback((m) => {
+    if (m.whisper) {
+      const uid = `${m.ts}-${m.id}-${Math.random().toString(36).slice(2, 6)}`
+      setWhisperInbox((prev) =>
+        [{ uid, fromId: m.id, fromName: m.name, toId: m.to, toName: m.toName, text: m.text, ts: m.ts, self: Boolean(m.self) }, ...prev].slice(0, 30),
+      )
+      if (!m.self) setWhisperUnread((n) => n + 1)
+      return
+    }
     setFeed((f) => [...f, { kind: 'chat', ...m }].slice(-100))
     // başkasından özel mesaj geldi ve o sohbet açık değilse bildirim göster
-    if ((m.dm || m.whisper) && !m.self && chatTargetRef.current !== m.id) setIncoming({ id: m.id, name: m.name, text: m.text, whisper: Boolean(m.whisper) })
+    if (m.dm && !m.self && chatTargetRef.current !== m.id) setIncoming({ id: m.id, name: m.name, text: m.text, whisper: false })
   }, [])
   const say = useCallback((text) => setFeed((f) => [...f, { kind: 'system', ts: Date.now(), text }].slice(-100)), [])
   // Şehir ↔ ev geçişi: ekran kısa süre kararır, sonra oyuncu yeni yere ışınlanır.
@@ -425,16 +434,7 @@ function WorldScene({ avatar }) {
     return () => window.removeEventListener('situapp:tp', on)
   }, [net])
 
-  // Biri oyuna/odaya katıldığında sohbet kutusunda "<kullanıcıadı> çevrimiçi" bildirimi göster
-  useEffect(
-    () =>
-      net.on('join', (m) => {
-        const p = m.p
-        if (!p?.id || !p.name || p.id === net.selfId.current) return
-        setFeed((f) => [...f, { kind: 'join', id: p.id, name: p.name, ts: Date.now() }].slice(-100))
-      }),
-    [net],
-  )
+  // Sohbeti sade tutmak için otomatik katılma bildirimleri sohbet akışına basılmaz.
 
   const goTo = useCallback(
     (target) => {
@@ -1052,6 +1052,36 @@ function WorldScene({ avatar }) {
           inRoomCount={net.roster.length + 1}
           onSwitch={switchVenueChannel}
           onRefresh={() => net.send({ t: 'venue_channels', id: venue })}
+        />
+      )}
+      {!introActive && !inTutorial && !editing && !chatTarget && !interactPeer && (
+        <WhisperInbox
+          items={whisperInbox}
+          unread={whisperUnread}
+          touch={touch}
+          onReadAll={() => setWhisperUnread(0)}
+          onClear={() => {
+            setWhisperInbox([])
+            setWhisperUnread(0)
+          }}
+          onReply={(toId, txt) => {
+            if (!peerOf(toId)) {
+              say('Bu oyuncu artık burada değil.')
+              return false
+            }
+            if (!net.sendWhisper(txt, toId)) {
+              say('Şu an çevrimdışısın.')
+              return false
+            }
+            return true
+          }}
+          onInspect={(id) => {
+            if (peerOf(id)) {
+              setChatTarget(null)
+              chatTargetRef.current = null
+              setInteractId(id)
+            } else say('Bu oyuncu artık burada değil.')
+          }}
         />
       )}
       {!introActive && !inTutorial && !editing && !chatTarget && !interactPeer && (

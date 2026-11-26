@@ -302,7 +302,7 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
           <p className="text-xs font-bold text-[#8a7a9c]">Sürükleyip 360° çevir, kombinini oluştur</p>
         </div>
         <button onClick={onClose} aria-label="Gardırobu kapat" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f0ff] text-sm font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
-          ✕
+          ✖️
         </button>
       </div>
 
@@ -334,9 +334,9 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
             type="button"
             onClick={resetAll}
             title="Görünümü sıfırla"
-            className="grid h-7 w-7 place-items-center rounded-full border border-white bg-white/85 text-xs font-black text-[#8a7a9c] shadow-sm backdrop-blur-sm transition hover:bg-white active:scale-95"
+            className="grid h-7 w-7 place-items-center rounded-full border border-white bg-white/85 text-sm shadow-sm backdrop-blur-sm transition hover:bg-white active:scale-95"
           >
-            ↺
+            🎨
           </button>
         </div>
         {/* sol alt: duruş seçici */}
@@ -402,9 +402,9 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
                         type="button"
                         onClick={(e) => clearFav(i, e)}
                         aria-label={`${f.name} sil`}
-                        className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-white/90 text-[0.625rem] font-black text-[#8a7a9c] hover:text-rose-500"
+                        className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-white/90 text-[0.625rem] hover:scale-110"
                       >
-                        ✕
+                        ✖️
                       </button>
                     </div>
                   ) : (
@@ -414,7 +414,7 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
                       onClick={() => saveFav(i)}
                       className="flex flex-col items-center justify-center gap-0.5 rounded-2xl border-2 border-dashed border-[#d6c7ff] bg-[#faf6ff] px-2 py-2.5 text-center transition hover:border-[#a88bff] active:scale-95"
                     >
-                      <span className="text-base font-black text-[#a88bff]">＋</span>
+                      <span className="text-base">➕</span>
                       <span className="text-[0.6875rem] font-extrabold text-[#6b4fc0]">Slot {i + 1}’e Kaydet</span>
                     </button>
                   )
@@ -537,7 +537,7 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
           Vazgeç
         </button>
         <ToyButton className="!py-3 !text-base" onClick={() => onSave({ acc, acc2, pet, look })}>
-          ✓ Görünümü Kaydet
+          ✔️ Görünümü Kaydet
         </ToyButton>
       </div>
     </Modal>

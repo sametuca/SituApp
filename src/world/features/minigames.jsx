@@ -225,7 +225,7 @@ export function useMinigames({ net, panel, setPanel, touch, say, name }) {
               <p className="text-xs font-bold text-[#8a7a9c]">{meta.desc}</p>
             </div>
             <button type="button" onClick={closeAll} aria-label="Kapat" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f0ff] text-sm font-black text-[#8a7a9c]">
-              ✕
+              ✖️
             </button>
           </div>
 

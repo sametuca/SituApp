@@ -1,5 +1,6 @@
 // Saç / göz / kıyafet rengi seçici (karakter seçimi ve gardırop). value = { h, e, o } palet indeksleri (-1 = orijinal).
 import { EYE_COLORS, EYE_NAMES, HAIR_COLORS, HAIR_NAMES, OUTFIT_COLORS, OUTFIT_NAMES } from '../world/lookData'
+import { Em } from './emoji'
 
 const ROWS = [
   { key: 'h', label: 'Saç', colors: HAIR_COLORS, names: HAIR_NAMES },
@@ -28,7 +29,7 @@ export default function LookPicker({ value, onChange, compact = false }) {
                 onClick={() => onChange({ ...value, [r.key]: -1 })}
                 className={`grid ${sz} place-items-center rounded-full border-2 bg-white text-xs font-black text-ink-soft transition active:scale-90 ${curIdx === -1 ? 'scale-105 border-ink' : 'border-white shadow-soft'}`}
               >
-                ↺
+                <Em e="🎨" size={16} />
               </button>
               {r.colors.map((c, i) => (
                 <button

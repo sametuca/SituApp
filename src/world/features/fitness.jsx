@@ -207,7 +207,7 @@ function WeightWorkoutModal({ ski, energy, energyMaxVal, onDone, onClose }) {
         </div>
         <div className="flex items-center gap-2">
           <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-black text-[#ffd35e]">⚡ {energy}/{energyMaxVal}</span>
-          <button type="button" onClick={onClose} aria-label="Kapat" className="grid h-8 w-8 place-items-center rounded-full bg-white/15 text-xs font-black text-white">✕</button>
+          <button type="button" onClick={onClose} aria-label="Kapat" className="grid h-8 w-8 place-items-center rounded-full bg-white/15 text-xs font-black text-white">✖️</button>
         </div>
       </div>
 
@@ -360,7 +360,7 @@ function CardioWorkoutModal({ energy, energyMaxVal, onDone, onClose }) {
         </div>
         <div className="flex items-center gap-2">
           <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-black text-[#7fcdf3]">⚡ {energy}/{energyMaxVal}</span>
-          <button type="button" onClick={onClose} aria-label="Kapat" className="grid h-8 w-8 place-items-center rounded-full bg-white/15 text-xs font-black text-white">✕</button>
+          <button type="button" onClick={onClose} aria-label="Kapat" className="grid h-8 w-8 place-items-center rounded-full bg-white/15 text-xs font-black text-white">✖️</button>
         </div>
       </div>
 
@@ -395,7 +395,7 @@ function CardioWorkoutModal({ energy, energyMaxVal, onDone, onClose }) {
               }}
               className={`select-none rounded-2xl border-b-4 py-5 text-lg font-black text-white transition active:translate-y-[2px] ${nextFoot === 'L' ? 'border-[#4da5d1] bg-[#7fcdf3] ring-4 ring-[#7fcdf3]/40' : 'border-[#c5bdd8] bg-[#d6cef0] text-[#6d6185]'}`}
             >
-              ⬅️ SOL (A)
+              SOL (A)
             </button>
             <button
               type="button"
@@ -405,7 +405,7 @@ function CardioWorkoutModal({ energy, energyMaxVal, onDone, onClose }) {
               }}
               className={`select-none rounded-2xl border-b-4 py-5 text-lg font-black text-white transition active:translate-y-[2px] ${nextFoot === 'R' ? 'border-[#5aa886] bg-[#7fd3b8] ring-4 ring-[#7fd3b8]/40' : 'border-[#c5bdd8] bg-[#d6cef0] text-[#6d6185]'}`}
             >
-              SAĞ (D) ➡️
+              SAĞ (D)
             </button>
           </div>
         ) : (
@@ -779,7 +779,7 @@ function BoxingArena({ match, selfName, liveState, onSendHit, onSoloEnd, onExit 
             </div>
           </div>
           <button type="button" onClick={onExit} className="shrink-0 rounded-full bg-[#f6f0ff] px-3 py-1.5 text-xs font-black text-[#8a7a9c]">
-            Çık ✕
+            Çık ✖️
           </button>
           <div className="min-w-0 flex-1">
             <div className="flex justify-between text-xs font-black text-[#4a3b5c]">
@@ -1282,10 +1282,20 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
 
       {inStatsModal && (
         <Modal onClose={() => setPanel(null)} label="Karakter Statları" theme="bag">
-          <div className="mb-3 grid grid-cols-3 gap-1.5 rounded-2xl bg-[#f3ece0] p-1">
-            <button type="button" onClick={() => setPanel('inventory')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">🎒 Çanta</button>
-            <button type="button" className="rounded-xl bg-white py-1.5 text-xs font-black text-[#4a3b5c] shadow-sm">💪 Statlar</button>
-            <button type="button" onClick={() => setPanel('collection')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">🧺 Koleksiyon</button>
+          <div className="mb-3 flex items-center gap-2">
+            <div className="grid flex-1 grid-cols-3 gap-1.5 rounded-2xl bg-[#f3ece0] p-1">
+              <button type="button" onClick={() => setPanel('inventory')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">🎒 Çanta</button>
+              <button type="button" className="rounded-xl bg-white py-1.5 text-xs font-black text-[#4a3b5c] shadow-sm">💪 Statlar</button>
+              <button type="button" onClick={() => setPanel('collection')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">🧺 Koleksiyon</button>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPanel(null)}
+              aria-label="Kapat"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#f3ece0] text-sm font-black text-[#6b5a4e] transition hover:bg-[#eadcc8] active:scale-95"
+            >
+              ✖️
+            </button>
           </div>
           <div className="flex items-center justify-between gap-2">
             <div>

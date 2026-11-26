@@ -170,7 +170,7 @@ function SuggestCard({ s, onHi, onClose }) {
         </button>
       </div>
       <button onClick={onClose} aria-label="Öneriyi kapat" className="grid h-9 w-9 shrink-0 place-items-center self-start rounded-full text-sm font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
-        ✕
+        ✖️
       </button>
     </div>
   )
@@ -207,7 +207,6 @@ export function useProgress({ net, say, focusRef, home, venue, panel, setPanel, 
       on('progress', (m) => setProg(m.p)),
       on('quest_done', (m) => {
         setToasts((t) => [...t, { key: Math.random(), kind: 'quest', ...m.quest }])
-        say(`⭐ Görev tamamlandı: ${m.quest.title} (+${m.quest.stars} ⭐)`)
       }),
       on('badge', (m) => {
         // aynı rozet bu tarayıcıda bir kez gösterilir (sunucu verisi sıfırlansa/yeniden bağlansa tekrar tekrar çıkmasın)
@@ -220,11 +219,9 @@ export function useProgress({ net, say, focusRef, home, venue, panel, setPanel, 
           /* depolama yoksa yine göster */
         }
         setToasts((t) => [...t, { key: Math.random(), kind: 'badge', ...m.badge }])
-        say(`🏅 Yeni rozet: ${m.badge.name}`)
       }),
       on('event', (m) => {
         setEvent(m.event ?? null)
-        say(m.event ? `${m.event.emoji} ${m.event.name} başladı! ${m.event.desc}` : 'Etkinlik sona erdi. Bir sonrakini kaçırma!')
       }),
       on('suggest', (m) => {
         setSuggest(m.s ?? null)
@@ -232,7 +229,7 @@ export function useProgress({ net, say, focusRef, home, venue, panel, setPanel, 
       }),
     ]
     return () => offs.forEach((off) => off())
-  }, [on, say])
+  }, [on])
 
   // günün önerisi: bağlanınca biraz bekle, kimse yoksa ara sıra yeniden sor
   useEffect(() => {

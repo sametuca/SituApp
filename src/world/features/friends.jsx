@@ -303,7 +303,7 @@ function FriendsPanel({ data, inbox, fresh, roster, onClose, api, startTab }) {
                       <p className="mt-1 break-words text-sm font-semibold text-[#4a3b5c]">{m.text}</p>
                       <div className="mt-2 flex gap-2">
                         <Pill tone="lilac" onClick={() => setComposeKey(composeKey === m.id ? null : m.id)}>
-                          ↩️ Yanıtla
+                          Yanıtla
                         </Pill>
                         <Pill tone="ghost" onClick={() => api.deleteMail(m.id)} label="Sil">
                           🗑️
@@ -349,7 +349,7 @@ function Cards({ cards, onDismiss, onAnswer, onOpen }) {
             {c.avatar ? <Avatar name={c.avatar} pkey={c.key} size="h-10 w-10" /> : <span className="text-2xl">{c.emoji}</span>}
             <p className="min-w-0 flex-1 text-sm font-black text-[#4a3b5c]">{c.text}</p>
             <button onClick={() => onDismiss(c.id)} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
-              ✕
+              ✖️
             </button>
           </div>
           {c.kind === 'request' && (

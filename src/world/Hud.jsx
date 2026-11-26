@@ -68,13 +68,8 @@ export function TopBar({ online, status, dnd, onExit, onHelp, onSettings, extraB
                 {!b.badge && b.highlight ? <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-[#fdb252]" /> : null}
                 {spot ? (
                   <span className="pointer-events-none absolute left-full top-1/2 ml-3 flex -translate-y-1/2 items-center gap-2 whitespace-nowrap">
-                    <span className="flex items-center gap-0.5 text-[#ffd35e] drop-shadow-[0_2px_8px_rgba(0,0,0,0.65)] animate-point-left">
-                      <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                        <path d="M10.5 5.5 3.5 12l7 6.5V14.5h10v-5h-10V5.5Z" />
-                      </svg>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="opacity-75" aria-hidden>
-                        <path d="M10.5 5.5 3.5 12l7 6.5V14.5h10v-5h-10V5.5Z" />
-                      </svg>
+                    <span className="flex items-center gap-0.5 drop-shadow-[0_2px_8px_rgba(0,0,0,0.65)] animate-point-left">
+                      <Ico name="prev" size={28} />
                     </span>
                     <span className="rounded-full border-2 border-white bg-gradient-to-r from-[#ff9f43] to-[#fdb252] px-4 py-1.5 text-sm font-black text-white shadow-[0_6px_22px_rgba(253,178,82,0.75)]">
                       {b.hint}
@@ -434,8 +429,8 @@ export function Minimap({ focusRef, remotes, compact }) {
               <h2 className="flex items-center gap-2 text-lg font-black text-[#4a3b5c]"><Ico name="map" size={20} /> Şehir Haritası</h2>
               <p className="text-xs font-bold text-[#8a7a9c]">Gitmek istediğin bölgeye tıkla</p>
             </div>
-            <button onClick={() => setBig(false)} aria-label="Haritayı kapat" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f0ff] text-sm font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
-              ✕
+            <button onClick={() => setBig(false)} aria-label="Haritayı kapat" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f0ff] hover:bg-[#ffedd6]/70">
+              <Ico name="close" size={14} />
             </button>
           </div>
           <canvas ref={canvas} className="block rounded-2xl border-2 border-white shadow-soft" style={{ width: S, height: S }} />
@@ -531,6 +526,12 @@ export function ChatPanel({ feed, onSend, status, onAddFriend, onOpenDm, onInspe
     requestAnimationFrame(() => input.current?.focus())
   }
 
+  const stripChatIcons = (s) =>
+    String(s ?? '')
+      .replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+
   return (
     <div className="absolute bottom-3 left-3 z-10 flex w-[min(92vw,24rem)] flex-col gap-2">
       {picked && (
@@ -542,8 +543,8 @@ export function ChatPanel({ feed, onSend, status, onAddFriend, onOpenDm, onInspe
         >
           <div className="flex items-center justify-between gap-2 px-1">
             <span className="truncate text-sm font-black text-[#4a3b5c]">{picked.name}</span>
-            <button type="button" onClick={() => setPicked(null)} aria-label="Kapat" className="grid h-6 w-6 place-items-center rounded-full bg-[#f6f0ff] text-xs font-black text-[#8a7a9c] hover:bg-[#ffedd6]">
-              ✕
+            <button type="button" onClick={() => setPicked(null)} aria-label="Kapat" className="grid h-6 w-6 place-items-center rounded-full bg-[#f6f0ff] hover:bg-[#ffedd6]">
+              <Ico name="close" size={11} />
             </button>
           </div>
           <div className="flex flex-col gap-1">
@@ -595,66 +596,53 @@ export function ChatPanel({ feed, onSend, status, onAddFriend, onOpenDm, onInspe
       )}
       <div
         ref={list}
-        className="pointer-events-auto flex max-h-48 flex-col gap-1 overflow-y-auto rounded-2xl p-1 [scrollbar-width:thin]"
+        className="pointer-events-auto flex max-h-44 flex-col gap-1 overflow-y-auto rounded-2xl p-1 [scrollbar-width:thin]"
         role="log"
         aria-live="polite"
       >
-        {feed.slice(-30).map((m, i) => (
+        {feed.slice(-24).map((m, i) => (
           <p
             key={`${m.ts}-${i}`}
             className={`w-fit max-w-full break-words rounded-2xl px-3 py-1 text-sm font-semibold ${
-              m.kind === 'join'
-                ? 'inline-flex items-center gap-1.5 bg-white/92 text-[#2d6a4f] shadow-sm'
-                : m.kind === 'system'
-                  ? 'bg-[#fdb252]/90 text-white'
-                  : m.whisper
-                    ? 'border-2 border-dashed border-[#c9b6f5] bg-[#f4edff]/95 italic text-[#5b3fa8]'
-                    : m.self
-                      ? 'bg-[#a9ddf5]/95 text-[#2f4a5c]'
-                      : 'bg-white/90 text-[#4a3b5c]'
+              m.kind === 'system'
+                ? 'bg-[#2b2042]/75 text-[#fff6eb] backdrop-blur-sm'
+                : m.whisper
+                  ? 'border border-[#c9b6f5] bg-[#f4edff]/95 italic text-[#5b3fa8]'
+                  : m.self
+                    ? 'bg-[#a9ddf5]/95 text-[#2f4a5c]'
+                    : 'bg-white/92 text-[#4a3b5c]'
             }`}
           >
-            {m.kind === 'join' ? (
+            {m.kind === 'system' ? (
+              stripChatIcons(m.text)
+            ) : m.whisper ? (
               <>
-                <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" />
-                <button type="button" onClick={() => pickNick(m.id, m.name)} className="cursor-pointer font-black text-[#4a3b5c] hover:underline">
-                  {m.name}
-                </button>
-                <span className="text-xs font-bold text-[#4e8a6b]">çevrimiçi</span>
+                {m.self ? (
+                  <span className="font-extrabold">{`${m.toName ?? ''}’a fısıldadın`}: </span>
+                ) : (
+                  <>
+                    <button type="button" onClick={() => pickNick(m.id, m.name)} className="cursor-pointer font-extrabold hover:underline">
+                      {m.name}
+                    </button>
+                    <span className="font-extrabold"> fısıldadı: </span>
+                  </>
+                )}
+                {stripChatIcons(m.text)}
               </>
-            ) : m.kind === 'system' ? (
-              <>🧭 {m.text}</>
             ) : (
-              m.whisper ? (
-                <>
-                  🤫{' '}
-                  {m.self ? (
-                    <span className="font-extrabold">{`${m.toName ?? ''}’a fısıldadın`}: </span>
-                  ) : (
-                    <>
-                      <button type="button" onClick={() => pickNick(m.id, m.name)} className="cursor-pointer font-extrabold hover:underline">
-                        {m.name}
-                      </button>
-                      <span className="font-extrabold"> fısıldadı: </span>
-                    </>
-                  )}
-                  {m.text}
-                </>
-              ) : (
-                <>
-                  {m.self ? (
-                    <span className="font-extrabold">{m.name}: </span>
-                  ) : (
-                    <>
-                      <button type="button" onClick={() => pickNick(m.id, m.name)} className="cursor-pointer font-extrabold text-[#6b4fc0] hover:underline">
-                        {m.name}
-                      </button>
-                      <span className="font-extrabold">: </span>
-                    </>
-                  )}
-                  {m.text}
-                </>
-              )
+              <>
+                {m.self ? (
+                  <span className="font-extrabold">{m.name}: </span>
+                ) : (
+                  <>
+                    <button type="button" onClick={() => pickNick(m.id, m.name)} className="cursor-pointer font-extrabold text-[#6b4fc0] hover:underline">
+                      {m.name}
+                    </button>
+                    <span className="font-extrabold">: </span>
+                  </>
+                )}
+                {stripChatIcons(m.text)}
+              </>
             )}
           </p>
         ))}
@@ -763,9 +751,9 @@ export function HelpModal({ onClose, inCity = false, onOpenWardrobe, onGoHome, o
             type="button"
             onClick={onClose}
             aria-label="Kapat"
-            className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f0ff] text-sm font-black text-[#8a7a9c] transition hover:bg-[#ffedd6] active:scale-95"
+            className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f0ff] transition hover:bg-[#ffedd6] active:scale-95"
           >
-            ✕
+            <Ico name="close" size={14} />
           </button>
         </div>
 
@@ -956,8 +944,8 @@ export function CameraTutorial({ touch, onDone }) {
     <div className="pointer-events-none absolute inset-x-0 bottom-[22%] z-30 grid place-items-center" role="status">
       <div className="flex w-[min(21rem,calc(100vw-1.5rem))] animate-pop flex-col items-center gap-2 rounded-[2rem] border-2 border-white bg-white/85 px-5 pb-4 pt-3 shadow-toy backdrop-blur-md">
         <div className="relative flex h-24 w-full items-center justify-center">
-          <span className="absolute left-3 text-4xl font-black text-[#fdb252]" style={{ animation: 'hand-arrow 1.8s ease-in-out infinite' }}>‹</span>
-          <span className="absolute right-3 text-4xl font-black text-[#fdb252]" style={{ animation: 'hand-arrow 1.8s ease-in-out 0.9s infinite' }}>›</span>
+          <span className="absolute left-3" style={{ animation: 'hand-arrow 1.8s ease-in-out infinite' }}><Ico name="prev" size={26} /></span>
+          <span className="absolute right-3" style={{ animation: 'hand-arrow 1.8s ease-in-out 0.9s infinite' }}><Ico name="next" size={26} /></span>
           <div className="absolute h-1.5 w-40 rounded-full bg-gradient-to-r from-transparent via-[#fdb252]/50 to-transparent" />
           <div style={{ animation: 'hand-drag 2.4s ease-in-out infinite' }}>
             <div style={{ animation: 'hand-press 2.4s ease-in-out infinite', filter: 'drop-shadow(0 6px 8px rgba(74,59,92,.3))' }}>
@@ -1069,12 +1057,12 @@ export function StartGuide({ touch, ready = true, inCity, inAirport = false, onD
             </button>
           )}
           <button onClick={advance} className="rounded-full bg-[#f6f0ff] px-3 py-1 text-xs font-black text-[#6b4fc0] hover:bg-[#ede4ff] active:scale-95">
-            {stepIdx === visibleSteps.length ? 'Bitir ✓' : 'İleri ›'}
+            {stepIdx === visibleSteps.length ? 'Bitir ✔️' : 'İleri 👉'}
           </button>
         </div>
       </div>
-      <button onClick={onDone} aria-label="İpucunu kapat" className="absolute right-2.5 top-2.5 grid h-7 w-7 place-items-center rounded-full text-xs font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
-        ✕
+      <button onClick={onDone} aria-label="İpucunu kapat" className="absolute right-2.5 top-2.5 grid h-7 w-7 place-items-center rounded-full hover:bg-[#ffedd6]/70">
+        <Ico name="close" size={12} />
       </button>
     </div></TopDock>
   )

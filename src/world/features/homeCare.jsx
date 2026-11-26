@@ -431,7 +431,7 @@ export function useHomeCare({ net, home, focusRef, touch, say, panel }) {
                         onClick={() => inviteFriend(f)}
                         className={`rounded-full px-3 py-1 text-xs font-black text-white transition active:scale-95 ${sent ? 'bg-[#a8d5ba]' : 'bg-[#a88bff] hover:bg-[#9370ff]'}`}
                       >
-                        {sent ? 'Davet Edildi ✓' : 'Davet Et'}
+                        {sent ? 'Davet Edildi ✔️' : 'Davet Et'}
                       </button>
                     </div>
                   )
@@ -468,7 +468,7 @@ export function useHomeCare({ net, home, focusRef, touch, say, panel }) {
           <div className="mt-4 flex items-center justify-between gap-3">
             <span className="text-xs font-black text-[#8a7a9c]">İlerleme: {careDone}/3</span>
             {care.claimed ? (
-              <span className="rounded-full bg-[#eefcf1] px-3 py-1.5 text-xs font-black text-[#2f7a55]">Bugünkü ödül alındı ✓</span>
+              <span className="rounded-full bg-[#eefcf1] px-3 py-1.5 text-xs font-black text-[#2f7a55]">Bugünkü ödül alındı ✔️</span>
             ) : (
               <ToyButton onClick={claimCareBonus} disabled={careDone < 3} className="!w-auto !px-5 !py-2 !text-sm">
                 {careDone < 3 ? '3/3 Tamamla' : '+25 ₺ Ödülü Al'}
@@ -546,7 +546,7 @@ export function useHomeCare({ net, home, focusRef, touch, say, panel }) {
             Evine Git
           </button>
           <button onClick={() => setInviteCard(null)} aria-label="Kapat" className="text-xs font-black text-[#8a7a9c]">
-            ✕
+            ✖️
           </button>
         </div>
       )}

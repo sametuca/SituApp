@@ -201,7 +201,7 @@ export function PhotoPreview({ photo, onAgain, onAlbum, onClose }) {
           💾 Kaydet
         </button>
         <button onClick={onAgain} className={lilac}>
-          🔁 Tekrar
+          Tekrar Çek
         </button>
       </div>
       <div className="mt-2 flex gap-2">
@@ -241,7 +241,7 @@ export function AlbumModal({ list, onDelete, onClose }) {
             </button>
           </div>
           <button onClick={() => setOpen(null)} className="mt-2 w-full rounded-2xl py-2 text-sm font-extrabold text-[#8a7a9c] hover:bg-[#ffedd6]/60">
-            ← Albüme dön
+            🖼️ Albüme dön
           </button>
         </>
       ) : list.length === 0 ? (

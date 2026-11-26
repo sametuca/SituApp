@@ -114,7 +114,7 @@ export function VoiceBubble({ voice, self }) {
         aria-label={playing ? 'Sesi durdur' : 'Sesli mesajı oynat'}
         className="grid h-9 w-9 shrink-0 place-items-center rounded-full border-b-2 border-[#e8952c] bg-[#fdb252] text-sm text-white active:translate-y-px"
       >
-        {playing ? '❚❚' : '▶'}
+        {playing ? '🛑' : '🎵'}
       </button>
       <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-white/70">
         <div className="h-full rounded-full bg-[#fdb252] transition-[width]" style={{ width: `${Math.round(pos * 100)}%` }} />

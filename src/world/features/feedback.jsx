@@ -161,7 +161,7 @@ export function useFeedback({ panel, setPanel, venue, home, name: who }) {
               aria-label="Kapat"
               className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full bg-[#f6f0ff] text-sm font-black text-[#8a7a9c] transition hover:bg-[#ffedd6]/70"
             >
-              ✕
+              ✖️
             </button>
             <span className="grid h-16 w-16 place-items-center rounded-3xl bg-[#fff3c8] shadow-soft">
               <Ico name="feedback" size={38} />

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { screenK } from './screenK'
 import { useFrame, useLoader } from '@react-three/fiber'
-import { CanvasTexture, Color, DataTexture, MeshStandardMaterial, Object3D, ExtrudeGeometry, Shape, LinearFilter, RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
+import { CanvasTexture, Color, DataTexture, DoubleSide, MeshStandardMaterial, Object3D, ExtrudeGeometry, ShaderMaterial, Shape, LinearFilter, RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
 import { Html, RoundedBox } from '@react-three/drei'
 import { BEACH, BLANKETS, BUILDINGS, GAP, GAZEBO, ISLAND, PIER, PLAY_BOUNDS, PLAZA_R, PROPS, RIM, RING, ROAD_END, ROAD_HALF, ROAD_START, SPEED_RING_POS, TOWELS } from './layout'
 import { CULL_R, playerPos, useCull } from './cull'
@@ -837,7 +837,7 @@ function Sun({ focusRef }) {
 
 // ---------- deniz: adanın dört yanı (Meshy dokulu, animasyonlu) ----------
 const WATER_COLOR = new Color('#feda9d')
-const WATER_NIGHT = new Color('#3f5a9c')
+const WATER_NIGHT = new Color('#294582')
 
 // ---------- dünya sınırı: şamandıra halatı (oyuncu bunun ötesine geçemez; tatlı bir "buraya kadar" çizgisi) ----------
 const BUOY_OFF = 3.2 // oynanabilir sınırın ötesinde (m)
@@ -930,6 +930,7 @@ function Sea() {
   }, [])
   const mat = useRef()
   const mat2 = useRef()
+  const moonPath = useRef()
   const plane = useRef()
   useFrame(({ clock }, dt) => {
     const t = clock.elapsedTime
@@ -940,8 +941,16 @@ function Sea() {
     ring.offset.x += dt * 0.02
     if (plane.current) plane.current.position.y = -0.05 + Math.sin(t * 0.7) * 0.025 // yavaş kabarma
     const night = Number.isFinite(worldClock.night) ? worldClock.night : 0
-    if (mat.current) mat.current.color.copy(WATER_COLOR).lerp(WATER_NIGHT, night * 0.85)
+    if (mat.current) mat.current.color.copy(WATER_COLOR).lerp(WATER_NIGHT, night * 0.88)
     if (mat2.current) mat2.current.opacity = 0.16 + Math.sin(t * 0.9) * 0.05
+    if (moonPath.current) {
+      const mVis = night > 0.1
+      moonPath.current.visible = mVis
+      if (mVis) {
+        moonPath.current.material.opacity = (night - 0.1) * 0.24 * (0.85 + Math.sin(t * 2.1) * 0.15)
+        moonPath.current.scale.x = 1 + Math.sin(t * 1.4) * 0.08
+      }
+    }
   })
   // kıyıya vuran dalgalar: her kenarda 3 bant, aynı döngüde faz farklı; açıktan kıyıya yürür, kıyıda sönüp kaybolur
   const WAVES = 3
@@ -981,6 +990,11 @@ function Sea() {
       <mesh position={[0, -0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[2200, 2200]} />
         <meshBasicMaterial ref={mat2} map={swell} transparent opacity={0.18} depthWrite={false} />
+      </mesh>
+      {/* Yaz akşamı denizde ay ışığı yakamozu */}
+      <mesh ref={moonPath} position={[14, -0.015, ISLAND.z1 + 58]} rotation={[-Math.PI / 2, 0, -0.22]} visible={false}>
+        <planeGeometry args={[18, 95]} />
+        <meshBasicMaterial map={fade} color="#ffe7a8" transparent opacity={0} depthWrite={false} />
       </mesh>
       {sides.flatMap((sd, si) =>
         Array.from({ length: WAVES }, (_, k) => {
@@ -1176,64 +1190,206 @@ function SkyBalloon() {
   )
 }
 
-/** Şehir yollarında içinden geçince hız artışı veren modern neon-pastel hız kapıları (asfalt üstünde, çift halka + oklar). */
+/** Şehir yollarında içinden geçince hız artışı veren fantastik enerji geçitleri (enerji girdabı, dönen rün halkaları, 3B şimşek tacı ve ışıklı zemin okları). */
 function SpeedRings() {
   const outerRefs = useRef([])
   const innerRefs = useRef([])
+  const runeRefs = useRef([])
+  const crestRefs = useRef([])
+
+  // 3B şimşek rozeti geometrisi
+  const boltGeo = useMemo(() => {
+    const sh = new Shape()
+    sh.moveTo(0.04, 0.36)
+    sh.lineTo(-0.22, 0.02)
+    sh.lineTo(-0.02, 0.02)
+    sh.lineTo(-0.12, -0.36)
+    sh.lineTo(0.24, 0.04)
+    sh.lineTo(0.04, 0.04)
+    sh.closePath()
+    const g = new ExtrudeGeometry(sh, { depth: 0.09, bevelEnabled: true, bevelThickness: 0.025, bevelSize: 0.02, bevelSegments: 2 })
+    g.center()
+    return g
+  }, [])
+
+  // Kapı içi dönen enerji girdabı shader'ı
+  const portalMat = useMemo(
+    () =>
+      new ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        side: DoubleSide,
+        uniforms: { uTime: { value: 0 } },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv * 2.0 - 1.0;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform float uTime;
+          varying vec2 vUv;
+          void main() {
+            float r = length(vUv);
+            if (r > 1.0) discard;
+            float a = atan(vUv.y, vUv.x);
+            float swirl = sin(a * 4.0 - r * 10.0 + uTime * 5.0) * 0.5 + 0.5;
+            float rings = sin(r * 16.0 - uTime * 6.5) * 0.5 + 0.5;
+            float edge = smoothstep(1.0, 0.65, r) * smoothstep(0.08, 0.42, r);
+            float core = (1.0 - smoothstep(0.0, 0.35, r)) * 0.45;
+            vec3 c1 = vec3(0.45, 0.94, 1.0);
+            vec3 c2 = vec3(0.72, 0.58, 1.0);
+            vec3 c3 = vec3(1.0, 0.84, 0.42);
+            vec3 col = mix(c2, c1, swirl * 0.75 + rings * 0.25);
+            col = mix(col, c3, pow(rings * swirl, 2.0) * 0.55);
+            float alpha = clamp((edge * (0.28 + swirl * 0.28 + rings * 0.16) + core), 0.0, 0.72);
+            gl_FragColor = vec4(col, alpha);
+          }
+        `,
+      }),
+    [],
+  )
+
+  // Asfalt üstü akan hız okları şeridi
+  const padMat = useMemo(
+    () =>
+      new ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        uniforms: { uTime: { value: 0 } },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform float uTime;
+          varying vec2 vUv;
+          void main() {
+            float x = abs(vUv.x - 0.5) * 2.0;
+            float chev = fract(vUv.y * 3.0 - uTime * 2.2 - x * 0.65);
+            float band = smoothstep(0.05, 0.18, chev) * (1.0 - smoothstep(0.28, 0.45, chev));
+            float mask = smoothstep(1.0, 0.15, x) * sin(vUv.y * 3.14159);
+            vec3 col = mix(vec3(0.32, 0.92, 0.98), vec3(1.0, 0.84, 0.38), band);
+            gl_FragColor = vec4(col, band * mask * 0.85);
+          }
+        `,
+      }),
+    [],
+  )
+
+  useEffect(() => () => {
+    boltGeo.dispose()
+    portalMat.dispose()
+    padMat.dispose()
+  }, [boltGeo, portalMat, padMat])
+
+  const orbAngles = useMemo(() => Array.from({ length: 8 }, (_, k) => (k / 8) * Math.PI * 2), [])
+
   useFrame(({ clock }) => {
     const t = clock.elapsedTime
+    portalMat.uniforms.uTime.value = t
+    padMat.uniforms.uTime.value = t
     outerRefs.current.forEach((g, i) => {
       if (!g) return
-      g.position.y = 1.9 + Math.sin(t * 2.8 + i) * 0.12
+      g.position.y = 1.98 + Math.sin(t * 2.5 + i * 1.1) * 0.12
     })
     innerRefs.current.forEach((m, i) => {
       if (!m) return
-      m.rotation.z = t * (i % 2 === 0 ? 1.8 : -1.8)
+      m.rotation.z = t * (i % 2 === 0 ? 1.9 : -1.9)
+      m.rotation.x = Math.sin(t * 1.5 + i) * 0.16
+    })
+    runeRefs.current.forEach((m, i) => {
+      if (!m) return
+      m.rotation.z = -t * 1.1
+      m.rotation.y = Math.cos(t * 1.3 + i) * 0.18
+    })
+    crestRefs.current.forEach((m, i) => {
+      if (!m) return
+      m.rotation.y = t * 2.1 + i
+      m.position.y = 1.84 + Math.sin(t * 3.4 + i) * 0.08
     })
   })
+
   return (
     <group>
       {SPEED_RING_POS.map(([x, z, ry], i) => (
         <group key={i} position={[x, 0, z]} rotation={[0, ry, 0]}>
-          {/* Sol ve sağ parlak kapı dikmeleri (asfalt üstüne temiz oturur) */}
-          {[-1.55, 1.55].map((px) => (
+          {/* Asfalt üstü ışıklı geçit tabanı + akan oklar */}
+          <mesh position={[0, 0.105, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={2}>
+            <planeGeometry args={[2.7, 2.2]} />
+            <primitive object={padMat} attach="material" />
+          </mesh>
+
+          {/* Sol ve sağ süslü sütun kaideleri + parlayan kristal kuleler */}
+          {[-1.68, 1.68].map((px, sideIdx) => (
             <group key={px} position={[px, 0, 0]}>
-              <mesh position={[0, 0.14, 0]} castShadow>
-                <cylinderGeometry args={[0.22, 0.28, 0.28, 12]} />
-                <meshStandardMaterial color="#4a3b5c" roughness={0.5} />
+              <mesh position={[0, 0.15, 0]} castShadow>
+                <cylinderGeometry args={[0.26, 0.34, 0.3, 8]} />
+                <meshStandardMaterial color="#4a3b5c" roughness={0.42} metalness={0.15} />
               </mesh>
-              <mesh position={[0, 0.85, 0]} castShadow>
-                <cylinderGeometry args={[0.09, 0.11, 1.35, 10]} />
-                <meshStandardMaterial color="#fffaf2" roughness={0.35} />
+              <mesh position={[0, 0.32, 0]}>
+                <cylinderGeometry args={[0.29, 0.29, 0.07, 8]} />
+                <meshStandardMaterial color="#ffd35e" emissive="#ffb32c" emissiveIntensity={0.6} roughness={0.28} />
               </mesh>
-              <mesh position={[0, 1.56, 0]}>
-                <sphereGeometry args={[0.16, 12, 10]} />
-                <meshStandardMaterial color="#38bdf8" emissive="#38bdf8" emissiveIntensity={1.1} roughness={0.2} />
+              <mesh position={[0, 0.92, 0]} castShadow>
+                <cylinderGeometry args={[0.12, 0.16, 1.15, 8]} />
+                <meshStandardMaterial color="#f8f2ff" roughness={0.35} />
+              </mesh>
+              {/* Sütun üstü yükselen parlayan kristal */}
+              <mesh position={[0, 1.68, 0]} rotation={[0, sideIdx * 0.7, 0]}>
+                <octahedronGeometry args={[0.22, 0]} />
+                <meshStandardMaterial color="#80f0ff" emissive="#38bdf8" emissiveIntensity={1.35} roughness={0.18} />
+              </mesh>
+              <mesh position={[0, 1.68, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                <torusGeometry args={[0.28, 0.025, 8, 20]} />
+                <meshStandardMaterial color="#ffd35e" emissive="#ffb32c" emissiveIntensity={0.85} />
               </mesh>
             </group>
           ))}
-          {/* Yüzen çift neon hız halkası + hız okları */}
-          <group ref={(el) => (outerRefs.current[i] = el)} position={[0, 1.9, 0]}>
+
+          {/* Ana yüzen fantastik geçit */}
+          <group ref={(el) => (outerRefs.current[i] = el)} position={[0, 1.98, 0]}>
+            {/* Enerji girdabı yüzeyi */}
+            <mesh renderOrder={3}>
+              <circleGeometry args={[1.3, 36]} />
+              <primitive object={portalMat} attach="material" />
+            </mesh>
+
+            {/* Altın çerçeve halkası + 8 adet parlayan taş */}
             <mesh>
-              <torusGeometry args={[1.38, 0.11, 12, 32]} />
-              <meshStandardMaterial color="#ffd35e" emissive="#ff9f1c" emissiveIntensity={0.95} roughness={0.2} />
+              <torusGeometry args={[1.44, 0.11, 14, 36]} />
+              <meshStandardMaterial color="#ffd35e" emissive="#ff9f1c" emissiveIntensity={0.85} roughness={0.22} metalness={0.2} />
             </mesh>
-            <mesh ref={(el) => (innerRefs.current[i] = el)}>
-              <torusGeometry args={[1.12, 0.055, 10, 28]} />
-              <meshStandardMaterial color="#7ef9ff" emissive="#38bdf8" emissiveIntensity={1.1} roughness={0.18} />
-            </mesh>
-            {/* Üstte parlak şimşek/yıldız rozeti */}
-            <mesh position={[0, 1.56, 0]} rotation={[0, 0, Math.PI / 4]}>
-              <octahedronGeometry args={[0.24, 0]} />
-              <meshStandardMaterial color="#fff3c4" emissive="#ffd35e" emissiveIntensity={1.2} />
-            </mesh>
-            {/* Yanlarda hız oku konileri */}
-            {[-0.65, 0.65].map((ax) => (
-              <mesh key={ax} position={[ax, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
-                <coneGeometry args={[0.16, 0.34, 8]} />
-                <meshStandardMaterial color="#8fdcb4" emissive="#4ade80" emissiveIntensity={0.9} />
+            {orbAngles.map((ang, oi) => (
+              <mesh key={oi} position={[Math.cos(ang) * 1.44, Math.sin(ang) * 1.44, 0]} rotation={[0, 0, ang]}>
+                <octahedronGeometry args={[0.11, 0]} />
+                <meshStandardMaterial
+                  color={oi % 2 === 0 ? '#7ef9ff' : '#ff9ec7'}
+                  emissive={oi % 2 === 0 ? '#38bdf8' : '#ff70a6'}
+                  emissiveIntensity={1.4}
+                  roughness={0.18}
+                />
               </mesh>
             ))}
+
+            {/* Çift eksenli dönen rün/enerji halkaları */}
+            <mesh ref={(el) => (innerRefs.current[i] = el)}>
+              <torusGeometry args={[1.18, 0.055, 10, 32]} />
+              <meshStandardMaterial color="#7ef9ff" emissive="#38bdf8" emissiveIntensity={1.2} roughness={0.18} />
+            </mesh>
+            <mesh ref={(el) => (runeRefs.current[i] = el)}>
+              <torusGeometry args={[1.32, 0.032, 8, 6]} />
+              <meshStandardMaterial color="#c9a8ff" emissive="#a88bff" emissiveIntensity={1.1} roughness={0.22} />
+            </mesh>
+
+            {/* Tepe noktası: dönen 3B altın şimşek arması */}
+            <mesh ref={(el) => (crestRefs.current[i] = el)} geometry={boltGeo} position={[0, 1.84, 0]} castShadow>
+              <meshStandardMaterial color="#ffe48f" emissive="#ffae2b" emissiveIntensity={1.15} roughness={0.22} metalness={0.18} />
+            </mesh>
           </group>
         </group>
       ))}

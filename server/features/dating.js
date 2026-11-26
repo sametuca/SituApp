@@ -216,17 +216,12 @@ export default function dating(ctx) {
     if (i >= 0) sdQueue.splice(i, 1)
   }
 
-  // Periyodik canlı nabız (25 sn)
-  let lastEvKey = ''
+  // Periyodik canlı nabız (25 sn) — sohbete otomatik duyuru basılmaz, Sosyal ve Buluşma kartında görünür
   setInterval(() => {
     const pulse = computePulse()
-    const evKey = pulse.event.active ? `${pulse.event.event.id}|${Math.floor(Date.now() / (20 * 60_000))}` : ''
-    const announced = Boolean(evKey && evKey !== lastEvKey)
-    if (announced) lastEvKey = evKey
     for (const p of players.values()) {
       if (p.ws.readyState !== 1) continue
       send(p.ws, pulse)
-      if (announced) send(p.ws, { t: 'info', text: `${pulse.event.event.emoji} ${pulse.event.event.title} başladı! ${pulse.event.event.desc}` })
     }
   }, 25_000).unref?.()
 

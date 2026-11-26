@@ -324,13 +324,13 @@ export function ClickToMoveGround({ moveTargetRef, disabled = false }) {
         <planeGeometry args={[280, 280]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
-      <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]} visible={false}>
-        <ringGeometry args={[0.32, 0.5, 32]} />
-        <meshBasicMaterial color="#fdb252" transparent opacity={0.9} depthWrite={false} />
+      <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]} visible={false} renderOrder={6}>
+        <ringGeometry args={[0.3, 0.5, 32]} />
+        <meshBasicMaterial color="#ff8533" transparent opacity={0.95} depthWrite={false} toneMapped={false} />
       </mesh>
-      <mesh ref={pulseRef} rotation={[-Math.PI / 2, 0, 0]} visible={false}>
-        <ringGeometry args={[0.38, 0.48, 32]} />
-        <meshBasicMaterial color="#ffffff" transparent opacity={0.7} depthWrite={false} />
+      <mesh ref={pulseRef} rotation={[-Math.PI / 2, 0, 0]} visible={false} renderOrder={6}>
+        <ringGeometry args={[0.38, 0.49, 32]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.85} depthWrite={false} toneMapped={false} />
       </mesh>
     </>
   )

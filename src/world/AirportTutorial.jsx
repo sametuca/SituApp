@@ -222,7 +222,7 @@ export function AirportTutorialHud({ step, near, touch, celebrate, onCollect, on
             </div>
           </div>
           <button onClick={onSkip} className="rounded-full px-2 py-0.5 text-[11px] font-extrabold text-[#8a7a9c] transition hover:bg-[#f6f0ff]">
-            Atla ›
+            Atla 👉
           </button>
         </div>
 

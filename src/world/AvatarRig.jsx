@@ -7,6 +7,7 @@ import { applyPose, applyUprightIdle, makeRig } from './avatarPose'
 import { HeadAccessory } from './Accessories'
 import { cosStore } from './cosStore'
 import { applyLook, trimBase } from './avatarLook'
+import { applyPastelShading, getCleanAvatarTexture } from './avatarTextureFix'
 import { screenK } from './screenK'
 import WorkProp from './WorkProp'
 
@@ -14,10 +15,13 @@ export const AVATAR_HEIGHT = 1.3
 const FEET_LIFT = 0.085 // en yüksek yer zemini (meydan taşı) 0,08
 const RIG_HEIGHT = 1.2 // meshy_rig çağrısındaki height_meters
 
-/** Satın alınan sokak ürünü (dondurma, çiçek, balon, gazete): yeme/keyif animasyonu sırasında avatarın önünde görünür. */
+const DRINK_EMOJIS = new Set(['🍹', '🥤', '🍺', '🍻', '🥂', '🍷', '🍾', '☕', '🍵', '🧋', '🍸', '🥃'])
+
+/** Satın alınan ürün (içecek, dondurma, çiçek, balon, gazete): yeme/içme animasyonu sırasında avatarın önünde görünür. */
 function HandProp({ item, t0 }) {
   const ref = useRef()
   const scoopRef = useRef()
+  const isDrink = item.style === 'drink' || item.alcohol || DRINK_EMOJIS.has(item.emoji)
   useFrame(() => {
     const g = ref.current
     if (!g) return
@@ -33,6 +37,11 @@ function HandProp({ item, t0 }) {
       const sway = Math.sin(t * 3.2)
       g.position.set(-0.1 + sway * 0.03, 0.78 + sway * 0.03, 0.28)
       g.rotation.set(-0.25, 0, 0.2)
+    } else if (isDrink) {
+      const sip = Math.max(0, Math.sin(t * 4.8))
+      g.position.set(-0.1, 0.76 + sip * 0.07, 0.28 - sip * 0.03)
+      g.rotation.set(-0.18 - sip * 0.32, 0, 0.12)
+      if (scoopRef.current) scoopRef.current.scale.y = Math.max(0.2, 1 - u * 0.78)
     } else {
       const bite = Math.sin(t * 7.2)
       g.position.set(-0.11 + bite * 0.025, 0.78 + bite * 0.04, 0.29 + bite * 0.02)
@@ -40,6 +49,31 @@ function HandProp({ item, t0 }) {
       if (scoopRef.current) scoopRef.current.scale.setScalar(Math.max(0.25, 1 - u * 0.72))
     }
   })
+
+  if (isDrink) {
+    return (
+      <group ref={ref} position={[-0.1, 0.76, 0.28]}>
+        <mesh position={[0, 0, 0]}>
+          <cylinderGeometry args={[0.068, 0.052, 0.17, 14]} />
+          <meshStandardMaterial color="#fffaf5" transparent opacity={0.58} roughness={0.2} />
+        </mesh>
+        <group ref={scoopRef} position={[0, -0.07, 0]}>
+          <mesh position={[0, 0.065, 0]}>
+            <cylinderGeometry args={[0.058, 0.045, 0.13, 14]} />
+            <meshStandardMaterial color={item.color ?? '#ffd95e'} roughness={0.35} />
+          </mesh>
+        </group>
+        <mesh position={[0.045, 0.085, 0]} rotation={[0.3, 0, -0.5]}>
+          <cylinderGeometry args={[0.034, 0.034, 0.012, 12]} />
+          <meshStandardMaterial color="#ffe066" roughness={0.45} />
+        </mesh>
+        <mesh position={[-0.015, 0.1, 0]} rotation={[0, 0, 0.24]}>
+          <cylinderGeometry args={[0.007, 0.007, 0.2, 6]} />
+          <meshStandardMaterial color="#7fe0c3" roughness={0.4} />
+        </mesh>
+      </group>
+    )
+  }
 
   if (item.style === 'hold') {
     return (
@@ -236,14 +270,18 @@ export default function AvatarRig({ slug, anim = 'idle', pose, cosId, halfRate =
         o.frustumCulled = false
         if (o.material && !Array.isArray(o.material)) {
           o.material = o.material.clone()
+          if (o.material.map) o.material.map = getCleanAvatarTexture(o, o.material.map)
           o.material.metalness = 0
-          o.material.roughness = Math.max(o.material.roughness ?? 0.72, 0.72)
-          o.material.envMapIntensity = 0.25
+          o.material.roughness = 0.78
+          o.material.envMapIntensity = 0.52
         }
       }
     })
     trimBase(clone, slug)
     if (look) applyLook(clone, slug, look)
+    clone.traverse((o) => {
+      if (o.isMesh && o.material && !Array.isArray(o.material)) applyPastelShading(o.material)
+    })
     return clone
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene, lookKey])

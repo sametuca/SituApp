@@ -40,8 +40,8 @@ function NpcSheet({ npc, text, onOption, onBuy, onClose, touch }) {
             <Typed key={text} text={text} />
           </div>
         </div>
-        <button onClick={onClose} aria-label="Kapat" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/80 text-lg font-black text-[#8a7a9c] shadow">
-          ✕
+        <button onClick={onClose} aria-label="Kapat" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/80 text-sm font-black text-[#8a7a9c] shadow">
+          ✖️
         </button>
       </div>
       {npc.shop?.length > 0 && (
@@ -112,7 +112,7 @@ function AfkPlayerModal({ bot, onClose, say }) {
           <p className="flex items-center gap-1 text-xs font-bold text-[#8a7a9c]"><Ico name="afk" size={14} /> Şu an klavyeden uzakta (AFK)</p>
         </div>
         <button onClick={onClose} aria-label="Kapat" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f0ff] text-sm font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
-          ✕
+          ✖️
         </button>
       </div>
 

@@ -7,6 +7,7 @@ import { skyLive } from './Sky'
 import Prop from './Prop'
 import HomeGarden from './HomeGarden.jsx'
 import { DecorFloor, RomanticLights, wallHex, wallTexture } from './HomeDecor'
+import { screenK } from './screenK'
 
 
 // Duvarlar yalnızca içe bakan yüzü çizer (FrontSide): kamera dışarıdan bakınca duvar "şeffaf" olur, oyuncak ev gibi görünür.
@@ -133,7 +134,8 @@ function RoomLights({ dim }) {
         shadow-camera-bottom={-8}
         shadow-camera-near={1}
         shadow-camera-far={30}
-        shadow-bias={-0.0005}
+        shadow-bias={-0.0004}
+        shadow-normalBias={0.035}
       />
       <pointLight position={[0, 3, 0]} intensity={dim ? 4 : 14} distance={12} color="#fff0d9" />
     </>
@@ -289,10 +291,10 @@ export default function HomeRoom({ ownerName, decor, tier = 1, garden, landTier 
             <ringGeometry args={[0.45, 0.62, 24]} />
             <meshBasicMaterial color="#c9b6ff" transparent opacity={0.85} />
           </mesh>
-          <Html position={[0, 0.55, 0]} center distanceFactor={12} zIndexRange={[6, 0]} style={{ pointerEvents: 'none' }}>
-            <div className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border-2 border-white bg-[#f3e8ff] px-2.5 py-0.5 text-[11px] font-black text-[#5b4678] shadow-md">
-              <span>{HOME_TIERS[tier + 1].emoji} Ev Büyüt</span>
-              <span className="rounded-full bg-[#fff3c4] px-1.5 py-[1px] text-[#8a5a00]">₺ {HOME_TIERS[tier + 1].price}</span>
+          <Html position={[0, 0.65, 0]} center distanceFactor={13 * screenK()} zIndexRange={[6, 0]} style={{ pointerEvents: 'none' }}>
+            <div className="inline-flex w-max min-w-max items-center gap-2 whitespace-nowrap rounded-full border-2 border-white bg-[#f3e8ff]/95 px-3 py-1 text-[12px] leading-none font-black text-[#5b4678] shadow-md">
+              <span className="shrink-0">{HOME_TIERS[tier + 1].emoji} Ev Büyüt</span>
+              <span className="shrink-0 rounded-full bg-[#fff3c4] px-2 py-0.5 text-[11px] font-black text-[#8a5a00]">₺ {HOME_TIERS[tier + 1].price}</span>
             </div>
           </Html>
         </group>
@@ -312,13 +314,14 @@ export default function HomeRoom({ ownerName, decor, tier = 1, garden, landTier 
       {tier === 0 ? <GarageDoor /> : <ExitDoor />}
 
 
-      {/* sahibin adı: arka duvarda tabela */}
+      {/* sahibin adı: arka duvar üst orta tabela */}
       {signReady && (
-      <Html position={[0, 3.2, -hd + 0.15]} center distanceFactor={14} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
-        <div className="whitespace-nowrap rounded-full border-2 border-white bg-white/90 px-3 py-1 text-sm font-extrabold text-[#4a3b5c] shadow-md">
-          🏠 {ownerName} evi
-        </div>
-      </Html>
+        <Html position={[0, wallH + 0.58, -hd]} center distanceFactor={15 * screenK()} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
+          <div className="inline-flex w-max min-w-max items-center gap-1.5 whitespace-nowrap rounded-full border-2 border-white bg-white/95 px-3.5 py-1 text-[13px] leading-none font-extrabold text-[#4a3b5c] shadow-md">
+            <span className="shrink-0">🏠</span>
+            <span className="shrink-0">{ownerName} evi</span>
+          </div>
+        </Html>
       )}
 
       <Prop model="/models/cafe/cafe-plant.glb" x={-hw + 0.9} z={hd - 1} scale={1.5} />

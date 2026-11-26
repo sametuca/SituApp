@@ -1,6 +1,7 @@
 // Flört & Sosyal Akış Merkezi: Mod (Vibe) seçimi, Canlı Sıcak Nokta, Zamanlı Kasaba Etkinlikleri,
 // 3 Dakikalık Hızlı Randevu Masası (Canlı + Demo), Uyum Seviyesi (Bond 1–5), Tek Tık Buz Kırıcılar ve Gizlilik.
 import { useCallback, useEffect, useState } from 'react'
+import { Em } from '../../components/emoji'
 import { BOND_LEVELS, ICEBREAKERS, SPEED_QUESTIONS, VIBE_BY_ID, VIBES, townEventStatus } from '../datingData'
 import { ZONES } from '../layout'
 import { Modal } from '../Hud'
@@ -33,17 +34,17 @@ function SpeedDateModal({ session, msgs, onVote, onChat, onDecide, onClose }) {
     <Modal onClose={onClose} label="3 Dakikalık Hızlı Randevu" wide theme="dating">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h2 className="text-xl font-black text-[#4a3b5c]">💘 Hızlı Randevu · {session.opp.name}</h2>
-          <p className="text-xs font-bold text-[#8a7a9c]">Soruları oyla, sohbet et ve sonunda kararını ver!</p>
+          <h2 className="text-xl font-black text-[#4a3b5c]">Hızlı Randevu · {session.opp.name}</h2>
+          <p className="text-xs font-bold text-[#8a7a9c]">Soruları oyla, sohbet et ve sonunda kararını ver.</p>
         </div>
         <div className="flex items-center gap-2">
           {session.compat !== null && (
             <span className="rounded-full bg-[#ffe6f2] px-3 py-1 text-xs font-black text-[#c93b78]">
-              💞 %{session.compat} Uyum
+              %{session.compat} Uyum
             </span>
           )}
           <span className="rounded-full bg-[#f3ecff] px-3 py-1 text-xs font-black tabular-nums text-[#5b3fa8]">
-            ⏱ {fmtTime(leftMs)}
+            {fmtTime(leftMs)}
           </span>
         </div>
       </div>
@@ -117,7 +118,7 @@ function SpeedDateModal({ session, msgs, onVote, onChat, onDecide, onClose }) {
           onClick={() => onDecide(false)}
           className={`rounded-2xl border-2 py-2.5 text-sm font-black transition ${session.myDec === 'pass' ? 'border-[#c5bdd8] bg-[#e9e3f5] text-[#6b5d85]' : 'border-[#e4daf7] bg-[#f6f0ff] text-[#6b4fc0]'}`}
         >
-          {session.myDec === 'pass' ? 'Pas Seçildi' : '👋 Pas'}
+          {session.myDec === 'pass' ? 'Pas Seçildi' : 'Pas'}
         </button>
         <button
           type="button"
@@ -125,7 +126,7 @@ function SpeedDateModal({ session, msgs, onVote, onChat, onDecide, onClose }) {
           onClick={() => onDecide(true)}
           className={`rounded-2xl border-b-4 py-2.5 text-sm font-black text-white shadow-soft transition active:translate-y-[2px] ${session.myDec === 'like' ? 'border-[#c93b78] bg-[#ff7aa8]' : 'border-[#d96c8e] bg-[#ff8fb8]'}`}
         >
-          {session.myDec === 'like' ? '💗 Beğendin (Bekleniyor…)' : '💗 Eşleş!'}
+          {session.myDec === 'like' ? 'Beğendin (Bekleniyor…)' : 'Eşleş'}
         </button>
       </div>
     </Modal>
@@ -352,12 +353,12 @@ export function useDating({ net, say, panel, setPanel, focusRef, home, venue, cl
 
   const settingsSections = [
     <div key="dating-privacy" className="rounded-2xl bg-[#f8f4ff] p-3.5">
-      <p className="text-sm font-black text-[#4a3b5c]">🛡️ Flört & Mesaj Rahatlığı</p>
+      <p className="text-sm font-black text-[#4a3b5c]">Flört & Mesaj Rahatlığı</p>
       <p className="mt-0.5 text-xs font-bold text-[#8a7a9c]">Kimlerin sana fısıltı ve buz kırıcı gönderebileceğini seç.</p>
       <div className="mt-2.5 grid grid-cols-2 gap-1.5">
         {[
-          ['all', '🌍 Herkes'],
-          ['matched', '💗 Sadece Eşleşmeler & Arkadaşlar'],
+          ['all', 'Herkes'],
+          ['matched', 'Eşleşmeler & Arkadaşlar'],
         ].map(([val, lbl]) => (
           <button
             key={val}
@@ -385,7 +386,7 @@ export function useDating({ net, say, panel, setPanel, focusRef, home, venue, cl
               {ibBanner.emoji} {ibBanner.fromName}: “{ibBanner.text}”
             </p>
             <button type="button" onClick={() => setIbBanner(null)} className="text-xs font-black text-[#8a7a9c]">
-              ✕
+              ✖️
             </button>
           </div>
         </div>
@@ -394,19 +395,35 @@ export function useDating({ net, say, panel, setPanel, focusRef, home, venue, cl
       {/* İlk giriş Mod (Vibe) seçici */}
       {showVibeIntro && !open && !sdSession && (
         <Modal onClose={() => setShowVibeIntro(false)} label="Bugün Modun Ne?">
-          <h2 className="text-xl font-black text-[#4a3b5c]">✨ Bugün Modun Ne?</h2>
-          <p className="mt-1 text-xs font-bold text-[#8a7a9c]">Modunu seç, seninle aynı kafadaki kişilerin olduğu sıcak noktayı gösterelim!</p>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <h2 className="text-xl font-black text-[#4a3b5c]">Bugün Modun Ne?</h2>
+              <p className="mt-0.5 text-xs font-bold text-[#8a7a9c]">Modunu seç, seninle aynı kafadaki oyuncuların olduğu bölgeyi gösterelim.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowVibeIntro(false)}
+              aria-label="Kapat"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#f6f0ff] text-sm font-black text-[#6b4fc0] transition hover:bg-[#ece2ff]"
+            >
+              ✖️
+            </button>
+          </div>
           <div className="mt-3 grid grid-cols-2 gap-2">
             {VIBES.map((v) => (
               <button
                 key={v.id}
                 type="button"
                 onClick={() => chooseVibe(v.id)}
-                className="flex flex-col items-start rounded-2xl border-2 border-[#efe6ff] bg-[#fcfaff] p-3 text-left transition hover:border-[#a88bff] hover:bg-[#f5eeff]"
+                className="flex items-center gap-2.5 rounded-2xl border-2 border-white bg-[#faf6ff] p-2.5 text-left shadow-soft transition hover:border-[#a88bff] hover:bg-[#f3ebff] active:scale-95"
               >
-                <span className="text-2xl">{v.emoji}</span>
-                <span className="mt-1 text-sm font-black text-[#4a3b5c]">{v.label}</span>
-                <span className="text-[11px] font-bold text-[#8a7a9c]">{v.desc}</span>
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white shadow-sm">
+                  <Em e={v.emoji} size={26} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-black text-[#4a3b5c]">{v.label}</p>
+                  <p className="truncate text-[11px] font-semibold text-[#8a7a9c]">{v.desc}</p>
+                </div>
               </button>
             ))}
           </div>
@@ -431,22 +448,26 @@ export function useDating({ net, say, panel, setPanel, focusRef, home, venue, cl
       {/* Flört Merkezi Modalı */}
       {open && !sdSession && (
         <Modal onClose={() => setPanel(null)} label="Sosyal ve Buluşma" theme="dating">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-start justify-between gap-2">
             <div>
               <h2 className="text-xl font-black text-[#4a3b5c]">Sosyal ve Buluşma</h2>
-              <p className="text-xs font-bold text-[#8a7a9c]">Sıcak nokta, 3 dk hızlı randevu ve uyumların.</p>
+              <p className="text-xs font-bold text-[#8a7a9c]">Sıcak nokta, hızlı randevu ve uyumların.</p>
             </div>
-            <div className="flex gap-1.5">
-              <button type="button" onClick={() => setPanel('quests')} className="rounded-xl bg-[#fff3c8] px-2.5 py-1.5 text-[11px] font-black text-[#8a5a00]">⭐ Görevler</button>
-              <button type="button" onClick={() => setPanel('pvp')} className="rounded-xl bg-[#efe6ff] px-2.5 py-1.5 text-[11px] font-black text-[#5b3fa8]">⚔️ Düello</button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setPanel(null)}
+              aria-label="Kapat"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#ffeef5] text-sm font-black text-[#a83668] transition hover:bg-[#ffdceb] active:scale-95"
+            >
+              ✖️
+            </button>
           </div>
 
           <div className="mt-3 grid grid-cols-3 gap-1.5 rounded-2xl bg-[#f3ecff] p-1">
             {[
-              ['hot', '🔥 Sıcak Nokta'],
-              ['speed', '💘 Hızlı Randevu'],
-              ['bonds', '💞 Uyumlarım'],
+              ['hot', 'Sıcak Nokta'],
+              ['speed', 'Hızlı Randevu'],
+              ['bonds', 'Uyumlarım'],
             ].map(([id, lbl]) => (
               <button
                 key={id}
@@ -465,63 +486,80 @@ export function useDating({ net, say, panel, setPanel, focusRef, home, venue, cl
           <div className="mt-3">
             {tab === 'hot' && (
               <div className="flex flex-col gap-3">
-                {/* Zamanlı Kasaba Etkinliği */}
-                <div className={`rounded-2xl border-2 p-3.5 ${evStatus.active ? 'border-[#ffd35e] bg-[#fff9e6]' : 'border-[#efe6ff] bg-[#fcfaff]'}`}>
-                  <div className="flex items-center justify-between text-xs font-black">
-                    <span className="text-[#4a3b5c]">
-                      {evStatus.active ? `${evStatus.event.emoji} CANLI: ${evStatus.event.title}` : `⏳ Sıradaki: ${evStatus.next.emoji} ${evStatus.next.title}`}
-                    </span>
-                    <span className="rounded-full bg-white px-2.5 py-0.5 text-[#8a5a00]">
-                      {evStatus.active ? fmtTime(evStatus.endsInMs) : fmtTime(evStatus.startsInMs)}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs font-bold text-[#8a7a9c]">
-                    {evStatus.active ? evStatus.event.desc : 'Her 20 dakikada bir kasaba buluşma etkinliği başlar!'}
-                  </p>
-                  {evStatus.active && (
-                    <button
-                      type="button"
-                      onClick={() => jumpTo(evStatus.event.zone, evStatus.event.spawn)}
-                      className="mt-2.5 w-full rounded-xl border-b-4 border-[#d98a1c] bg-[#fdb252] py-2 text-xs font-black text-white"
-                    >
-                      ✨ Etkinliğe Işınlan
-                    </button>
-                  )}
-                </div>
-
-                {/* Canlı Sıcak Nokta */}
-                <div className="flex items-center justify-between rounded-2xl bg-[#fff3f8] p-3.5">
-                  <div>
-                    <p className="text-sm font-black text-[#4a3b5c]">🔥 Sıcak Nokta: {hotZoneObj.emoji} {hotZoneObj.name}</p>
-                    <p className="text-xs font-bold text-[#a83668]">Şu an en hareketli bölge ({pulse.hotCount} kişi)</p>
+                {/* Tek Sade Öne Çıkan Kart: Canlı Etkinlik + Sıcak Nokta */}
+                <div className={`flex items-center gap-3 rounded-2xl border-2 p-3 ${evStatus.active ? 'border-[#ffd35e] bg-[#fff9e6]' : 'border-white bg-[#fff3f8] shadow-soft'}`}>
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white shadow-sm">
+                    <Em e={evStatus.active ? evStatus.event.emoji : hotZoneObj.emoji} size={30} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-black text-[#4a3b5c]">
+                      {evStatus.active ? evStatus.event.title : `Sıcak Nokta: ${hotZoneObj.name}`}
+                    </p>
+                    <p className="truncate text-xs font-bold text-[#a83668]">
+                      {evStatus.active
+                        ? `${evStatus.event.desc} · ${fmtTime(evStatus.endsInMs)}`
+                        : `En hareketli bölge (${pulse.hotCount} kişi) · Sıradaki: ${evStatus.next.title} (${fmtTime(evStatus.startsInMs)})`}
+                    </p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => jumpTo(hotZoneObj.id, hotZoneObj.spawn)}
-                    className="rounded-xl bg-[#ff8fb8] px-3 py-2 text-xs font-black text-white shadow-sm"
+                    onClick={() =>
+                      evStatus.active
+                        ? jumpTo(evStatus.event.zone, evStatus.event.spawn)
+                        : jumpTo(hotZoneObj.id, hotZoneObj.spawn)
+                    }
+                    className={`shrink-0 rounded-xl px-3.5 py-2 text-xs font-black text-white shadow-sm active:scale-95 ${
+                      evStatus.active ? 'bg-[#fdb252]' : 'bg-[#ff8fb8]'
+                    }`}
                   >
-                    Git →
+                    Git
                   </button>
                 </div>
 
-                {/* Mod seçimi */}
+                {/* Mod seçimi (Büyük 3D Fluent ikon kartları) */}
                 <div>
-                  <p className="mb-1.5 text-xs font-black text-[#4a3b5c]">Bugünkü Modun</p>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {VIBES.map((v) => (
-                      <button
-                        key={v.id}
-                        type="button"
-                        onClick={() => chooseVibe(v.id)}
-                        className={`flex items-center justify-between rounded-xl px-3 py-2 text-xs font-black transition ${
-                          vibe === v.id ? 'bg-[#a88bff] text-white shadow-sm' : 'bg-[#f6f0ff] text-[#4a3b5c]'
-                        }`}
-                      >
-                        <span>{v.emoji} {v.label}</span>
-                        <span className="opacity-80">{pulse.vibeCounts?.[v.id] ?? 0}</span>
-                      </button>
-                    ))}
+                  <p className="mb-2 text-xs font-black uppercase tracking-wide text-[#8a7a9c]">Bugünkü Modun</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {VIBES.map((v) => {
+                      const active = vibe === v.id
+                      return (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => chooseVibe(v.id)}
+                          className={`flex items-center gap-2.5 rounded-2xl border-2 px-2.5 py-2 text-left transition active:scale-95 ${
+                            active ? 'border-[#a88bff] bg-[#efe6ff] shadow-soft' : 'border-white bg-[#faf6ff] hover:bg-[#f3ebff]'
+                          }`}
+                        >
+                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white shadow-sm">
+                            <Em e={v.emoji} size={26} />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-xs font-black text-[#4a3b5c]">{v.label}</p>
+                            <p className="text-[11px] font-bold text-[#8a7a9c]">{pulse.vibeCounts?.[v.id] ?? 0} kişi</p>
+                          </div>
+                        </button>
+                      )
+                    })}
                   </div>
+                </div>
+
+                {/* Sade ikincil kısayollar */}
+                <div className="grid grid-cols-2 gap-2 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setPanel('quests')}
+                    className="rounded-xl bg-[#fff7dc] py-2 text-xs font-black text-[#8a5a00] transition hover:bg-[#ffefbf]"
+                  >
+                    Günlük Görevler
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPanel('pvp')}
+                    className="rounded-xl bg-[#f3ecff] py-2 text-xs font-black text-[#5b3fa8] transition hover:bg-[#e8dcff]"
+                  >
+                    Düello & Arena
+                  </button>
                 </div>
               </div>
             )}
@@ -530,12 +568,14 @@ export function useDating({ net, say, panel, setPanel, focusRef, home, venue, cl
               <div className="flex flex-col gap-3">
                 {sdResult ? (
                   <div className="rounded-3xl bg-gradient-to-br from-[#ffe6f2] via-white to-[#efe6ff] p-5 text-center shadow-soft">
-                    <p className="text-4xl">{sdResult.matched ? '💞' : '👋'}</p>
-                    <p className="mt-1 text-lg font-black text-[#4a3b5c]">
-                      {sdResult.matched ? `${sdResult.oppName} ile EŞLEŞTİN!` : 'Güzel bir sohbetti!'}
+                    <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white shadow-sm">
+                      <Em e={sdResult.matched ? '💞' : '👋'} size={36} />
+                    </span>
+                    <p className="mt-2 text-lg font-black text-[#4a3b5c]">
+                      {sdResult.matched ? `${sdResult.oppName} ile Eşleştin` : 'Güzel bir sohbetti'}
                     </p>
                     <p className="mt-1 text-xs font-bold text-[#6b4fc0]">
-                      {sdResult.matched ? 'Uyum Seviyesi +40 XP, +2 ✨ Karizma ve +15 🪙 kazandın!' : 'Yeni bir hızlı randevuya hemen katılabilirsin.'}
+                      {sdResult.matched ? 'Uyum Seviyesi +40 XP, +2 Karizma ve +15 Altın kazandın.' : 'Yeni bir hızlı randevuya hemen katılabilirsin.'}
                     </p>
                     <button type="button" onClick={() => setSdResult(null)} className="mt-3 w-full rounded-2xl bg-[#ff8fb8] py-2.5 text-sm font-black text-white">
                       Tamam
@@ -543,8 +583,13 @@ export function useDating({ net, say, panel, setPanel, focusRef, home, venue, cl
                   </div>
                 ) : (
                   <>
-                    <div className="rounded-2xl bg-[#fff3f8] p-3.5 text-xs font-bold text-[#a83668]">
-                      💘 3 dakika boyunca hazır eğlenceli ikilem sorularıyla tanış; süre bitince ikiniz de 💗 basarsanız <strong>Eşleşme</strong> açılır!
+                    <div className="flex items-center gap-3 rounded-2xl border-2 border-white bg-[#fff3f8] p-3 shadow-soft">
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white shadow-sm">
+                        <Em e="💞" size={26} />
+                      </span>
+                      <p className="text-xs font-bold text-[#a83668]">
+                        3 dakika boyunca ikilem sorularıyla tanış; süre bitince ikiniz de eşleşmeye basarsanız <strong>Eşleşme</strong> açılır.
+                      </p>
                     </div>
                     {sdQueued ? (
                       <button
@@ -566,7 +611,7 @@ export function useDating({ net, say, panel, setPanel, focusRef, home, venue, cl
                         }}
                         className="w-full rounded-2xl border-b-4 border-[#d96c8e] bg-[#ff8fb8] py-3 text-sm font-black text-white shadow-soft active:translate-y-[2px]"
                       >
-                        💘 Canlı Hızlı Randevuya Katıl ({pulse.sdQueue ?? 0} bekliyor)
+                        Canlı Hızlı Randevuya Katıl ({pulse.sdQueue ?? 0} bekliyor)
                       </button>
                     )}
                     <button
@@ -574,7 +619,7 @@ export function useDating({ net, say, panel, setPanel, focusRef, home, venue, cl
                       onClick={startDemoDate}
                       className="w-full rounded-2xl border-b-4 border-[#7a5fd0] bg-[#a88bff] py-2.5 text-sm font-black text-white shadow-soft active:translate-y-[2px]"
                     >
-                      🤖 Hızlı Pratik (Demo Randevu)
+                      Hızlı Pratik (Demo Randevu)
                     </button>
                   </>
                 )}
@@ -584,15 +629,27 @@ export function useDating({ net, say, panel, setPanel, focusRef, home, venue, cl
             {tab === 'bonds' && (
               <div className="flex max-h-64 flex-col gap-2 overflow-y-auto">
                 {bonds.length === 0 ? (
-                  <p className="py-8 text-center text-xs font-bold text-[#8a7a9c]">Henüz bir uyumun yok — Hızlı Randevu, Buz Kırıcı veya Teknel ikramıyla başla! 💞</p>
+                  <div className="flex flex-col items-center gap-2 py-7 text-center">
+                    <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#fff3f8] shadow-sm">
+                      <Em e="💞" size={30} />
+                    </span>
+                    <p className="max-w-xs text-xs font-bold text-[#8a7a9c]">
+                      Henüz bir uyumun yok — Hızlı Randevu, Buz Kırıcı veya Teknel ikramıyla başla.
+                    </p>
+                  </div>
                 ) : (
                   bonds.map((b) => (
-                    <div key={b.key} className="rounded-2xl bg-[#f8f4ff] p-3">
-                      <div className="flex items-center justify-between text-xs font-black text-[#4a3b5c]">
-                        <span>{b.emoji} {b.name} {b.matched ? '💗' : ''}</span>
-                        <span className="text-[#6b4fc0]">Sv.{b.lv} · {b.title}</span>
+                    <div key={b.key} className="flex items-center gap-3 rounded-2xl border-2 border-white bg-[#faf6ff] p-2.5 shadow-sm">
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white shadow-sm">
+                        <Em e={b.emoji} size={24} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between text-xs font-black text-[#4a3b5c]">
+                          <span className="truncate">{b.name}</span>
+                          <span className="text-[#6b4fc0]">Sv.{b.lv} · {b.title}</span>
+                        </div>
+                        <p className="mt-0.5 truncate text-[11px] font-bold text-[#8a7a9c]">{b.perk} ({b.xp} XP)</p>
                       </div>
-                      <p className="mt-0.5 text-[11px] font-bold text-[#8a7a9c]">{b.perk} ({b.xp} XP)</p>
                       {b.lv >= 3 && (
                         <button
                           type="button"
@@ -600,9 +657,9 @@ export function useDating({ net, say, panel, setPanel, focusRef, home, venue, cl
                             window.dispatchEvent(new CustomEvent('situapp:visit-home', { detail: b.name }))
                             setPanel(null)
                           }}
-                          className="mt-2 rounded-xl bg-[#7fd3b8] px-3 py-1 text-[11px] font-black text-white"
+                          className="shrink-0 rounded-xl bg-[#7fd3b8] px-3 py-1.5 text-[11px] font-black text-white"
                         >
-                          🏡 Evine Misafir Ol
+                          Ziyaret Et
                         </button>
                       )}
                     </div>

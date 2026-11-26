@@ -1,10 +1,10 @@
 // Flört & sosyal akış verisi (istemci + sunucu ortak): modlar, buz kırıcılar, 3 dk hızlı randevu soruları, uyum seviyeleri ve zamanlı etkinlikler.
 
 export const VIBES = [
-  { id: 'cafe', emoji: '☕', label: 'Sakin Sohbet', desc: 'Kahve, tatlı ve samimi muhabbet', zone: 'cafe', spawn: [0, -26] },
-  { id: 'party', emoji: '🪩', label: 'Parti & Dans', desc: 'Müzik, pist ve yüksek enerji', zone: 'club', spawn: [28, 0] },
+  { id: 'cafe', emoji: '☕', label: 'Sakin Sohbet', desc: 'Kahve ve samimi muhabbet', zone: 'cafe', spawn: [0, -26] },
+  { id: 'party', emoji: '🎵', label: 'Parti & Dans', desc: 'Müzik, pist ve yüksek enerji', zone: 'club', spawn: [28, 0] },
   { id: 'game', emoji: '🎮', label: 'Oyun & Rekabet', desc: 'Boks, sörf ve mini oyunlar', zone: 'club', spawn: [24, 2] },
-  { id: 'chill', emoji: '🏖️', label: 'Takılmaca', desc: 'Plaj, gün batımı ve rahat sohbet', zone: 'beach', spawn: [0, 56] },
+  { id: 'chill', emoji: '🌴', label: 'Takılmaca', desc: 'Plaj, gün batımı ve rahat sohbet', zone: 'beach', spawn: [0, 56] },
 ]
 export const VIBE_BY_ID = Object.fromEntries(VIBES.map((v) => [v.id, v]))
 
@@ -44,10 +44,10 @@ export function bondLevelOf(xp = 0) {
 
 // Her 20 dakikada 1 kez 5 dakika süren canlı kasaba etkinlikleri (tüm istemcilerde ve sunucuda aynı saatle senkron)
 export const TOWN_EVENTS = [
-  { id: 'sunset_beach', emoji: '🌅', title: 'Plajda Gün Batımı Partisi', desc: 'Plajda herkes toplanıyor · 2x Karizma!', zone: 'beach', spawn: [0, 56] },
-  { id: 'club_dance', emoji: '🪩', title: 'Klüp’te Çift Dansı Saati', desc: 'Klüp pisti alev alıyor · 2x Karizma!', zone: 'club', spawn: [28, 0] },
-  { id: 'cafe_date', emoji: '☕', title: 'Kafe Sokağı Randevu Saati', desc: 'Hızlı randevuda 2x Uyum XP!', zone: 'cafe', spawn: [0, -26] },
-  { id: 'gym_show', emoji: '🥊', title: 'MakFit Gösteri Maçı', desc: 'Ringde 2x Beceri & heyecan!', zone: 'club', spawn: [41, 4] },
+  { id: 'sunset_beach', emoji: '🌅', title: 'Plajda Gün Batımı Partisi', desc: 'Plajda buluşma · 2x Karizma', zone: 'beach', spawn: [0, 56] },
+  { id: 'club_dance', emoji: '🎵', title: 'Klüp’te Çift Dansı Saati', desc: 'Klüp pisti · 2x Karizma', zone: 'club', spawn: [28, 0] },
+  { id: 'cafe_date', emoji: '☕', title: 'Kafe Sokağı Randevu Saati', desc: 'Hızlı randevuda 2x Uyum XP', zone: 'cafe', spawn: [0, -26] },
+  { id: 'gym_show', emoji: '🏆', title: 'MakFit Gösteri Maçı', desc: 'Ringde 2x Beceri', zone: 'club', spawn: [41, 4] },
 ]
 
 const CYCLE_MS = 20 * 60_000

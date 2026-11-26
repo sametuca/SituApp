@@ -20,7 +20,7 @@ const MIN_PLAYERS = 2
 const MAX_PLAYERS = 10
 const COUNTDOWN_MS = 10_000
 const TICK_MS = 80
-const MAX_MATCH_MS = 120_000
+const MAX_MATCH_MS = 180_000
 
 const DATA_DIR = process.env.SITUAPP_DATA_DIR || path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data')
 const BOARD_FILE = path.join(DATA_DIR, 'surf-board.json')

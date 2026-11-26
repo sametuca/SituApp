@@ -300,7 +300,7 @@ function FishingCard({ spot, onCatch, onClose, onPhase, result, touch }) {
           <Ico name="fish" size={18} /> Balıkçılık
         </span>
         <button type="button" onClick={onClose} aria-label="Kapat" className="grid h-7 w-7 place-items-center rounded-full bg-[#f6f0ff] text-xs font-black text-[#8a7a9c]">
-          ✕
+          ✖️
         </button>
       </div>
 

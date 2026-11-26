@@ -171,7 +171,7 @@ export function PhotoSection({ net, enabled, privacy, setPrivacy }) {
       ) : (
         <div className="flex flex-wrap gap-2">
           <button type="button" disabled={busy} onClick={() => fileRef.current?.click()} className={`${btn} bg-[#fff2e3] text-[#926021]`}>
-            {current ? '🔄 Fotoğrafı değiştir' : '📷 Fotoğraf ekle'}
+            {current ? 'Fotoğrafı değiştir' : '📷 Fotoğraf ekle'}
           </button>
           <button type="button" disabled={busy} onClick={() => camRef.current?.click()} className={`${btn} bg-[#e6f4ff] text-[#1f5d7a] sm:hidden`}>
             🤳 Kamera

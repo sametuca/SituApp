@@ -4,6 +4,15 @@ import { save, user } from '../store.js'
 
 const MAX_INV = 30
 const OFFER_TTL = 45_000
+const STARTER_DRINK = {
+  id: 'starter_lemonade',
+  label: 'Buzlu Limonata',
+  emoji: '🍹',
+  style: 'drink',
+  color: '#ffd95e',
+  alcohol: false,
+  from: 'Hoş Geldin İkramı',
+}
 
 export default function inventory(ctx) {
   const { players, send } = ctx
@@ -12,6 +21,13 @@ export default function inventory(ctx) {
   const invOf = (key) => {
     const u = user(key)
     if (!Array.isArray(u.stats.inv)) u.stats.inv = []
+    if (!u.stats.starterDrinkGiven) {
+      u.stats.starterDrinkGiven = true
+      if (u.stats.inv.length === 0) {
+        u.stats.inv.push({ uid: crypto.randomUUID().slice(0, 8), ...STARTER_DRINK })
+        save()
+      }
+    }
     return u.stats.inv
   }
 
@@ -29,6 +45,8 @@ export default function inventory(ctx) {
       id: String(item.id ?? 'item'),
       label: String(item.label ?? 'Eşya').slice(0, 40),
       emoji: String(item.emoji ?? '🎁').slice(0, 8),
+      style: item.style ? String(item.style).slice(0, 16) : null,
+      color: item.color ? String(item.color).slice(0, 16) : null,
       alcohol: Boolean(item.alcohol),
       from: item.from ? String(item.from).slice(0, 30) : null,
     }

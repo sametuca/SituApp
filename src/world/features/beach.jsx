@@ -1,7 +1,6 @@
 // Plaj etkinlikleri (istemci): gün batımı buluşması bannerı + plaj halkası ve voleybol (zamanlama). Sunucu: server/features/beach.js.
 import { TopDock } from '../../components/Dock'
 import { useEffect, useRef, useState } from 'react'
-import { useFrame } from '@react-three/fiber'
 import { DoorPrompt } from '../Social'
 import { BEACH, VOLLEY_NET } from '../layout'
 
@@ -10,23 +9,6 @@ const glass = 'border-2 border-white bg-white/90 shadow-soft backdrop-blur-md'
 const mmss = (ms) => {
   const s = Math.max(0, Math.ceil(ms / 1000))
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
-}
-
-/** Buluşma sırasında plajın ortasında nabız gibi atan sıcak halka. */
-function MeetupRing({ on }) {
-  const ref = useRef()
-  useFrame(({ clock }) => {
-    if (!ref.current) return
-    const k = (clock.elapsedTime * 0.6) % 1
-    ref.current.scale.setScalar(0.5 + k * 1.1)
-    ref.current.material.opacity = 0.55 * (1 - k)
-  })
-  return (
-    <mesh ref={ref} position={[BEACH.x, 0.12, BEACH.z]} rotation={[-Math.PI / 2, 0, 0]}>
-      <ringGeometry args={[BEACH.r - 3, BEACH.r - 2, 64]} />
-      <meshBasicMaterial color={on ? '#ffb347' : '#ffe48f'} transparent depthWrite={false} />
-    </mesh>
-  )
 }
 
 function Volley({ vb, me, touch, onHit, onLeave }) {
@@ -251,5 +233,5 @@ export function useBeach({ net, focusRef, home, venue, touch }) {
       {vb && <Volley vb={vb} me={myId.current} touch={touch} onHit={hit} onLeave={leaveVolley} />}
     </>
   )
-  return { overlays, worldEffects: !home && !venue && meetup.phase !== 'idle' ? <MeetupRing on={meetup.phase === 'on'} /> : null }
+  return { overlays }
 }
