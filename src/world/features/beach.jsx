@@ -211,7 +211,7 @@ export function useBeach({ net, focusRef, home, venue, touch }) {
             🌅 Gün batımı buluşması · {meetup.phase === 'soon' ? `${mmss(meetup.start - now)} sonra` : `${mmss(meetup.end - now)} kaldı`}
           </p>
           <p className="text-[0.6875rem] font-bold text-[#8a7a9c]">
-            {meetup.phase === 'soon' ? 'Plajın ortasına gel, TL kazan!' : dist <= BEACH.r + 4 ? `Plajdasın ₺ · ${meetup.n} kişi burada` : `Plaja gel (${dist} m) · ${meetup.n} kişi bekliyor`}
+            {meetup.phase === 'soon' ? 'Plajın ortasına gel, TL kazan!' : dist <= BEACH.r + 4 ? `Plajdasın · ${meetup.n} kişi burada` : `Plaja gel (${dist} m) · ${meetup.n} kişi bekliyor`}
           </p>
         </div></TopDock>
       )}

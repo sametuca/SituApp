@@ -44,11 +44,10 @@ function Celebration({ toast }) {
             style={{ background: p.color, '--dx': `${p.dx}px`, '--dy': `${p.dy}px`, '--rot': `${p.rot}deg`, animation: `confetti-burst 1.4s ${p.delay}s ease-out forwards`, opacity: 0 }}
           />
         ))}
-        <div className="flex w-[min(86vw,19rem)] flex-col items-center gap-1 rounded-[2rem] border-2 border-white bg-white/95 px-6 py-5 text-center shadow-toy">
-          <span className="text-5xl [animation:star-bounce_0.9s_ease-out]">{quest ? '⭐' : toast.emoji}</span>
+        <div className="flex w-[min(86vw,19rem)] flex-col items-center gap-1.5 rounded-[2rem] border-2 border-white bg-white/95 px-6 py-5 text-center shadow-toy">
           <p className="text-xs font-extrabold uppercase tracking-wide text-[#fdb252]">{quest ? 'Görev tamamlandı!' : 'Yeni rozet!'}</p>
-          <p className="text-lg font-black text-[#4a3b5c]">{quest ? `${toast.emoji} ${toast.title}` : toast.name}</p>
-          <p className="text-sm font-bold text-[#8a7a9c]">{quest ? `+${toast.stars} ⭐ kazandın` : toast.desc}</p>
+          <p className="text-lg font-black text-[#4a3b5c]">{quest ? toast.title : toast.name}</p>
+          <p className="text-sm font-bold text-[#8a7a9c]">{quest ? `+${toast.stars} Yıldız kazandın` : toast.desc}</p>
         </div>
       </div>
     </div>

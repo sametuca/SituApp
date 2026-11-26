@@ -69,8 +69,9 @@ function Tag({ name, bubble: rawBubble, reaction, whisper, showName = true }) {
           ))
         })}
         {bubble && (
-          <div className={`break-words rounded-2xl rounded-bl-md border-2 border-white bg-white text-center font-bold text-[#4a3b5c] shadow-lg ${bubble.big ? 'px-4 py-1 text-6xl leading-tight' : 'w-max min-w-[120px] max-w-[340px] px-3.5 py-1.5 text-sm leading-snug'}`}>
+          <div className={`relative break-words rounded-2xl border-2 border-white bg-gradient-to-b from-white via-[#fffdf8] to-[#efe6ff] text-center font-extrabold text-[#4a3b5c] shadow-[0_10px_22px_rgba(35,23,63,0.28),0_4px_0_#cbb7ef,inset_0_2px_0_rgba(255,255,255,0.95)] ring-1 ring-[#a88bff]/30 ${bubble.big ? 'px-4 py-1.5 text-6xl leading-tight' : 'w-max min-w-[120px] max-w-[340px] px-4 py-2 text-sm leading-snug'}`}>
             {bubble.text}
+            <span aria-hidden className="absolute -bottom-[7px] left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 rounded-br-[3px] border-b-2 border-r-2 border-[#cbb7ef] bg-[#efe6ff]" />
           </div>
         )}
         {whisper && !bubble && (

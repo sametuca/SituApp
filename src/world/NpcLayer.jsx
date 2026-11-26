@@ -216,11 +216,14 @@ export function NpcTag({ name, bubble, nearTalk, isVendor }) {
       <div className="relative flex flex-col items-center gap-1.5">
         {nearTalk && !bubble && (
           <div className="w-max min-w-max whitespace-nowrap rounded-full border border-[#ffd35e]/80 bg-[#fff8e6]/95 px-3 py-0.5 text-[10px] font-black tracking-wide text-[#7a4b00] shadow-md">
-            {isVendor ? 'E · Göz At' : 'E · Konuş'}
+            {isVendor ? 'Göz At' : 'Konuş'}
           </div>
         )}
         {bubble && (
-          <div className="w-max min-w-[160px] max-w-[340px] break-words rounded-2xl rounded-bl-md border-2 border-white bg-white/95 px-3.5 py-1.5 text-center text-sm font-bold leading-snug text-[#4a3b5c] shadow-lg">{bubble}</div>
+          <div className="relative w-max min-w-[160px] max-w-[340px] break-words rounded-2xl border-2 border-white bg-gradient-to-b from-white via-[#fffdf8] to-[#efe6ff] px-4 py-2 text-center text-sm font-extrabold leading-snug text-[#4a3b5c] shadow-[0_10px_22px_rgba(35,23,63,0.32),0_4px_0_#cbb7ef,inset_0_2px_0_rgba(255,255,255,0.95)] ring-1 ring-[#a88bff]/35">
+            {bubble}
+            <span aria-hidden className="absolute -bottom-[7px] left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 rounded-br-[3px] border-b-2 border-r-2 border-[#cbb7ef] bg-[#efe6ff]" />
+          </div>
         )}
         {/* Fantastik, ikonsuz ve tüm NPC'lerde tek tip isim kartı */}
         <div className="inline-flex w-max min-w-max flex-col items-center whitespace-nowrap rounded-2xl border-2 border-[#fff7e6] bg-gradient-to-b from-[#3d2b63]/95 via-[#2e204f]/95 to-[#23173f]/95 px-3.5 py-1.5 text-center shadow-[0_6px_18px_rgba(35,23,63,0.42),0_0_12px_rgba(255,211,94,0.24)] ring-1 ring-[#ffd35e]/55">
@@ -285,7 +288,7 @@ const NpcView = memo(function NpcView({ npc, focusRef, onTalk }) {
     g.position.set(p.x, 0, p.z)
 
     // yaklaşınca oyuncuya dön (yürümüyorsa), değilse yürüyüş yönüne
-    const want = !p.moving && d < GREET_RADIUS ? Math.atan2(dx, dz) : p.ry
+    const want = !p.moving && npc.pose?.kind !== 'push' && d < GREET_RADIUS ? Math.atan2(dx, dz) : p.ry
     const diff = MathUtils.euclideanModulo(want - s.ry + Math.PI, Math.PI * 2) - Math.PI
     s.ry += diff * (1 - Math.exp(-dt * 6))
     g.rotation.y = s.ry

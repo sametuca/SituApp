@@ -134,7 +134,7 @@ function Board({ x, y, z, ry = 0, w, h, lines, bg, fg, frame, big, map }) {
   return (
     <group position={[x, y, z]} rotation={[0, ry, 0]}>
       {frame && (
-        <mesh position={[0, 0, -0.012]}>
+        <mesh position={[0, 0, -0.018]}>
           <boxGeometry args={[w + 0.12, h + 0.12, 0.03]} />
           <Mat c={frame} />
         </mesh>
@@ -186,18 +186,6 @@ function Window({ wall, z }) {
 function Shelf({ x, z, ry, w, mode }) {
   // kitaplık/raf: GLB; kitap kafede dolu raf, diğerlerinde aynı raf (süs eşyasız)
   return <Glb model="/models/furniture/bookshelf.glb" x={x} z={z} ry={ry} h={mode === 'books' ? 2.0 : 1.7} w={w} />
-}
-
-function Frame({ x, y, z, ry, w, h, c }) {
-  return (
-    <group position={[x, y, z]} rotation={[0, ry, 0]}>
-      <Box w={w + 0.1} h={h + 0.1} d={0.04} c="#fffaf2" y={-(h + 0.1) / 2} shadow={false} />
-      <mesh position={[0, 0, 0.025]}>
-        <planeGeometry args={[w, h]} />
-        <Mat c={c} r={0.6} />
-      </mesh>
-    </group>
-  )
 }
 
 // ---------- kulüp: ışık gösterisi ----------
@@ -603,8 +591,6 @@ function Item({ it }) {
       return <Shelf {...it} />
     case 'board':
       return <Board {...it} />
-    case 'frame':
-      return <Frame {...it} />
     case 'window':
       return <Window {...it} />
     case 'neon':
@@ -680,49 +666,6 @@ const WALL_KIND = {
   cafe: 'brick', bar: 'brick', fastfood: 'brick', club: 'brick', bakery: 'brick',
   shop: 'siding', tea: 'siding', books: 'siding', teknel: 'siding',
   dessert: 'plaster', icecream: 'plaster', salon: 'plaster', studio: 'plaster', gym: 'plaster', guide: 'plaster', airport: 'plaster', arcade: 'plaster',
-}
-
-/** Duvar apliği: sıcak ışıklı pastel abajur (yan duvarlara derinlik ve atmosfer katar). */
-function WallSconce({ x, y = 2.35, z, ry = 0, accent = '#ffd35e' }) {
-  return (
-    <group position={[x, y, z]} rotation={[0, ry, 0]}>
-      <mesh position={[0, 0, 0.04]}>
-        <cylinderGeometry args={[0.1, 0.1, 0.06, 12]} />
-        <Mat c="#fffaf2" r={0.4} />
-      </mesh>
-      <mesh position={[0, 0.08, 0.16]}>
-        <cylinderGeometry args={[0.11, 0.18, 0.24, 14]} />
-        <meshStandardMaterial color="#fff6df" emissive={accent} emissiveIntensity={0.9} roughness={0.3} />
-      </mesh>
-      <mesh position={[0, -0.05, 0.16]}>
-        <sphereGeometry args={[0.06, 10, 8]} />
-        <meshStandardMaterial color="#fff9e6" emissive="#ffd878" emissiveIntensity={1.2} />
-      </mesh>
-    </group>
-  )
-}
-
-/** Duvar çerçeveli tablo: sade düz duvarlara sıcak pastel sanat vurgusu. */
-function WallArt({ x, y = 2.05, z, ry = 0, c1 = '#ffd9a8', c2 = '#a9ddf5' }) {
-  return (
-    <group position={[x, y, z]} rotation={[0, ry, 0]}>
-      <RoundedBox args={[1.28, 0.96, 0.06]} radius={0.03} smoothness={2} position={[0, 0, 0.03]}>
-        <Mat c="#fffaf2" r={0.5} />
-      </RoundedBox>
-      <mesh position={[0, 0, 0.064]}>
-        <planeGeometry args={[1.1, 0.78]} />
-        <Mat c={c1} r={0.7} />
-      </mesh>
-      <mesh position={[-0.18, 0.06, 0.068]}>
-        <circleGeometry args={[0.2, 20]} />
-        <Mat c={c2} r={0.65} />
-      </mesh>
-      <mesh position={[0.2, -0.1, 0.068]}>
-        <circleGeometry args={[0.15, 20]} />
-        <Mat c="#fff8e8" r={0.65} />
-      </mesh>
-    </group>
-  )
 }
 
 // ---------- oda kabuğu (PBR kabartmalı duvar + lambri çıtası) ----------
@@ -838,7 +781,6 @@ export default function Venue({ id }) {
   const L = venueLayout(id)
   const th = L.theme
   const wKind = WALL_KIND[L.type] ?? 'plaster'
-  const showSideArt = !['club', 'studio', 'shop', 'airport'].includes(L.type)
   return (
     <group>
       <Lights th={th} />
@@ -848,19 +790,6 @@ export default function Venue({ id }) {
       <Wall position={[-hw, 0, 0]} rotation={[0, Math.PI / 2, 0]} w={hd * 2} color={th.wall2} band={1.0} bandColor={th.band} kind={wKind} />
       <Wall position={[hw, 0, 0]} rotation={[0, -Math.PI / 2, 0]} w={hd * 2} color={th.wall2} band={1.0} bandColor={th.band} kind={wKind} />
       <Wall position={[0, 0, hd]} rotation={[0, Math.PI, 0]} w={hw * 2} color={th.wall} band={1.0} bandColor={th.band} kind={wKind} />
-      {/* Yan duvarlarda sıcak ışık aplikleri ve çerçeveli pastel sanat panelleri */}
-      {[-2.2, 2.0].map((z) => (
-        <group key={z}>
-          <WallSconce x={-hw + 0.02} z={z} ry={Math.PI / 2} accent={th.accent} />
-          <WallSconce x={hw - 0.02} z={z} ry={-Math.PI / 2} accent={th.accent} />
-        </group>
-      ))}
-      {showSideArt && (
-        <>
-          <WallArt x={-hw + 0.02} z={-0.1} ry={Math.PI / 2} c1={th.pastel ?? '#ffe9c8'} c2={th.accent} />
-          <WallArt x={hw - 0.02} z={-0.1} ry={-Math.PI / 2} c1={th.band} c2={th.accent} />
-        </>
-      )}
       <Trim position={[0, wallH + 0.08, -hd]} args={[hw * 2 + 0.3, 0.18, 0.3]} color={th.trim} />
       <Trim position={[-hw, wallH + 0.08, 0]} args={[0.3, 0.18, hd * 2 + 0.3]} color={th.trim} />
       <Trim position={[hw, wallH + 0.08, 0]} args={[0.3, 0.18, hd * 2 + 0.3]} color={th.trim} />

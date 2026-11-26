@@ -1639,6 +1639,10 @@ export default function City({ focusRef }) {
       <TexRing r0={PLAZA_R - 0.8} r1={RING.r0} y={Y.sidewalk + 0.004} tex="cobble" color="#fdf6ff" />
       <TexRing r0={RING.r1} r1={RING.r1 + RING.side} y={Y.sidewalk + 0.004} tex="cobble" color="#fdf6ff" />
       <Flat x={-25} z={0} w={12} d={3.4} y={Y.sidewalk} tex="cobble" color="#fff8f0" /> {/* park patikası: lobiden çardağa */}
+      {/* MakFit ve Sinepsot Foto önündeki arnavut kaldırımını güney caddesine bağla */}
+      <Flat x={4.0} z={37.2} w={3.4} d={11.2} y={0.038} tex="cobble" color="#f6efe6" />
+      <Flat x={13.25} z={41.1} w={21.9} d={3.4} y={0.038} tex="cobble" color="#f6efe6" />
+      <Flat x={23.2} z={43.85} w={3.4} d={2.5} y={0.038} tex="cobble" color="#f6efe6" />
       <Flat x={0} z={nsN.cz} w={road} d={nsN.len} y={Y.road} tex="asphalt" />
       <Flat x={0} z={nsS.cz} w={road} d={nsS.len} y={Y.road} tex="asphalt" />
       <Flat x={ewE.cx} z={0} w={ewE.len} d={road} y={Y.road} tex="asphalt" />

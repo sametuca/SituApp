@@ -50,11 +50,10 @@ export default function housing(ctx) {
         const idx = Number(msg.idx)
         const crop = CROP_BY_ID[msg.crop]
         if (!Number.isInteger(idx) || idx < 0 || idx >= GARDEN_PLOT_COUNT || !crop) return
-        if (ctx.jobOf?.(me) !== 'gardener') return send(me.ws, { t: 'info', text: '🌱 Tohum ekmek için Bahçıvan mesleğini seç (soldaki 💼 düğmesi).' })
         const plots = getGarden(me.homeKey)
         if (plots[idx]) return
         plots[idx] = { crop: crop.id, plantedAt: Date.now(), wateredAt: null }
-        ctx.jobEvent?.(me, 'plant')
+        if (ctx.jobOf?.(me) === 'gardener') ctx.jobEvent?.(me, 'plant')
         ctx.workTend?.(me)
         save()
         pushGarden(me.homeKey, plots, me)

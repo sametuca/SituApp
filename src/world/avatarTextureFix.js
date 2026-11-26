@@ -90,45 +90,8 @@ export function getCleanAvatarTexture(mesh, origTex) {
     inside[i] = maskPx[i * 4] > 127 ? 1 : 0
   }
 
-  // UV sınırındaki 2 px'lik WebP siyah-sızıntı şeridini tespit et (ada içindeki göz/kaşlara dokunmaz)
-  const valid = new Uint8Array(total)
-  for (let y = 0; y < h; y++) {
-    const row = y * w
-    for (let x = 0; x < w; x++) {
-      const i = row + x
-      if (!inside[i]) continue
-      const o = i * 4
-      const r = px[o]
-      const g = px[o + 1]
-      const b = px[o + 2]
-      const lum = r * 0.299 + g * 0.587 + b * 0.114
-      // Sadece UV adasının dış kenarına ≤2 px yakın koyu pikselleri kenar artığı say
-      let nearEdge = false
-      if (lum < 95) {
-        outer: for (let dy = -2; dy <= 2; dy++) {
-          const ny = y + dy
-          if (ny < 0 || ny >= h) {
-            nearEdge = true
-            break
-          }
-          const nrow = ny * w
-          for (let dx = -2; dx <= 2; dx++) {
-            const nx = x + dx
-            if (nx < 0 || nx >= w || !inside[nrow + nx]) {
-              nearEdge = true
-              break outer
-            }
-          }
-        }
-      }
-      // Ada kenarında siyaha karışmış pikseli boşalt ki temiz iç renkle dolsun
-      if (nearEdge && (lum < 48 || (lum < 85 && Math.max(r, g, b) < 105))) {
-        valid[i] = 0
-      } else {
-        valid[i] = 1
-      }
-    }
-  }
+  // Yalnızca UV üçgenlerinin DIŞINDAKİ boşlukları (inside=0) doldur; koyu saç/kaş piksellerini asla silme
+  const valid = inside
 
   // 3. 10 adımlı 8-komşulu genişletme (dilation): hem kenar artıkları hem UV boşlukları komşu ada rengiyle dolar
   let curValid = valid
@@ -186,9 +149,8 @@ export function getCleanAvatarTexture(mesh, origTex) {
   tex.wrapS = origTex.wrapS
   tex.wrapT = origTex.wrapT
   tex.magFilter = LinearFilter
-  tex.minFilter = LinearMipmapLinearFilter
-  tex.generateMipmaps = true
-  tex.anisotropy = 4
+  tex.minFilter = LinearFilter
+  tex.generateMipmaps = false
   tex.needsUpdate = true
 
   fixedCache.set(img, tex)

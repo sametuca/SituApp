@@ -3,46 +3,46 @@
 
 /** Pastel renkler (aksesuar rengi). */
 export const PASTELS = [
-  { id: 'pink', name: 'Bal', hex: '#fec071' },
-  { id: 'lilac', name: 'Mor', hex: '#bba0ff' },
-  { id: 'blue', name: 'Mavi', hex: '#8fd0ff' },
-  { id: 'mint', name: 'Nane', hex: '#8fe3c0' },
-  { id: 'yellow', name: 'Sarı', hex: '#ffd96b' },
-  { id: 'peach', name: 'Şeftali', hex: '#ffb18f' },
-  { id: 'coral', name: 'Mercan', hex: '#ff9382' },
-  { id: 'pearl', name: 'İnci', hex: '#fff5ea' },
-  { id: 'lavender', name: 'Lavanta', hex: '#d8c4ff' },
-  { id: 'gold', name: 'Altın', hex: '#f4c55c' },
-  { id: 'sage', name: 'Adaçayı', hex: '#9ed6b4' },
-  { id: 'noir', name: 'Gece', hex: '#4a415c' },
+  { id: 'pink', name: 'Bal', hex: '#fec071', lv: 1 },
+  { id: 'lilac', name: 'Mor', hex: '#bba0ff', lv: 1 },
+  { id: 'blue', name: 'Mavi', hex: '#8fd0ff', lv: 1 },
+  { id: 'mint', name: 'Nane', hex: '#8fe3c0', lv: 1 },
+  { id: 'yellow', name: 'Sarı', hex: '#ffd96b', lv: 1 },
+  { id: 'peach', name: 'Şeftali', hex: '#ffb18f', lv: 1 },
+  { id: 'coral', name: 'Mercan', hex: '#ff9382', lv: 2 },
+  { id: 'pearl', name: 'İnci', hex: '#fff5ea', lv: 2 },
+  { id: 'lavender', name: 'Lavanta', hex: '#d8c4ff', lv: 2 },
+  { id: 'gold', name: 'Altın', hex: '#f4c55c', lv: 3 },
+  { id: 'sage', name: 'Adaçayı', hex: '#9ed6b4', lv: 3 },
+  { id: 'noir', name: 'Gece', hex: '#4a415c', lv: 3 },
 ]
 export const PASTEL_BY_ID = Object.fromEntries(PASTELS.map((c) => [c.id, c]))
 
 /** Slot 1 (acc): Baş & saç aksesuarları. */
 export const ACCESSORIES = [
-  { id: 'crown', name: 'Taç', emoji: '👑' },
-  { id: 'tiara', name: 'İncili Taç', emoji: '👸' },
-  { id: 'bow', name: 'Fiyonk', emoji: '🎀' },
-  { id: 'beret', name: 'Fransız Bere', emoji: '🎨' },
-  { id: 'flowers', name: 'Çiçek tacı', emoji: '🌸' },
-  { id: 'hat', name: 'Şapka', emoji: '👒' },
-  { id: 'bunny', name: 'Tavşan kulağı', emoji: '🐰' },
-  { id: 'cat_ears', name: 'Kedi kulağı', emoji: '🐱' },
-  { id: 'hairpins', name: 'Yıldız toka', emoji: '⭐' },
-  { id: 'halo', name: 'Işıltı halesi', emoji: '😇' },
-  { id: 'shades', name: 'Güneş gözlüğü', emoji: '🕶️' },
-  { id: 'headphones', name: 'Kulaklık', emoji: '🎧' },
+  { id: 'bow', name: 'Fiyonk', emoji: '🎀', lv: 1 },
+  { id: 'flowers', name: 'Çiçek tacı', emoji: '🌸', lv: 1 },
+  { id: 'hat', name: 'Şapka', emoji: '👒', lv: 1 },
+  { id: 'shades', name: 'Güneş gözlüğü', emoji: '🕶️', lv: 1 },
+  { id: 'beret', name: 'Fransız Bere', emoji: '🎨', lv: 2 },
+  { id: 'hairpins', name: 'Yıldız toka', emoji: '⭐', lv: 2 },
+  { id: 'cat_ears', name: 'Kedi kulağı', emoji: '🐱', lv: 2 },
+  { id: 'bunny', name: 'Tavşan kulağı', emoji: '🐰', lv: 3 },
+  { id: 'headphones', name: 'Kulaklık', emoji: '🎧', lv: 3 },
+  { id: 'tiara', name: 'İncili Taç', emoji: '👸', lv: 4 },
+  { id: 'crown', name: 'Taç', emoji: '👑', lv: 4 },
+  { id: 'halo', name: 'Işıltı halesi', emoji: '😇', lv: 5 },
 ]
 export const ACCESSORY_BY_ID = Object.fromEntries(ACCESSORIES.map((a) => [a.id, a]))
 
 /** Slot 2 (acc2): Yüz, kulak, sırt & çanta aksesuarları (baş aksesuarıyla birlikte takılabilir). */
 export const STYLE_ACCESSORIES = [
-  { id: 'earrings', name: 'İnci küpe', emoji: '💎' },
-  { id: 'heart_shades', name: 'Kalp gözlük', emoji: '🕶️' },
-  { id: 'round_glasses', name: 'Retro gözlük', emoji: '🤓' },
-  { id: 'wings', name: 'Peri kanadı', emoji: '🧚' },
-  { id: 'bag', name: 'Mini çanta', emoji: '👜' },
-  { id: 'scarf', name: 'Fular', emoji: '🧣' },
+  { id: 'scarf', name: 'Fular', emoji: '🧣', lv: 1 },
+  { id: 'round_glasses', name: 'Retro gözlük', emoji: '🤓', lv: 2 },
+  { id: 'bag', name: 'Mini çanta', emoji: '👜', lv: 2 },
+  { id: 'heart_shades', name: 'Kalp gözlük', emoji: '🕶️', lv: 3 },
+  { id: 'earrings', name: 'İnci küpe', emoji: '💎', lv: 3 },
+  { id: 'wings', name: 'Peri kanadı', emoji: '🧚', lv: 4 },
 ]
 export const STYLE_ACC_BY_ID = Object.fromEntries(STYLE_ACCESSORIES.map((a) => [a.id, a]))
 
@@ -57,16 +57,17 @@ export const PET_RENEW_PRICE = 80 // ₺ / hafta
 export const PET_BY_ID = Object.fromEntries(PETS.map((p) => [p.id, p]))
 
 /** İstemciden gelen kozmetik seçimini doğrular. Dönüş: { acc?: {id,color}|null, acc2?: {id,color}|null, pet?: id|null } (verilmeyen alan yok). */
-export function sanitizeCos(c) {
+export function sanitizeCos(c, lv = Infinity) {
   const out = {}
   if (c && typeof c === 'object') {
+    const okColor = (col) => PASTEL_BY_ID[col] && (PASTEL_BY_ID[col].lv ?? 1) <= lv
     if ('acc' in c) {
       const a = c.acc
-      out.acc = a && ACCESSORY_BY_ID[a.id] && PASTEL_BY_ID[a.color] ? { id: a.id, color: a.color } : null
+      out.acc = a && ACCESSORY_BY_ID[a.id] && (ACCESSORY_BY_ID[a.id].lv ?? 1) <= lv && okColor(a.color) ? { id: a.id, color: a.color } : null
     }
     if ('acc2' in c) {
       const a2 = c.acc2
-      out.acc2 = a2 && STYLE_ACC_BY_ID[a2.id] && PASTEL_BY_ID[a2.color] ? { id: a2.id, color: a2.color } : null
+      out.acc2 = a2 && STYLE_ACC_BY_ID[a2.id] && (STYLE_ACC_BY_ID[a2.id].lv ?? 1) <= lv && okColor(a2.color) ? { id: a2.id, color: a2.color } : null
     }
     if ('pet' in c) out.pet = typeof c.pet === 'string' && PET_BY_ID[c.pet] ? c.pet : null
   }

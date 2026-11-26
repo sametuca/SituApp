@@ -2,6 +2,7 @@
 // 60 FPS ritim-zamanlama boks arenası (PvP + Koç Kaan), otomatik boks kıyafeti ve haftalık şampiyon kemeri.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { BLOCK_MS, BOX, CUE_META, CUE_TYPES, STAT_KEYS, STAT_META, STAT_MAX, STAT_START, boxCues, coinBonusPct, energyMax, gradeWindow, hitDamage, matchDuration, roundStart } from '../boxing'
+import BoxingArena3D from './BoxingArena3D'
 import { cosStore } from '../cosStore'
 import { fitnessStore } from '../fitnessStore'
 import { work } from './jobStore'
@@ -418,10 +419,10 @@ function CardioWorkoutModal({ energy, energyMaxVal, onDone, onClose }) {
   )
 }
 
-// ======================= 3. 60 FPS RİTİM-ZAMANLAMA BOKS ARENASI =======================
+// ======================= 3. 3D GERÇEK ZAMANLI BOKS ARENASI =======================
 function BoxingArena({ match, selfName, liveState, onSendHit, onSoloEnd, onExit }) {
-  const canvasRef = useRef(null)
-  const [hud, setHud] = useState({ round: 1, hp: BOX.hp, ohp: BOX.hp, combo: 0, msg: 'Hazır ol! 🥊' })
+  const [hud, setHud] = useState({ round: 1, hp: BOX.hp, ohp: BOX.hp, combo: 0, msg: 'Hazır ol!' })
+  const [cueUi, setCueUi] = useState({ countdown: 3, active: null, progress: 0, banner: '', bannerCol: '#ffd35e' })
   const cuesRef = useRef(boxCues(match.seed))
   const localRef = useRef({
     hp: BOX.hp,
@@ -433,7 +434,9 @@ function BoxingArena({ match, selfName, liveState, onSendHit, onSoloEnd, onExit 
     seen: new Set(),
     aiSeen: new Set(),
     youPunch: 0,
+    youType: 'jab',
     oppPunch: 0,
+    oppType: 'jab',
     shake: 0,
     banner: '',
     bannerCol: '#ffd35e',
@@ -441,13 +444,14 @@ function BoxingArena({ match, selfName, liveState, onSendHit, onSoloEnd, onExit 
     ended: false,
   })
 
-  // PvP sunucu durumunu sahne animasyonuna yansıt
+  // PvP sunucu durumunu 3B sahne animasyonuna yansıt
   useEffect(() => {
     if (match.solo || !liveState) return
     const s = localRef.current
     if (liveState.you) {
       if (liveState.you.hp < s.hp) {
         s.oppPunch = 1
+        s.oppType = 'hook'
         s.shake = 0.24
       }
       s.hp = liveState.you.hp
@@ -473,7 +477,6 @@ function BoxingArena({ match, selfName, liveState, onSendHit, onSoloEnd, onExit 
       const now = Date.now()
       const elapsed = now - match.startAt
       const win = gradeWindow(match.you.ski)
-      // Şu an zamanlama penceresine en yakın işlenmemiş cue'yu bul
       let best = null
       let bestDiff = Infinity
       for (const c of cuesRef.current) {
@@ -486,10 +489,12 @@ function BoxingArena({ match, selfName, liveState, onSendHit, onSoloEnd, onExit 
       }
       if (!best || bestDiff > win.good + 120) {
         s.combo = 0
+        s.youType = type
+        s.youPunch = 0.45
         s.banner = 'ERKEN / KAÇTI'
         s.bannerCol = '#ff8a7a'
         s.bannerAt = now
-        setHud((h) => ({ ...h, combo: 0, msg: 'Ritmi bekle! Halka küçülünce bas.' }))
+        setHud((h) => ({ ...h, combo: 0, msg: 'Ritmi bekle! Halka daralınca vur.' }))
         return
       }
 
@@ -497,18 +502,19 @@ function BoxingArena({ match, selfName, liveState, onSendHit, onSoloEnd, onExit 
       const wrong = type !== best.type
       if (wrong || bestDiff > win.good) {
         s.combo = 0
-        s.banner = wrong ? 'YANLIŞ TUŞ!' : 'KAÇTI!'
+        s.banner = wrong ? 'YANLIŞ HAMLE!' : 'KAÇTI!'
         s.bannerCol = '#ff8a7a'
         s.bannerAt = now
         if (!match.solo) onSendHit(best.i, type)
-        setHud((h) => ({ ...h, combo: 0, msg: wrong ? `Doğru tuş: ${CUE_META[best.type].key} ${CUE_META[best.type].label}` : 'Biraz geç/erken!' }))
+        setHud((h) => ({ ...h, combo: 0, msg: wrong ? `Doğru hamle: ${CUE_META[best.type].label}` : 'Zamanlama kaçtı!' }))
         return
       }
 
       const grade = bestDiff <= win.perfect ? 'perfect' : 'good'
       s.combo += 1
+      s.youType = type
       s.youPunch = type === 'block' ? 0.3 : 1
-      s.banner = grade === 'perfect' ? `🔥 MÜKEMMEL ${CUE_META[type].label.toUpperCase()}!` : `✨ İYİ ${CUE_META[type].label.toUpperCase()}!`
+      s.banner = grade === 'perfect' ? `MÜKEMMEL ${CUE_META[type].label.toUpperCase()}!` : `İYİ ${CUE_META[type].label.toUpperCase()}!`
       s.bannerCol = grade === 'perfect' ? '#ffd35e' : '#8fdcb4'
       s.bannerAt = now
       window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: grade === 'perfect' ? 'collect' : 'pop' }))
@@ -519,7 +525,6 @@ function BoxingArena({ match, selfName, liveState, onSendHit, onSoloEnd, onExit 
         return
       }
 
-      // Solo (Koç Kaan'a karşı antrenman maçı) yerel hasar hesabı
       if (type === 'block') {
         s.shieldUntil = now + BLOCK_MS
         s.score += grade === 'perfect' ? 35 : 20
@@ -527,7 +532,7 @@ function BoxingArena({ match, selfName, liveState, onSendHit, onSoloEnd, onExit 
         const dmg = hitDamage(type, grade, s.combo, match.you.str, match.opp.sta, s.oppShieldUntil > now)
         s.ohp = Math.max(0, s.ohp - dmg)
         s.score += dmg * 10 + (grade === 'perfect' ? 30 : 15)
-        s.shake = grade === 'perfect' ? 0.25 : 0.14
+        s.shake = grade === 'perfect' ? 0.35 : 0.18
       }
       setHud((h) => ({ ...h, hp: s.hp, ohp: s.ohp, combo: s.combo, msg: s.banner }))
       if (s.ohp <= 0 && !s.ended) {
@@ -538,7 +543,6 @@ function BoxingArena({ match, selfName, liveState, onSendHit, onSoloEnd, onExit 
     [match, onSendHit, onSoloEnd],
   )
 
-  // Klavye kontrolleri (Ok tuşları + WASD)
   useEffect(() => {
     const onKey = (e) => {
       if (isTyping(e)) return
@@ -554,80 +558,21 @@ function BoxingArena({ match, selfName, liveState, onSendHit, onSoloEnd, onExit 
     return () => window.removeEventListener('keydown', onKey)
   }, [triggerAction])
 
-  // 60 FPS Canvas çizim döngüsü + Solo Koç Kaan AI
+  // 30 Hz HUD zamanlama + Solo Koç Kaan AI döngüsü
   useEffect(() => {
-    const cv = canvasRef.current
-    if (!cv) return undefined
-    const ctx = cv.getContext('2d')
-    let raf = 0
-    let prev = performance.now()
     const totalMs = matchDuration()
-
-    const drawBoxer = (x, y, facing, bodyCol, gloveCol, punch, shielded, hitFlash) => {
-      ctx.save()
-      ctx.translate(x, y)
-      ctx.scale(facing, 1)
-      // Gölge
-      ctx.fillStyle = 'rgba(74,59,92,0.18)'
-      ctx.beginPath()
-      ctx.ellipse(0, 44, 34, 11, 0, 0, Math.PI * 2)
-      ctx.fill()
-      // Blok kalkanı
-      if (shielded) {
-        ctx.strokeStyle = '#b79cff'
-        ctx.lineWidth = 5
-        ctx.beginPath()
-        ctx.arc(4, -6, 56, 0, Math.PI * 2)
-        ctx.stroke()
-      }
-      // Boks şortu & gövde
-      ctx.fillStyle = hitFlash ? '#ffffff' : bodyCol
-      ctx.beginPath()
-      ctx.roundRect(-22, -16, 44, 48, 16)
-      ctx.fill()
-      // Şort kemeri
-      ctx.fillStyle = '#fffaf2'
-      ctx.fillRect(-22, 6, 44, 8)
-      // Kafa
-      ctx.fillStyle = '#ffe1c6'
-      ctx.beginPath()
-      ctx.arc(0, -34, 22, 0, Math.PI * 2)
-      ctx.fill()
-      // Gözler
-      ctx.fillStyle = '#4a3b5c'
-      ctx.beginPath()
-      ctx.arc(8, -36, 3.2, 0, Math.PI * 2)
-      ctx.fill()
-      // Kafa bandı
-      ctx.fillStyle = gloveCol
-      ctx.fillRect(-21, -48, 42, 7)
-      // Arka eldiven
-      ctx.fillStyle = gloveCol
-      ctx.beginPath()
-      ctx.arc(16 + punch * 14, -10 - punch * 8, 13, 0, Math.PI * 2)
-      ctx.fill()
-      // Ön yumruk eldiveni
-      ctx.beginPath()
-      ctx.arc(28 + punch * 48, -2 - punch * 12, 16, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.fillStyle = 'rgba(255,255,255,0.45)'
-      ctx.beginPath()
-      ctx.arc(32 + punch * 48, -7 - punch * 12, 5, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.restore()
-    }
-
-    const frame = (nowPerf) => {
-      const dt = Math.min(0.05, (nowPerf - prev) / 1000)
+    let prev = performance.now()
+    const tid = setInterval(() => {
+      const nowPerf = performance.now()
+      const dt = Math.min(0.1, (nowPerf - prev) / 1000)
       prev = nowPerf
       const now = Date.now()
       const elapsed = now - match.startAt
       const s = localRef.current
-      s.youPunch = Math.max(0, s.youPunch - dt * 5)
-      s.oppPunch = Math.max(0, s.oppPunch - dt * 5)
-      s.shake = Math.max(0, s.shake - dt * 1.6)
+      s.youPunch = Math.max(0, s.youPunch - dt * 4.5)
+      s.oppPunch = Math.max(0, s.oppPunch - dt * 4.5)
+      s.shake = Math.max(0, s.shake - dt * 1.8)
 
-      // Solo AI (Koç Kaan): her cue'yu %70 olasılıkla vurur
       if (match.solo && !s.ended) {
         for (const c of cuesRef.current) {
           if (elapsed >= c.t && !s.aiSeen.has(c.i)) {
@@ -640,8 +585,9 @@ function BoxingArena({ match, selfName, liveState, onSendHit, onSoloEnd, onExit 
                 const grade = roll < 0.25 ? 'perfect' : 'good'
                 const dmg = hitDamage(c.type, grade, 1, match.opp.str, match.you.sta, s.shieldUntil > now)
                 s.hp = Math.max(0, s.hp - dmg)
+                s.oppType = c.type
                 s.oppPunch = 1
-                s.shake = 0.16
+                s.shake = 0.22
                 setHud((h) => ({ ...h, hp: s.hp }))
                 if (s.hp <= 0) {
                   s.ended = true
@@ -658,115 +604,36 @@ function BoxingArena({ match, selfName, liveState, onSendHit, onSoloEnd, onExit 
         }
       }
 
-      // Aktif raunt numarası
       let rNow = 1
       for (let r = 0; r < BOX.rounds; r++) if (elapsed >= roundStart(r)) rNow = r + 1
-
-      const W = 680
-      const H = 320
-      if (cv.width !== W || cv.height !== H) {
-        cv.width = W
-        cv.height = H
-      }
-      ctx.clearRect(0, 0, W, H)
-
-      const sx = s.shake > 0 ? (Math.random() - 0.5) * 14 * s.shake : 0
-      const sy = s.shake > 0 ? (Math.random() - 0.5) * 10 * s.shake : 0
-      ctx.save()
-      ctx.translate(sx, sy)
-
-      // Arka plan: pastel arena spotları
-      const bg = ctx.createLinearGradient(0, 0, 0, H)
-      bg.addColorStop(0, '#2e224b')
-      bg.addColorStop(0.58, '#4a366f')
-      bg.addColorStop(1, '#fff3e6')
-      ctx.fillStyle = bg
-      ctx.fillRect(0, 0, W, H)
-
-      // Ring zemini & ipler
-      ctx.fillStyle = '#fff7ee'
-      ctx.fillRect(0, 215, W, 105)
-      ;[140, 172, 204].forEach((ry, i) => {
-        ctx.strokeStyle = ['#ff8a7a', '#ffffff', '#7fcdf3'][i]
-        ctx.lineWidth = 5
-        ctx.beginPath()
-        ctx.moveTo(0, ry)
-        ctx.lineTo(W, ry)
-        ctx.stroke()
-      })
-
-      // Boksörler
-      const bob = Math.sin(nowPerf / 180) * 4
-      drawBoxer(185, 206 + bob, 1, '#ff8a7a', '#ff595e', s.youPunch, s.shieldUntil > now, s.oppPunch > 0.7)
-      drawBoxer(495, 206 - bob, -1, '#7fcdf3', '#3b82f6', s.oppPunch, s.oppShieldUntil > now, s.youPunch > 0.7)
-
-      // Yaklaşan ritim halkaları (merkezde daralan zamanlama hedefi)
-      const cx = W / 2
-      const cy = 122
-      ctx.strokeStyle = 'rgba(255,255,255,0.4)'
-      ctx.lineWidth = 4
-      ctx.beginPath()
-      ctx.arc(cx, cy, 42, 0, Math.PI * 2)
-      ctx.stroke()
-
-      if (elapsed < BOX.leadMs) {
-        const sec = Math.max(1, Math.ceil((BOX.leadMs - elapsed) / 1000))
-        ctx.fillStyle = '#ffd35e'
-        ctx.font = '900 44px system-ui, sans-serif'
-        ctx.textAlign = 'center'
-        ctx.fillText(`🥊 ${sec}`, cx, cy + 16)
-      } else {
-        for (const c of cuesRef.current) {
-          if (s.seen.has(c.i)) continue
-          const dtCue = c.t - elapsed // ms kaldı
-          if (dtCue > 950 || dtCue < -240) continue
-          const meta = CUE_META[c.type]
-          const radius = 42 + Math.max(0, dtCue / 950) * 66
-          ctx.strokeStyle = meta.color
-          ctx.lineWidth = 6
-          ctx.beginPath()
-          ctx.arc(cx, cy, radius, 0, Math.PI * 2)
-          ctx.stroke()
-
-          if (dtCue < 520) {
-            ctx.fillStyle = meta.color
-            ctx.beginPath()
-            ctx.arc(cx, cy, 34, 0, Math.PI * 2)
-            ctx.fill()
-            ctx.fillStyle = '#2d1f47'
-            ctx.font = '900 28px system-ui, sans-serif'
-            ctx.textAlign = 'center'
-            ctx.fillText(meta.key, cx, cy + 5)
-            ctx.font = '900 11px system-ui, sans-serif'
-            ctx.fillText(meta.label.toUpperCase(), cx, cy + 21)
-          }
+      let activeCue = null
+      let progress = 0
+      for (const c of cuesRef.current) {
+        if (s.seen.has(c.i)) continue
+        const dtCue = c.t - elapsed
+        if (dtCue <= 950 && dtCue >= -240) {
+          activeCue = c
+          progress = Math.max(0, Math.min(1, 1 - dtCue / 950))
+          break
         }
       }
-
-      // Geri bildirim yazısı
-      if (now - s.bannerAt < 750 && s.banner) {
-        ctx.fillStyle = s.bannerCol
-        ctx.font = '900 22px system-ui, sans-serif'
-        ctx.textAlign = 'center'
-        ctx.fillText(s.banner, cx, 44)
-      }
-
-      // Raunt etiketi
-      ctx.fillStyle = 'rgba(255,255,255,0.9)'
-      ctx.font = '900 14px system-ui, sans-serif'
-      ctx.textAlign = 'center'
-      ctx.fillText(`RAUNT ${rNow}/${BOX.rounds}`, cx, 292)
-
-      ctx.restore()
-      raf = requestAnimationFrame(frame)
-    }
-    raf = requestAnimationFrame(frame)
-    return () => cancelAnimationFrame(raf)
+      setHud((h) => (h.round === rNow ? h : { ...h, round: rNow }))
+      setCueUi({
+        countdown: elapsed < BOX.leadMs ? Math.max(1, Math.ceil((BOX.leadMs - elapsed) / 1000)) : 0,
+        active: activeCue,
+        progress,
+        banner: now - s.bannerAt < 750 ? s.banner : '',
+        bannerCol: s.bannerCol,
+      })
+    }, 33)
+    return () => clearInterval(tid)
   }, [match, onSoloEnd])
 
+  const activeMeta = cueUi.active ? CUE_META[cueUi.active.type] : null
+
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#23183d]/85 p-3 backdrop-blur-sm">
-      <div className="flex w-[min(96vw,44rem)] flex-col gap-2.5 rounded-[2rem] border-2 border-white bg-white/95 p-4 shadow-toy">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#23183d]/88 p-3">
+      <div className="flex w-[min(96vw,46rem)] flex-col gap-2.5 rounded-[2rem] border-2 border-white bg-white/95 p-4 shadow-toy">
         {/* Üst can barları */}
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1">
@@ -792,18 +659,53 @@ function BoxingArena({ match, selfName, liveState, onSendHit, onSoloEnd, onExit 
           </div>
         </div>
 
-        {/* 60 FPS Canvas */}
-        <canvas ref={canvasRef} className="w-full rounded-2xl border-2 border-[#efe6ff]" />
+        {/* Gerçek 3D Boks Ringi + Zamanlama Hedefi */}
+        <div className="relative h-72 w-full overflow-hidden rounded-2xl border-2 border-[#efe6ff] bg-[#24193d] sm:h-80">
+          <BoxingArena3D stateRef={localRef} />
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-between py-2.5">
+            <div className="flex min-h-[1.75rem] items-center justify-center">
+              {cueUi.banner && (
+                <span className="rounded-full bg-[#23183d]/80 px-4 py-1 text-sm font-black shadow" style={{ color: cueUi.bannerCol }}>
+                  {cueUi.banner}
+                </span>
+              )}
+            </div>
+            {cueUi.countdown > 0 ? (
+              <div className="grid h-20 w-20 place-items-center rounded-full border-4 border-[#ffd35e] bg-[#23183d]/85 text-3xl font-black text-[#ffd35e] shadow-lg">
+                {cueUi.countdown}
+              </div>
+            ) : activeMeta ? (
+              <div className="relative grid h-20 w-20 place-items-center">
+                <div
+                  className="absolute inset-0 rounded-full border-4 transition-transform duration-75"
+                  style={{ borderColor: activeMeta.color, transform: `scale(${1.9 - cueUi.progress * 0.9})` }}
+                />
+                <div
+                  className="grid h-16 w-16 place-items-center rounded-full border-2 border-white text-center shadow-lg"
+                  style={{ backgroundColor: activeMeta.color }}
+                >
+                  <span className="text-[11px] font-black uppercase text-[#2d1f47]">{activeMeta.label}</span>
+                </div>
+              </div>
+            ) : (
+              <div />
+            )}
+            <span className="rounded-full bg-[#23183d]/75 px-3 py-0.5 text-[11px] font-black tracking-wider text-white">
+              RAUNT {hud.round}/{BOX.rounds}
+            </span>
+          </div>
+        </div>
 
         <div className="flex items-center justify-between px-1 text-xs font-black text-[#6b4fc0]">
           <span>{hud.msg}</span>
           <span>🔥 Kombo: x{hud.combo}</span>
         </div>
 
-        {/* 4 Büyük Dokunmatik / Klavye Boks Düğmesi (Mobilde rahat başparmak erişimi) */}
+        {/* 4 Boks Hamlesi */}
         <div className="grid grid-cols-4 gap-2">
           {CUE_TYPES.map((t) => {
             const m = CUE_META[t]
+            const active = cueUi.active?.type === t
             return (
               <button
                 key={t}
@@ -813,10 +715,12 @@ function BoxingArena({ match, selfName, liveState, onSendHit, onSoloEnd, onExit 
                   triggerAction(t)
                 }}
                 style={{ backgroundColor: m.color }}
-                className="flex select-none flex-col items-center justify-center rounded-2xl border-b-4 border-black/15 py-3 text-[#2d1f47] shadow-soft active:translate-y-[2px]"
+                className={`flex select-none flex-col items-center justify-center rounded-2xl border-b-4 border-black/15 py-3 text-[#2d1f47] shadow-soft transition active:translate-y-[2px] ${
+                  active ? 'ring-4 ring-[#4a3b5c]/35 scale-[1.03]' : ''
+                }`}
               >
-                <span className="text-xl font-black leading-none">{m.key}</span>
-                <span className="mt-0.5 text-[11px] font-black">{m.label}</span>
+                <span className="text-xs font-black leading-none">{m.label}</span>
+                <span className="mt-1 rounded-md bg-white/55 px-1.5 py-0.5 text-[10px] font-extrabold">{m.key}</span>
               </button>
             )
           })}

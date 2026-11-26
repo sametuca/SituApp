@@ -152,7 +152,7 @@ function build(v) {
     plant(hw - 0.7, 4.1)
   }
   const sign = () => add({ t: 'board', x: 0, y: 3.25, z: -hd + 0.04, ry: 0, w: 3.4, h: 0.56, lines: [`${v.emoji} ${v.name}`], bg: th.accent, fg: '#ffffff', big: true })
-  const windows = (zs = [-0.6, 2.4]) => zs.forEach((z) => { add({ t: 'window', wall: 'w', z }); add({ t: 'window', wall: 'e', z }) })
+  const windows = (z = 1.2, wall = 'w') => add({ t: 'window', wall, z })
   const chairAt = (name, x, z, ry, kind, group, c) => {
     add({ t: 'chair', x, z, ry, c: c ?? th.accent })
     block(x, z, 0.24, 0.24, ry)
@@ -181,7 +181,6 @@ function build(v) {
     seat(name, 'stool', 'chair', x, z, ry, undefined, group)
   }
   const shelfRow = (mode, xs, extra = {}) => xs.forEach((x) => add({ t: 'shelf', x, z: -hd + 0.26, ry: 0, w: 1.6, rows: 3, mode, c: th.dark ? th.trim : '#fffaf2', ...extra }))
-  const frame = (x, y, z, ry, w, h, c) => add({ t: 'frame', x, y, z, ry, w, h, c })
   const menu = (lines, x, y = 2.1) => add({ t: 'board', x, y, z: -hd + 0.04, ry: 0, w: 1.7, h: 1.15, lines, bg: '#fffaf2', fg: '#4a3b5c', frame: th.accent })
   const nx = clamp(npc.x, -2.4, 2.4)
   const sideMenus = (a, b) => {
@@ -271,7 +270,6 @@ function build(v) {
     case 'books': {
       sign()
       counter(npc.x, 3.2)
-      add({ t: 'frame', x: -hw + 0.04, y: 2.2, z: -2.6, ry: Math.PI / 2, w: 1.0, h: 0.8, c: th.accent })
       // kuzey ve doğu duvarında kitap rafları (NPC solda)
       shelfRow('books', [-0.4, 1.2, 2.8, 4.4])
       for (const z of [-2.8, -1.0, 0.8]) add({ t: 'shelf', x: hw - 0.26, z, ry: -Math.PI / 2, w: 1.6, rows: 3, mode: 'books', c: '#fffaf2' })
@@ -285,7 +283,7 @@ function build(v) {
       ;[[-3.9, 1.0], [-3.9, 3.2]].forEach(([x, z], i) => tableSet(i, x, z))
       add({ t: 'glb', m: 'plant', x: -hw + 0.7, z: 4.1, s: 1.4 }, { x: -hw + 0.7, z: 4.1, hw: 0.3, hd: 0.3, ry: 0 })
       add({ t: 'glb', m: 'plant', x: hw - 0.7, z: -4.3, s: 1.4 }, { x: hw - 0.7, z: -4.3, hw: 0.3, hd: 0.3, ry: 0 })
-      windows([-0.2])
+      windows(-0.2)
       break
     }
     // ================= bar =================
@@ -375,7 +373,7 @@ function build(v) {
       add({ t: 'mirror', x: hw - 0.05, z: -0.6, w: 1.3, h: 1.8, ry: -Math.PI / 2 })
       plant(-hw + 0.7, 4.1)
       plant((hw - 0.7), -4.2)
-      windows([2.4])
+      windows(-1.6)
       break
     }
     // ================= stüdyo =================
@@ -392,9 +390,6 @@ function build(v) {
       add({ t: 'ball', x: bx + 2.0, y: 0.8, z: -3.6, r: 0.3, c: th.accent })
       L.photo = { x: bx, z: -1.0, radius: 2.2 }
       add({ t: 'rug', x: bx, z: -1.4, w: 3.4, d: 3.6, c: mix(th.accent, '#ffffff', 0.7), round: true })
-      ;[-5.0, -3.9, -2.8].forEach((x, i) => frame(x, 2.3 - (i % 2) * 0.35, -hd + 0.03, 0, 0.8, 1.0, [th.accent, '#7fcdf3', '#ffd35e'][i]))
-      frame(-hw + 0.03, 2.1, 1.4, Math.PI / 2, 1.0, 1.3, '#b79cff')
-      frame(-hw + 0.03, 2.0, 3.0, Math.PI / 2, 0.8, 1.0, '#8fdcb4')
       plant(-hw + 0.7, 4.1)
       plant((hw - 0.7), 4.1)
       break
@@ -413,7 +408,7 @@ function build(v) {
       add({ t: 'glb', m: 'palm', x: -5.2, z: -4.1, s: 3.0 }, { x: -5.2, z: -4.1, hw: 0.4, hd: 0.4, ry: 0 })
       add({ t: 'glb', m: 'palm', x: hw - 0.7, z: 4.0, s: 3.0 }, { x: 5.3, z: 4.0, hw: 0.4, hd: 0.4, ry: 0 })
       add({ t: 'rug', x: 0, z: 0.8, w: 3.2, d: 2.2, c: '#9fd8f5', round: true })
-      windows([2.6])
+      windows(2.6)
       break
     }
     // ================= rehber =================
@@ -429,7 +424,7 @@ function build(v) {
       add({ t: 'globe', x: 4.6, z: -0.6 }, { x: 4.6, z: -0.6, hw: 0.45, hd: 0.45, ry: 0 })
       plant(-hw + 0.7, -4.2)
       plant((hw - 0.7), -4.2)
-      windows([0.4])
+      windows(-1.6)
       break
     }
     // ================= havalimanı çıkış salonu (başlangıç odası) =================
@@ -462,7 +457,7 @@ function build(v) {
       plant(hw - 0.7, -4.4)
       plant(hw - 0.7, 4.2)
       add({ t: 'rug', x: hw - 2.6, z: 0.4, w: 2.2, d: 4.2, c: mix(th.accent, '#ffffff', 0.62) })
-      windows([-0.6, 2.4])
+      windows(2.2)
       break
     }
     // ================= fitness kulübü (MakFit) =================
@@ -478,16 +473,15 @@ function build(v) {
       // Koşu bantları (sağ güney)
       add({ t: 'treadmill', x: 4.4, z: 1.5, ry: Math.PI }, { x: 4.4, z: 1.5, hw: 0.55, hd: 0.95, ry: 0 })
       add({ t: 'treadmill', x: 6.1, z: 1.5, ry: Math.PI }, { x: 6.1, z: 1.5, hw: 0.55, hd: 0.95, ry: 0 })
-      // Duvar panoları & aynalar
+      // Duvar panoları
       add({ t: 'board', x: -3.2, y: 2.15, z: -hd + 0.04, ry: 0, w: 2.5, h: 1.15, lines: ['🥊 BOKS RİNGİ', '← Jab · → Kroşe', '↑ Aparkat · ↓ Blok', 'Haftalık Şampiyon: 🏆'], bg: '#fffaf2', fg: '#4a3b5c', frame: '#ff8a7a' })
       add({ t: 'board', x: 4.5, y: 2.15, z: -hd + 0.04, ry: 0, w: 2.3, h: 1.1, lines: ['💪 ANTRENMAN', 'Ağırlık → +Güç', 'Koşu → +Kondisyon', 'Enerji her gün yenilenir'], bg: '#fffaf2', fg: '#4a3b5c', frame: '#7fcdf3' })
-      add({ t: 'mirror', x: hw - 0.05, z: -0.4, w: 2.2, h: 1.9, ry: -Math.PI / 2 })
       add({ t: 'rug', x: 5.2, z: -0.4, w: 3.8, d: 5.4, c: '#c8eadf', round: false })
       sofaAt('sofaA', -5.4, 3.2, 0, 2.0, '#7fcdf3')
       plant(-hw + 0.7, -4.2)
       plant(-hw + 0.7, 4.1)
       plant(hw - 0.7, 4.1)
-      windows([2.4])
+      windows(1.0)
       L.gym = {
         ring: { x: -3.2, z: -0.6 },
         weights: { x: 4.5, z: -2.4 },
@@ -523,9 +517,11 @@ function build(v) {
   const hit = (x, z, rw, rd) => L.colliders.some((c) => Math.abs(c.x - x) < c.hw + rw + 0.1 && Math.abs(c.z - z) < c.hd + rd + 0.1)
   const inNpc = (x, z) => x > L.npcRect.x0 - 0.6 && x < L.npcRect.x1 + 0.6 && z > L.npcRect.z0 - 0.6 && z < L.npcRect.z1 + 0.6
   const CAFE_LIKE = ['cafe', 'tea', 'bakery', 'dessert', 'books', 'fastfood', 'icecream']
+  const winAt = (sx, z) => L.items.some((it) => it.t === 'window' && it.wall === (sx < 0 ? 'w' : 'e') && Math.abs(it.z - z) < 1.35)
   let fi = 0
   for (const sx of [-1, 1]) {
     for (const z of [-0.6, 2.4]) {
+      if (winAt(sx, z)) continue
       const x = sx * (hw - 1.7)
       if (CAFE_LIKE.includes(v.type)) {
         if (!hit(x, z, 1.5, 0.7) && !inNpc(x, z)) tableSet(`fx${fi++}`, x, z, 'x')
@@ -566,16 +562,32 @@ function build(v) {
     [hw - 1.05, 0.9, -Math.PI / 2],
   ]
   const wallSpots = [
+    [-hw + 0.24, -2.0, Math.PI / 2],
+    [hw - 0.24, -2.0, -Math.PI / 2],
     [-hw + 0.24, -0.2, Math.PI / 2],
     [hw - 0.24, -0.2, -Math.PI / 2],
     [-hw + 0.24, 2.2, Math.PI / 2],
     [hw - 0.24, 2.2, -Math.PI / 2],
+    [-hw + 0.24, 3.0, Math.PI / 2],
+    [hw - 0.24, 3.0, -Math.PI / 2],
   ]
-  let wallIdx = 0
+  const wallFree = (wx, wz) => {
+    const side = wx < 0 ? 'w' : 'e'
+    return !L.items.some((it) => {
+      if (it.t === 'window' && it.wall === side && Math.abs(it.z - wz) < 1.65) return true
+      if (it.t === 'demodoor' && side === 'w' && Math.abs(it.z - wz) < 1.75) return true
+      if (it.t === 'neon' && it.x !== undefined && Math.sign(it.x) === Math.sign(wx) && Math.abs(it.x) > hw - 1 && Math.abs(it.z - wz) < (it.w ?? 2) / 2 + 0.8) return true
+      if (['mirror', 'shelf', 'surf', 'decor'].includes(it.t) && it.x !== undefined && Math.abs(it.x - wx) < 1.2 && Math.abs(it.z - wz) < 1.55) return true
+      return false
+    })
+  }
   for (const ac of accents) {
     if (ac.wall) {
-      const [wx, wz, wry] = wallSpots[wallIdx++ % wallSpots.length]
-      add({ t: 'decor', model: ac.model, x: wx, y: ac.y ?? 1.6, z: wz, ry: wry, h: ac.h })
+      const spot = wallSpots.find(([wx, wz]) => wallFree(wx, wz))
+      if (spot) {
+        const [wx, wz, wry] = spot
+        add({ t: 'decor', model: ac.model, x: wx, y: ac.y ?? 1.6, z: wz, ry: wry, h: ac.h })
+      }
       continue
     }
     for (const [sx, sz, sry] of floorSpots) {

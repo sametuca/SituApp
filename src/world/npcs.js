@@ -28,8 +28,6 @@ const CITY = [
       { id: 'newspaper', label: 'Günün Gazetesi', emoji: '📰', price: 3, style: 'read', color: '#fffaf2', reply: 'Sıcak sıcak günün manşetleri! 📰✨' },
     ],
     options: [
-      { label: 'Öneri iste', reply: ['Bu akşam Kafe Sokağı çok sakin, sohbet için birebir ☕', 'Gün batımında plaja git, manşet fotoğrafı orada çekiliyor 🌅'] },
-      { label: 'Hikâye anlat', reply: ['Geçen gün iki yabancı aynı gazeteyi almak için uzandı, elleri değdi… Şimdi her sabah birlikte okuyorlar 💞', 'Bir kadın bana “şu mavi tişörtlü kim?” diye sordu. Dönüp baktım, mavi tişörtlü de aynısını soruyordu 😄'] },
     ],
   },
   {
@@ -41,16 +39,12 @@ const CITY = [
     ],
     options: [
       { label: '🎈 Balon Patlatma Oyunu', action: 'open_mg:balloon', reply: ['Parti şapkanı tak, bombalara dokunmadan balonları patlat! 🎈✨'] },
-      { label: 'Öneri iste', reply: ['Çeşmenin başında buluşmak klasik ama hep işe yarar ⛲', 'Park çardağı akşamüstü çok romantik oluyor 🌳'] },
-      { label: 'Hikâye anlat', reply: ['Bir balon uçup gitti, peşinden koşan çocuk bir de baktı ki yeni arkadaş edinmiş 🎈', 'Bir çift buluştuğunda iki balonun ipini birbirine bağlamıştı. Hâlâ birlikteler 💞'] },
     ],
   },
   {
     id: 'muzisyen', avatar: 'deniz', name: 'Sokak Müzisyeni Deniz', role: '🎸', x: 5.35, z: -17.2, ry: -1.45, pose: SIT_STOOL, prop: 'stool',
     lines: ['Bu şarkıyı sana çalıyorum 🎶', 'Kafe Sokağı’nın sesi benim 🎸', 'Müzik, sohbetin en tatlı başlangıcı 😉', 'Dinleyene bir kahve ısmarlarım… yarın 😄'],
     options: [
-      { label: 'Öneri iste', reply: ['Müzik dinleyerek kahve içmek için Starbucket’in pencere kenarı ideal ☕', 'Dans etmek istersen Gece Kulübü’ne uğra, pist hiç boş kalmıyor 🪩'] },
-      { label: 'Hikâye anlat', reply: ['Bir akşam çaldığım şarkıya biri eşlik etti, ses ses derken ikisi de sustu, sadece gülümsediler 🎶', 'İlk şarkımı bir banka oturup yazdım. Yanıma oturan kişi nakaratı buldu 💫'] },
     ],
   },
   {
@@ -60,8 +54,6 @@ const CITY = [
       { id: 'flower_tulip', label: 'Taze Lale', emoji: '🌷', price: 5, style: 'smell', color: '#ff8fb8', reply: 'Mis gibi taze laleler, keyfini çıkar 🌷✨' },
     ],
     options: [
-      { label: 'Öneri iste', reply: ['Çiçek göndermek için en iyi yer Park, hem bahar kokusu hem sakinlik 🌳', 'Tatlı Kafası’ndan bir şey alıp çiçekle birlikte sürpriz yap 🍰'] },
-      { label: 'Hikâye anlat', reply: ['Her sabah aynı kişi bir papatya alırdı. Bir gün sebebini sordum: “Birine ‘sevmiyor’ dedirtmemek için” dedi 🌼', 'Bir gün iki kişi aynı buketi almak istedi, buketi ikiye bölüp birlikte yürüdüler 💐'] },
     ],
   },
   {
@@ -70,8 +62,6 @@ const CITY = [
     lines: ['Ağaçlar bu yıl çok güzel yeşerdi 🌳', 'Park banklarında iki kişi oturunca sohbet açılır 😉', 'Çardağın altı yaz sıcağında bir cennet 🌿', 'Çiçekleri sularken dünyayı unutuyorum 🌱'],
     options: [
       { label: '🚲 Bisiklet Engel Yarışı', action: 'open_mg:bike', reply: ['Forma hazır! Park yolunda engellerden kaçıp hız şeritlerini yakala 🚲⚡'] },
-      { label: 'Öneri iste', reply: ['Park banklarından birine otur, biri mutlaka yanına gelir 😉', 'Çardağın önü fotoğraf için güzel, ışığı yumuşak 📸'] },
-      { label: 'Hikâye anlat', reply: ['Bir fidanı iki kişi birlikte dikmişti. Şimdi her yıl onun gölgesinde buluşuyorlar 🌳', 'Bu bank var ya, üç evliliğe şahit oldu. Söylemem ama… 🤫'] },
     ],
   },
   {
@@ -79,8 +69,6 @@ const CITY = [
     route: { pts: [[-30, 6.3], [-34.5, 4.5], [-36.3, 0], [-34.5, -4.5], [-30, -6.3], [-25.5, -4.5], [-23.7, 0], [-25.5, 4.5]], mode: 'loop', speed: 1.0, pause: 2.5 },
     lines: ['Pofuduk her gün çardağın etrafında dört tur atar 🐕', 'Köpeği olan biriyle sohbet açmak çok kolay, dene 😄', 'Pofuduk senden hoşlandı galiba, kuyruğu sallanıyor 🐾', 'Parkta yürüyüş en iyi buluşma sebebi 🌳'],
     options: [
-      { label: 'Öneri iste', reply: ['Parkta yürüyüş yapanlara selam vermeyi dene, çoğu sohbete açık 👋', 'Yürüyüşten sonra Çay Evi’nde çay iyi gider 🍵'] },
-      { label: 'Hikâye anlat', reply: ['Pofuduk bir gün tanımadığı birinin ayağına yatıp kalktı. Şimdi o kişi hafta sonlarının sahibi 🐶💞', 'Bir gün iki köpeğin ipi dolandı, sahipleri gülerek çözdü. Sonrası çay 🍵'] },
     ],
   },
   {
@@ -105,8 +93,6 @@ const CITY = [
       { id: 'ice_choco', label: 'Çikolatalı Dondurma', emoji: '🍦', price: 5, style: 'eat', color: '#7a4b32', color2: '#f5d7b0', reply: 'Bol çikolatalı dondurman hazır, afiyet olsun! 🍫🍦' },
     ],
     options: [
-      { label: 'Öneri iste', reply: ['Dondurmanı al, kıyıya otur, dalga sesi eşlik etsin 🌊', 'Nevarlanda’e da uğra, külahlar özel 🍦'] },
-      { label: 'Hikâye anlat', reply: ['İki kişi aynı anda son çilekli külahı istedi. Birbirlerine uzatınca külah kırıldı, kahkaha koptu 🍓😄', 'Bir kız “eksik para” çıkardı, arkasındaki çocuk “ben ısmarlayayım” dedi. İkisi de şimdi kuyrukta bekler 🍦'] },
     ],
   },
   {
@@ -114,8 +100,6 @@ const CITY = [
     pose: GUARD, look: BLACK_SUIT, scale: 1.12,
     lines: ['Hoş geldin, içeride herkese yer var ama kavga yok! 🕶️', 'Kapıdaki düzene dikkat, sıra sıra geçelim 😄', 'Rahatsız eden olursa haber ver, ben buradayım 👀', 'Klüp’te iyi eğlenceler 🪩'],
     options: [
-      { label: 'Öneri iste', reply: ['İçerideki pist akşamları çok canlı, DJ’e istek şarkı söyle 🎶', 'Kalabalık sevmezsen önce Hard Rök’te bir şey iç, sonra piste geç 🍹'] },
-      { label: 'Hikâye anlat', reply: ['Bir gece iki kişi pistte aynı anda aynı adımı yaptı. Sonra dans bütün gece sürdü 💃', 'Yıllardır kapıdayım, en güzel manzara içeriden dışarı sızan kahkaha 🪩'] },
     ],
   },
   {
@@ -124,31 +108,24 @@ const CITY = [
     lines: ['İyi akşamlar, buyurun içeri 🕶️', 'Kıyafet tamam, enerji tamam — geçebilirsin ✨', 'Pist bu gece alev alıyor, keyfine bak 🪩', 'Gözüm kapıda, içeride rahatça eğlen 👀'],
     options: [
       { label: 'İçeride ne var?', reply: ['DJ Kaan kabinde, pist kalabalık ve ışıklar yanıyor 🪩', 'Arkadaşlarınla dans edip müzik seçebilirsin 🎶'] },
-      { label: 'Hikâye anlat', reply: ['Geçen hafta biri kapıda adını unuttu, heyecanla “VIP” dedi. Gülüştük, içeri aldık 😄', 'Kaan’la yıllardır bu kapıyı tutuyoruz, içeriden mutsuz çıkan görmedim 🕶️'] },
     ],
   },
   {
     id: 'hayran', where: 'kulup', avatar: 'elif', name: 'DJ Hayranı Elif', role: '🎧', x: -1.4, z: 0.8, ry: 3.1, pose: SOLO,
     lines: ['DJ Kaan bu akşam harika çalıyor!! 🎧', 'Ben bu şarkıyı bin kere dinledim ve hâlâ dans ediyorum 💃', 'Dans etmek için birine 💃 gönder, kabul ederse el ele dönersiniz 😍', 'Şarkıyı duyunca duramıyorum 🪩'],
     options: [
-      { label: 'Öneri iste', reply: ['Cuma akşamları kulüpte konfeti yağıyor, kaçırma 🎉', 'Piste yalnız çıkmaktan çekinme, biri mutlaka katılır 💃'] },
-      { label: 'Hikâye anlat', reply: ['Pistte yanımdaki kişiyle aynı anda “bu şarkıya bayılıyorum” diye bağırdık. İlk cümlemiz buydu 😂', 'Bir kere DJ benim için “kırmızı elbiseli kız için” diye şarkı çaldı. Hâlâ kırmızı giyiyorum ❤️'] },
     ],
   },
   {
     id: 'kediler', avatar: 'mira', name: 'Kedi Hanım Mira', role: '🐈', x: 5, z: -35, ry: 0.2, companion: 'cat',
     lines: ['Minnoş kimseyi sevmez ama seni sevdi 🐈', 'Kediler iyi insanı hemen tanır, bilirsin 😺', 'Mahalledeki bütün kedilerin adını biliyorum 🐾', 'Sokakta kedi görünce selam ver, o da cevap verir 😸'],
     options: [
-      { label: 'Öneri iste', reply: ['Kafe Sokağı kediler için ideal, her kafede bir dost var 🐾', 'Kitap Kafe sessiz ve sıcak, tam kedilik bir yer 📚'] },
-      { label: 'Hikâye anlat', reply: ['Bir kedi iki yabancıyı aynı kucakta uyuyarak tanıştırdı. Adı “Cupid” kaldı 💘🐈', 'Minnoş bir gün benim için bir çift çorap getirdi, sahibi de arkasından geldi. Çorabın sahibi şimdi çay arkadaşım 🧦'] },
     ],
   },
   {
     id: 'turist', worldPos: true, avatar: 'deniz', name: 'Gezgin Deniz', role: '📷', x: 26.2, z: 49.5, ry: 0.35,
     lines: ['Fotoğraf noktasını gördün mü? Tam burada 📸', 'Bu şehirde her köşe bir kare 🌆', 'İki kişi poz verince albüm daha tatlı oluyor 💞', 'Fotoğraf makinesi hep yanımda, gülümsemeyi unutma 😄'],
     options: [
-      { label: 'Öneri iste', reply: ['Fotoğraf Stüdyosu’nun önündeki işaretli noktada kare çek, ışık harika 📸', 'Gün batımında plajda çekilen kareler en tatlısı 🌅'] },
-      { label: 'Hikâye anlat', reply: ['Bir gün kare çekerken arkaya biri girdi. Fotoğrafın en güzel yeri o sürpriz oldu 📷', 'Albümümün en sevdiğim karesi: iki yabancı aynı anda gülüyor ve haberleri yok 😊'] },
     ],
   },
   // Sahil Partisi (Beach Party) NPC'leri: her biri farklı dans stiliyle plaja inen oyuncuları karşılar
@@ -157,7 +134,6 @@ const CITY = [
     lines: ['Sahil partisine hoş geldin! 🌴🪩', 'Müziği açtık, pist senin — birine 💃 gönderip dansa kaldır!', 'Güneş, deniz ve en iyi ritimler burada 🌊🎶'],
     options: [
       { label: 'Parti nasıl gidiyor?', reply: ['Enerji tavan! Yeni gelenler ilk burada tanışıyor 🪩✨', 'Birazdan gün batımı setine geçiyoruz, kaçırma 🌅'] },
-      { label: 'Öneri iste', reply: ['Plajın sağında MakFit, solunda kendi evin var — her şey elinin altında! 🏖️', 'Quicksörf’te Sörfçü Kaan’la konuşup dalgalara da çıkabilirsin 🏄'] },
     ],
   },
   {
@@ -258,8 +234,6 @@ const venueNpcs = VENUES.filter((v) => v.npc).map((v) => ({
           { label: '🗺️ Mekanlara nasıl giderim?', reply: ['Sağ üstteki yuvarlak haritaya tıklayınca tüm şehir açılır; kafe, kulüp, plaj veya Toni & Güy’e tek tıkla ışınlanabilirsin 🗺️'] },
         ]
       : []),
-    { label: 'Ne önerirsin?', reply: TYPE_TIPS[v.type] ?? TYPE_TIPS.cafe },
-    ...(TYPE_STORY[v.type] ? [{ label: 'Hikâye anlat', reply: [TYPE_STORY[v.type]] }] : []),
   ],
 }))
 

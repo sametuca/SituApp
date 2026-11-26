@@ -1,33 +1,25 @@
 import { useEffect, useRef, useState } from 'react'
 import { Ico } from '../../components/Icon'
-import { PLAY_BOUNDS, zoneAt } from '../layout'
-import { VENUE_BY_ID, venueIdOf } from '../venues'
-import { subscribeWorld, worldClock } from '../worldClock'
-import { createMusic, OUTDOOR, VENUE_SCENE, ZONE_SCENE } from '../audio/music'
-import { duck, ensureStarted, getSettings, installUnlock, onReady, play, setSettings, subscribeSettings } from '../audio/engine'
+import { zoneAt } from '../layout'
+import { venueIdOf } from '../venues'
+import { duck, ensureStarted, getSettings, installUnlock, play, setSettings, subscribeSettings } from '../audio/engine'
 
-// Ses ve müzik (tamamen procedural, Web Audio; dış dosya yok). Motor: ../audio/engine.js, efektler: sfx.js, müzik: music.js.
+// Ses efektleri (tamamen procedural, Web Audio). Motor: ../audio/engine.js, efektler: sfx.js. (Müzik şimdilik devre dışı.)
 // Başka modüller ses isteyebilir:
 //   window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'quest' }))                       (ad listesi: audio/sfx.js başı)
 //   window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: { name: 'beep', final: true, gain: 0.6 } }))
-//   window.dispatchEvent(new CustomEvent('situapp:duck', { detail: true | false }))                 (sesli mesaj oynarken müziği kıs)
-// Bölge: net.room + focusRef + layout.js zoneAt (+ venues.js type); hava/gece: worldClock (night, weather).
+//   window.dispatchEvent(new CustomEvent('situapp:duck', { detail: true | false }))
 
 const STEP_WALK = 0.43
 const STEP_RUN = 0.27
 const GESTURE_SFX = { heart: 'heart', flower: 'flower', wink: 'wink', wave: 'wave', kiss: 'kiss', dance: 'dance' }
 
-/** Bulunduğum yerin müzik sahnesi ve zemin türü. */
+/** Bulunduğum yerin zemin türü (ayak sesi için). */
 function whereAmI(room, f) {
-  if (typeof room === 'string' && room.startsWith('home:')) return { scene: 'home', surface: 'wood', outdoor: false }
-  const vid = venueIdOf(room)
-  if (vid) {
-    const type = VENUE_BY_ID[vid]?.type
-    return { scene: VENUE_SCENE[type] ?? 'lobby', surface: 'wood', outdoor: false }
-  }
+  if (typeof room === 'string' && room.startsWith('home:')) return { surface: 'wood' }
+  if (venueIdOf(room)) return { surface: 'wood' }
   const z = zoneAt(f.x, f.z).id
-  const scene = ZONE_SCENE[z] ?? 'lobby'
-  return { scene, surface: ['park', 'meadow', 'forest', 'pond'].includes(z) ? 'grass' : z === 'beach' ? 'sand' : 'city', outdoor: OUTDOOR.has(scene) }
+  return { surface: ['park', 'meadow', 'forest', 'pond'].includes(z) ? 'grass' : z === 'beach' ? 'sand' : 'city' }
 }
 
 function Slider({ label, value, onChange, onRelease }) {
@@ -53,7 +45,6 @@ function Slider({ label, value, onChange, onRelease }) {
 
 export function useAudio({ net, focusRef, home, panel }) {
   const [st, setSt] = useState(getSettings)
-  const musicRef = useRef(null)
   const netRef = useRef(net)
   const roomRef = useRef('city')
   const homeRef = useRef(home)
@@ -67,54 +58,10 @@ export function useAudio({ net, focusRef, home, panel }) {
   })
   useEffect(() => subscribeSettings(setSt), [])
 
-  // motor + müzik denetçisi + dünya havası
+  // Web Audio kilidini aç (müzikler şimdilik kapalı, yalnızca SFX aktif)
   useEffect(() => {
     installUnlock()
-    let music = null
-    let offWorld = null
-    let mood = { night: 0, rain: false }
-    const sync = () => {
-      if (!music) return
-      const w = worldClock
-      const night = Math.round((Number.isFinite(w.night) ? w.night : 0) * 20) / 20
-      const rain = w.weather === 'rain'
-      if (night !== mood.night || rain !== mood.rain) {
-        mood = { night, rain }
-        music.setMood(mood)
-      }
-      const here = whereAmI(homeRef.current ? 'home:me' : roomRef.current, focusRef.current)
-      music.setScene(here.scene, { outdoor: here.outdoor })
-    }
-    const offReady = onReady((ac, buses) => {
-      try {
-        music = createMusic(ac, buses.music)
-        musicRef.current = music
-        if (import.meta.env.DEV) window.__audio = music // geliştirme: music.scene / mood
-        music.start()
-        offWorld = subscribeWorld(sync)
-        sync()
-      } catch {
-        /* ses olmadan devam */
-      }
-    })
-    const poll = setInterval(sync, 500)
-    // kıyı dalgaları: adanın kenarına (PLAY_BOUNDS) yaklaştıkça artar; evde/mekânda yok
-    const shoreTimer = setInterval(() => {
-      if (!music) return
-      const indoors = homeRef.current || String(roomRef.current).startsWith('venue:')
-      const f = focusRef.current
-      const edge = Math.min(f.x - PLAY_BOUNDS.x0, PLAY_BOUNDS.x1 - f.x, f.z - PLAY_BOUNDS.z0, PLAY_BOUNDS.z1 - f.z) // kenara kalan mesafe (m)
-      music.setShore(indoors ? 0 : Math.pow(Math.max(0, 1 - edge / 22), 1.4))
-    }, 250)
-    return () => {
-      clearInterval(poll)
-      clearInterval(shoreTimer)
-      offReady()
-      offWorld?.()
-      music?.stop()
-      musicRef.current = null
-    }
-  }, [focusRef])
+  }, [])
 
   // adımlar (~16 Hz yoklama; ritim yürüme/koşmaya göre)
   useEffect(() => {
@@ -222,7 +169,7 @@ export function useAudio({ net, focusRef, home, panel }) {
       <div className="flex items-center gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-sm font-black text-[#4a3b5c]">Ses</p>
-          <p className="text-xs font-semibold text-[#8a7a9c]">Müzik ve efektler cihazında üretilir.</p>
+          <p className="text-xs font-semibold text-[#8a7a9c]">Ses efektleri cihazında üretilir.</p>
         </div>
         <button
           role="switch"
@@ -238,7 +185,6 @@ export function useAudio({ net, focusRef, home, panel }) {
         </button>
       </div>
       <div className={`mt-3 flex flex-col gap-2 transition-opacity ${st.muted ? 'opacity-50' : ''}`}>
-        <Slider label="Müzik" value={st.music} onChange={(v) => setSettings({ music: v })} />
         <Slider label="Efekt" value={st.sfx} onChange={(v) => setSettings({ sfx: v })} onRelease={() => play('pop')} />
         <button onClick={test} className="mt-1 w-fit rounded-2xl bg-[#a88bff] px-4 py-2 text-sm font-extrabold text-white shadow-soft active:scale-95">
           Sesi test et

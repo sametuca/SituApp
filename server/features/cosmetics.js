@@ -7,6 +7,7 @@ import { save, user } from '../store.js'
 import { getDecor, setDecor, setGiftResolver } from '../homes.js'
 import { sanitizeLook } from '../../src/world/lookData.js'
 import { GIFT_BY_ID, GIFT_RANGE, sanitizeCos } from '../../src/world/cosmeticsData.js'
+import { levelOf } from '../../src/world/collectibles.js'
 
 const OFFER_TTL_MS = 90_000
 const MAX_GIFTS = 60 // envanter sınırı
@@ -62,7 +63,8 @@ export default function cosmetics(ctx) {
         me.lastLook = now
         const u = user(me.key)
         if (!u.character) return
-        u.character.look = sanitizeLook(msg.look)
+        const lv = levelOf(u.stats?.stars ?? 0).level
+        u.character.look = sanitizeLook(msg.look, lv)
         me.cos = { ...me.cos, look: u.character.look }
         save()
         broadcast({ t: 'cos', id: me.id, cos: me.cos }, undefined, me.room)
@@ -72,14 +74,15 @@ export default function cosmetics(ctx) {
         const now = Date.now()
         if (now - (me.lastCos ?? 0) < 400) return
         me.lastCos = now
-        const c = sanitizeCos(msg)
+        const u = user(me.key)
+        const lv = levelOf(u.stats?.stars ?? 0).level
+        const c = sanitizeCos(msg, lv)
         if (c.pet && !ctx.petActive?.(me)) {
           delete c.pet // evcil hayvan süresi bitti (features/pets.js)
           send(me.ws, { t: 'info', text: '🐾 Evcil hayvan süren bitti. Gardırop’tan 1 hafta daha ekleyebilirsin.' })
         }
         if (!('acc' in c) && !('acc2' in c) && !('pet' in c)) return
         me.cos = { ...me.cos, ...c }
-        const u = user(me.key)
         u.cosmetics = { accessory: me.cos.acc, acc2: me.cos.acc2 ?? null, pet: me.cos.pet }
         save()
         broadcast({ t: 'cos', id: me.id, cos: me.cos }, undefined, me.room)

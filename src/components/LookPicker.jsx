@@ -1,14 +1,14 @@
 // Saç / göz / kıyafet rengi seçici (karakter seçimi ve gardırop). value = { h, e, o } palet indeksleri (-1 = orijinal).
-import { EYE_COLORS, EYE_NAMES, HAIR_COLORS, HAIR_NAMES, OUTFIT_COLORS, OUTFIT_NAMES } from '../world/lookData'
+import { EYE_COLORS, EYE_LEVELS, EYE_NAMES, HAIR_COLORS, HAIR_LEVELS, HAIR_NAMES, OUTFIT_COLORS, OUTFIT_LEVELS, OUTFIT_NAMES } from '../world/lookData'
 import { Em } from './emoji'
 
 const ROWS = [
-  { key: 'h', label: 'Saç', colors: HAIR_COLORS, names: HAIR_NAMES },
-  { key: 'e', label: 'Göz', colors: EYE_COLORS, names: EYE_NAMES },
-  { key: 'o', label: 'Kıyafet', colors: OUTFIT_COLORS, names: OUTFIT_NAMES },
+  { key: 'h', label: 'Saç', colors: HAIR_COLORS, names: HAIR_NAMES, levels: HAIR_LEVELS },
+  { key: 'e', label: 'Göz', colors: EYE_COLORS, names: EYE_NAMES, levels: EYE_LEVELS },
+  { key: 'o', label: 'Kıyafet', colors: OUTFIT_COLORS, names: OUTFIT_NAMES, levels: OUTFIT_LEVELS },
 ]
 
-export default function LookPicker({ value, onChange, compact = false }) {
+export default function LookPicker({ value, onChange, compact = false, playerLv = Infinity, onLocked }) {
   const sz = compact ? 'h-7 w-7' : 'h-8 w-8'
   return (
     <div className="flex flex-col gap-3">
@@ -31,17 +31,23 @@ export default function LookPicker({ value, onChange, compact = false }) {
               >
                 <Em e="🎨" size={16} />
               </button>
-              {r.colors.map((c, i) => (
-                <button
-                  key={c}
-                  type="button"
-                  title={r.names[i]}
-                  aria-label={`${r.label}: ${r.names[i]}`}
-                  onClick={() => onChange({ ...value, [r.key]: i })}
-                  style={{ background: c }}
-                  className={`${sz} rounded-full border-2 transition active:scale-90 ${curIdx === i ? 'scale-110 border-ink ring-2 ring-[#a88bff]/40' : 'border-white shadow-soft hover:scale-105'}`}
-                />
-              ))}
+              {r.colors.map((c, i) => {
+                const reqLv = r.levels[i] ?? 1
+                const locked = reqLv > playerLv
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    title={locked ? `${r.names[i]} (Seviye ${reqLv})` : r.names[i]}
+                    aria-label={`${r.label}: ${r.names[i]}${locked ? ` (Seviye ${reqLv})` : ''}`}
+                    onClick={() => (locked ? onLocked?.(reqLv) : onChange({ ...value, [r.key]: i }))}
+                    style={{ background: c }}
+                    className={`relative ${sz} rounded-full border-2 transition ${locked ? 'cursor-not-allowed opacity-45' : 'active:scale-90 hover:scale-105'} ${curIdx === i ? 'scale-110 border-ink ring-2 ring-[#a88bff]/40' : 'border-white shadow-soft'}`}
+                  >
+                    {locked && <span className="absolute inset-0 grid place-items-center text-[0.625rem] drop-shadow">🔒</span>}
+                  </button>
+                )
+              })}
             </div>
           </div>
         )

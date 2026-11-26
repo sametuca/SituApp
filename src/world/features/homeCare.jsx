@@ -150,11 +150,10 @@ export function useHomeCare({ net, home, focusRef, touch, say, panel }) {
       if (!isOwnHome) return
       const c = CROP_BY_ID[cropId]
       if (!c) return
-      if (!send({ t: 'garden_plant', idx, crop: cropId })) {
-        const next = plots.slice()
-        next[idx] = { crop: cropId, plantedAt: Date.now(), wateredAt: null }
-        commitPlots(next)
-      }
+      send({ t: 'garden_plant', idx, crop: cropId })
+      const next = plots.slice()
+      next[idx] = { crop: cropId, plantedAt: Date.now(), wateredAt: null }
+      commitPlots(next)
       markCare('plant')
       setPickPlot(null)
       say(`${c.emoji} ${c.name} ekildi! Sulamayı unutma 💧`)

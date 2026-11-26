@@ -200,7 +200,7 @@ vec3 lookRecolor(vec3 col, vec3 ref, vec3 to, float w){
 }
 vec3 lookApply(vec3 col){
   vec3 res = col;
-  float tol = 0.14;
+  float tol = 0.26;
   vec3 sc = pow(col, vec3(0.4545));
   float hairW = 0.0; vec3 hairRef = uHairRef[0];
   {
@@ -208,9 +208,13 @@ vec3 lookApply(vec3 col){
     for (int i=0;i<${HAIR_N};i++){ float d = distance(sc, uHairRef[i]); if (d<best){best=d;hairRef=uHairRef[i];} }
     float skinH = 9.0;
     for (int i=0;i<3;i++) skinH = min(skinH, distance(sc, uSkinRef[i]));
-    float faceSkin = lookSkinMask(sc, uSkinRef, 0.60);
-    // yüzde gölgeli ten saça dönmesin (hem öklid hem renk-yönü ten koruması); ense/tepede (yüzün gerisi) daha serbest
-    hairW = (1.0 - smoothstep(tol*0.68, tol*1.2, best)) * mix(1.0, (1.0 - faceSkin) * smoothstep(-0.02, 0.03, skinH - best), step(uBrow.z, vBind.z));
+    float faceSkin = lookSkinMask(sc, uSkinRef, 0.56);
+    float notWhiteH = 1.0 - smoothstep(0.68, 0.84, min(sc.r, min(sc.g, sc.b)));
+    float darkCrevice = smoothstep(0.32, 0.10, lookLum(sc)) * (1.0 - smoothstep(0.28, 0.44, best));
+    float baseMatch = 1.0 - smoothstep(tol*0.62, tol*1.18, best);
+    float headMatch = max(baseMatch, darkCrevice) * notWhiteH;
+    // yüzde gölgeli ten ve kulaklar saça dönmesin; arka/tepe saç kıvrımlarındaki koyu çizgiler tamamen boyansın
+    hairW = headMatch * (1.0 - faceSkin) * mix(1.0, smoothstep(-0.02, 0.03, skinH - best), step(uBrow.z, vBind.z));
   }
   // kaş / göz kapağı bandı saç sayılmaz (kaşlar ve kirpikler boyanmasın); sakal ve saç bu bandın dışında kalır
   float inBrow = step(uBrow.x, vBind.y) * step(vBind.y, uBrow.y) * step(uBrow.z, vBind.z) * step(abs(vBind.x - uBrowX.x), uBrowX.y) * step(0.9, vHead);
@@ -220,11 +224,11 @@ vec3 lookApply(vec3 col){
     // gövdede gölgeli ten dahil tüm ten alanları korunur; yalnızca gerçek kıyafet ve beyaz taban dışı kumaş boyanır
     float bodySkin = lookSkinMask(sc, uSkinRef, 0.52);
     float nonSkin = 1.0 - bodySkin;
-    float notDark = smoothstep(0.05, 0.13, lookLum(sc));
+    float notDark = smoothstep(0.03, 0.10, lookLum(sc));
     float whiteSole = step(0.25, vFoot) * smoothstep(0.68, 0.84, lookLum(sc)) * (1.0 - smoothstep(0.08, 0.16, max(sc.r,max(sc.g,sc.b)) - min(sc.r,min(sc.g,sc.b))));
     vec3 ref = vec3(0.0); float bd = 9.0;
     for (int i=0;i<${OUT_N};i++){ float d = distance(sc, uOutRef[i]); if (d<bd){bd=d;ref=uOutRef[i];} }
-    float isKnownOut = 1.0 - smoothstep(0.14, 0.22, bd);
+    float isKnownOut = 1.0 - smoothstep(0.14, 0.24, bd);
     float w = max(nonSkin, isKnownOut * (1.0 - bodySkin * 0.7)) * notDark * (1.0 - hairW) * (1.0 - whiteSole);
     if (bd > 0.3) ref = sc; // bilinmeyen yama: kendi parlaklığına göre
     res = lookRecolor(res, pow(ref, vec3(2.2)), uOutTo, w);
@@ -236,8 +240,8 @@ vec3 lookApply(vec3 col){
     float skinE = 9.0;
     for (int i=0;i<3;i++) skinE = min(skinE, distance(sc, uSkinRef[i]));
     float notSkinE = smoothstep(0.09, 0.17, skinE);
-    float notWhite = 1.0 - smoothstep(0.46, 0.68, ls); // beyaz göz akı ve parlama noktası korunur
-    float notPupil = smoothstep(0.03, 0.09, ls);       // tam siyah gözbebeği / kirpik korunur
+    float notWhite = 1.0 - smoothstep(0.58, 0.78, ls); // beyaz göz akı ve parlama noktası korunur
+    float notPupil = smoothstep(0.015, 0.055, ls);     // tam siyah gözbebeği / kirpik korunur
     vec3 eyeCol = clamp(uEyeTo * (0.62 + ls * 1.15), 0.0, 1.0);
     res = mix(res, eyeCol, inEye * notWhite * notPupil * notSkinE);
   }
@@ -316,7 +320,7 @@ export function applyLook(model, slug, look) {
       uEyeC0: { value: new Vector3(...(eyes?.eyes[0] ?? [0, 0, 0])) },
       uEyeC1: { value: new Vector3(...(eyes?.eyes[1] ?? [0, 0, 0])) },
       uHairMinY: { value: hairMinY(o) },
-      uBrow: { value: eyes?.eyes.length === 2 ? new Vector3(eyes.eyes[0][1] - 0.07, eyes.eyes[0][1] + 0.095, Math.min(eyes.eyes[0][2], eyes.eyes[1][2]) - 0.07) : new Vector3(9, -9, 9) },
+      uBrow: { value: eyes?.eyes.length === 2 ? new Vector3(eyes.eyes[0][1] - 0.07, eyes.eyes[0][1] + 0.125, Math.min(eyes.eyes[0][2], eyes.eyes[1][2]) - 0.07) : new Vector3(9, -9, 9) },
       uBrowX: { value: eyes?.eyes.length === 2 ? new Vector2((eyes.eyes[0][0] + eyes.eyes[1][0]) / 2, Math.abs(eyes.eyes[0][0] - eyes.eyes[1][0]) / 2 + 0.055) : new Vector2(0, 0) },
       uEyeR: { value: eyes?.r ?? 0.02 },
     }
