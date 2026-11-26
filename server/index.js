@@ -13,6 +13,7 @@ import { initHomes } from './homes.js'
 import { initNames } from './auth.js'
 import * as supa from './supa.js'
 import { assertSealed } from './guard.js'
+import { internalMode, requireInternal } from './internalAuth.js'
 assertSealed() // hile koruması çalışmıyorsa sunucu hiç açılmaz
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -48,6 +49,7 @@ function requireKey(res) {
 
 // Start a text-to-3d preview task
 app.post('/api/meshy/text-to-3d', async (req, res) => {
+  if (!requireInternal(req, res)) return
   if (!requireKey(res)) return
   const { prompt, artStyle = 'realistic', negativePrompt, topology = 'quad', targetPolycount = 10000 } = req.body
   try {
@@ -76,6 +78,7 @@ app.post('/api/meshy/text-to-3d', async (req, res) => {
 
 // Refine a previously generated preview task into a textured model
 app.post('/api/meshy/text-to-3d/:id/refine', async (req, res) => {
+  if (!requireInternal(req, res)) return
   if (!requireKey(res)) return
   try {
     const response = await fetch(`${MESHY_BASE}/openapi/v2/text-to-3d`, {
@@ -96,6 +99,7 @@ app.post('/api/meshy/text-to-3d/:id/refine', async (req, res) => {
 
 // Poll task status (works for both preview and refine task ids)
 app.get('/api/meshy/text-to-3d/:id', async (req, res) => {
+  if (!requireInternal(req, res)) return
   if (!requireKey(res)) return
   try {
     const response = await fetch(`${MESHY_BASE}/openapi/v2/text-to-3d/${req.params.id}`, {
@@ -109,11 +113,13 @@ app.get('/api/meshy/text-to-3d/:id', async (req, res) => {
   }
 })
 
-app.get('/api/characters', async (_req, res) => {
+app.get('/api/characters', async (req, res) => {
+  if (!requireInternal(req, res)) return
   res.json(await readCharacters())
 })
 
 app.post('/api/characters', async (req, res) => {
+  if (!requireInternal(req, res)) return
   const { name, prompt, artStyle, modelUrls, thumbnailUrl } = req.body
   const list = await readCharacters()
   const entry = {
@@ -131,6 +137,7 @@ app.post('/api/characters', async (req, res) => {
 })
 
 app.delete('/api/characters/:id', async (req, res) => {
+  if (!requireInternal(req, res)) return
   const list = await readCharacters()
   const next = list.filter((c) => c.id !== req.params.id)
   await writeCharacters(next)
@@ -142,8 +149,9 @@ app.get('/api/assets', async (_req, res) => {
   res.json(await readManifest())
 })
 
-// Meshy çıktısını indirip oyuna ekle
+// Meshy çıktısını indirip oyuna ekle (yalnızca studio anahtarıyla)
 app.post('/api/assets/import', async (req, res) => {
+  if (!requireInternal(req, res)) return
   try {
     res.json(await importAsset(req.body))
   } catch (err) {
@@ -166,6 +174,7 @@ app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
     meshyConfigured: Boolean(MESHY_API_KEY) && MESHY_API_KEY !== 'your_meshy_api_key',
+    studio: internalMode,
     online: game?.online() ?? 0,
     guard: true,
   })

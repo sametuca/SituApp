@@ -1,7 +1,9 @@
+import { studioHeaders } from './studioKey'
+
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001'
 
 export async function listCharacters() {
-  const res = await fetch(`${API_BASE}/api/characters`)
+  const res = await fetch(`${API_BASE}/api/characters`, { headers: studioHeaders() })
   if (!res.ok) throw new Error('Karakter listesi alınamadı')
   return res.json()
 }
@@ -9,7 +11,7 @@ export async function listCharacters() {
 export async function saveCharacter(entry) {
   const res = await fetch(`${API_BASE}/api/characters`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: studioHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(entry),
   })
   if (!res.ok) throw new Error('Karakter kaydedilemedi')
@@ -17,7 +19,7 @@ export async function saveCharacter(entry) {
 }
 
 export async function deleteCharacter(id) {
-  const res = await fetch(`${API_BASE}/api/characters/${id}`, { method: 'DELETE' })
+  const res = await fetch(`${API_BASE}/api/characters/${id}`, { method: 'DELETE', headers: studioHeaders() })
   if (!res.ok) throw new Error('Karakter silinemedi')
   return res.json()
 }

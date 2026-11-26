@@ -5,6 +5,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import nodemailer from 'nodemailer'
+import { ipOf } from './guard.js'
 
 const DIR = process.env.SITUAPP_DATA_DIR || path.join(path.dirname(fileURLToPath(import.meta.url)), 'data')
 const FILE = path.join(DIR, 'feedback.jsonl')
@@ -29,7 +30,7 @@ function mailer() {
 const clean = (v, n) => String(v ?? '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').trim().slice(0, n)
 
 export function feedbackHandler(req, res) {
-  const ip = String(req.headers['x-forwarded-for'] ?? req.socket.remoteAddress ?? '').split(',')[0].trim()
+  const ip = ipOf(req)
   const now = Date.now()
   const list = (hits.get(ip) ?? []).filter((t) => now - t < 3600_000)
   if (list.length >= LIMIT) return res.status(429).json({ ok: false, error: 'Çok sık gönderdin, biraz sonra tekrar dene.' })

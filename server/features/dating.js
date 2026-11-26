@@ -1,53 +1,27 @@
 // Flört & Sosyal Motoru: Mod (Vibe), Canlı Sıcak Nokta, 3 Dakikalık Hızlı Randevu Masası,
 // Uyum Seviyesi (Bond 1–5), Tek Tık Buz Kırıcılar, Zamanlı Kasaba Etkinlikleri ve Fısıltı Gizliliği.
 import crypto from 'node:crypto'
-import fs from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { save, user } from '../store.js'
 import { ICEBREAKERS, SPEED_QUESTIONS, VIBE_BY_ID, VIBES, bondLevelOf, townEventStatus } from '../../src/world/datingData.js'
 
-const DATA_DIR = process.env.SITUAPP_DATA_DIR || path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data')
-const BONDS_FILE = path.join(DATA_DIR, 'dating-bonds.json')
 const SD_DURATION_MS = 180_000
 
-const loadBonds = () => {
-  try {
-    const raw = JSON.parse(fs.readFileSync(BONDS_FILE, 'utf8'))
-    return raw && typeof raw === 'object' ? raw : {}
-  } catch {
-    return {}
-  }
-}
-
-const saveBonds = (data) => {
-  try {
-    fs.mkdirSync(path.dirname(BONDS_FILE), { recursive: true })
-    fs.writeFileSync(BONDS_FILE, JSON.stringify(data, null, 2))
-  } catch {
-    /* ignore */
-  }
-}
-
-const pairKey = (k1, k2) => [String(k1), String(k2)].sort().join('|')
+// Uyum kayıtları kullanıcı verisinde (store) tutulur: her iki taraf da kendi görünümünü yazar,
+// böylece Supabase `user_data` write-behind'i ile kalıcı olur ve çok örnekli dağıtımda tutarlı kalır.
+const bondsOf = (key) => (user(key).stats.bonds ??= {})
 
 export default function dating(ctx) {
   const { players, send } = ctx
-  const bonds = loadBonds() // pairKey → { xp, matched, names: { [key]: name } }
 
   const getBond = (k1, k2) => {
     if (!k1 || !k2 || k1 === k2) return null
-    return bonds[pairKey(k1, k2)] ?? null
+    return bondsOf(k1)[k2] ?? null
   }
 
   const bondsFor = (key) => {
     const out = []
-    for (const [pk, b] of Object.entries(bonds)) {
-      if (!pk.includes(key)) continue
-      const [a, c] = pk.split('|')
-      if (a !== key && c !== key) continue
-      const otherKey = a === key ? c : a
-      out.push({ key: otherKey, name: b.names?.[otherKey] ?? 'Oyuncu', matched: Boolean(b.matched), ...bondLevelOf(b.xp ?? 0) })
+    for (const [otherKey, b] of Object.entries(bondsOf(key))) {
+      out.push({ key: otherKey, name: b.name ?? 'Oyuncu', matched: Boolean(b.matched), ...bondLevelOf(b.xp ?? 0) })
     }
     return out.sort((x, y) => y.xp - x.xp).slice(0, 20)
   }
@@ -61,19 +35,23 @@ export default function dating(ctx) {
     const ka = typeof a === 'string' ? a : a?.key
     const kb = typeof b === 'string' ? b : b?.key
     if (!ka || !kb || ka === kb) return null
-    const pk = pairKey(ka, kb)
-    const cur = (bonds[pk] ??= { xp: 0, matched: false, names: {} })
-    const prevLv = bondLevelOf(cur.xp).lv
-    cur.xp = Math.min(9999, (cur.xp ?? 0) + xp)
-    if (matched) cur.matched = true
-    if (a?.name) cur.names[ka] = a.name
-    if (b?.name) cur.names[kb] = b.name
-    saveBonds(bonds)
-    const nextLv = bondLevelOf(cur.xp).lv
+    const mine = bondsOf(ka)
+    const theirs = bondsOf(kb)
+    const ca = (mine[kb] ??= { xp: 0, matched: false, name: '' }) // a'nın b'ye bakışı
+    const cb = (theirs[ka] ??= { xp: 0, matched: false, name: '' }) // b'nin a'ya bakışı
+    const prevLv = bondLevelOf(Math.max(ca.xp ?? 0, cb.xp ?? 0)).lv
+    const next = Math.min(9999, Math.max(ca.xp ?? 0, cb.xp ?? 0) + xp)
+    ca.xp = next
+    cb.xp = next
+    if (matched) ca.matched = cb.matched = true
+    if (b?.name) ca.name = b.name
+    if (a?.name) cb.name = a.name
+    save()
+    const nextLv = bondLevelOf(next).lv
     pushBonds(a)
     pushBonds(b)
     if (nextLv > prevLv) {
-      const info = bondLevelOf(cur.xp)
+      const info = bondLevelOf(next)
       for (const who of [a, b]) {
         const p = who?.ws ? who : [...players.values()].find((o) => o.key === (typeof who === 'string' ? who : who?.key))
         if (p && p.ws.readyState === 1) {
@@ -81,7 +59,7 @@ export default function dating(ctx) {
         }
       }
     }
-    return cur
+    return ca
   }
 
   ctx.addBond = addBond

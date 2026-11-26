@@ -1,14 +1,10 @@
 // Fitness Kulübü (MakFit): 4 karakter statı, günlük antrenman enerjisi, ağırlık/koşu antrenmanı,
 // sunucu otoriter 1v1 ritim-zamanlama boksu ve haftalık şampiyon kemeri.
-import fs from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { save, user } from '../store.js'
+// Haftalık boks puan tablosu kullanıcı verisinde (store.user(key).stats.boxing) tutulur; hafta değişince
+// satır kendiliğinden sıfırlanır ve Supabase `user_data` write-behind'i ile kalıcı olur.
+import { allUsers, save, user } from '../store.js'
 import { istanbul } from './progress.js'
 import { BLOCK_MS, BOX, STAT_KEYS, STAT_MAX, STAT_START, boxCues, energyMax, gradeWindow, hitDamage, matchDuration } from '../../src/world/boxing.js'
-
-const DATA_DIR = process.env.SITUAPP_DATA_DIR || path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data')
-const FILE = path.join(DATA_DIR, 'boxing-board.json')
 
 const isoWeek = (now = Date.now()) => {
   const d = new Date(now + 3 * 3600_000) // İstanbul UTC+3
@@ -19,34 +15,10 @@ const isoWeek = (now = Date.now()) => {
   return `${d.getUTCFullYear()}-W${String(w).padStart(2, '0')}`
 }
 
-const loadBoard = () => {
-  try {
-    const raw = JSON.parse(fs.readFileSync(FILE, 'utf8'))
-    return raw && typeof raw === 'object' ? raw : { week: isoWeek(), rows: {} }
-  } catch {
-    return { week: isoWeek(), rows: {} }
-  }
-}
-
-const saveBoard = (data) => {
-  try {
-    fs.mkdirSync(path.dirname(FILE), { recursive: true })
-    fs.writeFileSync(FILE, JSON.stringify(data, null, 2))
-  } catch {
-    /* disk yazılamazsa oyun durmaz */
-  }
-}
+const emptyRow = () => ({ week: isoWeek(), name: '', avatar: '', points: 0, wins: 0, ko: 0, games: 0 })
 
 export default function fitness(ctx) {
   const { players, send } = ctx
-  let board = loadBoard()
-  const ensureWeek = () => {
-    const w = isoWeek()
-    if (board.week !== w) {
-      board = { week: w, rows: {} }
-      saveBoard(board)
-    }
-  }
 
   const attrOf = (key) => {
     const u = user(key)
@@ -66,20 +38,19 @@ export default function fitness(ctx) {
     return { left: Math.max(0, max - (u.stats.gymUsed ?? 0)), max }
   }
 
-  const topList = () => {
-    ensureWeek()
-    return Object.entries(board.rows)
-      .map(([key, r]) => ({ key, ...r }))
+  const topList = () =>
+    Object.entries(allUsers())
+      .map(([key, u]) => (u.stats?.boxing?.week === isoWeek() ? { key, ...u.stats.boxing } : null))
+      .filter(Boolean)
       .sort((a, b) => b.points - a.points || b.wins - a.wins || b.ko - a.ko)
       .slice(0, 15)
-  }
 
   const champKey = () => topList()[0]?.key ?? null
 
   const statePayload = (key) => {
     const attr = attrOf(key)
     const en = energyOf(key)
-    return { t: 'fitness_state', attr, energy: en.left, energyMax: en.max, champKey: champKey(), week: board.week }
+    return { t: 'fitness_state', attr, energy: en.left, energyMax: en.max, champKey: champKey(), week: isoWeek() }
   }
 
   const pushState = (who) => {
@@ -119,17 +90,17 @@ export default function fitness(ctx) {
   }
 
   const recordBox = (p, win, ko, pts) => {
-    ensureWeek()
     const key = p.key || p.id
-    const cur = board.rows[key] ?? { name: p.name, avatar: p.avatar, points: 0, wins: 0, ko: 0, games: 0 }
+    const u = user(key)
+    const cur = u.stats.boxing?.week === isoWeek() ? u.stats.boxing : emptyRow()
     cur.name = p.name
     cur.avatar = p.avatar
     cur.points += pts
     cur.games += 1
     if (win) cur.wins += 1
     if (ko) cur.ko += 1
-    board.rows[key] = cur
-    saveBoard(board)
+    u.stats.boxing = cur
+    save()
   }
 
   const syncMatch = (m, lastHit = null) => {
@@ -233,7 +204,7 @@ export default function fitness(ctx) {
   return {
     welcome: (me) => {
       const en = energyOf(me.key)
-      return { fitness: { attr: attrOf(me.key), energy: en.left, energyMax: en.max, champKey: champKey(), week: board.week } }
+      return { fitness: { attr: attrOf(me.key), energy: en.left, energyMax: en.max, champKey: champKey(), week: isoWeek() } }
     },
     onLeave(me) {
       removeQueue(me)
@@ -256,7 +227,7 @@ export default function fitness(ctx) {
           energyMax: en.max,
           top: topList(),
           champKey: champKey(),
-          week: board.week,
+          week: isoWeek(),
           lobby: queue.map((p) => ({ id: p.id, name: p.name, avatar: p.avatar })),
         })
       },
