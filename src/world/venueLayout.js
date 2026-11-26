@@ -538,22 +538,22 @@ function build(v) {
   const V = (n) => `/models/venues/${n}.glb`
   const F = (n) => `/models/furniture/${n}.glb`
   const VENUE_ACCENTS = {
-    cafe: [{ model: V('cafe-neon-cup'), h: 1.15, wall: true, y: 1.7 }, { model: V('cafe-pastry-cart'), h: 1.25, w: 1.0, d: 0.75 }],
-    tea: [{ model: V('tea-wall-carpet'), h: 1.55, wall: true, y: 1.45 }, { model: V('tea-backgammon-table'), h: 1.0, w: 1.05, d: 0.9 }],
-    bakery: [{ model: V('bakery-bread-rack'), h: 1.75, w: 1.1, d: 0.65 }, { model: V('bakery-flour-barrel'), h: 1.05, w: 0.85, d: 0.85 }],
+    cafe: [{ model: V('cafe-neon-cup'), h: 1.15, wall: true, y: 1.7 }, { model: V('cafe-wall-menu'), h: 1.25, wall: true, y: 1.65 }, { model: V('cafe-pastry-cart'), h: 1.25, w: 1.0, d: 0.75 }],
+    tea: [{ model: V('tea-wall-carpet'), h: 1.55, wall: true, y: 1.45 }, { model: V('tea-copper-tray-wall'), h: 1.15, wall: true, y: 1.65 }, { model: V('tea-backgammon-table'), h: 1.0, w: 1.05, d: 0.9 }],
+    bakery: [{ model: V('bakery-oven-hood'), h: 1.3, wall: true, y: 1.85 }, { model: V('bakery-bread-rack'), h: 1.75, w: 1.1, d: 0.65 }, { model: V('bakery-flour-barrel'), h: 1.05, w: 0.85, d: 0.85 }],
     dessert: [{ model: V('dessert-donut-wall'), h: 1.45, wall: true, y: 1.4 }, { model: V('dessert-macaron-tower'), h: 1.3, w: 0.8, d: 0.8 }],
     icecream: [{ model: V('icecream-cone-lamp'), h: 1.65, w: 0.75, d: 0.75 }, { model: V('icecream-menu-board'), h: 1.35, w: 0.9, d: 0.65 }],
     fastfood: [{ model: V('fastfood-burger-statue'), h: 1.55, w: 0.95, d: 0.95 }, { model: V('fastfood-soda-fountain'), h: 1.45, w: 1.0, d: 0.75 }],
     books: [{ model: V('books-reading-ladder'), h: 1.95, w: 0.9, d: 0.7 }, { model: V('books-globe-lamp'), h: 1.25, w: 0.8, d: 0.8 }],
-    club: [{ model: V('club-neon-wings'), h: 1.75, wall: true, y: 1.35 }, { model: V('club-velvet-rope'), h: 1.15, w: 1.2, d: 0.6 }],
-    bar: [{ model: V('bar-guitar-wall'), h: 1.35, wall: true, y: 1.55 }, { model: V('bar-neon-cocktail'), h: 1.15, wall: true, y: 1.7 }],
+    club: [{ model: V('club-neon-wings'), h: 1.75, wall: true, y: 1.35 }, { model: V('club-speaker-tower'), h: 1.9, w: 0.95, d: 0.85 }, { model: V('club-velvet-rope'), h: 1.15, w: 1.2, d: 0.6 }],
+    bar: [{ model: V('bar-guitar-wall'), h: 1.35, wall: true, y: 1.55 }, { model: V('bar-neon-cocktail'), h: 1.15, wall: true, y: 1.7 }, { model: V('bar-dartboard'), h: 1.15, wall: true, y: 1.55 }],
     arcade: [{ model: V('arcade-prize-shelf'), h: 1.75, w: 1.15, d: 0.7 }, { model: V('arcade-neon-joystick'), h: 1.15, wall: true, y: 1.7 }],
-    salon: [{ model: V('salon-dryer-chair'), h: 1.55, w: 0.95, d: 0.95 }, { model: V('salon-perfume-shelf'), h: 1.15, wall: true, y: 1.6 }],
+    salon: [{ model: V('salon-dryer-chair'), h: 1.55, w: 0.95, d: 0.95 }, { model: V('salon-perfume-shelf'), h: 1.15, wall: true, y: 1.6 }, { model: V('salon-wall-dryer'), h: 1.25, wall: true, y: 1.55 }],
     studio: [{ model: V('studio-ring-light'), h: 1.85, w: 0.8, d: 0.8 }, { model: V('studio-polaroid-wall'), h: 1.35, wall: true, y: 1.55 }],
     shop: [{ model: V('surf-tiki-mask'), h: 1.35, wall: true, y: 1.6 }, { model: V('surf-wetsuit-rack'), h: 1.65, w: 1.1, d: 0.7 }],
     guide: [{ model: V('guide-postcard-rack'), h: 1.65, w: 0.85, d: 0.85 }, { model: V('guide-compass-plaque'), h: 1.2, wall: true, y: 1.65 }],
-    airport: [{ model: V('airport-departure-clock'), h: 1.15, wall: true, y: 1.8 }, { model: V('airport-dutyfree-shelf'), h: 1.65, w: 1.15, d: 0.7 }],
-    gym: [{ model: V('gym-trophy-case'), h: 1.8, w: 1.15, d: 0.7 }, { model: F('plant-stand'), h: 1.55, w: 0.8, d: 0.8 }],
+    airport: [{ model: V('airport-departure-clock'), h: 1.15, wall: true, y: 1.8 }, { model: V('airport-flight-board'), h: 1.35, wall: true, y: 1.7 }, { model: V('airport-dutyfree-shelf'), h: 1.65, w: 1.15, d: 0.7 }],
+    gym: [{ model: V('gym-trophy-case'), h: 1.8, w: 1.15, d: 0.7 }, { model: V('gym-wall-mirror-banner'), h: 1.3, wall: true, y: 1.75 }],
     teknel: [{ model: V('teknel-cheese-case'), h: 1.35, w: 1.25, d: 0.8 }, { model: F('plant-stand'), h: 1.55, w: 0.8, d: 0.8 }],
   }
   const accents = VENUE_ACCENTS[v.type] ?? VENUE_ACCENTS.cafe
@@ -568,6 +568,8 @@ function build(v) {
   const wallSpots = [
     [-hw + 0.24, -0.2, Math.PI / 2],
     [hw - 0.24, -0.2, -Math.PI / 2],
+    [-hw + 0.24, 2.2, Math.PI / 2],
+    [hw - 0.24, 2.2, -Math.PI / 2],
   ]
   let wallIdx = 0
   for (const ac of accents) {

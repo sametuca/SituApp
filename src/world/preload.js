@@ -17,6 +17,7 @@ const VENUE_ITEMS = [
   'icecream-cone-lamp', 'icecream-menu-board', 'fastfood-burger-statue', 'fastfood-soda-fountain', 'books-reading-ladder', 'books-globe-lamp', 'club-neon-wings', 'club-velvet-rope',
   'bar-guitar-wall', 'bar-neon-cocktail', 'arcade-prize-shelf', 'arcade-neon-joystick', 'salon-dryer-chair', 'salon-perfume-shelf', 'studio-ring-light', 'studio-polaroid-wall',
   'surf-tiki-mask', 'surf-wetsuit-rack', 'guide-postcard-rack', 'guide-compass-plaque', 'airport-departure-clock', 'airport-dutyfree-shelf', 'gym-trophy-case', 'teknel-cheese-case',
+  'cafe-wall-menu', 'tea-copper-tray-wall', 'bakery-oven-hood', 'club-speaker-tower', 'bar-dartboard', 'salon-wall-dryer', 'gym-wall-mirror-banner', 'airport-flight-board',
 ].map((n) => `/models/venues/${n}.glb`)
 const AIRPORT = ['suitcases', 'luggage-cart', 'toy-plane'].map((n) => `/models/airport/${n}.glb`).concat('/models/bike/bike.glb')
 const COLLECT = ['star', 'heartstone', 'flower', 'balloon', 'shell', 'chest'].map((n) => `/models/collectibles/${n}.glb`)
