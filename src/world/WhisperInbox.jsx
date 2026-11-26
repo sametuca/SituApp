@@ -14,8 +14,7 @@ const fmtClock = (ts) => {
  * Ekranın solunda duran Fısıltı Gelen Kutusu (Inbox):
  * Gelen fısıltıları temiz bir listede okuma ve doğrudan yanıtlama sağlar.
  */
-export default function WhisperInbox({ items = [], unread = 0, touch = false, onReadAll, onClear, onReply, onInspect }) {
-  const [open, setOpen] = useState(false)
+export default function WhisperInbox({ open = false, onClose, items = [], touch = false, onReadAll, onClear, onReply, onInspect }) {
   const [replyId, setReplyId] = useState(null)
   const [replyText, setReplyText] = useState('')
   const boxRef = useRef(null)
@@ -28,14 +27,25 @@ export default function WhisperInbox({ items = [], unread = 0, touch = false, on
   useEffect(() => {
     if (!open) return
     const off = (e) => {
+      if (e.target instanceof Element && e.target.closest('[aria-label="Gelen Fısıltılar"]')) return
       if (!boxRef.current?.contains(e.target)) {
-        setOpen(false)
         setReplyId(null)
+        onClose?.()
+      }
+    }
+    const esc = (e) => {
+      if (e.key === 'Escape') {
+        setReplyId(null)
+        onClose?.()
       }
     }
     window.addEventListener('pointerdown', off)
-    return () => window.removeEventListener('pointerdown', off)
-  }, [open])
+    window.addEventListener('keydown', esc)
+    return () => {
+      window.removeEventListener('pointerdown', off)
+      window.removeEventListener('keydown', esc)
+    }
+  }, [open, onClose])
 
   const sendReply = (e, item) => {
     e.preventDefault()
@@ -47,37 +57,14 @@ export default function WhisperInbox({ items = [], unread = 0, touch = false, on
     }
   }
 
+  if (!open) return null
+
   return (
     <div
       ref={boxRef}
-      className={`pointer-events-auto fixed left-2.5 z-20 sm:left-3 ${touch ? 'top-[17.2rem]' : 'top-[20.8rem]'}`}
+      className="pointer-events-auto fixed left-[3.85rem] top-[4.5rem] z-30 sm:left-[4.75rem] sm:top-[5rem]"
     >
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        aria-label="Fısıltı Gelen Kutusu"
-        className={`flex items-center gap-2 rounded-full border-2 border-white bg-white/94 px-2.5 py-1.5 text-xs font-black text-[#4a3b5c] shadow-soft backdrop-blur-md transition hover:bg-white active:scale-95 ${
-          unread > 0 ? 'ring-2 ring-[#a88bff]' : ''
-        }`}
-      >
-        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#f5efff] shadow-sm">
-          <Em e="💌" size={18} />
-        </span>
-        <span className="pr-0.5">Inbox</span>
-        {unread > 0 ? (
-          <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[#a88bff] px-1.5 text-[11px] font-black text-white">
-            {unread}
-          </span>
-        ) : items.length > 0 ? (
-          <span className="rounded-full bg-[#f3ecff] px-1.5 py-0.5 text-[11px] font-black text-[#6b4fc0]">
-            {items.length}
-          </span>
-        ) : null}
-      </button>
-
-      {open && (
-        <div className="mt-2 flex w-[min(88vw,20.5rem)] animate-pop flex-col rounded-3xl border-2 border-white bg-white/96 p-3 shadow-toy backdrop-blur-md">
+      <div className="flex w-[min(calc(100vw-4.6rem),20.5rem)] animate-pop flex-col rounded-3xl border-2 border-white bg-white/96 p-3 shadow-toy backdrop-blur-md">
           <div className="flex items-center justify-between gap-2 pb-2">
             <div>
               <h3 className="text-sm font-black text-[#4a3b5c]">Gelen Fısıltılar</h3>
@@ -99,8 +86,8 @@ export default function WhisperInbox({ items = [], unread = 0, touch = false, on
               <button
                 type="button"
                 onClick={() => {
-                  setOpen(false)
                   setReplyId(null)
+                  onClose?.()
                 }}
                 aria-label="Kapat"
                 className="grid h-7 w-7 place-items-center rounded-full bg-[#f6f0ff] hover:bg-[#ece2ff]"
@@ -133,7 +120,7 @@ export default function WhisperInbox({ items = [], unread = 0, touch = false, on
                         type="button"
                         onClick={() => {
                           if (!w.self && w.fromId) {
-                            setOpen(false)
+                            onClose?.()
                             onInspect?.(w.fromId)
                           }
                         }}
@@ -178,8 +165,7 @@ export default function WhisperInbox({ items = [], unread = 0, touch = false, on
               })}
             </div>
           )}
-        </div>
-      )}
+      </div>
     </div>
   )
 }

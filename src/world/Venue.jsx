@@ -9,6 +9,7 @@ import { mix, venueLayout } from './venueLayout'
 import { useFloorTexture } from './floorTex'
 import { getWallPair } from './pastelTex'
 import Prop from './Prop'
+import { fixPropMaterialSeams } from './avatarTextureFix'
 import { venueStore } from './features/venueStore'
 
 const { hw, hd, wallH } = VENUE_ROOM
@@ -27,7 +28,10 @@ function Glb({ model, x = 0, y = 0, z = 0, ry = 0, h, w, d, tilt = 0 }) {
     const c = box.getCenter(new Vector3())
     clone.position.set(-c.x, -box.min.y, -c.z)
     clone.traverse((o) => {
-      if (o.isMesh) o.castShadow = o.receiveShadow = true
+      if (o.isMesh) {
+        o.castShadow = o.receiveShadow = true
+        fixPropMaterialSeams(o.material)
+      }
     })
     let sc
     if (h && w && d) sc = [w / size.x, h / size.y, d / size.z]

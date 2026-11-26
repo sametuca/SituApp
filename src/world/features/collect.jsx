@@ -8,7 +8,6 @@ import CollectiblesLayer from '../CollectiblesLayer'
 import { COLLECTIBLE_BY_ID, COLLECT_PROMPT, HIDDEN_CHESTS, KINDS, KIND_ORDER, TOTAL_BY_KIND, levelOf } from '../collectibles'
 import { CollectBurst, LevelUp } from './collectCelebration'
 
-const isTyping = (e) => e.target instanceof HTMLElement && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)
 const sfx = (name) => window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: name }))
 
 function Bar({ value, max, tone = '#fdb252' }) {
@@ -224,11 +223,7 @@ export function useCollect(ctx) {
   const nearCol = near && !ctx.atDoor ? COLLECTIBLE_BY_ID[near] : null
   useEffect(() => {
     if (!nearCol) return
-    const onKey = (e) => {
-      if ((e.code === 'KeyE' || e.key === 'e' || e.key === 'E') && !isTyping(e) && !e.ctrlKey && !e.metaKey && !e.altKey) pick(nearCol.id)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    pick(nearCol.id)
   }, [nearCol, pick])
 
   return {
@@ -236,7 +231,6 @@ export function useCollect(ctx) {
     sceneNodes: where ? <CollectiblesLayer where={where} focusRef={focusRef} store={store} onNear={setNear} onPick={pick} pops={pops} /> : null,
     overlays: (
       <>
-        {nearCol && !panel && <DoorPrompt emoji={KINDS[nearCol.kind].emoji} label={KINDS[nearCol.kind].name} action="Topla" touch={touch} raised onGo={() => pick(nearCol.id)} />}
         {bursts.map((b) => (
           <CollectBurst key={b.key} ev={b} onDone={() => setBursts((x) => x.filter((y) => y.key !== b.key))} />
         ))}

@@ -76,11 +76,17 @@ export function LevelUp({ level, onDone }) {
             <span className="text-6xl font-black text-white drop-shadow-[0_3px_0_rgba(138,90,0,.45)]">{level}</span>
           </div>
           <div className="relative -mt-3 rounded-full border-4 border-white bg-[#4a3b5c] px-6 py-1.5 text-xl font-black tracking-wide text-[#ffe48f] shadow-lg">SEVİYE ATLADIN!</div>
-          <p className="mt-2 rounded-full bg-white/85 px-4 py-1 text-sm font-extrabold text-[#4a3b5c] shadow">Toplamaya devam et, yeni seviyeler seni bekliyor ⭐</p>
+          <p className="mt-2 rounded-full bg-white/85 px-4 py-1 text-sm font-extrabold text-[#4a3b5c] shadow">Yeni seviye açıldı, keşfetmeye devam et</p>
         </div>
       </div>
-      <div className="absolute left-1/2 top-[36%]">
+      <div className="pointer-events-none absolute left-1/2 top-[36%]">
         <Sparks big />
+      </div>
+      <div className="pointer-events-none absolute left-[28%] top-[32%]">
+        <Sparks />
+      </div>
+      <div className="pointer-events-none absolute left-[72%] top-[32%]">
+        <Sparks />
       </div>
     </div>
   )

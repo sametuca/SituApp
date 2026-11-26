@@ -217,7 +217,7 @@ function Heavens() {
 const LAMP_MODEL = '/models/park/park-lamp.glb'
 const LAMPS = PROPS.filter((p) => p.model === LAMP_MODEL).map((p) => ({ x: p.x, z: p.z }))
 const LAMP_TOP = 2.75
-const REAL_LIGHTS = 4
+const REAL_LIGHTS = 2
 
 function Lamps({ focusRef }) {
   const glow = useRef()
@@ -425,7 +425,7 @@ function Fireflies() {
   const ref = useRef()
   const tex = useMemo(() => glowTexture(SOFT), [])
   useEffect(() => () => tex.dispose(), [tex])
-  const count = 96
+  const count = 48
   const seeds = useMemo(() => {
     const r = mulberry(91)
     const anchors = [

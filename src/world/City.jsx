@@ -1324,33 +1324,6 @@ function SpeedRings() {
             <primitive object={padMat} attach="material" />
           </mesh>
 
-          {/* Sol ve sağ süslü sütun kaideleri + parlayan kristal kuleler */}
-          {[-1.68, 1.68].map((px, sideIdx) => (
-            <group key={px} position={[px, 0, 0]}>
-              <mesh position={[0, 0.15, 0]} castShadow>
-                <cylinderGeometry args={[0.26, 0.34, 0.3, 8]} />
-                <meshStandardMaterial color="#4a3b5c" roughness={0.42} metalness={0.15} />
-              </mesh>
-              <mesh position={[0, 0.32, 0]}>
-                <cylinderGeometry args={[0.29, 0.29, 0.07, 8]} />
-                <meshStandardMaterial color="#ffd35e" emissive="#ffb32c" emissiveIntensity={0.6} roughness={0.28} />
-              </mesh>
-              <mesh position={[0, 0.92, 0]} castShadow>
-                <cylinderGeometry args={[0.12, 0.16, 1.15, 8]} />
-                <meshStandardMaterial color="#f8f2ff" roughness={0.35} />
-              </mesh>
-              {/* Sütun üstü yükselen parlayan kristal */}
-              <mesh position={[0, 1.68, 0]} rotation={[0, sideIdx * 0.7, 0]}>
-                <octahedronGeometry args={[0.22, 0]} />
-                <meshStandardMaterial color="#80f0ff" emissive="#38bdf8" emissiveIntensity={1.35} roughness={0.18} />
-              </mesh>
-              <mesh position={[0, 1.68, 0]} rotation={[Math.PI / 2, 0, 0]}>
-                <torusGeometry args={[0.28, 0.025, 8, 20]} />
-                <meshStandardMaterial color="#ffd35e" emissive="#ffb32c" emissiveIntensity={0.85} />
-              </mesh>
-            </group>
-          ))}
-
           {/* Ana yüzen fantastik geçit */}
           <group ref={(el) => (outerRefs.current[i] = el)} position={[0, 1.98, 0]}>
             {/* Enerji girdabı yüzeyi */}

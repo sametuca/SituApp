@@ -4,6 +4,30 @@
 import { CanvasTexture, LinearFilter, LinearMipmapLinearFilter, SRGBColorSpace } from 'three'
 
 const fixedCache = new WeakMap() // original ImageBitmap/HTMLImageElement → CanvasTexture
+const seamFixedTex = new WeakSet()
+
+/**
+ * Prop/toplanabilir/mekân GLB dokularındaki UV kenar çatlaklarını (mipmap sızıntısı ve normal haritası gürültüsü)
+ * sıfır CPU maliyetiyle giderir; yüzeyleri yumuşak pastel kil/oyuncak görünümüne yaklaştırır.
+ */
+export function fixPropMaterialSeams(mat) {
+  if (!mat) return
+  if (mat.normalMap) {
+    mat.normalMap = null
+    mat.needsUpdate = true
+  }
+  if (typeof mat.roughness === 'number') mat.roughness = Math.max(mat.roughness, 0.58)
+  if (typeof mat.metalness === 'number') mat.metalness = Math.min(mat.metalness, 0.12)
+  for (const key of ['map', 'emissiveMap', 'roughnessMap', 'metalnessMap']) {
+    const tex = mat[key]
+    if (!tex || seamFixedTex.has(tex)) continue
+    seamFixedTex.add(tex)
+    tex.generateMipmaps = false
+    tex.minFilter = LinearFilter
+    tex.magFilter = LinearFilter
+    tex.needsUpdate = true
+  }
+}
 
 /**
  * Mesh'in gerçek UV üçgen maskesini çıkarır, UV kenarındaki WebP siyah sızıntısını temizler

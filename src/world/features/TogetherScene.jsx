@@ -113,8 +113,11 @@ function PhotoSpotMark() {
         <meshStandardMaterial color="#fff8f0" roughness={0.9} />
       </mesh>
       {label && (
-        <Html position={[0, 1.7, 0]} center distanceFactor={14} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
-          <div className="whitespace-nowrap rounded-full border-2 border-white bg-white/90 px-2.5 py-0.5 text-xs font-extrabold text-[#4a3b5c] shadow-md">📸 Fotoğraf noktası</div>
+        <Html position={[0, 1.75, 0]} center distanceFactor={14} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
+          <div className="inline-flex w-max items-center gap-1.5 whitespace-nowrap rounded-full border-2 border-white bg-white/95 px-3 py-1 text-xs font-extrabold text-[#4a3b5c] shadow-md">
+            <span>📸</span>
+            <span>Fotoğraf noktası</span>
+          </div>
         </Html>
       )}
     </group>

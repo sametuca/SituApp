@@ -14,13 +14,13 @@ import { GAP, ISLAND, PIER } from '../layout'
 
 const FISH_SPOTS = [
   { id: 'pier', label: 'Sahil İskelesi · Balık Tut', x: PIER.x, z: PIER.z0 + 1.8, wx: PIER.x, wz: PIER.z1, r: 6.5 },
-  { id: 'pond', label: 'Park Göleti · Balık Tut', x: -30 - GAP, z: 23.0 + GAP, wx: -30 - GAP, wz: 28.2 + GAP, r: 5.5 },
+  { id: 'pond', label: 'Park Göleti · Balık Tut', x: -30 - GAP, z: 30 + GAP, wx: -30 - GAP, wz: 30 + GAP, r: 11.5 },
 ]
-const SHORE_SPOT = { id: 'shore', label: 'Deniz Kenarı · Balık Tut', wx: PIER.x, wz: PIER.z1 }
+const SHORE_SPOT = { id: 'shore', label: 'Su Kenarı · Balık Tut', wx: PIER.x, wz: PIER.z1 }
 function fishSpotAt(x, z) {
   const fixed = FISH_SPOTS.find((s) => Math.hypot(x - s.x, z - s.z) < s.r)
   if (fixed) return fixed
-  if (z >= ISLAND.z1 - 1.5 && Math.abs(x) <= 34) return SHORE_SPOT
+  if (x <= ISLAND.x0 + 4.5 || x >= ISLAND.x1 - 4.5 || z <= ISLAND.z0 + 4.5 || z >= ISLAND.z1 - 4.5) return SHORE_SPOT
   return null
 }
 const MAILBOX = { x: 6.6, z: -6.2, r: 3.0 }

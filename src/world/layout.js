@@ -94,7 +94,7 @@ export const BUILDINGS = [
   // lobi meydanındaki dört önemli yapı
   b(17, -17, 8, 8, 6, 'blue', 's', '🧭 Tripadvisör'),
   b(-17, -17, 8, 8, 6, 'pink', 's', '💇 Toni & Güy'),
-  b(17, 17, 8, 8, 6, 'lilac', 's', '📸 Sinepsot Foto'),
+  b(17, 17, 8, 8, 6, 'lilac', 's'),
   b(-17, 17, 8, 8, 6, 'peach', 'n', '🍰 Tatlı Kafası'),
 
   // Kafe Sokağı (kuzey) — Kokabana ile Starbucket yer değiştirdi
@@ -128,7 +128,7 @@ export const BUILDINGS = [
   // Güneydoğu mahallesi (kasaba ölçeği)
   b(28, 26, 10, 10, 5.5, 'lilac', 'n'),
   b(41, 26, 8, 10, 6, 'mint', 'n'),
-  b(28, 41, 10, 8, 5.5, 'peach', 'n'),
+  b(28, 41, 10, 8, 5.5, 'lilac', 's', '📸 Sinepsot Foto'),
   b(41, 41, 8, 8, 5.5, 'yellow', 'n'),
 
   // Herkesin kendi evine girdiği kapı (sahile dönük, önü açık ve parlak)
@@ -207,8 +207,8 @@ for (const [fx, fz] of [[6.4, 6.4], [-6.4, 6.4], [6.4, -6.4], [-6.4, -6.4]]) PRO
 PROPS.push(pw('tree', 10, 10, 4.0, 0.9), pw('tree', -10, -10, 4.0, 0.9))
 {
   const nearBuilding = (x, z, pad) => BUILDINGS.some((bd) => !bd.gazebo && Math.abs(x - bd.x) < (bd.facing === 'e' || bd.facing === 'w' ? bd.d : bd.w) / 2 + pad && Math.abs(z - bd.z) < (bd.facing === 'e' || bd.facing === 'w' ? bd.w : bd.d) / 2 + pad)
-  for (let i = 0; i < 12; i++) {
-    const a = (i / 12) * Math.PI * 2 + Math.PI / 12
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2 + Math.PI / 8
     const bx = Math.cos(a) * 12.8
     const bz = Math.sin(a) * 12.8
     if (nearBuilding(bx, bz, 2.5)) continue
@@ -253,8 +253,8 @@ export const BEACH_PARTY = { x: 11.5, z: 58.5, ry: -0.58 } // sahil partisi sahn
       PROPS.push(pw('lounger', px + nx * 0.8, pz + nz * 0.8, 1.7, 0, ry), pw('lounger', px - nx * 0.8, pz - nz * 0.8, 1.7, 0, ry))
     }
   }
-  ring(25.5, 22, Math.PI / 22, true)
-  ring(17.5, 12, Math.PI / 12, false)
+  ring(25.5, 12, Math.PI / 12, true)
+  ring(17.5, 6, Math.PI / 6, false)
   for (const a of [-2.9, -2.5, -2.0, -1.2, -0.6, -0.2, 0.3, 0.8, 1.3, 1.9, 2.4, 2.8]) {
     const px = BEACH.x + Math.cos(a) * 31.5
     const pz = BEACH.z + Math.sin(a) * 29
@@ -351,8 +351,8 @@ loungers.forEach((a, i) => {
 export const SEATS = [...SEATS_PROPS, ...SEATS_BLANKET, ...SEATS_TOWEL]
 export const SEAT_LABEL = { bench: 'Banka otur', lounger: 'Şezlonga uzan', towel: 'Havluya uzan', chair: 'Sandalyeye otur', blanket: 'Battaniyeye otur', table: 'Masaya otur', stool: 'Taburede otur', sofa: 'Kanepeye otur' }
 
-// Fotoğraf Stüdyosu'nun (lobi, güneydoğu; kapısı güneye bakar) kapı önü: "Fotoğraf çek" istemi burada çıkar.
-export const PHOTO_SPOT = { x: G(17, 27.4)[0], z: G(17, 27.4)[1], radius: 2.7 }
+// Fotoğraf Stüdyosu'nun (MakFit yanı; kapısı güneye bakar) kapı önü: "Fotoğraf çek" istemi burada çıkar.
+export const PHOTO_SPOT = { x: G(28, 41)[0], z: G(28, 41)[1] + 6.4, radius: 2.7 }
 
 // ---------- çarpışma alanları ----------
 export const COLLIDERS = [
@@ -421,8 +421,8 @@ export function resolveCollisions(x, z) {
   return [x, z]
 }
 
-// Rehber NPC: plajdan ana sokağa girişte (sokağın başında, oyuncuyu karşılar)
-export const GUIDE = { x: -3.8, z: 30.2, ry: 0.3, avatar: 'mira', name: 'Rehber', radius: 5 }
+// Rehber NPC: plajda, yeni başlayan oyuncuyu karşılar
+export const GUIDE = { x: -4.2, z: 57.5, ry: 0.45, avatar: 'mira', name: 'Rehber', radius: 5 }
 
 // ---------- ev kapısı ve iç mekan ----------
 // Kapının önündeki nokta (şehirde): buraya gelince "Eve gir" çıkar, dışarı çıkınca buraya dönülür.

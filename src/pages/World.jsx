@@ -218,6 +218,7 @@ function WorldScene({ avatar }) {
   const [chatTarget, setChatTarget] = useState(null) // null = kapalı, 'public' = herkese açık, aksi halde oyuncu id'si
   const chatTargetRef = useRef(null)
   const [incoming, setIncoming] = useState(null)
+  const [inboxOpen, setInboxOpen] = useState(false)
   // Herkes kendi evinin garajında başlar (ev = şehirden bağımsız oda). Kademe sunucudan gelene dek önbellekten.
   const tierKey = `situapp_home_tier_${user?.id ?? 'guest'}`
   const [cachedTier] = useState(() => {
@@ -887,7 +888,7 @@ function WorldScene({ avatar }) {
       <WorldErrorBoundary>
       <Canvas
         shadows={PCFShadowMap}
-        dpr={touch ? [1, 1.5] : [1, 2]}
+        dpr={touch ? [1, 1.25] : [1, 1.5]}
         gl={{ powerPreference: 'high-performance', antialias: true, toneMapping: NeutralToneMapping, toneMappingExposure: 1.02 }}
         camera={{ fov: 55, near: 0.3, far: 300, position: [start.x, 6.4, start.z + 9.4] }}
         onCreated={({ gl }) => {
@@ -900,7 +901,7 @@ function WorldScene({ avatar }) {
         <color attach="background" args={[sceneBase.bg]} />
         <fog attach="fog" args={sceneBase.fog} />
         {/* Tek karede üretilen hafif PBR ışık haritası (IBL): tüm kil/plastik/cam/su yüzeylerine modern yansıma ve derinlik katar */}
-        <Environment resolution={256} frames={1} environmentIntensity={home || venue ? 0.36 : 0.42}>
+        <Environment resolution={128} frames={1} environmentIntensity={home || venue ? 0.36 : 0.42}>
           <Lightformer form="ring" intensity={1.8} color="#fff6e0" position={[10, 14, 8]} scale={14} target={[0, 0, 0]} />
           <Lightformer form="rect" intensity={1.4} color="#bfe8ff" position={[0, 12, 0]} rotation={[Math.PI / 2, 0, 0]} scale={[26, 26, 1]} />
           <Lightformer form="rect" intensity={0.9} color="#ffe0c2" position={[-12, 4, -8]} scale={[14, 8, 1]} target={[0, 0, 0]} />
@@ -930,7 +931,7 @@ function WorldScene({ avatar }) {
           ) : (
             <City focusRef={focusRef} />
           )}
-          <ClickToMoveGround moveTargetRef={moveTargetRef} disabled={introActive || Boolean(home && editing)} />
+          <ClickToMoveGround moveTargetRef={moveTargetRef} disabled={introActive} />
           <LocalPlayer
             slug={slug}
             start={start}
@@ -1035,7 +1036,17 @@ function WorldScene({ avatar }) {
                 : tutStep === 'wardrobe'
                   ? feat.extraButtons.filter((b) => b.key === 'wardrobe').map((b) => ({ ...b, highlight: true, hint: 'Buraya tıkla 👗' }))
                   : []
-              : feat.extraButtons
+              : [
+                  ...feat.extraButtons,
+                  {
+                    key: 'inbox',
+                    icon: 'feedback',
+                    label: 'Gelen Fısıltılar',
+                    badge: whisperUnread > 0 ? whisperUnread : 0,
+                    highlight: whisperUnread > 0,
+                    onClick: () => setInboxOpen((o) => !o),
+                  },
+                ]
           }
           extraNodes={inTutorial ? null : feat.extraNodes}
           menuNodes={feat.menuNodes}
@@ -1056,8 +1067,9 @@ function WorldScene({ avatar }) {
       )}
       {!introActive && !inTutorial && !editing && !chatTarget && !interactPeer && (
         <WhisperInbox
+          open={inboxOpen}
+          onClose={() => setInboxOpen(false)}
           items={whisperInbox}
-          unread={whisperUnread}
           touch={touch}
           onReadAll={() => setWhisperUnread(0)}
           onClear={() => {
@@ -1192,7 +1204,7 @@ function WorldScene({ avatar }) {
         <DoorPrompt emoji={home || venue ? '🚪' : '🏠'} label={home || venue ? 'Dışarı çık' : 'Evine gir'} action={home || venue ? 'Çık' : 'Gir'} touch={touch} raised={Boolean(nearPeer || editing)} onGo={doorGo} />
       )}
       {!home && !venue && !nearDoor && nearVenue && !chatTarget && !fade && !editing && (
-        <DoorPrompt emoji={VENUE_BY_ID[nearVenue].emoji} label={VENUE_BY_ID[nearVenue].name} action="Gir" touch={touch} raised={Boolean(nearPeer)} onGo={() => enterVenue(nearVenue)} />
+        <DoorPrompt label={VENUE_BY_ID[nearVenue].name} action="Gir" touch={touch} raised={Boolean(nearPeer)} onGo={() => enterVenue(nearVenue)} />
       )}
       {!home && !venue && !nearDoor && !nearVenue && nearGuide && !help && !chatTarget && !fade && !editing && (
         <DoorPrompt label="Rehber · Nasıl Oynanır" action="Aç" touch={touch} raised={Boolean(nearPeer)} onGo={() => setHelp(true)} />

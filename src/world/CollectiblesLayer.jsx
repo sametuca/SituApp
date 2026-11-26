@@ -8,6 +8,7 @@ import { useFrame } from '@react-three/fiber'
 import { Html, useGLTF } from '@react-three/drei'
 import { AdditiveBlending, Box3, CanvasTexture, CircleGeometry, Color, CylinderGeometry, DoubleSide, MathUtils, Object3D, RingGeometry, SphereGeometry, Vector3 } from 'three'
 import { COLLECT_PROMPT, DRAW_RADIUS, GLINT_RADIUS, HIDDEN_GLINT, HIDDEN_SHOW, KINDS, collectiblesIn } from './collectibles'
+import { fixPropMaterialSeams } from './avatarTextureFix'
 
 const LEAVE_MS = 480
 const MAX_GLINTS = 360
@@ -105,6 +106,7 @@ function useFitted(url, size, ground, glow) {
       let m = byGlow.get(glow)
       if (!m) {
         m = o.material.clone()
+        fixPropMaterialSeams(m)
         if (m.emissive) {
           m.emissive.set(glow)
           m.emissiveIntensity = 0.28

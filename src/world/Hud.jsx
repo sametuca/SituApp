@@ -263,24 +263,19 @@ function drawMap(ctx, S, big, f, remotes) {
     if (!im) return
     const px = X(wx)
     const pz = Z(wz)
-    const rad = big ? 11.5 : 12.5
+    const rad = big ? 10 : 10.5
     if (highlight) {
       ctx.fillStyle = 'rgba(253, 178, 82, 0.30)'
       ctx.beginPath()
-      ctx.arc(px, pz, rad + 3.5, 0, Math.PI * 2)
+      ctx.arc(px, pz, rad + 3, 0, Math.PI * 2)
       ctx.fill()
     }
-    ctx.save()
-    ctx.shadowColor = 'rgba(74, 59, 92, 0.22)'
-    ctx.shadowBlur = 5
-    ctx.shadowOffsetY = 2
     ctx.fillStyle = '#ffffff'
     ctx.beginPath()
     ctx.arc(px, pz, rad, 0, Math.PI * 2)
     ctx.fill()
-    ctx.restore()
     ctx.strokeStyle = ringColor
-    ctx.lineWidth = highlight ? 2.4 : 2
+    ctx.lineWidth = highlight ? 2.2 : 1.8
     ctx.beginPath()
     ctx.arc(px, pz, rad, 0, Math.PI * 2)
     ctx.stroke()
@@ -392,7 +387,7 @@ export function Minimap({ focusRef, remotes, compact }) {
       setZoneName((prev) => (prev === short ? prev : short))
     }
     draw()
-    const timer = setInterval(draw, 180)
+    const timer = setInterval(draw, 250)
     return () => clearInterval(timer)
   }, [focusRef, remotes, big, S])
 

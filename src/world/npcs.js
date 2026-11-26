@@ -84,7 +84,7 @@ const CITY = [
     ],
   },
   {
-    id: 'cankurtaran', avatar: 'ege', name: 'Kendini Mafya Sanan Hırtcan', role: '🕶️', x: 4.2, z: 44, ry: -0.35,
+    id: 'cankurtaran', worldPos: true, avatar: 'ege', name: 'Kendini Mafya Sanan Hırtcan', role: '🕶️', x: 5.8, z: 24.4, ry: -1.1,
     pose: GUARD, look: BLACK_SUIT, scale: 1.08,
     lines: [
       'Şezlongun yoksa plajı terket burası bizim! 🕶️',
@@ -144,7 +144,7 @@ const CITY = [
     ],
   },
   {
-    id: 'turist', avatar: 'deniz', name: 'Gezgin Deniz', role: '📷', x: 5.2, z: 13.2, ry: -0.8,
+    id: 'turist', worldPos: true, avatar: 'deniz', name: 'Gezgin Deniz', role: '📷', x: 26.2, z: 49.5, ry: 0.35,
     lines: ['Fotoğraf noktasını gördün mü? Tam burada 📸', 'Bu şehirde her köşe bir kare 🌆', 'İki kişi poz verince albüm daha tatlı oluyor 💞', 'Fotoğraf makinesi hep yanımda, gülümsemeyi unutma 😄'],
     options: [
       { label: 'Öneri iste', reply: ['Fotoğraf Stüdyosu’nun önündeki işaretli noktada kare çek, ışık harika 📸', 'Gün batımında plajda çekilen kareler en tatlısı 🌅'] },

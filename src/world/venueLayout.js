@@ -151,7 +151,7 @@ function build(v) {
     plant(-hw + 0.7, 4.1)
     plant(hw - 0.7, 4.1)
   }
-  const sign = () => add({ t: 'board', x: 0, y: 3.05, z: -hd + 0.04, ry: 0, w: 3.4, h: 0.6, lines: [`${v.emoji} ${v.name}`], bg: th.accent, fg: '#ffffff', big: true })
+  const sign = () => add({ t: 'board', x: 0, y: 3.25, z: -hd + 0.04, ry: 0, w: 3.4, h: 0.56, lines: [`${v.emoji} ${v.name}`], bg: th.accent, fg: '#ffffff', big: true })
   const windows = (zs = [-0.6, 2.4]) => zs.forEach((z) => { add({ t: 'window', wall: 'w', z }); add({ t: 'window', wall: 'e', z }) })
   const chairAt = (name, x, z, ry, kind, group, c) => {
     add({ t: 'chair', x, z, ry, c: c ?? th.accent })

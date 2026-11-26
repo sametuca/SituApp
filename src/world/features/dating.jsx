@@ -544,23 +544,14 @@ export function useDating({ net, say, panel, setPanel, focusRef, home, venue, cl
                   </div>
                 </div>
 
-                {/* Sade ikincil kısayollar */}
-                <div className="grid grid-cols-2 gap-2 pt-0.5">
-                  <button
-                    type="button"
-                    onClick={() => setPanel('quests')}
-                    className="rounded-xl bg-[#fff7dc] py-2 text-xs font-black text-[#8a5a00] transition hover:bg-[#ffefbf]"
-                  >
-                    Günlük Görevler
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPanel('pvp')}
-                    className="rounded-xl bg-[#f3ecff] py-2 text-xs font-black text-[#5b3fa8] transition hover:bg-[#e8dcff]"
-                  >
-                    Düello & Arena
-                  </button>
-                </div>
+                {/* Sade ikincil kısayol */}
+                <button
+                  type="button"
+                  onClick={() => setPanel('quests')}
+                  className="w-full rounded-xl bg-[#fff7dc] py-2.5 text-xs font-black text-[#8a5a00] transition hover:bg-[#ffefbf]"
+                >
+                  Günlük Görevler
+                </button>
               </div>
             )}
 

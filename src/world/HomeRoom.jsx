@@ -142,22 +142,51 @@ function RoomLights({ dim }) {
   )
 }
 
-const NEIGHBOR_HOUSES = [
-  '/models/neighborhood/house-cottage.glb',
-  '/models/neighborhood/house-heart.glb',
-  '/models/neighborhood/house-bungalow.glb',
-  '/models/neighborhood/house-tower.glb',
+const NEIGHBOR_PALETTES = [
+  { wall: '#ffe3ec', roof: '#ff9ec7', door: '#b79cff', trim: '#fffaf2', w: 5.4, h: 3.6, d: 4.8 },
+  { wall: '#dff2ff', roof: '#7fcdf3', door: '#fdb252', trim: '#fffaf2', w: 5.8, h: 3.4, d: 4.6 },
+  { wall: '#fff3d6', roof: '#ffc86b', door: '#8fdcb4', trim: '#fffaf2', w: 5.2, h: 3.8, d: 4.8 },
+  { wall: '#ebe3ff', roof: '#b79cff', door: '#ff9ec7', trim: '#fffaf2', w: 5.5, h: 3.5, d: 4.7 },
 ]
 
-/** Evin çevresindeki gerçek Meshy GLB komşu evler, sokak, lambalar ve ağaçlar (mahalle atmosferi). */
+/** Evin çevresindeki tatlı, kabarık pastel kil komşu evler (çatlaksız, pürüzsüz mahalle atmosferi). */
 function NeighborHouse({ x, z, ry = 0, kind = 0, gardenColor = '#d2f4c6' }) {
-  const model = NEIGHBOR_HOUSES[kind % NEIGHBOR_HOUSES.length]
+  const pal = NEIGHBOR_PALETTES[kind % NEIGHBOR_PALETTES.length]
+  const hz = pal.d / 2
   return (
     <group position={[x, 0, z]} rotation={[0, ry, 0]}>
       <RoundedBox args={[8.4, 0.12, 8.2]} radius={0.05} position={[0, -0.02, 0]} receiveShadow>
         <meshStandardMaterial color={gardenColor} roughness={0.95} />
       </RoundedBox>
-      <Prop model={model} x={0} z={-0.6} scale={6.2} />
+      <group position={[0, 0, -0.6]}>
+        {/* Kabarık yuvarlak gövde */}
+        <RoundedBox args={[pal.w, pal.h, pal.d]} radius={0.34} smoothness={4} position={[0, pal.h / 2, 0]} castShadow receiveShadow>
+          <meshStandardMaterial color={pal.wall} roughness={0.78} />
+        </RoundedBox>
+        {/* Yumuşak çatı */}
+        <RoundedBox args={[pal.w + 0.5, 0.72, pal.d + 0.5]} radius={0.32} smoothness={4} position={[0, pal.h + 0.2, 0]} castShadow>
+          <meshStandardMaterial color={pal.roof} roughness={0.68} />
+        </RoundedBox>
+        {/* Sevimli baca */}
+        <RoundedBox args={[0.62, 1.0, 0.62]} radius={0.16} smoothness={3} position={[pal.w * 0.28, pal.h + 0.75, -0.6]} castShadow>
+          <meshStandardMaterial color={pal.trim} roughness={0.72} />
+        </RoundedBox>
+        {/* Kapı */}
+        <RoundedBox args={[1.05, 1.85, 0.16]} radius={0.22} smoothness={3} position={[0, 0.96, hz + 0.04]}>
+          <meshStandardMaterial color={pal.door} roughness={0.58} />
+        </RoundedBox>
+        {/* Pencereler (sol, sağ ve üst) */}
+        {[-1.6, 1.6].map((wx) => (
+          <group key={wx} position={[wx, 1.65, hz + 0.04]}>
+            <RoundedBox args={[0.92, 0.92, 0.14]} radius={0.24} smoothness={3}>
+              <meshStandardMaterial color={pal.trim} roughness={0.65} />
+            </RoundedBox>
+            <RoundedBox args={[0.68, 0.68, 0.16]} radius={0.18} smoothness={3}>
+              <meshStandardMaterial color="#fff3c4" emissive="#ffe08a" emissiveIntensity={0.65} roughness={0.35} />
+            </RoundedBox>
+          </group>
+        ))}
+      </group>
       <Prop model="/models/neighborhood/garden-flowerbed.glb" x={-2.5} z={2.8} scale={1.5} />
       <Prop model="/models/neighborhood/garden-mailbox.glb" x={2.6} z={3.0} scale={1.4} ry={-0.2} />
     </group>

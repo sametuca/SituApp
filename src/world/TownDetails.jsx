@@ -247,7 +247,7 @@ function BeachExtras() {
 }
 
 // ---------- 4B. YAZ AKŞAMI SAHİL ATEŞİ VE BAMBU FENERLER ----------
-const BONFIRE_POS = [-4.6, 93.2]
+const BONFIRE_POS = [4.8, 67.2]
 const TIKI_SPOTS = [
   [-2.8, 97.6],
   [2.8, 97.6],
@@ -373,13 +373,16 @@ function TownBirds() {
       const g = refs.current[i]
       if (!g) return
       const a = t * b.sp + b.ph
-      const hop = Math.abs(Math.sin(t * 6.5 + b.ph)) * 0.08
-      // Ara sıra eğilip yemlenme hareketi
-      const peck = Math.sin(t * 2.2 + b.ph) > 0.65 ? 0.55 : 0
+      // Doğal dairesel yürüyüş + pürüzsüz yemlenme eğilmesi
+      const peckWave = Math.max(0, Math.sin(t * 1.4 + b.ph * 1.7))
+      const peck = peckWave * peckWave * 0.42
+      const hop = Math.abs(Math.sin(t * 4.2 + b.ph)) * 0.045 * (1 - peckWave)
       const nx = b.x + Math.cos(a) * b.r
-      const nz = b.z + Math.sin(a * 0.8) * b.r
-      g.position.set(nx, 0.14 + (peck ? 0 : hop), nz)
-      g.rotation.y = -a + Math.PI / 2
+      const nz = b.z + Math.sin(a) * b.r
+      const vx = -Math.sin(a)
+      const vz = Math.cos(a)
+      g.position.set(nx, 0.14 + hop, nz)
+      g.rotation.y = Math.atan2(vx, vz)
       g.rotation.x = peck
     })
   })
