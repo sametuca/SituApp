@@ -39,7 +39,7 @@ export const VENUES = [
   { id: 'dondurma', label: '🍦 Nevarlanda', name: 'Nevarlanda', emoji: '🍦', type: 'icecream', desc: 'Soğuk ve tatlı.',
     npc: { name: 'Dondurmacı Ege', avatar: 'ege', x: 0, z: -3.4, ry: 0, lines: ['Çilek mi vanilya mı? 🍦', 'Yaz geldi, plaj yakın 🏖️', 'İkisini birden yap, külah kırılmaz!'] } },
   { id: 'surf', label: '🏄 Quicksörf', name: 'Quicksörf', emoji: '🏄', type: 'shop', desc: 'Dalga için her şey.',
-    npc: { name: 'Sörfçü Kaan', avatar: 'kaan', x: -3, z: -3.4, ry: 0.3, lines: ['Dalgalar bugün harika 🌊', 'Gün batımında plaj bir başka güzel 🌅', 'Şezlongda yan yana oturmak da bir sörf sayılır 😄'] } },
+    npc: { name: 'Sörfçü Kaan', avatar: 'kaan', x: -3, z: -3.4, ry: 0.3, lines: ['Dalgalar bugün harika 🌊 Sörf yarışına katılmak için benimle konuş! 🏄', 'Gün batımında plaj bir başka güzel 🌅', 'Şezlongda yan yana oturmak da bir sörf sayılır 😄'] } },
   { id: 'plajbar', label: '🥤 Kokabana', name: 'Kokabana', emoji: '🥤', type: 'bar', desc: 'Serin içecekler.',
     npc: { name: 'Barmen Elif', avatar: 'elif', x: 0, z: -3.4, ry: 0, lines: ['Limonata mı smoothie mi? 🥤', 'Sokağın en serin köşesi burası.', 'Bir içecek kap, muhabbete başla 🥤'] } },
   { id: 'fitness', label: '🏋️ MakFit', name: 'MakFit Spor Kulübü', emoji: '🏋️', type: 'gym', desc: 'Ağırlık çalış, ringe çık!',

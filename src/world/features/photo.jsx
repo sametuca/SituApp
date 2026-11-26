@@ -76,7 +76,7 @@ function star(ctx, x, y, r, color) {
 
 const pad2 = (n) => String(n).padStart(2, '0')
 
-/** Canvas karesini pastel çerçeve + tarih + "SituApp" damgasıyla birleştirir. { full, thumb } (JPEG data URL) döndürür. */
+/** Canvas karesini pastel çerçeve + tarih + "Rastla" damgasıyla birleştirir. { full, thumb } (JPEG data URL) döndürür. */
 export async function composePhoto(shot, who) {
   const img = await loadImage(shot.url)
   const maxW = 1100
@@ -141,8 +141,8 @@ export async function composePhoto(shot, who) {
   g.fillStyle = '#e8952c'
   g.font = '900 52px Nunito, system-ui, sans-serif'
   g.textAlign = 'left'
-  g.fillText('SituApp', PAD + 4, baseY)
-  heart(g, PAD + 4 + g.measureText('SituApp').width + 26, baseY - 20, 18, '#fdb252')
+  g.fillText('Rastla', PAD + 4, baseY)
+  heart(g, PAD + 4 + g.measureText('Rastla').width + 26, baseY - 20, 18, '#fdb252')
   g.fillStyle = '#6d5a85'
   g.font = '800 30px Nunito, system-ui, sans-serif'
   g.textAlign = 'right'
@@ -162,7 +162,7 @@ export async function composePhoto(shot, who) {
   return { full, thumb: t.toDataURL('image/jpeg', 0.72) }
 }
 
-export function download(url, name = `situapp-${Date.now()}.jpg`) {
+export function download(url, name = `rastla-${Date.now()}.jpg`) {
   const a = document.createElement('a')
   a.href = url
   a.download = name
@@ -227,7 +227,7 @@ export function AlbumModal({ list, onDelete, onClose }) {
         <>
           <img src={shown.url} alt="" className="mt-3 max-h-[52vh] w-full rounded-2xl border-2 border-white object-contain shadow-soft" />
           <div className="mt-3 flex gap-2">
-            <button onClick={() => download(shown.url, `situapp-${shown.id}.jpg`)} className={pink}>
+            <button onClick={() => download(shown.url, `rastla-${shown.id}.jpg`)} className={pink}>
               💾 Kaydet
             </button>
             <button

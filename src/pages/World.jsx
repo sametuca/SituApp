@@ -104,7 +104,7 @@ function LoadingOverlay({ ready }) {
     <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#fff2e3] via-[#f1e6ff] to-[#dff3ff]">
       <img
         src="/logo.png"
-        alt="SituApp"
+        alt="Rastla"
         draggable={false}
         className="h-20 w-auto select-none drop-shadow-[0_8px_18px_rgba(74,59,92,0.18)] sm:h-24"
       />

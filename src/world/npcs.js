@@ -200,7 +200,7 @@ const venueNpcs = VENUES.filter((v) => v.npc).map((v) => ({
       ]
     : undefined,
   options: [
-    ...(v.id === 'sorf'
+    ...(v.id === 'surf'
       ? [
           { label: '🏄 Sörf Yarışına Katıl (2–10 kişi)', action: 'open_surf', reply: ['Sörf kıyafetin hazır! Dalgalardan kaç, en sona kalan kazanır! 🏄🌊'] },
           { label: '🏆 Sörf Puan Tablosu', action: 'open_surf_board', reply: ['İşte şehrin en iyi sörfçüleri! 🏆🌊'] },
