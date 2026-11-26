@@ -268,7 +268,7 @@ export function useProgress({ net, say, focusRef, home, venue, panel, setPanel, 
   const settingsSections = [
     <section key="fx" className="flex items-start gap-3">
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-black text-[#4a3b5c]">✨ Etkinlik efektleri</p>
+        <p className="text-sm font-black text-[#4a3b5c]">Etkinlik efektleri</p>
         <p className="text-xs font-semibold text-[#8a7a9c]">Sezon etkinliklerinde havada uçuşan kalp, kar ve konfeti. Telefonun yavaşlarsa kapat.</p>
       </div>
       <button

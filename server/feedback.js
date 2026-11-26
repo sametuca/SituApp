@@ -50,7 +50,7 @@ export function feedbackHandler(req, res) {
       .sendMail({
         from: process.env.SMTP_FROM || process.env.SMTP_USER,
         to: process.env.FEEDBACK_TO,
-        subject: `[Rastla] ${KINDS[kind]} geri bildirimi`,
+        subject: `[Plaka82] ${KINDS[kind]} geri bildirimi`,
         text: `${item.text}\n\n— ${item.who || 'misafir'} · ${item.page}${item.contact ? `\nİletişim: ${item.contact}` : ''}\n${item.ts}`,
         replyTo: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(item.contact) ? item.contact : undefined,
       })

@@ -62,7 +62,7 @@ function FeedbackModal({ who, onClose, onSent }) {
         <div className="text-center">
           <div className="text-5xl">💌</div>
           <h2 className="mt-2 text-xl font-black text-ink">Teşekkürler!</h2>
-          <p className="mt-1 text-sm font-semibold text-ink-soft">Mesajın bize ulaştı. Rastla henüz çok yeni, her yorum onu daha iyi yapıyor.</p>
+          <p className="mt-1 text-sm font-semibold text-ink-soft">Mesajın bize ulaştı. Plaka82 henüz çok yeni, her yorum onu daha iyi yapıyor.</p>
           <div className="mt-4">
             <ToyButton onClick={onClose}>Tamam</ToyButton>
           </div>
@@ -70,7 +70,7 @@ function FeedbackModal({ who, onClose, onSent }) {
       ) : (
         <>
           <h2 className="text-xl font-black text-ink">Geri bildirim</h2>
-          <p className="mt-1 text-sm font-semibold text-ink-soft">Rastla pre-alpha aşamasında. Ne düşündüğünü, neyi sevdiğini ya da neyin bozuk olduğunu yaz, doğrudan geliştiriciye ulaşır.</p>
+          <p className="mt-1 text-sm font-semibold text-ink-soft">Plaka82 pre-alpha aşamasında. Ne düşündüğünü, neyi sevdiğini ya da neyin bozuk olduğunu yaz, doğrudan geliştiriciye ulaşır.</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {KINDS.map(([id, label]) => (
               <button key={id} onClick={() => setKind(id)} aria-pressed={kind === id} className={`rounded-full border-2 px-3 py-1 text-sm font-extrabold transition active:scale-95 ${kind === id ? 'border-white bg-[#fdb252] text-white shadow' : 'border-white bg-white/70 text-[#4a3b5c]'}`}>
@@ -168,7 +168,7 @@ export function useFeedback({ panel, setPanel, venue, home, name: who }) {
             </span>
             <h2 className="mt-3 text-xl font-black text-[#4a3b5c]">Oyunu nasıl buluyorsun?</h2>
             <p className="mt-1.5 max-w-xs text-sm font-semibold leading-relaxed text-[#8a7a9c]">
-              Rastla pre-alpha aşamasında. Kısa bir geri bildirimin oyunu geliştirmemize çok yardımcı olur!
+              Plaka82 pre-alpha aşamasında. Kısa bir geri bildirimin oyunu geliştirmemize çok yardımcı olur!
             </p>
             <div className="mt-5 flex w-full gap-2.5">
               <button

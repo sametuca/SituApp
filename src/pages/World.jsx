@@ -22,7 +22,7 @@ import { AirportTutorialHud, AirportTutorialScene } from '../world/AirportTutori
 import { IntroCutsceneCamera, IntroCutsceneOverlay } from '../world/IntroCutscene'
 import { GIFT_BY_ID } from '../world/cosmeticsData'
 import { findFreeSpot, furnitureColliders, isValid, loadHome, newUid, saveHome } from '../world/homeLayout'
-import LocalPlayer from '../world/LocalPlayer'
+import LocalPlayer, { ClickToMoveGround } from '../world/LocalPlayer'
 import RemotePlayers, { GuideNpc, SelfTag } from '../world/RemotePlayers'
 import { useMultiplayer } from '../world/net'
 import { ChatPanel, HelpModal, Minimap, StartGuide, TopBar } from '../world/Hud'
@@ -104,7 +104,7 @@ function LoadingOverlay({ ready }) {
     <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#fff2e3] via-[#f1e6ff] to-[#dff3ff]">
       <img
         src="/logo.png"
-        alt="Rastla"
+        alt="Plaka82"
         draggable={false}
         className="h-20 w-auto select-none drop-shadow-[0_8px_18px_rgba(74,59,92,0.18)] sm:h-24"
       />
@@ -208,6 +208,7 @@ function WorldScene({ avatar }) {
   const focusRef = useRef({ x: SPAWN.x, z: SPAWN.z, ry: Math.PI, anim: 'idle', teleport: null })
   const controlsRef = useRef(null)
   const joystickRef = useRef({ x: 0, y: 0 })
+  const moveTargetRef = useRef(null)
   const touch = useIsTouch()
   const [nearId, setNearId] = useState(null)
   const [dismissedId, setDismissedId] = useState(null)
@@ -244,8 +245,8 @@ function WorldScene({ avatar }) {
   const [fade, setFade] = useState(false)
   const [sceneReady, setSceneReady] = useState(false) // ilk yükleme bitti mi (yükleme ekranı için)
   const onSceneReady = useCallback(() => setSceneReady(true), [])
-  // Havalimanı başlangıç eğitim holü: yıldız topla → örnek kapı dene → gardırop → çıkış
-  const [tutStep, setTutStep] = useState('collect') // collect | door | wardrobe | exit | done
+  // Havalimanı başlangıç eğitim holü: yıldız topla → çanta (envanter) → örnek kapı → gardırop → çıkış
+  const [tutStep, setTutStep] = useState('collect') // collect | inventory | door | wardrobe | exit | done
   const [tutNear, setTutNear] = useState(null)
   const [tutCelebrate, setTutCelebrate] = useState(null)
   const [introActive, setIntroActive] = useState(false)
@@ -260,6 +261,7 @@ function WorldScene({ avatar }) {
     }
   }, [])
   const tutOpenedWardrobe = useRef(false)
+  const tutOpenedInv = useRef(false)
   const tutCelebTimer = useRef(null)
   const flashTutCelebrate = useCallback((msg) => {
     setTutCelebrate(msg)
@@ -306,6 +308,7 @@ function WorldScene({ avatar }) {
   const say = useCallback((text) => setFeed((f) => [...f, { kind: 'system', ts: Date.now(), text }].slice(-100)), [])
   // Şehir ↔ ev geçişi: ekran kısa süre kararır, sonra oyuncu yeni yere ışınlanır.
   const swapScene = useCallback((target) => {
+    moveTargetRef.current = null
     setFade(true)
     setEditing(false)
     setSelected(null)
@@ -316,7 +319,7 @@ function WorldScene({ avatar }) {
       if (target === 'city') {
         setHome(null)
         // Konut Mahallesi kapısından girildiyse o kapının önüne, aksi halde lobideki Evim kapısına dön
-        focusRef.current.teleport = [HOME_DOOR.x, HOME_DOOR.z, Math.PI / 2] // evden çıkınca lobideki Evim kapısına dön
+        focusRef.current.teleport = [HOME_DOOR.x, HOME_DOOR.z, 0] // evden çıkınca sahile dönük Evim kapısına dön
       } else {
         setHome(target)
         if (target?.isOwn) setEditing(true)
@@ -328,6 +331,7 @@ function WorldScene({ avatar }) {
 
   // Şehir ↔ mekân geçişi (ev geçişinin paralelidir). Girerken kamera güneye sıfırlanır (oyuncak evi kesiti).
   const swapVenue = useCallback((target) => {
+    moveTargetRef.current = null
     const from = venueRef.current
     setFade(true)
     setEditing(false)
@@ -650,9 +654,21 @@ function WorldScene({ avatar }) {
     if (tutStep !== 'collect') return
     setTutNear(null)
     window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'collect' }))
-    flashTutCelebrate('⭐ Süper! Eşyaları hep E ile toplarsın (1/4)')
-    setTutStep('door')
+    window.dispatchEvent(new CustomEvent('situapp:inv-add', { detail: { id: 'welcome_soda', label: 'Hoş Geldin Limonata', emoji: '🍋', alcohol: false, style: 'eat' } }))
+    flashTutCelebrate('⭐ Süper! Hediyen 🎒 çantana eklendi (1/5)')
+    setTutStep('inventory')
   }, [tutStep, flashTutCelebrate])
+  useEffect(() => {
+    if (!inTutorial || tutStep !== 'inventory') return
+    if (panel === 'inventory') {
+      tutOpenedInv.current = true
+    } else if (panel === null && tutOpenedInv.current) {
+      tutOpenedInv.current = false
+      window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'quest' }))
+      flashTutCelebrate('🎒 Harika! Şimdi okları takip edip kapıyı dene (2/5)')
+      setTutStep('door')
+    }
+  }, [inTutorial, tutStep, panel, flashTutCelebrate])
   const onTutDoor = useCallback(() => {
     if (tutStep !== 'door' || fade) return
     setTutNear(null)
@@ -661,7 +677,7 @@ function WorldScene({ avatar }) {
     setTimeout(() => {
       setFade(false)
       setTutStep('wardrobe')
-      flashTutCelebrate('🚪 Harika! Soldaki 👗 Gardırop açıldı! (2/4)')
+      flashTutCelebrate('🚪 Süper! Soldaki 👗 Gardırop açıldı (3/5)')
     }, 420)
   }, [tutStep, fade, flashTutCelebrate])
   useEffect(() => {
@@ -671,7 +687,7 @@ function WorldScene({ avatar }) {
     } else if (panel === null && tutOpenedWardrobe.current) {
       tutOpenedWardrobe.current = false
       window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'quest' }))
-      flashTutCelebrate('👗 Çok şık! Şimdi çıkış kapısından şehre çık (3/4)')
+      flashTutCelebrate('👗 Çok şık! Şimdi okları takip edip şehre çık (4/5)')
       setTutStep('exit')
     }
   }, [inTutorial, tutStep, panel, flashTutCelebrate])
@@ -872,12 +888,14 @@ function WorldScene({ avatar }) {
           ) : (
             <City focusRef={focusRef} />
           )}
+          <ClickToMoveGround moveTargetRef={moveTargetRef} disabled={introActive || Boolean(home && editing)} />
           <LocalPlayer
             slug={slug}
             start={start}
             focusRef={focusRef}
             controlsRef={controlsRef}
             joystickRef={joystickRef}
+            moveTargetRef={moveTargetRef}
             onMove={net.sendMove}
             camOffset={[6.4, 9.4]}
             locked={introActive}
@@ -969,14 +987,16 @@ function WorldScene({ avatar }) {
           onSettings={() => setPanel('settings')}
           extraButtons={
             inTutorial
-              ? tutStep === 'wardrobe' || tutStep === 'exit'
-                ? feat.extraButtons.filter((b) => b.key === 'wardrobe').map((b) => ({ ...b, highlight: tutStep === 'wardrobe' }))
-                : []
+              ? tutStep === 'inventory'
+                ? feat.extraButtons.filter((b) => b.key === 'inventory').map((b) => ({ ...b, highlight: true, hint: 'Buraya tıkla 🎒' }))
+                : tutStep === 'wardrobe'
+                  ? feat.extraButtons.filter((b) => b.key === 'wardrobe').map((b) => ({ ...b, highlight: true, hint: 'Buraya tıkla 👗' }))
+                  : []
               : feat.extraButtons
           }
-          extraNodes={feat.extraNodes}
+          extraNodes={inTutorial ? null : feat.extraNodes}
           menuNodes={feat.menuNodes}
-          menuBadge={feat.menuBadge}
+          menuBadge={inTutorial ? 0 : feat.menuBadge}
           onExit={() => navigate('/avatar')}
           onHelp={() => setHelp(true)}
         />
@@ -985,17 +1005,17 @@ function WorldScene({ avatar }) {
       {!introActive && (touch ? (
         <>
           <Joystick inputRef={joystickRef} />
-          {!chatTarget && !editing && <ChatFab onClick={() => openChat('public')} />}
+          {!inTutorial && !chatTarget && !editing && <ChatFab onClick={() => openChat('public')} />}
         </>
       ) : (
         <>
-          {chatTarget !== 'public' && !sheetPeer && !editing && <ChatPanel feed={feed} onSend={onSend} status={net.status} />}
+          {!inTutorial && chatTarget !== 'public' && !sheetPeer && !editing && <ChatPanel feed={feed} onSend={onSend} status={net.status} />}
         </>
       ))}
       <DockSlot />
       {skillEdit && <SkillEditor slots={slots} onChange={changeSlots} onClose={() => setSkillEdit(false)} />}
       <TopDockSlot />
-      {!introActive && !editing && !chatTarget && !interactPeer && (
+      {!introActive && !inTutorial && !editing && !chatTarget && !interactPeer && (
         <>
           <SkillBar xp={feat.xp} cooldowns={skillCd} slots={skillList} onEdit={() => setSkillEdit(true)} onSkill={triggerSkill} onOpenExp={() => setPanel('collection')} touch={touch} />
         </>
@@ -1098,6 +1118,7 @@ function WorldScene({ avatar }) {
           celebrate={tutCelebrate}
           onCollect={onTutCollect}
           onDoor={onTutDoor}
+          onOpenInventory={() => setPanel('inventory')}
           onOpenWardrobe={() => setPanel('wardrobe')}
           onSkip={() => setTutStep('done')}
         />
@@ -1111,7 +1132,7 @@ function WorldScene({ avatar }) {
           onOpenMap={() => { setHelp(false); window.dispatchEvent(new CustomEvent('situapp:open-map')) }}
         />
       )}
-      {showTips && !help && !introActive && (
+      {showTips && !inTutorial && !help && !introActive && (
         <StartGuide
           touch={touch}
           ready={sceneReady}

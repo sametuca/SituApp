@@ -50,7 +50,7 @@ export function useModeration({ net, closeInteract }) {
   const settingsSections = [
     <section key="dnd" className="flex items-start gap-3">
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-black text-[#4a3b5c]">🌙 Rahatsız etme</p>
+        <p className="text-sm font-black text-[#4a3b5c]">Rahatsız etme</p>
         <p className="text-xs font-semibold text-[#8a7a9c]">Açıkken fısıltı, jest, özel mesaj ve davet alamazsın. Herkese açık sohbeti görmeye devam edersin.</p>
       </div>
       <button
@@ -63,7 +63,7 @@ export function useModeration({ net, closeInteract }) {
       </button>
     </section>,
     <section key="blocked">
-      <p className="text-sm font-black text-[#4a3b5c]">🚫 Engellediklerim</p>
+      <p className="text-sm font-black text-[#4a3b5c]">Engellediklerim</p>
       {net.blocked.length === 0 ? (
         <p className="mt-1 text-xs font-semibold text-[#8a7a9c]">Kimseyi engellemedin.</p>
       ) : (

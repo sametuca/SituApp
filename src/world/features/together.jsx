@@ -437,7 +437,7 @@ export function useTogether(ctx) {
   const settingsSections = [
     <section key="photos" className="flex items-start gap-3">
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-black text-[#4a3b5c]">📸 Fotoğraf albümü</p>
+        <p className="text-sm font-black text-[#4a3b5c]">Fotoğraf albümü</p>
         <p className="text-xs font-semibold text-[#8a7a9c]">Lobideki Fotoğraf Stüdyosu’nda çektiğin son 12 kare bu tarayıcıda saklanır ({album.length}/12).</p>
       </div>
       <button onClick={() => setPanel('photos')} className="shrink-0 rounded-xl bg-[#e9ddff] px-3 py-2 text-xs font-extrabold text-[#5b3fa8] active:scale-95">

@@ -84,7 +84,7 @@ const CITY = [
     ],
   },
   {
-    id: 'cankurtaran', avatar: 'ege', name: 'Sahil Mafyası Keko', role: '🕶️', x: 4.2, z: 44, ry: -0.35,
+    id: 'cankurtaran', avatar: 'ege', name: 'Kendini Mafya Sanan Hırtcan', role: '🕶️', x: 4.2, z: 44, ry: -0.35,
     pose: GUARD, look: BLACK_SUIT, scale: 1.08,
     lines: [
       'Şezlongun yoksa plajı terket burası bizim! 🕶️',
@@ -149,6 +149,29 @@ const CITY = [
     options: [
       { label: 'Öneri iste', reply: ['Fotoğraf Stüdyosu’nun önündeki işaretli noktada kare çek, ışık harika 📸', 'Gün batımında plajda çekilen kareler en tatlısı 🌅'] },
       { label: 'Hikâye anlat', reply: ['Bir gün kare çekerken arkaya biri girdi. Fotoğrafın en güzel yeri o sürpriz oldu 📷', 'Albümümün en sevdiğim karesi: iki yabancı aynı anda gülüyor ve haberleri yok 😊'] },
+    ],
+  },
+  // Sahil Partisi (Beach Party) NPC'leri: plaja yeni inen oyuncuları canlı müzik ve dansla karşılar
+  {
+    id: 'beach_dj', worldPos: true, avatar: 'kaan', name: 'Beach DJ Mert', role: '🎧', x: 12.1, z: 57.6, ry: -0.58, pose: SOLO,
+    lines: ['Sahil partisine hoş geldin! 🌴🪩', 'Müziği açtık, pist senin — birine 💃 gönderip dansa kaldır!', 'Güneş, deniz ve en iyi ritimler burada 🌊🎶'],
+    options: [
+      { label: 'Parti nasıl gidiyor?', reply: ['Enerji tavan! Yeni gelenler ilk burada tanışıyor 🪩✨', 'Birazdan gün batımı setine geçiyoruz, kaçırma 🌅'] },
+      { label: 'Öneri iste', reply: ['Plajın sağında MakFit, solunda kendi evin var — her şey elinin altında! 🏖️', 'Quicksörf’te Sörfçü Kaan’la konuşup dalgalara da çıkabilirsin 🏄'] },
+    ],
+  },
+  {
+    id: 'beach_dancer1', worldPos: true, avatar: 'zeynep', name: 'Selin', role: '🪩', x: 9.2, z: 60.4, ry: -0.3, pose: SOLO,
+    lines: ['Bu şarkıya bayılıyorum!! 🪩✨', 'Yeni mi geldin? Piste gel, birlikte dans edelim 💃', 'Sahil partisi her gün ayrı güzel 🌴🌊'],
+    options: [
+      { label: 'Nasıl dans ederim?', reply: ['Alttaki 2 tuşuna bas ya da birine tıklayıp dans teklifi gönder 💃✨'] },
+    ],
+  },
+  {
+    id: 'beach_dancer2', worldPos: true, avatar: 'ege', name: 'Arda', role: '🌴', x: 11.4, z: 61.8, ry: -0.9, pose: SOLO,
+    lines: ['Plaka82’ye hoş geldin! 🌴🔥', 'Plajda tanışmak çok kolay, selam vermekten çekinme 👋', 'Akşam da Kulüp’e geçiyoruz, unutma 🪩'],
+    options: [
+      { label: 'Burada neler var?', reply: ['Hemen arkada voleybol, karşıda Teknel, sağda MakFit… Ada dopdolu! 🏖️'] },
     ],
   },
 ]
@@ -344,6 +367,7 @@ const NPC_ACC = {
   gazeteci: ['hat', 'blue'], balon: ['hat', 'yellow'], muzisyen: ['headphones', 'lilac'], cicekci: ['flowers', 'mint'], bahcivan: ['hat', 'mint'],
   kopekci: ['shades', 'blue'], cankurtaran: ['shades', 'yellow'], dondurmaci: ['hat', 'peach'], guvenlik: ['shades', '#18181f'], guvenlik2: ['shades', '#18181f'], hayran: ['headphones', 'mint'],
   kediler: ['bunny', 'peach'], turist: ['hat', 'blue'],
+  beach_dj: ['headphones', 'yellow'], beach_dancer1: ['shades', 'peach'], beach_dancer2: ['shades', 'mint'],
 }
 const VENUE_ACC = [['hat', 'mint'], ['hat', 'peach'], ['hat', 'yellow'], ['hat', 'blue'], ['hat', 'lilac']]
 export const npcAccessory = (n) => {
@@ -353,7 +377,7 @@ export const npcAccessory = (n) => {
 export const NPC_SCALE = 1.06 // oyuncu avatarlarından biraz büyük
 
 // Şehir NPC'leri eski (v1) koordinatla yazıldı: harita genişleyince (layout.js G) konum ve rotalar yeni haritaya oturur.
-const toMap = (n) => ({
+const toMap = (n) => (n.worldPos ? n : {
   ...n,
   ...(n.x != null ? { x: G(n.x, n.z)[0], z: G(n.x, n.z)[1] } : {}),
   ...(n.route ? { route: { ...n.route, pts: n.route.pts.map(([x, z]) => G(x, z)) } } : {}),

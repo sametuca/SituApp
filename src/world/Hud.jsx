@@ -3,7 +3,7 @@ import { TopDock } from '../components/Dock'
 import { ToyButton } from '../components/ui'
 import { emojiSrc } from '../components/emoji'
 import { Ico } from '../components/Icon'
-import { BEACH, BUILDINGS, GUIDE, ISLAND, PLAZA_R, RIM, RING, ROAD_END, ROAD_HALF, ROAD_START, ZONES, zoneAt } from './layout'
+import { BEACH, BEACH_PARTY, BUILDINGS, GUIDE, ISLAND, PLAZA_R, RIM, RING, ROAD_END, ROAD_HALF, ROAD_START, ZONES, zoneAt } from './layout'
 
 const glass = 'border-2 border-white bg-white/92 shadow-soft'
 
@@ -50,12 +50,18 @@ export function TopBar({ zone, online, status, dnd, onExit, onHelp, onSettings, 
             onClick={b.onClick}
             aria-label={b.label}
             title={b.label}
-            className={`relative grid h-11 w-11 place-items-center rounded-full text-2xl transition hover:bg-white active:scale-95 sm:h-14 sm:w-14 sm:text-3xl ${glass} ${b.highlight ? 'ring-2 ring-[#fdb252] shadow-[0_0_14px_rgba(253,178,82,0.55)]' : ''}`}
+            className={`relative grid h-11 w-11 place-items-center rounded-full text-2xl transition hover:bg-white active:scale-95 sm:h-14 sm:w-14 sm:text-3xl ${glass} ${b.highlight ? 'ring-4 ring-[#fdb252] shadow-[0_0_20px_rgba(253,178,82,0.85)]' : ''}`}
           >
+            {b.highlight ? <span className="pointer-events-none absolute -inset-1 animate-ping rounded-full border-2 border-[#fdb252]/75" /> : null}
             {b.icon ? <Ico name={b.icon} size={28} /> : b.emoji}
             {b.badge ? <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full border-2 border-white bg-[#fdb252] px-1 text-[11px] font-black text-white">{b.badge}</span> : null}
             {!b.badge && b.highlight ? <span className="absolute -right-0.5 -top-0.5 h-3 w-3 animate-ping rounded-full bg-[#fdb252]" /> : null}
             {!b.badge && b.highlight ? <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-[#fdb252]" /> : null}
+            {b.hint ? (
+              <span className="pointer-events-none absolute left-full top-1/2 ml-2.5 -translate-y-1/2 whitespace-nowrap rounded-full border-2 border-white bg-[#fdb252] px-3 py-1 text-xs font-black text-white shadow-toy animate-bounce">
+                {b.hint}
+              </span>
+            ) : null}
           </button>
         ))}
       </div>
@@ -216,22 +222,68 @@ function drawMap(ctx, S, big, f, remotes) {
   ctx.beginPath()
   ctx.arc(X(-30), Z(0), len(3.2), 0, Math.PI * 2)
   ctx.fill()
-  // binalar
+  // binalar — 1. katman: gölgeli pastel çatı blokları
   for (const b of BUILDINGS) {
     if (b.gazebo) continue
     const side = b.facing === 'e' || b.facing === 'w'
     const w = side ? b.d : b.w
     const d = side ? b.w : b.d
-    ctx.fillStyle = b.roof
+    const bx = X(b.x - w / 2)
+    const bz = Z(b.z - d / 2)
+    const bw = len(w)
+    const bd = len(d)
+    const rad = Math.max(2, len(0.9))
+    ctx.save()
+    ctx.shadowColor = 'rgba(74, 59, 92, 0.14)'
+    ctx.shadowBlur = 4
+    ctx.shadowOffsetY = 1.5
+    ctx.fillStyle = b.homeDoor ? '#ffe699' : b.roof
     ctx.beginPath()
-    ctx.roundRect(X(b.x - w / 2), Z(b.z - d / 2), len(w), len(d), len(0.8))
+    ctx.roundRect(bx, bz, bw, bd, rad)
     ctx.fill()
-    if (b.label) {
-      const im = iconOf(b.label.split(' ')[0])
-      const sz = Math.max(len(3.4), big ? 18 : 16)
-      if (im) ctx.drawImage(im, X(b.x) - sz / 2, Z(b.z) - sz / 2, sz, sz)
-    }
+    ctx.restore()
+    ctx.strokeStyle = b.homeDoor ? '#fdb252' : 'rgba(255,255,255,0.65)'
+    ctx.lineWidth = b.homeDoor ? 1.8 : 1
+    ctx.beginPath()
+    ctx.roundRect(bx, bz, bw, bd, rad)
+    ctx.stroke()
   }
+  // 2. katman: modern dairesel harita rozetleri (ikonlar net beyaz zemin + renkli halka + yumuşak gölge)
+  const drawBadge = (wx, wz, emoji, ringColor, highlight = false) => {
+    const im = iconOf(emoji)
+    if (!im) return
+    const px = X(wx)
+    const pz = Z(wz)
+    const rad = big ? 11.5 : 12.5
+    if (highlight) {
+      ctx.fillStyle = 'rgba(253, 178, 82, 0.30)'
+      ctx.beginPath()
+      ctx.arc(px, pz, rad + 3.5, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    ctx.save()
+    ctx.shadowColor = 'rgba(74, 59, 92, 0.22)'
+    ctx.shadowBlur = 5
+    ctx.shadowOffsetY = 2
+    ctx.fillStyle = '#ffffff'
+    ctx.beginPath()
+    ctx.arc(px, pz, rad, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.restore()
+    ctx.strokeStyle = ringColor
+    ctx.lineWidth = highlight ? 2.4 : 2
+    ctx.beginPath()
+    ctx.arc(px, pz, rad, 0, Math.PI * 2)
+    ctx.stroke()
+    const icoSz = rad * 1.32
+    ctx.drawImage(im, px - icoSz / 2, pz - icoSz / 2, icoSz, icoSz)
+  }
+  for (const b of BUILDINGS) {
+    if (b.gazebo || !b.label) continue
+    drawBadge(b.x, b.z, b.label.split(' ')[0], b.homeDoor ? '#fdb252' : b.roof, Boolean(b.homeDoor))
+  }
+  // Sahil Partisi (Beach Party) rozeti
+  drawBadge(BEACH_PARTY.x, BEACH_PARTY.z, '🪩', '#ff8fb8', true)
   // bölge adları (büyük harita)
   if (big) {
     ctx.font = '800 11px Nunito, system-ui, sans-serif'
@@ -249,39 +301,52 @@ function drawMap(ctx, S, big, f, remotes) {
   }
   // diğer oyuncular
   for (const rp of remotes.current.values()) {
+    ctx.save()
+    ctx.shadowColor = 'rgba(74, 59, 92, 0.2)'
+    ctx.shadowBlur = 3
     ctx.fillStyle = '#a88bff'
     ctx.strokeStyle = '#ffffff'
-    ctx.lineWidth = 1.5
+    ctx.lineWidth = 1.8
     ctx.beginPath()
-    ctx.arc(X(rp.x), Z(rp.z), big ? 3.4 : 4, 0, Math.PI * 2)
+    ctx.arc(X(rp.x), Z(rp.z), big ? 3.8 : 4.4, 0, Math.PI * 2)
     ctx.fill()
     ctx.stroke()
+    ctx.restore()
   }
   // Rehber
   ctx.fillStyle = '#fdb252'
+  ctx.strokeStyle = '#ffffff'
+  ctx.lineWidth = 1.6
   ctx.beginPath()
-  ctx.arc(X(GUIDE.x), Z(GUIDE.z), 3.4, 0, Math.PI * 2)
+  ctx.arc(X(GUIDE.x), Z(GUIDE.z), 3.8, 0, Math.PI * 2)
   ctx.fill()
-  // kendin: nabız halkası + yönü gösteren ok
-  const t = (performance.now() % 1600) / 1600
-  ctx.strokeStyle = `rgba(255,126,179,${0.55 * (1 - t)})`
-  ctx.lineWidth = 2
-  ctx.beginPath()
-  ctx.arc(X(f.x), Z(f.z), 6 + t * 12, 0, Math.PI * 2)
   ctx.stroke()
-  ctx.translate(X(f.x), Z(f.z))
-  ctx.rotate(-f.ry + Math.PI)
-  ctx.fillStyle = '#ffffff'
-  ctx.strokeStyle = '#e8952c'
+  // kendin: sıcak turuncu nabız halkası + dolgulu beyaz konturlu yön oku
+  const t = (performance.now() % 1600) / 1600
+  ctx.strokeStyle = `rgba(253,178,82,${0.6 * (1 - t)})`
   ctx.lineWidth = 2.2
   ctx.beginPath()
-  ctx.moveTo(0, -9.5)
-  ctx.lineTo(7, 7.5)
-  ctx.lineTo(0, 3.5)
-  ctx.lineTo(-7, 7.5)
+  ctx.arc(X(f.x), Z(f.z), 6 + t * 13, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.save()
+  ctx.translate(X(f.x), Z(f.z))
+  ctx.rotate(-f.ry + Math.PI)
+  ctx.shadowColor = 'rgba(74, 59, 92, 0.28)'
+  ctx.shadowBlur = 4
+  ctx.shadowOffsetY = 1.5
+  ctx.fillStyle = '#fdb252'
+  ctx.strokeStyle = '#ffffff'
+  ctx.lineWidth = 2.4
+  ctx.lineJoin = 'round'
+  ctx.beginPath()
+  ctx.moveTo(0, -10)
+  ctx.lineTo(7.5, 7.5)
+  ctx.lineTo(0, 3.8)
+  ctx.lineTo(-7.5, 7.5)
   ctx.closePath()
   ctx.fill()
   ctx.stroke()
+  ctx.restore()
   ctx.restore()
 }
 

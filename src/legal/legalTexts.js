@@ -22,7 +22,7 @@ const C = CONTROLLER
 export const DOCS = {
   kvkk: {
     title: 'KVKK Aydınlatma Metni',
-    intro: `Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu'nun (“KVKK”) 10. maddesi ve Aydınlatma Yükümlülüğünün Yerine Getirilmesinde Uyulacak Usul ve Esaslar Hakkında Tebliğ uyarınca, Rastla'yı kullanırken kişisel verilerinin nasıl işlendiğini açıklamak için hazırlanmıştır.`,
+    intro: `Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu'nun (“KVKK”) 10. maddesi ve Aydınlatma Yükümlülüğünün Yerine Getirilmesinde Uyulacak Usul ve Esaslar Hakkında Tebliğ uyarınca, Plaka82'yi kullanırken kişisel verilerinin nasıl işlendiğini açıklamak için hazırlanmıştır.`,
     sections: [
       {
         h: '1. Veri sorumlusu',
@@ -86,11 +86,11 @@ export const DOCS = {
 
   terms: {
     title: 'Kullanım Şartları',
-    intro: 'Rastla hesabı oluşturarak ve oyunu kullanarak aşağıdaki şartları kabul etmiş olursun.',
+    intro: 'Plaka82 hesabı oluşturarak ve oyunu kullanarak aşağıdaki şartları kabul etmiş olursun.',
     sections: [
       {
         h: '1. Yaş sınırı',
-        p: ['Rastla 18 yaş ve üzeri kullanıcılar içindir. Kayıt olarak 18 yaşını doldurduğunu beyan edersin. 18 yaşından küçük olduğu anlaşılan hesaplar kapatılabilir.'],
+        p: ['Plaka82 18 yaş ve üzeri kullanıcılar içindir. Kayıt olarak 18 yaşını doldurduğunu beyan edersin. 18 yaşından küçük olduğu anlaşılan hesaplar kapatılabilir.'],
       },
       {
         h: '2. Hesap',

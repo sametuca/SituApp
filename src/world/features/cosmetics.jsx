@@ -862,8 +862,8 @@ export function useCosmetics({ net, say, touch, home, homeItems, venue, focusRef
   const settingsSections = [
     <section key="wardrobe" className="flex items-center gap-3">
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-black text-[#4a3b5c]">👗 Gardırop</p>
-        <p className="text-xs font-semibold text-[#8a7a9c]">Kombinler, saç/kıyafet rengi, aksesuar ve evcil hayvan. {gifts.length > 0 && `🎁 ${gifts.length} hediyen var (evinde Döşe → Hediyeler).`}</p>
+        <p className="text-sm font-black text-[#4a3b5c]">Gardırop</p>
+        <p className="text-xs font-semibold text-[#8a7a9c]">Kombinler, saç/kıyafet rengi, aksesuar ve evcil hayvan. {gifts.length > 0 && `${gifts.length} hediyen var (evinde Döşe → Hediyeler).`}</p>
       </div>
       <button onClick={() => setPanel('wardrobe')} className="shrink-0 rounded-2xl bg-[#a88bff] px-4 py-2.5 text-sm font-extrabold text-white shadow-soft active:scale-95">
         Aç

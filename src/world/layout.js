@@ -112,7 +112,7 @@ export const BUILDINGS = [
   b(41.5, -9.7, 7, 8, 5.5, 'pink', 's', '🍹 Hard Rök', { shop: true }),
   b(19, 9.7, 7, 6, 5, 'blue', 'n', '🎮 Playstasyon', { shop: true }),
   b(30, 9.7, 8, 6, 5.5, 'yellow', 'n', '🍔 Bulgur King', { shop: true }),
-  b(41, 9.7, 7, 6, 5, 'mint', 'n', '🏋️ MakFit', { shop: true }),
+  b(41, 9.7, 7, 6, 5, 'mint', 'n'),
 
   // Plaj Yolu (güney) — Starbucket plaj yolunda, karşısında mavi logolu Teknel
   b(-9.7, 19, 6, 7, 5, 'blue', 'e', '🍦 Nevarlanda', { shop: true }),
@@ -131,8 +131,10 @@ export const BUILDINGS = [
   b(28, 41, 10, 8, 5.5, 'peach', 'n'),
   b(41, 41, 8, 8, 5.5, 'yellow', 'n'),
 
-  // Herkesin kendi evine girdiği kapı (plaja yakın sakin köşe)
-  bw(-18, 36.5, 5, 5, 4.6, 'mint', 'e', '🏠 Evim', { homeDoor: true }),
+  // Herkesin kendi evine girdiği kapı (sahile dönük, önü açık ve parlak)
+  bw(-18, 36.5, 5, 5, 4.6, 'yellow', 's', '🏠 Evim', { homeDoor: true }),
+  // Spor kulübü (sahil kenarında, plaja dönük)
+  bw(20, 36.5, 7, 6, 5, 'mint', 's', '🏋️ MakFit', { shop: true }),
 
   // Park çardağı
   { x: G(-30, 0)[0], z: 0, gazebo: true },
@@ -229,13 +231,20 @@ PROPS.push(p('bench', -22, -5, 1.7, 0, 0), p('bench', -22, 5, 1.7, 0, Math.PI), 
 for (const x of [-19.5, -24.5]) PROPS.push(p('lamp', x, 2.6, 3, 0.35), p('lamp', x, -2.6, 3, 0.35))
 // plaj meydanı (yuvarlak, yarıçap 34): dış ve iç halkada şemsiyeli şezlong çiftleri merkeze bakar; ortada serbest alan (doğuş noktası, voleybol, etkinlikler), kıyıda palmiyeler
 export const VOLLEY_NET = { x: BEACH.x - 9, z: BEACH.z + 2, r: 5 } // voleybol filesi (istemci + sunucu ortak)
+export const BEACH_PARTY = { x: 11.5, z: 58.5, ry: -0.58 } // sahil partisi sahnesi + dans pisti (plaja doğan oyuncuları karşılar)
 {
+  // Evim (-18, 36.5), MakFit (20, 36.5) ve Beach Party (11.5, 58.5) önü ağaç/şezlongla kapanmasın
+  const nearBeachFront = (x, z) =>
+    Math.hypot(x + 18, z - 38.5) < 6.4 ||
+    Math.hypot(x - 20, z - 38.5) < 7.4 ||
+    Math.hypot(x - BEACH_PARTY.x, z - BEACH_PARTY.z) < 6.8
   const ring = (R, n, off, skipNorth) => {
     for (let i = 0; i < n; i++) {
       const a = (i / n) * Math.PI * 2 + off
       const px = BEACH.x + Math.cos(a) * R
       const pz = BEACH.z + Math.sin(a) * R
       if (skipNorth && pz < BEACH.z - R * 0.8 && Math.abs(px) < 9) continue // yol girişi açık kalsın
+      if (nearBeachFront(px, pz)) continue
       if (Math.hypot(px - VOLLEY_NET.x, pz - VOLLEY_NET.z) < VOLLEY_NET.r + 3) continue
       const ry = Math.atan2(BEACH.x - px, BEACH.z - pz) // merkeze bak
       const nx = Math.cos(ry)
@@ -246,7 +255,12 @@ export const VOLLEY_NET = { x: BEACH.x - 9, z: BEACH.z + 2, r: 5 } // voleybol f
   }
   ring(25.5, 22, Math.PI / 22, true)
   ring(17.5, 12, Math.PI / 12, false)
-  for (const a of [-2.9, -2.5, -2.0, -1.2, -0.6, -0.2, 0.3, 0.8, 1.3, 1.9, 2.4, 2.8]) PROPS.push(pw('palm', BEACH.x + Math.cos(a) * 31.5, BEACH.z + Math.sin(a) * 29, 4.6, 0.5))
+  for (const a of [-2.9, -2.5, -2.0, -1.2, -0.6, -0.2, 0.3, 0.8, 1.3, 1.9, 2.4, 2.8]) {
+    const px = BEACH.x + Math.cos(a) * 31.5
+    const pz = BEACH.z + Math.sin(a) * 29
+    if (nearBeachFront(px, pz)) continue
+    PROPS.push(pw('palm', px, pz, 4.6, 0.5))
+  }
 }
 // plaj ortamı: cankurtaran kulesi, voleybol, kum kaleleri, havalimanı terminali + park etmiş uçak (bkz. yukarıdaki Terminal)
 PROPS.push(pw('lifeguard', -22, BEACH.z + 22, 3.4, 1.0, 0.5), pw('volleyball', VOLLEY_NET.x, VOLLEY_NET.z, 4.6, 0, Math.PI / 2), pw('sandcastle', -12, BEACH.z + 28, 1.5, 0.5), pw('sandcastle', 14, BEACH.z + 29, 1.2, 0.4, 0.8), pw('sandcastle', 27, BEACH.z + 18, 1.3, 0.4, 0.3))
@@ -261,7 +275,7 @@ export const TOWELS = (() => {
       const a = (i / n) * Math.PI * 2 + off
       const x = BEACH.x + Math.cos(a) * R
       const z = BEACH.z + Math.sin(a) * R
-      if (Math.hypot(x - VOLLEY_NET.x, z - VOLLEY_NET.z) < VOLLEY_NET.r + 3 || z < BEACH.z - 20) continue
+      if (Math.hypot(x - VOLLEY_NET.x, z - VOLLEY_NET.z) < VOLLEY_NET.r + 3 || Math.hypot(x - BEACH_PARTY.x, z - BEACH_PARTY.z) < 6.8 || z < BEACH.z - 20) continue
       out.push({ x: +x.toFixed(2), z: +z.toFixed(2), ry: +(((i * 0.7) % 1.2) - 0.6).toFixed(2), c: cols[out.length % cols.length] })
     }
   }
@@ -270,7 +284,7 @@ export const TOWELS = (() => {
   return out
 })()
 // mahalle köşelerinde ağaçlar
-for (const [x, z] of [[17, -33], [17, 33], [47 - 2, 14]]) PROPS.push(p('tree', x, z, 3.6, 0.7))
+for (const [x, z] of [[17, -33], [47 - 2, 14]]) PROPS.push(p('tree', x, z, 3.6, 0.7))
 
 // dış alanlar: orman, çiçek bahçesi, gölet kıyısı, liman (tohumlu, yollardan ve binalardan uzak)
 const nearRoad = (x, z) => Math.abs(x) < ROAD_HALF + 2.5 || (x > -RING.r0 && Math.abs(z) < ROAD_HALF + 2.5) || (x <= -RING.r0 && x >= -33 && Math.abs(z) < 4) || Math.hypot(x, z) < RING.r1 + RING.side + 2 || Math.hypot(x - BEACH.x, z - BEACH.z) < BEACH.r + 3
@@ -351,6 +365,7 @@ export const COLLIDERS = [
   }),
   ...PROPS.filter((pr) => pr.r > 0).map((pr) => ({ type: 'circle', x: pr.x, z: pr.z, r: pr.r })),
   { type: 'box', x: -28.6, z: 14, hw: 1.5, hd: 1.85 }, // Posta Merkezi (jobsData.js POST_CENTER; doğuya bakar)
+  { type: 'circle', x: BEACH_PARTY.x, z: BEACH_PARTY.z, r: 2.3 }, // Beach Party DJ sahnesi
 ]
 
 export const PLAYER_RADIUS = 0.4
@@ -411,7 +426,7 @@ export const GUIDE = { x: -3.8, z: 30.2, ry: 0.3, avatar: 'mira', name: 'Rehber'
 
 // ---------- ev kapısı ve iç mekan ----------
 // Kapının önündeki nokta (şehirde): buraya gelince "Eve gir" çıkar, dışarı çıkınca buraya dönülür.
-export const HOME_DOOR = { x: G(-16, 8.5)[0], z: G(-16, 8.5)[1], radius: 2.6 }
+export const HOME_DOOR = { x: -18, z: 40.4, radius: 2.6 }
 
 // Ev odası: orijin = oda merkezi; giriş kapısı güney duvarında (+z). Şehir çizilmez, aynı koordinat sistemi.
 export const HOME_ROOM = {

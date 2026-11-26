@@ -107,7 +107,7 @@ export function useSky({ net, touch, home, venue, focusRef }) {
   const settingsSections = [
     <section key="weather" className="flex items-start gap-3">
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-black text-[#4a3b5c]">🌦️ Hava efektleri</p>
+        <p className="text-sm font-black text-[#4a3b5c]">Hava efektleri</p>
         <p className="text-xs font-semibold text-[#8a7a9c]">Yağmur, kar ve uçuşan yapraklar. Telefonun yavaşlarsa kapat.</p>
       </div>
       <Toggle on={fxOn} onClick={toggleFx} />

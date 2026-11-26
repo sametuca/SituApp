@@ -5,6 +5,21 @@ import { together } from './togetherStore'
 import { bike } from '../bikeStore'
 
 const LOCAL_KEY = 'situapp_inv_v1'
+const SEEN_KEY = 'situapp_inv_seen_v1'
+const hasSeenInv = () => {
+  try {
+    return Boolean(localStorage.getItem(SEEN_KEY))
+  } catch {
+    return false
+  }
+}
+const markSeenInv = () => {
+  try {
+    localStorage.setItem(SEEN_KEY, '1')
+  } catch {
+    /* ignore */
+  }
+}
 const readLocal = () => {
   try {
     const a = JSON.parse(localStorage.getItem(LOCAL_KEY))
@@ -24,6 +39,8 @@ const saveLocal = (list) => {
 export function useInventory({ net, say, panel, setPanel, roster, focusRef, closeInteract }) {
   const { on, send } = net
   const [items, setItems] = useState(readLocal)
+  const [unseen, setUnseen] = useState(() => !hasSeenInv())
+  const prevLenRef = useRef(items.length)
   const [offer, setOffer] = useState(null) // { offerId, fromId, fromName, item }
   const [giftPick, setGiftPick] = useState(null) // { uid, label, emoji } — kime gönderelim?
   const [targetPeer, setTargetPeer] = useState(null) // belirli bir oyuncuya ısmarlama kısayolu
@@ -32,6 +49,20 @@ export function useInventory({ net, say, panel, setPanel, roster, focusRef, clos
   const drinkTimer = useRef(null)
 
   const open = panel === 'inventory'
+
+  useEffect(() => {
+    if (items.length > prevLenRef.current && (!hasSeenInv() || prevLenRef.current === 0)) {
+      setUnseen(true)
+    }
+    prevLenRef.current = items.length
+  }, [items.length])
+
+  useEffect(() => {
+    if (open && unseen) {
+      setUnseen(false)
+      markSeenInv()
+    }
+  }, [open, unseen])
 
   useEffect(() => () => {
     clearTimeout(tipsyTimer.current)
@@ -128,13 +159,21 @@ export function useInventory({ net, say, panel, setPanel, roster, focusRef, clos
     setOffer(null)
   }
 
+  const showHighlight = unseen && items.length > 0
+
   const extraButtons = [
     {
       key: 'inventory',
       emoji: '🎒',
       label: 'Envanter',
       badge: items.length > 0 ? items.length : 0,
+      highlight: showHighlight,
+      hint: showHighlight ? 'Çantana eklendi! Tıkla 🎒' : null,
       onClick: () => {
+        if (unseen) {
+          setUnseen(false)
+          markSeenInv()
+        }
         setTargetPeer(null)
         setGiftPick(null)
         setPanel(open ? null : 'inventory')

@@ -9,7 +9,7 @@ import { PROPS } from './layout'
 import { FURNITURE, furnitureUrl } from './furniture'
 
 const AVATARS = ['zeynep', 'deniz', 'elif', 'kaan', 'mira', 'ege']
-const CITY = [...new Set([...PROPS.map((p) => p.model), '/models/venues/picnic-blanket.glb', '/models/plants/bush.glb', '/models/plants/tuft.glb', '/models/venues/surfboard-a.glb', '/models/beach/lifeguard.glb', '/models/beach/volleyball.glb', '/models/beach/sandcastle.glb', '/models/airport/toy-plane.glb', '/models/venues/surfboard-b.glb'])]
+const CITY = [...new Set([...PROPS.map((p) => p.model), '/models/venues/picnic-blanket.glb', '/models/plants/bush.glb', '/models/plants/tuft.glb', '/models/venues/surfboard-a.glb', '/models/venues/surfboard-b.glb', '/models/venues/dj-stand.glb', '/models/club/club-ball.glb', '/models/club/club-speaker.glb', '/models/beach/lifeguard.glb', '/models/beach/volleyball.glb', '/models/beach/sandcastle.glb', '/models/airport/toy-plane.glb'])]
 const VENUE_ITEMS = [
   'arcade-cabinet', 'bakery-oven', 'bar-stool', 'bottle-shelf', 'cake-display', 'camera-tripod', 'cash-register', 'claw-machine', 'clothes-rack', 'coffee-machine',
   'counter', 'dj-stand', 'icecream-freezer', 'karaoke-mic', 'salon-chair', 'salon-mirror', 'samovar', 'softbox-light', 'stage-podium', 'surfboard-a', 'surfboard-b', 'world-globe',

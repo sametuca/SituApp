@@ -233,14 +233,14 @@ export default function profile(ctx) {
           age = ageFromBirthDate(birthRaw)
           if (age === null || age < 18 || age > 99) {
             send(me.ws, { t: 'profile_error', field: 'birthDate' })
-            return info(me, '🔞 Rastla yalnızca 18 yaş ve üzeri içindir. Geçerli bir doğum tarihi seç.')
+            return info(me, '🔞 Plaka82 yalnızca 18 yaş ve üzeri içindir. Geçerli bir doğum tarihi seç.')
           }
           birthDate = birthRaw
         } else if (raw.age !== null && raw.age !== undefined && raw.age !== '') {
           age = Number(raw.age)
           if (!Number.isInteger(age) || age < 18 || age > 99) {
             send(me.ws, { t: 'profile_error', field: 'age' })
-            return info(me, '🔞 Rastla yalnızca 18 yaş ve üzeri içindir. Yaşın 18–99 arasında olmalı.')
+            return info(me, '🔞 Plaka82 yalnızca 18 yaş ve üzeri içindir. Yaşın 18–99 arasında olmalı.')
           }
         }
         me.lastProfileSave = now

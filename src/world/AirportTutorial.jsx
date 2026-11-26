@@ -1,13 +1,20 @@
-import { Suspense, useRef, useState } from 'react'
+import { Suspense, useMemo, useRef, useState } from 'react'
 import { TopDock } from '../components/Dock'
 import { useFrame } from '@react-three/fiber'
 import { Html, useGLTF } from '@react-three/drei'
+import { Shape } from 'three'
 import { screenK } from './screenK'
 import { DoorPrompt } from './Social'
 
 const TUT_STAR = { x: 1.4, z: 1.5 }
 const TUT_DOOR = { x: -7.0, z: -0.4 }
 const TUT_EXIT = { x: 0, z: 4.1 }
+
+const TARGET_FOR = {
+  collect: { ...TUT_STAR, color: '#fdb252' },
+  door: { ...TUT_DOOR, color: '#6fd1a6' },
+  exit: { ...TUT_EXIT, color: '#fdb252' },
+}
 
 const CONFETTI = Array.from({ length: 18 }, (_, i) => ({
   dx: Math.round(Math.cos((i / 18) * Math.PI * 2) * (65 + (i % 3) * 28)),
@@ -18,11 +25,86 @@ const CONFETTI = Array.from({ length: 18 }, (_, i) => ({
 }))
 
 const STEPS = [
-  { id: 'collect', short: 'Eşya', emoji: '⭐', title: 'Önündeki parlayan yıldızı topla!', hint: 'Yıldıza yaklaş ve E tuşuna bas (ya da dokun).' },
-  { id: 'door', short: 'Kapı', emoji: '🚪', title: 'Soldaki örnek mekân kapısını dene!', hint: 'Kapıya yaklaş ve E ile içeri gir.' },
-  { id: 'wardrobe', short: 'Stil', emoji: '👗', title: 'Gardıroptan tarzını seç!', hint: 'Soldaki parlayan 👗 düğmesine bas ve görünümünü kaydet.' },
-  { id: 'exit', short: 'Çıkış', emoji: '🏖️', title: 'Hazırsın! Şehre çıkış yap.', hint: 'Güneydeki çıkış kapısından E ile plaja çık.' },
+  { id: 'collect', emoji: '⭐', title: 'Okları takip et, yıldızı al', hint: 'Yere tıklayarak ya da tuşlarla yürü, yaklaşınca E’ye bas.' },
+  { id: 'inventory', emoji: '🎒', title: 'Çantanı (Envanter) aç', hint: 'Aldığın hediye soldaki 🎒 çantanda. Tıklayıp göz at!' },
+  { id: 'door', emoji: '🚪', title: 'Örnek mekân kapısını dene', hint: 'Yerdeki okları takip et, kapı önünde E’ye bas.' },
+  { id: 'wardrobe', emoji: '👗', title: 'Gardıroptan tarzını seç', hint: 'Soldaki 👗 düğmesine bas ve görünümünü kaydet.' },
+  { id: 'exit', emoji: '🏖️', title: 'Hazırsın! Şehre çıkış yap', hint: 'Okları takip edip çıkış kapısından plaja in.' },
 ]
+
+/** Oyuncunun ayağından aktif hedefe uzanan, sırayla parlayan 3D yer okları. */
+function FloorArrows({ focusRef, target }) {
+  const grpRef = useRef()
+  const meshes = useRef([])
+  const chevron = useMemo(() => {
+    // XY düzleminde ucu -Y'de: rotation.x = -PI/2 ile ucu yerel +Z'ye (hedefe) bakar
+    const sh = new Shape()
+    sh.moveTo(0, -0.34)
+    sh.lineTo(0.32, 0.14)
+    sh.lineTo(0.18, 0.24)
+    sh.lineTo(0, -0.04)
+    sh.lineTo(-0.18, 0.24)
+    sh.lineTo(-0.32, 0.14)
+    sh.closePath()
+    return sh
+  }, [])
+
+  useFrame(({ clock }) => {
+    const g = grpRef.current
+    if (!g) return
+    if (!target) {
+      g.visible = false
+      return
+    }
+    const f = focusRef.current
+    const dx = target.x - f.x
+    const dz = target.z - f.z
+    const dist = Math.hypot(dx, dz)
+    if (dist < 1.6) {
+      g.visible = false
+      return
+    }
+    g.visible = true
+    g.position.set(f.x, 0.07, f.z)
+    g.rotation.y = Math.atan2(dx, dz)
+
+    const count = 5
+    const startOff = 0.95
+    const usable = Math.max(0.4, dist - 1.9)
+    const t = clock.elapsedTime * 3.4
+    for (let i = 0; i < count; i++) {
+      const m = meshes.current[i]
+      if (!m) continue
+      const frac = (i + 0.5) / count
+      const zPos = startOff + frac * usable
+      if (zPos > dist - 0.85) {
+        m.visible = false
+        continue
+      }
+      m.visible = true
+      m.position.set(0, 0, zPos)
+      const wave = 0.5 + 0.5 * Math.sin(t - i * 0.9)
+      const sc = 0.78 + wave * 0.22
+      m.scale.set(sc, sc, 1)
+      m.material.opacity = 0.35 + wave * 0.6
+    }
+  })
+
+  return (
+    <group ref={grpRef} visible={false}>
+      {[0, 1, 2, 3, 4].map((i) => (
+        <mesh
+          key={i}
+          ref={(el) => (meshes.current[i] = el)}
+          rotation={[-Math.PI / 2, 0, 0]}
+        >
+          <shapeGeometry args={[chevron]} />
+          <meshBasicMaterial color={target?.color ?? '#fdb252'} transparent opacity={0.85} depthWrite={false} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
 
 function Beacon({ x, z, color, label, children }) {
   const ring = useRef()
@@ -96,8 +178,11 @@ export function AirportTutorialScene({ step, focusRef, onNear }) {
     }
   })
 
+  const target = TARGET_FOR[step] ?? null
+
   return (
     <>
+      <FloorArrows focusRef={focusRef} target={target} />
       {step === 'collect' && (
         <Beacon x={TUT_STAR.x} z={TUT_STAR.z} color="#ffd35e" label="⭐ Topla (E)">
           <Suspense fallback={null}>
@@ -111,45 +196,48 @@ export function AirportTutorialScene({ step, focusRef, onNear }) {
   )
 }
 
-/** Üst görev takip kartı, konfeti kutlaması ve yakın istemi. */
-export function AirportTutorialHud({ step, near, touch, celebrate, onCollect, onDoor, onOpenWardrobe, onSkip }) {
+/** Sade, kalabalık yaratmayan üst görev kartı, konfeti kutlaması ve yakın istemi. */
+export function AirportTutorialHud({ step, near, touch, celebrate, onCollect, onDoor, onOpenInventory, onOpenWardrobe, onSkip }) {
   const idx = STEPS.findIndex((s) => s.id === step)
   const cur = STEPS[idx]
   if (!cur) return null
 
   return (
     <>
-      {/* sadeleştirilmiş görev kartı */}
-      <TopDock><div className="relative pointer-events-auto w-[min(92vw,28rem)] animate-pop rounded-[1.75rem] border-2 border-white bg-white/95 px-5 py-4 shadow-toy backdrop-blur-md sm:">
+      <TopDock><div className="relative pointer-events-auto w-[min(92vw,24rem)] animate-pop rounded-3xl border-2 border-white bg-white/94 px-4 py-3 shadow-toy backdrop-blur-md">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span className="rounded-full bg-[#fff3c8] px-3 py-0.5 text-xs font-black text-[#8a5a00]">
-              Görev {idx + 1}/{STEPS.length}
+            <span className="rounded-full bg-[#fff3c8] px-2.5 py-0.5 text-[11px] font-black text-[#8a5a00]">
+              {idx + 1}/{STEPS.length}
             </span>
             <div className="flex items-center gap-1" aria-hidden>
               {STEPS.map((s, i) => (
                 <span
                   key={s.id}
-                  className={`h-2 rounded-full transition-all ${
-                    i < idx ? 'w-2 bg-[#7fd8a8]' : i === idx ? 'w-5 bg-[#a88bff]' : 'w-2 bg-[#e8dff8]'
+                  className={`h-1.5 rounded-full transition-all ${
+                    i < idx ? 'w-1.5 bg-[#7fd8a8]' : i === idx ? 'w-4 bg-[#fdb252]' : 'w-1.5 bg-[#e8dff8]'
                   }`}
                 />
               ))}
             </div>
           </div>
-          <button onClick={onSkip} className="rounded-full px-2.5 py-0.5 text-xs font-extrabold text-[#8a7a9c] transition hover:bg-[#f6f0ff]">
+          <button onClick={onSkip} className="rounded-full px-2 py-0.5 text-[11px] font-extrabold text-[#8a7a9c] transition hover:bg-[#f6f0ff]">
             Atla ›
           </button>
         </div>
 
-        <div className="mt-3 flex items-center gap-3.5">
-          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#f6f0ff] text-2xl">{cur.emoji}</span>
+        <div className="mt-2 flex items-center gap-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#fff7eb] text-xl">{cur.emoji}</span>
           <div className="min-w-0 flex-1">
-            <p className="text-base font-black leading-snug text-[#4a3b5c] sm:text-lg">{cur.title}</p>
-            <p className="mt-0.5 text-xs font-semibold text-[#8a7a9c] sm:text-sm">{cur.hint}</p>
+            <p className="text-sm font-black leading-snug text-[#4a3b5c] sm:text-base">{cur.title}</p>
+            <p className="mt-0.5 text-[11px] font-semibold leading-snug text-[#8a7a9c] sm:text-xs">{cur.hint}</p>
           </div>
-          {step === 'wardrobe' ? (
-            <button onClick={onOpenWardrobe} className="shrink-0 rounded-2xl border-b-4 border-[#7a5fd0] bg-[#a88bff] px-4 py-2 text-sm font-black text-white shadow-soft active:translate-y-[2px] active:border-b-2">
+          {step === 'inventory' ? (
+            <button onClick={onOpenInventory} className="shrink-0 rounded-2xl border-b-4 border-[#d98a1c] bg-[#fdb252] px-3.5 py-1.5 text-xs font-black text-white shadow-soft active:translate-y-[2px] active:border-b-2">
+              🎒 Aç
+            </button>
+          ) : step === 'wardrobe' ? (
+            <button onClick={onOpenWardrobe} className="shrink-0 rounded-2xl border-b-4 border-[#7a5fd0] bg-[#a88bff] px-3.5 py-1.5 text-xs font-black text-white shadow-soft active:translate-y-[2px] active:border-b-2">
               👗 Aç
             </button>
           ) : null}

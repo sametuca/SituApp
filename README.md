@@ -1,4 +1,4 @@
-# Rastla
+# Plaka82
 
 **An open-source, browser-native 3D multiplayer social world** — built with React Three Fiber, Three.js, and WebSocket. No game engine required.
 

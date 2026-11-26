@@ -10,6 +10,8 @@ import { facadeOf } from './facadeData'
 import Prop, { InstancedPropGroup } from './Prop'
 import Plants from './Plants'
 import TownDetails from './TownDetails'
+import BeachParty from './BeachParty'
+import TurkishFlags from './TurkishFlags'
 import { Em } from '../components/emoji'
 import { SKY_MATS, skyLive } from './Sky'
 import { worldClock } from './worldClock'
@@ -341,7 +343,7 @@ const STYLES = [
 const lighten = (hex, t) => `#${new Color(hex).lerp(new Color('#ffffff'), t).getHexString()}`
 
 /** Balonsu pasterize cephe/duvar paneli: renk + yumuşak kabartma haritasıyla pofuduk kil görünümü. */
-function Panel({ tex, w, h, color, position, rotation, repeat }) {
+function Panel({ tex, w, h, color, position, rotation, repeat, emissive, emissiveIntensity = 0 }) {
   const pair = useMemo(() => getWallPair(tex), [tex])
   const { map, bumpMap } = useMemo(() => {
     const m = WALL_TEX[tex] ?? 2.4
@@ -356,7 +358,7 @@ function Panel({ tex, w, h, color, position, rotation, repeat }) {
   return (
     <mesh position={position} rotation={rotation} receiveShadow>
       <planeGeometry args={[w, h]} />
-      <meshStandardMaterial color={color} map={map} bumpMap={bumpMap} bumpScale={0.042} roughness={0.56} />
+      <meshStandardMaterial color={color} map={map} bumpMap={bumpMap} bumpScale={0.042} roughness={emissive ? 0.42 : 0.56} emissive={emissive ?? '#000000'} emissiveIntensity={emissiveIntensity} />
     </mesh>
   )
 }
@@ -381,7 +383,7 @@ function GableRoof({ w, d, h, mat }) {
   )
 }
 
-function Roof({ w, d, h, color, type }) {
+function Roof({ w, d, h, color, type, emissive, emissiveIntensity = 0 }) {
   const tint = lighten(color, 0.35)
   const shingle = useMemo(() => getPuffyShinglePair(), [])
   const { map, bumpMap } = useMemo(() => {
@@ -391,7 +393,7 @@ function Roof({ w, d, h, color, type }) {
       bumpMap: sharedTexture(shingle.bump, 'broof_puffy', setup),
     }
   }, [shingle])
-  const mat = <meshStandardMaterial color={color} map={map} bumpMap={bumpMap} bumpScale={0.055} roughness={0.48} />
+  const mat = <meshStandardMaterial color={color} map={map} bumpMap={bumpMap} bumpScale={0.055} roughness={emissive ? 0.36 : 0.48} emissive={emissive ?? '#000000'} emissiveIntensity={emissiveIntensity} />
   if (type === 'gable') {
     return <GableRoof w={w} d={d} h={h} mat={mat} />
   }
@@ -542,18 +544,32 @@ function Building({ b, i, focusRef }) {
   const fac = facadeOf(b)
   const doorShift = ((i * 7) % 3 - 1) * 0.12 * w // sıradan binalarda kapı biraz kayık (hepsi aynı görünmesin)
   const ww = Math.min(1.5, w / count - 0.8)
+  const isHome = Boolean(b.homeDoor)
   return (
     <group ref={grp} position={[b.x, 0, b.z]} rotation={[0, FACING[facing], 0]}>
-      <Flat x={0} z={d / 2 + 1.6} w={w + 1.4} d={3.4} y={0.038} tex="cobble" color="#f6efe6" />
+      <Flat x={0} z={d / 2 + 1.6} w={w + 1.4} d={3.4} y={0.038} tex="cobble" color={isHome ? '#fffbf0' : '#f6efe6'} />
+      {isHome && (
+        <>
+          <mesh position={[0, 0.055, d / 2 + 1.35]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[0.72, 1.05, 36]} />
+            <meshStandardMaterial color="#ffd35e" emissive="#ffd35e" emissiveIntensity={0.85} transparent opacity={0.88} />
+          </mesh>
+          <pointLight position={[0, 3.1, d / 2 + 1.5]} color="#ffe9ad" intensity={3.8} distance={10} decay={2} />
+        </>
+      )}
       <RoundedBox args={[w, h, d]} radius={0.35} smoothness={2} position={[0, h / 2, 0]} castShadow receiveShadow>
-        <primitive object={stdMat(color, 0.55)} attach="material" />
+        {isHome ? (
+          <meshStandardMaterial color="#fff8e0" emissive="#ffeaad" emissiveIntensity={0.28} roughness={0.38} />
+        ) : (
+          <primitive object={stdMat(color, 0.55)} attach="material" />
+        )}
       </RoundedBox>
       {/* Meshy cephe dokusu: dört yüzeyde ince paneller (köşeler yuvarlak ve düz renkli kalır) */}
-      <Panel tex={st.wall} w={w - 0.5} h={h - 0.4} color={wallColor} position={[0, h / 2, d / 2 + 0.012]} />
-      <Panel tex={st.wall} w={w - 0.5} h={h - 0.4} color={wallColor} position={[0, h / 2, -d / 2 - 0.012]} rotation={[0, Math.PI, 0]} />
-      <Panel tex={st.wall} w={d - 0.5} h={h - 0.4} color={wallColor} position={[w / 2 + 0.012, h / 2, 0]} rotation={[0, Math.PI / 2, 0]} />
-      <Panel tex={st.wall} w={d - 0.5} h={h - 0.4} color={wallColor} position={[-w / 2 - 0.012, h / 2, 0]} rotation={[0, -Math.PI / 2, 0]} />
-      <Roof w={w} d={d} h={h} color={roof} type={roofType} />
+      <Panel tex={st.wall} w={w - 0.5} h={h - 0.4} color={isHome ? '#fffdf5' : wallColor} emissive={isHome ? '#ffe9a8' : undefined} emissiveIntensity={isHome ? 0.25 : 0} position={[0, h / 2, d / 2 + 0.012]} />
+      <Panel tex={st.wall} w={w - 0.5} h={h - 0.4} color={isHome ? '#fffdf5' : wallColor} emissive={isHome ? '#ffe9a8' : undefined} emissiveIntensity={isHome ? 0.25 : 0} position={[0, h / 2, -d / 2 - 0.012]} rotation={[0, Math.PI, 0]} />
+      <Panel tex={st.wall} w={d - 0.5} h={h - 0.4} color={isHome ? '#fffdf5' : wallColor} emissive={isHome ? '#ffe9a8' : undefined} emissiveIntensity={isHome ? 0.25 : 0} position={[w / 2 + 0.012, h / 2, 0]} rotation={[0, Math.PI / 2, 0]} />
+      <Panel tex={st.wall} w={d - 0.5} h={h - 0.4} color={isHome ? '#fffdf5' : wallColor} emissive={isHome ? '#ffe9a8' : undefined} emissiveIntensity={isHome ? 0.25 : 0} position={[-w / 2 - 0.012, h / 2, 0]} rotation={[0, -Math.PI / 2, 0]} />
+      <Roof w={w} d={d} h={h} color={isHome ? '#ffd866' : roof} type={roofType} emissive={isHome ? '#ffcf54' : undefined} emissiveIntensity={isHome ? 0.24 : 0} />
       {st.chimney && roofType !== 'flat' && (
         <RoundedBox args={[0.8, 1.8, 0.8]} radius={0.1} smoothness={2} position={[w * 0.28, h + 2.2, -d * 0.15]} castShadow>
           <meshStandardMaterial color={lighten(roof, 0.1)} roughness={0.6} />
@@ -1424,6 +1440,8 @@ export default function City({ focusRef }) {
       <SkyBalloon />
       <SpeedRings />
       <BeachPier />
+      <BeachParty />
+      <TurkishFlags />
       <TownDetails focusRef={focusRef} />
 
       {/* zemin ve mahalle zeminleri */}

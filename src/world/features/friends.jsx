@@ -559,7 +559,7 @@ export function useFriends({ net, say, focusRef, home, venue, panel, setPanel, o
   const settingsSections = [
     <section key="notify" className="flex items-start gap-3">
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-black text-[#4a3b5c]">🔔 Tarayıcı bildirimi</p>
+        <p className="text-sm font-black text-[#4a3b5c]">Tarayıcı bildirimi</p>
         <p className="text-xs font-semibold text-[#8a7a9c]">
           {perm === 'unsupported'
             ? 'Bu tarayıcı bildirimleri desteklemiyor. Sekme arka plandayken başlık yanıp söner.'

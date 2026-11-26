@@ -326,12 +326,12 @@ export function useProfile({ net, say, panel, setPanel, home }) {
 
   const settingsSections = [
     <section key="profile">
-      <p className="text-sm font-black text-[#4a3b5c]">💗 Profilim</p>
+      <p className="text-sm font-black text-[#4a3b5c]">Profilim</p>
       <p className="mt-0.5 text-xs font-semibold text-[#8a7a9c]">
         {isEmpty(mine) ? 'Henüz doldurmadın. Hakkında, yaşın, şehrin ve ilgi alanların diğer oyunculara görünür.' : `${mine.age ? `${mine.age} yaş · ` : ''}${mine.city || 'şehir yok'} · ${mine.tags?.length ?? 0} ilgi alanı`}
       </p>
       <button onClick={() => setPanel('profile')} className="mt-2 rounded-2xl bg-[#fff2e3] px-4 py-2 text-sm font-extrabold text-[#926021] active:scale-95">
-        ✏️ Profilimi düzenle
+        Profilimi düzenle
       </button>
     </section>,
   ]
