@@ -18,8 +18,8 @@ const MODES = [
   { id: 'dusk', emoji: '🌇', label: 'Hep gün batımı', hour: 19.2 },
   { id: 'night', emoji: '🌙', label: 'Hep gece', hour: 23 },
 ]
-const WEATHER_EMOJI = { clear: '', rain: '🌧️', snow: '❄️', leaves: '🍂', petals: '🌸', fog: '🌫️' }
-const WEATHER_NAME = { clear: 'Açık', rain: 'Yağmurlu', snow: 'Karlı', leaves: 'Yaprak savruluyor', petals: 'Çiçek yaprakları', fog: 'Sisli' }
+const WEATHER_EMOJI = { clear: '', snow: '❄️', leaves: '🍂', petals: '🌸', fog: '🌫️' }
+const WEATHER_NAME = { clear: 'Açık', snow: 'Karlı', leaves: 'Yaprak savruluyor', petals: 'Çiçek yaprakları', fog: 'Sisli' }
 const WEATHERS = Object.keys(WEATHER_NAME)
 
 const read = (key, fallback) => {
@@ -47,8 +47,8 @@ function Toggle({ on, onClick }) {
   )
 }
 
-// Gece-gündüz döngüsü şimdilik kapalı: oyun hep gündüz (tatlı, aydınlık görünüm). Geri açmak için false yap. Test için ?hour= ve ?daylen= yine çalışır.
-const DAY_ONLY = true
+// Güneşli gündüz + gün batımı + yıldızlı gece döngüsü açık (yağmur iptal).
+const DAY_ONLY = false
 
 export function useSky({ net, touch, home, venue, focusRef }) {
   const { on } = net
@@ -57,20 +57,20 @@ export function useSky({ net, touch, home, venue, focusRef }) {
   const dayLen = Number(q.get('daylen')) > 0 ? Number(q.get('daylen')) : null // dakika
   const urlWeather = WEATHERS.includes(q.get('weather')) ? q.get('weather') : null
 
-  const [mode] = useState(() => (MODES.some((m) => m.id === read(MODE_KEY, 'real')) ? read(MODE_KEY, 'real') : 'real'))
+  const [mode, setMode] = useState(() => (MODES.some((m) => m.id === read(MODE_KEY, 'real')) ? read(MODE_KEY, 'real') : 'real'))
   const [fxOn, setFxOn] = useState(() => read(FX_KEY, '1') !== '0')
   const [srvWeather, setSrvWeather] = useState('clear')
   const [eventOn, setEventOn] = useState(false)
   const weather = urlWeather ?? srvWeather
 
-  // sunucudan hava + etkinlik bilgisi
+  // sunucudan hava + etkinlik bilgisi (yağmur gelse bile 'clear' yapılır)
   useEffect(() => {
     const offs = [
       on('welcome', (m) => {
         setSrvWeather(WEATHERS.includes(m.weather) ? m.weather : 'clear')
         setEventOn(Boolean(m.event))
       }),
-      on('weather', (m) => WEATHERS.includes(m.w) && setSrvWeather(m.w)),
+      on('weather', (m) => setSrvWeather(WEATHERS.includes(m.w) ? m.w : 'clear')),
       on('event', (m) => setEventOn(Boolean(m.event))),
     ]
     return () => offs.forEach((off) => off())
@@ -104,11 +104,34 @@ export function useSky({ net, touch, home, venue, focusRef }) {
     write(FX_KEY, v ? '1' : '0')
   }
 
+  const pickMode = (id) => {
+    setMode(id)
+    write(MODE_KEY, id)
+  }
+
   const settingsSections = [
+    <section key="time" className="flex flex-col gap-2">
+      <div>
+        <p className="text-sm font-black text-[#4a3b5c]">🌗 Gün / Gece Döngüsü</p>
+        <p className="text-xs font-semibold text-[#8a7a9c]">Gerçek saate göre güneşli gündüz ve gece ya da sabit bir zaman seç.</p>
+      </div>
+      <div className="grid grid-cols-2 gap-1.5">
+        {MODES.map((m) => (
+          <button
+            key={m.id}
+            type="button"
+            onClick={() => pickMode(m.id)}
+            className={`rounded-xl px-2.5 py-2 text-xs font-black transition ${mode === m.id ? 'bg-[#a88bff] text-white shadow-sm' : 'bg-[#f6f0ff] text-[#5b4678]'}`}
+          >
+            {m.emoji} {m.label}
+          </button>
+        ))}
+      </div>
+    </section>,
     <section key="weather" className="flex items-start gap-3">
       <div className="min-w-0 flex-1">
         <p className="text-sm font-black text-[#4a3b5c]">Hava efektleri</p>
-        <p className="text-xs font-semibold text-[#8a7a9c]">Yağmur, kar ve uçuşan yapraklar. Telefonun yavaşlarsa kapat.</p>
+        <p className="text-xs font-semibold text-[#8a7a9c]">Kar ve uçuşan yapraklar. Telefonun yavaşlarsa kapat.</p>
       </div>
       <Toggle on={fxOn} onClick={toggleFx} />
     </section>,

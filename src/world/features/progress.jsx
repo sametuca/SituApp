@@ -260,10 +260,21 @@ export function useProgress({ net, say, focusRef, home, venue, panel, setPanel, 
   }, [panel, send])
 
   const remaining = prog ? prog.quests.filter((q) => !q.done).length : 0
-  const extraButtons = [
-    { key: 'quests', icon: 'quests', label: 'Görevler ve rozetler', onClick: () => setPanel('quests'), badge: remaining || undefined },
-    ...(event ? [{ key: 'event', emoji: event.emoji, label: event.name, onClick: () => setPanel('event') }] : []),
-  ]
+  const menuNodes = (
+    <>
+      <button onClick={() => setPanel('quests')} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#fff8f0]">
+        <span className="text-lg">⭐</span>
+        <span className="flex-1">Görevler ve Rozetler</span>
+        {remaining > 0 && <span className="rounded-full bg-[#fdb252] px-2 py-0.5 text-[11px] font-black text-white">{remaining}</span>}
+      </button>
+      {event && (
+        <button onClick={() => setPanel('event')} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#fff8f0]">
+          <span className="text-lg">{event.emoji}</span>
+          <span className="flex-1">{event.name}</span>
+        </button>
+      )}
+    </>
+  )
 
   const settingsSections = [
     <section key="fx" className="flex items-start gap-3">
@@ -307,5 +318,5 @@ export function useProgress({ net, say, focusRef, home, venue, panel, setPanel, 
   )
 
   const worldEffects = event && fxOn && !home && !venue ? <EventFx fx={event.fx} focusRef={focusRef} /> : null
-  return { extraButtons, settingsSections, overlays, worldEffects }
+  return { menuNodes, menuBadge: remaining, settingsSections, overlays, worldEffects }
 }

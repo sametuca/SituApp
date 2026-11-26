@@ -25,11 +25,11 @@ const CONFETTI = Array.from({ length: 18 }, (_, i) => ({
 }))
 
 const STEPS = [
-  { id: 'collect', emoji: '⭐', title: 'Okları takip et, yıldızı al', hint: 'Yere tıklayarak ya da tuşlarla yürü, yaklaşınca E’ye bas.' },
-  { id: 'inventory', emoji: '🎒', title: 'Çantanı (Envanter) aç', hint: 'Aldığın hediye soldaki 🎒 çantanda. Tıklayıp göz at!' },
-  { id: 'door', emoji: '🚪', title: 'Örnek mekân kapısını dene', hint: 'Yerdeki okları takip et, kapı önünde E’ye bas.' },
-  { id: 'wardrobe', emoji: '👗', title: 'Gardıroptan tarzını seç', hint: 'Soldaki 👗 düğmesine bas ve görünümünü kaydet.' },
-  { id: 'exit', emoji: '🏖️', title: 'Hazırsın! Şehre çıkış yap', hint: 'Okları takip edip çıkış kapısından plaja in.' },
+  { id: 'collect', emoji: '⭐', title: 'Önündeki yıldızı al', hint: 'Okları takip edip yaklaş, E tuşuna bas.' },
+  { id: 'inventory', emoji: '🎒', title: 'Çantanı aç', hint: 'Aldığın hediye soldaki çantanda.' },
+  { id: 'door', emoji: '🚪', title: 'Mekân kapısını dene', hint: 'Kapının önüne yürüyüp E tuşuna bas.' },
+  { id: 'wardrobe', emoji: '👗', title: 'Tarzını ayarla', hint: 'Soldaki gardıroptan görünümünü kaydet.' },
+  { id: 'exit', emoji: '🏖️', title: 'Kasabaya çık', hint: 'Güneydeki çıkış kapısından plaja in.' },
 ]
 
 /** Oyuncunun ayağından aktif hedefe uzanan, sırayla parlayan 3D yer okları. */

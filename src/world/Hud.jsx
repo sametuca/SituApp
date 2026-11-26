@@ -21,40 +21,70 @@ export function TopBar({ online, status, dnd, onExit, onHelp, onSettings, extraB
   }, [menu])
   const dot = status === 'online' ? 'bg-emerald-400' : status === 'connecting' ? 'bg-amber-400' : 'bg-rose-400'
   const label = status === 'online' ? `${online} çevrimiçi` : status === 'connecting' ? 'Bağlanıyor…' : 'Çevrimdışı (tek başına)'
+  const hasSpotlight = extraButtons.some((b) => b.hint)
   return (
-    <div
-      className="pointer-events-none absolute left-0 right-0 top-0 z-20 flex items-start justify-between gap-2 px-2.5 pb-2 sm:px-3 sm:py-3"
-      style={{ paddingTop: 'max(0.65rem, env(safe-area-inset-top))' }}
-    >
-      <div className="pointer-events-auto flex flex-col gap-1.5 sm:gap-2.5">
-        <button
-          onClick={onExit}
-          aria-label="Karakter seçimine dön"
-          className={`grid h-11 w-11 place-items-center rounded-full text-xl font-black text-[#4a3b5c] transition hover:bg-white active:scale-95 sm:h-14 sm:w-14 sm:text-2xl ${glass}`}
-        >
-          <Ico name="back" size={28} />
-        </button>
-        {extraButtons.map((b) => (
+    <>
+      {/* "Buraya tıkla" rehber odağı: ekranı karartıp hedef düğmeyi öne çıkarır */}
+      {hasSpotlight && (
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-0 z-[25] bg-[#160e29]/65 backdrop-blur-[2px] transition-opacity duration-300"
+        />
+      )}
+      <div
+        className={`pointer-events-none absolute left-0 right-0 top-0 flex items-start justify-between gap-2 px-2.5 pb-2 sm:px-3 sm:py-3 ${hasSpotlight ? 'z-30' : 'z-20'}`}
+        style={{ paddingTop: 'max(0.65rem, env(safe-area-inset-top))' }}
+      >
+        <div className="pointer-events-auto flex flex-col gap-1.5 sm:gap-2.5">
           <button
-            key={b.key}
-            onClick={b.onClick}
-            aria-label={b.label}
-            title={b.label}
-            className={`relative grid h-11 w-11 place-items-center rounded-full text-2xl transition hover:bg-white active:scale-95 sm:h-14 sm:w-14 sm:text-3xl ${glass} ${b.highlight ? 'ring-4 ring-[#fdb252] shadow-[0_0_20px_rgba(253,178,82,0.85)]' : ''}`}
+            onClick={onExit}
+            aria-label="Karakter seçimine dön"
+            className={`grid h-11 w-11 place-items-center rounded-full text-xl font-black text-[#4a3b5c] transition hover:bg-white active:scale-95 sm:h-14 sm:w-14 sm:text-2xl ${glass} ${hasSpotlight ? 'opacity-40' : ''}`}
           >
-            {b.highlight ? <span className="pointer-events-none absolute -inset-1 animate-ping rounded-full border-2 border-[#fdb252]/75" /> : null}
-            {b.icon ? <Ico name={b.icon} size={28} /> : b.emoji}
-            {b.badge ? <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full border-2 border-white bg-[#fdb252] px-1 text-[11px] font-black text-white">{b.badge}</span> : null}
-            {!b.badge && b.highlight ? <span className="absolute -right-0.5 -top-0.5 h-3 w-3 animate-ping rounded-full bg-[#fdb252]" /> : null}
-            {!b.badge && b.highlight ? <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-[#fdb252]" /> : null}
-            {b.hint ? (
-              <span className="pointer-events-none absolute left-full top-1/2 ml-2.5 -translate-y-1/2 whitespace-nowrap rounded-full border-2 border-white bg-[#fdb252] px-3 py-1 text-xs font-black text-white shadow-toy animate-bounce">
-                {b.hint}
-              </span>
-            ) : null}
+            <Ico name="back" size={28} />
           </button>
-        ))}
-      </div>
+          {extraButtons.map((b) => {
+            const spot = Boolean(b.hint)
+            return (
+              <button
+                key={b.key}
+                onClick={b.onClick}
+                aria-label={b.label}
+                title={b.label}
+                className={`relative grid h-11 w-11 place-items-center rounded-full text-2xl transition hover:bg-white active:scale-95 sm:h-14 sm:w-14 sm:text-3xl ${glass} ${
+                  spot
+                    ? 'z-40 scale-110 bg-white ring-4 ring-[#ffd35e] shadow-[0_0_34px_rgba(255,211,94,0.95)]'
+                    : b.highlight
+                      ? 'ring-4 ring-[#fdb252] shadow-[0_0_20px_rgba(253,178,82,0.85)]'
+                      : hasSpotlight
+                        ? 'opacity-35'
+                        : ''
+                }`}
+              >
+                {b.highlight || spot ? <span className="pointer-events-none absolute -inset-1.5 animate-ping rounded-full border-2 border-[#ffd35e]/85" /> : null}
+                {b.icon ? <Ico name={b.icon} size={28} /> : b.emoji}
+                {b.badge ? <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full border-2 border-white bg-[#fdb252] px-1 text-[11px] font-black text-white">{b.badge}</span> : null}
+                {!b.badge && b.highlight ? <span className="absolute -right-0.5 -top-0.5 h-3 w-3 animate-ping rounded-full bg-[#fdb252]" /> : null}
+                {!b.badge && b.highlight ? <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-[#fdb252]" /> : null}
+                {spot ? (
+                  <span className="pointer-events-none absolute left-full top-1/2 ml-3 flex -translate-y-1/2 items-center gap-2 whitespace-nowrap">
+                    <span className="flex items-center gap-0.5 text-[#ffd35e] drop-shadow-[0_2px_8px_rgba(0,0,0,0.65)] animate-point-left">
+                      <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                        <path d="M10.5 5.5 3.5 12l7 6.5V14.5h10v-5h-10V5.5Z" />
+                      </svg>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="opacity-75" aria-hidden>
+                        <path d="M10.5 5.5 3.5 12l7 6.5V14.5h10v-5h-10V5.5Z" />
+                      </svg>
+                    </span>
+                    <span className="rounded-full border-2 border-white bg-gradient-to-r from-[#ff9f43] to-[#fdb252] px-4 py-1.5 text-sm font-black text-white shadow-[0_6px_22px_rgba(253,178,82,0.75)]">
+                      {b.hint}
+                    </span>
+                  </span>
+                ) : null}
+              </button>
+            )
+          })}
+        </div>
       <div className="flex min-w-0 flex-col items-center gap-1.5 sm:gap-2">
         {/* yalnızca bağlantı sorunu ya da rahatsız etme açıkken bilgi çıkar */}
         {(status !== 'online' || dnd) && (
@@ -92,7 +122,8 @@ export function TopBar({ online, status, dnd, onExit, onHelp, onSettings, extraB
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   )
 }
 
@@ -655,20 +686,32 @@ export function HintBar() {
 }
 
 // ---------- modal çerçevesi ----------
-export function Modal({ children, onClose, label, wide = false }) {
+const MODAL_THEMES = {
+  default: 'border-white bg-white/92 text-[#4a3b5c]',
+  bag: 'border-[#f0e5d5] bg-[#fffdf9]/95 text-[#4a3b5c]',
+  dating: 'border-[#ffd6e7] bg-gradient-to-b from-[#fff6fa]/96 to-white/95 text-[#4a3b5c]',
+  gym: 'border-[#ff9f8e]/70 bg-gradient-to-b from-[#271f3d]/96 to-[#1d1630]/96 text-white',
+  pvp: 'border-[#d6c7ff] bg-gradient-to-b from-[#f5f0ff]/96 to-white/95 text-[#4a3b5c]',
+}
+
+export function Modal({ children, onClose, label, wide = false, theme = 'default', dockBottom = false }) {
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
+  const cls = MODAL_THEMES[theme] ?? MODAL_THEMES.default
   return (
-    <div className="absolute inset-0 z-30 grid place-items-center bg-[#4a3b5c]/25 p-4 backdrop-blur-[2px]" onClick={onClose}>
+    <div
+      className={`absolute inset-0 z-30 flex p-4 ${dockBottom ? 'items-end justify-center bg-transparent pointer-events-none' : 'items-center justify-center bg-[#231938]/35 backdrop-blur-[2px]'}`}
+      onClick={dockBottom ? undefined : onClose}
+    >
       <div
         role="dialog"
-        aria-modal="true"
+        aria-modal={!dockBottom}
         aria-label={label}
         onClick={(e) => e.stopPropagation()}
-        className={`relative max-h-[90svh] w-full animate-pop overflow-y-auto rounded-[2rem] border-2 border-white bg-white/90 p-5 sm:p-6 shadow-toy ${wide ? 'max-w-lg' : 'max-w-md'}`}
+        className={`pointer-events-auto relative max-h-[90svh] w-full animate-pop overflow-y-auto rounded-[2rem] border-2 p-5 sm:p-6 shadow-toy ${cls} ${wide ? 'max-w-lg' : 'max-w-md'}`}
       >
         {children}
       </div>

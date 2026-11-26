@@ -358,6 +358,11 @@ export function useNpcs(ctx) {
       window.dispatchEvent(new CustomEvent('situapp:open-mg', { detail: { game } }))
       return
     }
+    if (o.action === 'open_speed_date') {
+      setTalk(null)
+      window.dispatchEvent(new CustomEvent('situapp:open-speed-date'))
+      return
+    }
     if (o.action === 'open_boxing' || o.action === 'open_boxing_board') {
       setTalk(null)
       window.dispatchEvent(new CustomEvent('situapp:open-boxing', { detail: { mode: o.action === 'open_boxing_board' ? 'board' : 'lobby' } }))

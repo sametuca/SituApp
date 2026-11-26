@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { authService } from '../lib/auth'
 import { photoStore } from './photoStore'
+import { venueIdOf } from './venues'
 
 const ANIMS = ['idle', 'walk', 'run', 'ride'] // ride: bisiklette (sunucudaki ANIMS ile aynı sıra)
 const SEND_INTERVAL_MS = 100
@@ -33,7 +34,9 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
   const [online, setOnline] = useState(1)
   const [roster, setRoster] = useState([])
   const [spawn, setSpawn] = useState(null)
-  const [room, setRoom] = useState('city') // 'city' | 'home:<sahip anahtarı>'
+  const [room, setRoom] = useState('city') // 'city' | 'home:<sahip anahtarı>' | 'venue:<id>#<salon>'
+  const [venueChannel, setVenueChannel] = useState(1) // bulunulan mekân salonu (1, 2, ...)
+  const [venueChannels, setVenueChannels] = useState([]) // [{ ch, count, cap }]
   const [homeKey, setHomeKey] = useState(null) // kendi evimin anahtarı (sunucu verir)
   const [blocked, setBlocked] = useState([]) // engellediklerim: [{ key, name }]
   const [dnd, setDndState] = useState(false) // rahatsız etme modum
@@ -173,6 +176,9 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
           case 'room':
             roomRef.current = m.room
             setRoom(m.room)
+            setVenueChannel(m.channel ?? 1)
+            setVenueChannels(Array.isArray(m.channels) ? m.channels : [])
+            if (m.venue && m.channel) wantRoom.current = { to: 'venue', id: m.venue, ch: m.channel }
             setVisit(m.owner && m.owner !== homeKeyRef.current ? { owner: m.owner, ownerName: m.ownerName, items: m.items ?? [], tier: m.tier ?? 1 } : null)
             remotes.current.clear()
             bubbles.current.clear()
@@ -182,6 +188,9 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
             m.players.forEach(addRemote)
             syncRoster()
             onRoomRef.current?.(m)
+            break
+          case 'venue_channels':
+            if (venueIdOf(roomRef.current) === m.venue) setVenueChannels(Array.isArray(m.channels) ? m.channels : [])
             break
           case 'home_items':
             // bulunduğum evin sahibi düzeni değiştirdi
@@ -316,9 +325,9 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
     return ws?.readyState === 1
   }, [])
 
-  /** Odaya geç. target: 'city' | { owner? } (ev; owner yoksa kendi evin) | { venue: id } (girilebilir mekân). */
+  /** Odaya geç. target: 'city' | { owner? } (ev; owner yoksa kendi evin) | { venue: id, ch? } (girilebilir mekân). */
   const enterRoom = useCallback((target) => {
-    const msg = target === 'city' ? { to: 'city' } : target.venue ? { to: 'venue', id: target.venue } : { to: 'home', ...(target.owner ? { owner: target.owner } : {}) }
+    const msg = target === 'city' ? { to: 'city' } : target.venue ? { to: 'venue', id: target.venue, ...(target.ch ? { ch: target.ch } : {}) } : { to: 'home', ...(target.owner ? { owner: target.owner } : {}) }
     wantRoom.current = target === 'city' ? null : msg
     const ws = wsRef.current
     if (ws?.readyState === 1) ws.send(JSON.stringify({ t: 'room', ...msg }))
@@ -370,5 +379,5 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
   /** Bir oyuncuyu evine davet et: { to: id } ya da { name }. */
   const invite = useCallback((who) => send({ t: 'invite', ...who }), [send])
 
-  return { on, send, blocked, dnd, block, unblock, report, setDnd, status, online, roster, spawn, room, homeKey, homeTier, visit, homeSync, saveHome, setHomeOpen, invite, sendReact, sendWhisper, sendGesture, sendTyping, remotes, bubbles, reactions, whispering, typing, selfId, sendMove, sendChat, enterRoom, feedMax: FEED_MAX }
+  return { on, send, blocked, dnd, block, unblock, report, setDnd, status, online, roster, spawn, room, venueChannel, venueChannels, homeKey, homeTier, visit, homeSync, saveHome, setHomeOpen, invite, sendReact, sendWhisper, sendGesture, sendTyping, remotes, bubbles, reactions, whispering, typing, selfId, sendMove, sendChat, enterRoom, feedMax: FEED_MAX }
 }

@@ -184,3 +184,11 @@ html {
 
 /* hız halkası etiketi: belirir, yukarı süzülür, kaybolur */
 @keyframes speed-tag { 0% { opacity: 0; transform: translateY(8px) scale(0.6); } 15% { opacity: 1; transform: translateY(0) scale(1.15); } 30% { transform: translateY(-2px) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translateY(-26px) scale(1); } }
+
+@keyframes point-left {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-10px); }
+}
+.animate-point-left {
+  animation: point-left 0.85s ease-in-out infinite;
+}

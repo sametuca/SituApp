@@ -3,7 +3,7 @@ import { DockSlot, TopDockSlot } from '../components/Dock'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Environment, Lightformer, OrbitControls, useProgress } from '@react-three/drei'
-import { ACESFilmicToneMapping, PCFShadowMap } from 'three'
+import { NeutralToneMapping, PCFShadowMap } from 'three'
 import { useAuth } from '../lib/AuthContext'
 import City from '../world/City'
 import HomeRoom from '../world/HomeRoom'
@@ -24,6 +24,7 @@ import { GIFT_BY_ID } from '../world/cosmeticsData'
 import { findFreeSpot, furnitureColliders, isValid, loadHome, newUid, saveHome } from '../world/homeLayout'
 import LocalPlayer, { ClickToMoveGround } from '../world/LocalPlayer'
 import RemotePlayers, { GuideNpc, SelfTag } from '../world/RemotePlayers'
+import { NearbyPicker, VenueChannelPill } from '../world/CrowdHud'
 import { useMultiplayer } from '../world/net'
 import { ChatPanel, HelpModal, Minimap, StartGuide, TopBar } from '../world/Hud'
 import { ChatFab, ChatSheet, DoorPrompt, GestureChip, IncomingChip, InteractSheet, InviteChip, Joystick, LookJoystick, MatchOverlay, NearbyCard, SkillBar } from '../world/Social'
@@ -372,9 +373,21 @@ function WorldScene({ avatar }) {
   }, [seenKey])
 
   // Başkasının evine girerken sahne, sunucu izin verince ('room' mesajı) değişir; reddedilirse olduğun yerde kalırsın.
+  // Mekân girişinde/salon değişiminde sunucunun verdiği dağılımlı kapı konumu uygulanır (üst üste binmeyi önler).
   const visitPending = useRef(false)
   const onRoom = useCallback(
     (m) => {
+      if (m.venue && Array.isArray(m.spawn) && m.spawn.length === 2) {
+        const [sx, sz] = m.spawn
+        focusRef.current.teleport = [sx, sz, Math.PI]
+        setTimeout(() => {
+          const c = controlsRef.current
+          if (!c) return
+          c.object.position.set(sx, 6.4, sz + 9.4)
+          c.target.set(sx, 0.8, sz)
+          c.update()
+        }, 60)
+      }
       if (!visitPending.current || !m.owner) return
       visitPending.current = false
       swapScene({ owner: m.owner, ownerName: m.ownerName })
@@ -448,6 +461,16 @@ function WorldScene({ avatar }) {
       net.enterRoom({ venue: id })
     },
     [net, swapVenue],
+  )
+  const switchVenueChannel = useCallback(
+    (ch) => {
+      if (!venue || ch === net.venueChannel) return
+      setFade(true)
+      setInteractId(null)
+      net.enterRoom({ venue, ch })
+      setTimeout(() => setFade(false), 260)
+    },
+    [venue, net],
   )
   const leaveVenue = useCallback(() => {
     swapVenue('city')
@@ -593,7 +616,7 @@ function WorldScene({ avatar }) {
   const venueTh = useMemo(() => (venue ? venueTheme(venue) : null), [venue])
   const venueDim = venueTh?.dim ?? 0
   const sceneBase = useMemo(
-    () => (venueTh ? { bg: venueTh.bg, fog: [venueTh.bg, 30, 60] } : home ? { bg: '#faeee2', fog: ['#faeee2', 30, 60] } : { bg: '#dcf0ff', fog: ['#dcf0ff', 45, 122] }),
+    () => (venueTh ? { bg: venueTh.bg, fog: [venueTh.bg, 36, 76] } : home ? { bg: '#faeee2', fog: ['#faeee2', 36, 76] } : { bg: '#bce4ff', fog: ['#bce4ff', 78, 210] }),
     [venueTh, home],
   )
   const venueCollide = useMemo(() => (venue ? (x, z) => resolveVenueRoom(x, z, venueLayout(venue).colliders) : null), [venue])
@@ -865,7 +888,7 @@ function WorldScene({ avatar }) {
       <Canvas
         shadows={PCFShadowMap}
         dpr={touch ? [1, 1.5] : [1, 2]}
-        gl={{ powerPreference: 'high-performance', antialias: true, toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1.05 }}
+        gl={{ powerPreference: 'high-performance', antialias: true, toneMapping: NeutralToneMapping, toneMappingExposure: 1.02 }}
         camera={{ fov: 55, near: 0.3, far: 300, position: [start.x, 6.4, start.z + 9.4] }}
         onCreated={({ gl }) => {
           gl.domElement.addEventListener('webglcontextlost', (e) => {
@@ -877,11 +900,11 @@ function WorldScene({ avatar }) {
         <color attach="background" args={[sceneBase.bg]} />
         <fog attach="fog" args={sceneBase.fog} />
         {/* Tek karede üretilen hafif PBR ışık haritası (IBL): tüm kil/plastik/cam/su yüzeylerine modern yansıma ve derinlik katar */}
-        <Environment resolution={256} frames={1} environmentIntensity={home || venue ? 0.52 : 0.65}>
+        <Environment resolution={256} frames={1} environmentIntensity={home || venue ? 0.36 : 0.42}>
           <Lightformer form="ring" intensity={1.8} color="#fff6e0" position={[10, 14, 8]} scale={14} target={[0, 0, 0]} />
           <Lightformer form="rect" intensity={1.4} color="#bfe8ff" position={[0, 12, 0]} rotation={[Math.PI / 2, 0, 0]} scale={[26, 26, 1]} />
           <Lightformer form="rect" intensity={0.9} color="#ffe0c2" position={[-12, 4, -8]} scale={[14, 8, 1]} target={[0, 0, 0]} />
-          <Lightformer form="rect" intensity={0.65} color="#c9f0e2" position={[0, -6, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[24, 24, 1]} />
+          <Lightformer form="rect" intensity={0.75} color="#ffe8d6" position={[0, -6, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[24, 24, 1]} />
         </Environment>
         <Sky home={Boolean(home)} interior={venueTh ? { bg: venueTh.bg, fog: sceneBase.fog, dim: venueDim } : null} focusRef={focusRef} />
 
@@ -927,7 +950,7 @@ function WorldScene({ avatar }) {
         </Suspense>
         {/* Geri kalan her katman kendi yükleme bölgesinde: model gelmeyi beklerken şehir/oyuncu çizilmeye devam eder */}
         <Suspense fallback={null}>
-          <RemotePlayers roster={net.roster} remotes={net.remotes} bubbles={net.bubbles} reactions={net.reactions} whispering={net.whispering} onPick={(id) => { setChatTarget(null); chatTargetRef.current = null; setInteractId(id) }} />
+          <RemotePlayers roster={net.roster} remotes={net.remotes} bubbles={net.bubbles} reactions={net.reactions} whispering={net.whispering} touch={touch} onPick={(id) => { setChatTarget(null); chatTargetRef.current = null; setInteractId(id) }} />
         </Suspense>
         {!home && !venue && (
           <Suspense fallback={null}>
@@ -1019,6 +1042,29 @@ function WorldScene({ avatar }) {
           menuBadge={inTutorial ? 0 : feat.menuBadge}
           onExit={() => navigate('/avatar')}
           onHelp={() => setHelp(true)}
+        />
+      )}
+      {!introActive && !inTutorial && venue && net.status === 'online' && (
+        <VenueChannelPill
+          venueName={VENUE_BY_ID[venue]?.name ?? 'Mekân'}
+          channel={net.venueChannel}
+          channels={net.venueChannels}
+          inRoomCount={net.roster.length + 1}
+          onSwitch={switchVenueChannel}
+          onRefresh={() => net.send({ t: 'venue_channels', id: venue })}
+        />
+      )}
+      {!introActive && !inTutorial && !editing && !chatTarget && !interactPeer && (
+        <NearbyPicker
+          remotes={net.remotes}
+          roster={net.roster}
+          focusRef={focusRef}
+          touch={touch}
+          onPick={(id) => {
+            setChatTarget(null)
+            chatTargetRef.current = null
+            setInteractId(id)
+          }}
         />
       )}
       {!introActive && !home && !venue && <Minimap focusRef={focusRef} remotes={net.remotes} compact={touch} />}

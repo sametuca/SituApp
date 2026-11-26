@@ -28,5 +28,6 @@ import surf from './surf.js'
 import minigames from './minigames.js'
 import fitness from './fitness.js'
 import inventory from './inventory.js'
+import dating from './dating.js'
 
-export const FEATURE_FACTORIES = [moderation, games, friends, profile, progress, media, together, cosmetics, npcs, weather, venues, collect, economy, dj, housing, rental, pets, beach, pvp, jobs, surf, minigames, fitness, inventory]
+export const FEATURE_FACTORIES = [moderation, games, friends, profile, progress, media, together, cosmetics, npcs, weather, venues, collect, economy, dj, housing, rental, pets, beach, pvp, jobs, surf, minigames, fitness, inventory, dating]

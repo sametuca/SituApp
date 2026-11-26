@@ -127,8 +127,8 @@ export function applyPose(rig, pose, dt) {
       turn(rig, bones.lArm, AZ, 0.22 * b)
       turn(rig, bones.rArm, AZ, -0.22 * b)
     } else if (rig.style === 'bike') {
-      // bisiklet: sele üstüne otur, gövde öne eğilir, eller iki yandaki gidon elciklerine tam oturur
-      model.position.z = -0.10 * b
+      // bisiklet: sele üstüne otur, gövde hafif öne eğilir, kollar doğal açıyla öne uzanıp gidonu kavrar
+      model.position.z = -0.23 * b
       if (rig.moving) rig.pedal += Math.min(dt, 0.1) * 10
       const pL = rig.pedal
       const pR = rig.pedal + Math.PI
@@ -138,16 +138,15 @@ export function applyPose(rig, pose, dt) {
       turn(rig, bones.rUp, AX, (-0.95 + Math.sin(pR) * 0.38) * b)
       turn(rig, bones.lLeg, AX, (1.15 - Math.cos(pL) * 0.34) * b)
       turn(rig, bones.rLeg, AX, (1.15 - Math.cos(pR) * 0.34) * b)
-      turn(rig, bones.spine, AX, 0.36 * b)
-      // kolları elcik yüksekliğine indir (-1.26) ve omuzdan elcik genişliğine dışa aç (lArm +AY, rArm -AY)
-      turn(rig, bones.lArm, AX, -1.26 * b)
-      turn(rig, bones.rArm, AX, -1.26 * b)
-      turn(rig, bones.lArm, AY, 0.36 * b)
-      turn(rig, bones.rArm, AY, -0.36 * b)
-      turn(rig, bones.lArm, AZ, 0.16 * b)
-      turn(rig, bones.rArm, AZ, -0.16 * b)
-      turn(rig, bones.lForeArm, AX, 0.12 * b)
-      turn(rig, bones.rForeArm, AX, 0.12 * b)
+      turn(rig, bones.spine, AX, 0.24 * b)
+      turn(rig, bones.lArm, AX, -1.38 * b)
+      turn(rig, bones.rArm, AX, -1.38 * b)
+      turn(rig, bones.lArm, AY, -0.14 * b)
+      turn(rig, bones.rArm, AY, 0.14 * b)
+      turn(rig, bones.lArm, AZ, -0.06 * b)
+      turn(rig, bones.rArm, AZ, 0.06 * b)
+      turn(rig, bones.lForeArm, AX, -0.22 * b)
+      turn(rig, bones.rForeArm, AX, -0.22 * b)
     } else {
       turn(rig, bones.lUp, AX, -1.45 * b)
       turn(rig, bones.rUp, AX, -1.45 * b)
@@ -184,6 +183,28 @@ export function applyPose(rig, pose, dt) {
       turn(rig, bones.lArm, AX, (-1.35 + dig) * b)
       turn(rig, bones.rArm, AX, (-1.35 - dig) * b)
       model.position.y = -0.06 * ease(k) * b
+    } else if (rig.style === 'bench') {
+      // spor salonu ağırlık çalışma: ritmik halter kaldırma hareketi
+      const lift = 0.5 + 0.5 * Math.sin(now * 5.2)
+      turn(rig, bones.lArm, AX, (-1.65 - lift * 0.95) * b)
+      turn(rig, bones.rArm, AX, (-1.65 - lift * 0.95) * b)
+      turn(rig, bones.lForeArm, AX, (-0.75 + lift * 0.55) * b)
+      turn(rig, bones.rForeArm, AX, (-0.75 + lift * 0.55) * b)
+      turn(rig, bones.spine, AX, (-0.08 * lift) * b)
+      model.position.y = 0.04 * lift * b
+    } else if (rig.style === 'cardio') {
+      // spor salonu koşu bandı: ritmik koşu adımları ve kol salınımı
+      const stride = now * 11
+      model.position.y = (0.14 + Math.abs(Math.sin(stride)) * 0.06) * b
+      turn(rig, bones.spine, AX, 0.16 * b)
+      turn(rig, bones.lUp, AX, Math.sin(stride) * 0.65 * b)
+      turn(rig, bones.rUp, AX, -Math.sin(stride) * 0.65 * b)
+      turn(rig, bones.lLeg, AX, Math.max(0, -Math.cos(stride)) * 0.85 * b)
+      turn(rig, bones.rLeg, AX, Math.max(0, Math.cos(stride)) * 0.85 * b)
+      turn(rig, bones.lArm, AX, (-0.6 - Math.sin(stride) * 0.55) * b)
+      turn(rig, bones.rArm, AX, (-0.6 + Math.sin(stride) * 0.55) * b)
+      turn(rig, bones.lForeArm, AX, -0.7 * b)
+      turn(rig, bones.rForeArm, AX, -0.7 * b)
     }
   } else if (rig.kind === 'dance') {
     model.position.z = 0

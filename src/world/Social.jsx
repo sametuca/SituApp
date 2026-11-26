@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { HugeiconsIcon } from '@hugeicons/react'
-import { PencilEdit02Icon } from '@hugeicons/core-free-icons'
+import { Em } from '../components/emoji'
 import { SlotIcon } from '../components/SkillIcon'
 import { TopDock } from '../components/Dock'
 import { Dock } from '../components/Dock'
@@ -337,7 +336,7 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch, slots =
             title="İfadeleri düzenle"
             className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[#efe7ff] text-[#6b4fc0] transition hover:bg-[#e3d6ff] active:scale-90"
           >
-            <HugeiconsIcon icon={PencilEdit02Icon} size={16} strokeWidth={2} />
+            <Em e="✏️" size={16} />
           </button>}
         </div>
       </div>
@@ -410,7 +409,7 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch, slots =
             title="İfadeleri düzenle"
             className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[#efe7ff] text-[#6b4fc0] transition hover:bg-[#e3d6ff] active:scale-90"
           >
-            <HugeiconsIcon icon={PencilEdit02Icon} size={16} strokeWidth={2} />
+            <Em e="✏️" size={16} />
           </button>}
       </div>
     </div>

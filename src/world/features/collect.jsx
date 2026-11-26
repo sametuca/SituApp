@@ -19,15 +19,20 @@ function Bar({ value, max, tone = '#fdb252' }) {
   )
 }
 
-function CollectionPanel({ data, onClose }) {
+function CollectionPanel({ data, onClose, onTab }) {
   const [tab, setTab] = useState('kinds')
   const s = data?.s
   const found = new Set(s?.chests ?? [])
   return (
-    <Modal onClose={onClose} label="Koleksiyon">
+    <Modal onClose={onClose} label="Karakter & Koleksiyon" theme="bag">
+      <div className="mb-3 grid grid-cols-3 gap-1.5 rounded-2xl bg-[#f3ece0] p-1">
+        <button type="button" onClick={() => onTab('inventory')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">🎒 Çanta</button>
+        <button type="button" onClick={() => onTab('stats')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">💪 Statlar</button>
+        <button type="button" className="rounded-xl bg-white py-1.5 text-xs font-black text-[#4a3b5c] shadow-sm">🧺 Koleksiyon</button>
+      </div>
       <div className="flex items-center gap-2">
-        <h2 className="min-w-0 flex-1 text-2xl font-black text-[#4a3b5c]">Koleksiyonum 🧺</h2>
-        <span className="rounded-full bg-[#ffe48f] px-3 py-1 text-sm font-black text-[#7a5b00]">{s?.total ?? 0} toplandı</span>
+        <h2 className="min-w-0 flex-1 text-xl font-black text-[#4a3b5c]">Koleksiyon</h2>
+        <span className="rounded-full bg-[#ffe48f] px-3 py-1 text-xs font-black text-[#7a5b00]">{s?.total ?? 0} toplandı</span>
       </div>
       <div className="mt-3 flex gap-2" role="tablist">
         {[
@@ -218,7 +223,6 @@ export function useCollect(ctx) {
 
   return {
     xp,
-    extraButtons: [{ key: 'collection', icon: 'collection', label: 'Koleksiyon', onClick: () => setPanel('collection') }],
     sceneNodes: where ? <CollectiblesLayer where={where} focusRef={focusRef} store={store} onNear={setNear} onPick={pick} pops={pops} /> : null,
     overlays: (
       <>
@@ -227,7 +231,7 @@ export function useCollect(ctx) {
           <CollectBurst key={b.key} ev={b} onDone={() => setBursts((x) => x.filter((y) => y.key !== b.key))} />
         ))}
         {levelUp && <LevelUp level={levelUp} onDone={() => setLevelUp(null)} />}
-        {panel === 'collection' && <CollectionPanel data={data} onClose={() => setPanel(null)} />}
+        {panel === 'collection' && <CollectionPanel data={data} onTab={setPanel} onClose={() => setPanel(null)} />}
       </>
     ),
   }

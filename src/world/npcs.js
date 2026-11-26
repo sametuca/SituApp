@@ -236,7 +236,10 @@ const venueNpcs = VENUES.filter((v) => v.npc).map((v) => ({
       ? [{ label: '🎮 Renk Karosu — Düşmeden Kal!', action: 'open_mg:tiles', reply: ['Neon tulumun hazır! Söylenen renge koş, en sona kalan kazanır 🎮🔥'] }]
       : []),
     ...(v.type === 'cafe' || v.type === 'dessert'
-      ? [{ label: '☕ Barista Sipariş Yarışı', action: 'open_mg:barista', reply: ['Önlüğünü taktın! Müşteri siparişlerini katman katman en hızlı hazırla ☕🍰'] }]
+      ? [
+          { label: '💘 3 Dk Hızlı Randevu Masası', action: 'open_speed_date', reply: ['Randevu masası hazır! Eğlenceli sorularla 3 dakikada tanış 💘☕'] },
+          { label: '☕ Barista Sipariş Yarışı', action: 'open_mg:barista', reply: ['Önlüğünü taktın! Müşteri siparişlerini katman katman en hızlı hazırla ☕🍰'] },
+        ]
       : []),
     ...(v.type === 'salon'
       ? [{ label: '👗 Gardırobu aç', action: 'open_wardrobe', reply: ['İşte ayna hazır! Saç, kıyafet ve aksesuarlarını dilediğin gibi seç ✨'] }]

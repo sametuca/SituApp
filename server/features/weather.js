@@ -6,18 +6,18 @@
 // SITUAPP_WEATHER=rain (vb.) ile hava sabitlenir (test).
 import { istanbul } from './progress.js'
 
-export const WEATHERS = ['clear', 'rain', 'snow', 'leaves', 'petals', 'fog']
+export const WEATHERS = ['clear', 'snow', 'leaves', 'petals', 'fog']
 const BLOCK_MIN = 20 * 60000
 const BLOCK_MAX = 40 * 60000
 
-/** Mevsim ve saate göre ağırlıklar. */
+/** Mevsim ve saate göre ağırlıklar (yağmur iptal edildi — açık güneşli/geceli gökyüzü öncelikli). */
 export function weights(month, hour) {
   let w
-  if (month === 12 || month <= 2) w = { clear: 40, snow: 40, fog: 14, rain: 6 } // kış
-  else if (month <= 5) w = { clear: 45, petals: 25, rain: 20, fog: 10 } // ilkbahar
-  else if (month <= 8) w = { clear: 82, rain: 12, fog: 3, petals: 3 } // yaz
-  else w = { clear: 35, leaves: 35, rain: 20, fog: 10 } // sonbahar
-  if (hour >= 5 && hour < 9 && w.fog) w.fog *= 2.5 // sabah sisi
+  if (month === 12 || month <= 2) w = { clear: 56, snow: 32, fog: 12 } // kış
+  else if (month <= 5) w = { clear: 68, petals: 24, fog: 8 } // ilkbahar
+  else if (month <= 8) w = { clear: 92, petals: 5, fog: 3 } // yaz
+  else w = { clear: 62, leaves: 30, fog: 8 } // sonbahar
+  if (hour >= 5 && hour < 9 && w.fog) w.fog *= 2.0 // hafif sabah sisi
   return w
 }
 /** avoid: bu hava hariç seç (arka arkaya aynı hava gelmesin; açık hava bloğu sık olsun diye 'clear' sonrası da serbest). */

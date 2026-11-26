@@ -12,7 +12,6 @@ const H = 14 // yükseklik (m)
 const FADE = 1.2 // sn: tür değişiminde sönme/belirme
 
 const KINDS = {
-  rain: { n: 1, fall: 15, size: [0.11, 1.0], color: ['#d6ecff'], op: 0.85, sway: 0 },
   snow: { n: 0.8, fall: 1.3, size: [0.3, 0.3], color: ['#ffffff'], op: 0.95, sway: 0.9 },
   leaves: { n: 0.35, fall: 1.4, size: [0.42, 0.28], color: ['#ff9a4a', '#f0b54a', '#e0693b', '#c98a3a', '#f4c76a'], op: 1, sway: 1.6, spin: 2.2 },
   petals: { n: 0.45, fall: 1.0, size: [0.3, 0.2], color: ['#fed095', '#ffeed9', '#fec983', '#fff8f0'], op: 1, sway: 1.4, spin: 2 },

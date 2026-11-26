@@ -55,15 +55,21 @@ export function usePvp({ net, panel, setPanel }) {
     setPanel(null)
   }
 
-  const extraButtons = [{ key: 'pvp', icon: 'pvp', label: 'Düello (PvP)', badge: lobby?.list?.length || undefined, onClick: () => setPanel('pvp') }]
+  const menuNodes = (
+    <button onClick={() => setPanel('pvp')} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#fff8f0]">
+      <span className="text-lg">⚔️</span>
+      <span className="flex-1">Düello (PvP)</span>
+      {lobby?.list?.length > 0 && <span className="rounded-full bg-[#a88bff] px-2 py-0.5 text-[11px] font-black text-white">{lobby.list.length}</span>}
+    </button>
+  )
 
   const overlays = open ? (
-    <Modal onClose={close} label="Düello">
+    <Modal onClose={close} label="Düello" theme="pvp">
       {match ? <Match match={match} result={result} send={send} now={now} onBack={() => (setMatch(null), setResult(null))} /> : <Lobby lobby={lobby} send={send} now={now} />}
     </Modal>
   ) : null
 
-  return { extraButtons, overlays }
+  return { menuNodes, overlays }
 }
 
 function Lobby({ lobby, send, now }) {

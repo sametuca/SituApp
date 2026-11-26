@@ -24,7 +24,7 @@ const HOME_BG = '#faeee2'
 const HOME_FOG = [HOME_BG, 30, 60]
 
 /** TogetherScene.SkyTint'e verilen canlı "taban" renkleri (bu modül her karede günceller). */
-export const skyBase = { bg: new Color('#dcf0ff'), fog: [new Color('#dcf0ff'), 45, 122] }
+export const skyBase = { bg: new Color('#bce4ff'), fog: [new Color('#bce4ff'), 78, 210] }
 
 /** Diğer bileşenlerin okuduğu canlı gökyüzü durumu. */
 export const skyLive = {
@@ -51,11 +51,11 @@ export const SKY_MATS = {
 // ---------------------------------------------------------------- anahtar kareler (saat → renkler)
 const C = (s) => new Color(s)
 const KEYS = {
-  night: { bg: C('#3b3f80'), fog: C('#4d4f93'), sun: C('#b4c0ff'), sunI: 0.55, amb: C('#9aa4ff'), ambI: 0.55, hs: C('#8e9cff'), hg: C('#6b5aa6'), hI: 0.65, fn: 40, ff: 125 },
-  dawn: { bg: C('#ffecd0'), fog: C('#fff3e1'), sun: C('#ffc6a0'), sunI: 1.0, amb: C('#fff8f0'), ambI: 0.55, hs: C('#fff2e1'), hg: C('#ffedd6'), hI: 0.85, fn: 45, ff: 130 },
-  day: { bg: C('#cbeaff'), fog: C('#d8f0ff'), sun: C('#ffffff'), sunI: 1.95, amb: C('#ffffff'), ambI: 0.45, hs: C('#e8f6ff'), hg: C('#fff3e6'), hI: 0.95, fn: 50, ff: 135 },
-  dusk: { bg: C('#ffb494'), fog: C('#ffcdb9'), sun: C('#ff9f6b'), sunI: 1.1, amb: C('#ffd5c4'), ambI: 0.55, hs: C('#ffc7b0'), hg: C('#d9a7e8'), hI: 0.75, fn: 45, ff: 130 },
-  dusk2: { bg: C('#8f6fb8'), fog: C('#a98bc4'), sun: C('#c99aff'), sunI: 0.8, amb: C('#cdb0ff'), ambI: 0.5, hs: C('#b79be8'), hg: C('#8a63b0'), hI: 0.65, fn: 42, ff: 128 },
+  night: { bg: C('#2c306b'), fog: C('#3b3f82'), sun: C('#a8b8ff'), sunI: 0.55, amb: C('#7f8df0'), ambI: 0.38, hs: C('#7e90f5'), hg: C('#52428c'), hI: 0.5, fn: 60, ff: 175 },
+  dawn: { bg: C('#ffd9b0'), fog: C('#ffe6c8'), sun: C('#ffba85'), sunI: 1.05, amb: C('#ffeedb'), ambI: 0.34, hs: C('#ffe4c4'), hg: C('#f5d4b0'), hI: 0.65, fn: 72, ff: 195 },
+  day: { bg: C('#a9dcff'), fog: C('#c2e7ff'), sun: C('#ffffff'), sunI: 1.65, amb: C('#ffffff'), ambI: 0.44, hs: C('#f2f9ff'), hg: C('#ffe9d6'), hI: 0.82, fn: 78, ff: 210 },
+  dusk: { bg: C('#ff9f78'), fog: C('#ffbca0'), sun: C('#ff884d'), sunI: 1.12, amb: C('#ffc2a8'), ambI: 0.36, hs: C('#ffb496'), hg: C('#c78ce0'), hI: 0.6, fn: 70, ff: 190 },
+  dusk2: { bg: C('#7554a6'), fog: C('#9070b8'), sun: C('#b885ff'), sunI: 0.78, amb: C('#b492f0'), ambI: 0.36, hs: C('#a384db'), hg: C('#6e4896'), hI: 0.52, fn: 64, ff: 180 },
 }
 const FRAMES = [
   [0, 'night'],

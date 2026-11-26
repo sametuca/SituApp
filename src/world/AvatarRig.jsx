@@ -209,7 +209,7 @@ function LoungeRelaxProps() {
   )
 }
 
-export default function AvatarRig({ slug, anim = 'idle', pose, cosId }) {
+export default function AvatarRig({ slug, anim = 'idle', pose, cosId, halfRate = false }) {
   const { scene, animations } = useGLTF(`/models/avatars/${slug}.glb`)
   const current = useRef(null)
   const [handProp, setHandProp] = useState(null)
@@ -217,6 +217,11 @@ export default function AvatarRig({ slug, anim = 'idle', pose, cosId }) {
   const handKeyRef = useRef('')
   const loungeRef = useRef(false)
   const liftRef = useRef(null)
+  const halfRateRef = useRef(halfRate)
+  const skipRef = useRef({ acc: 0, odd: false })
+  useEffect(() => {
+    halfRateRef.current = halfRate
+  }, [halfRate])
   const look = useSyncExternalStore(cosStore.subscribe, () => cosStore.get(cosId)?.look ?? null)
   const lookKey = look ? `${look.h}.${look.e}.${look.o}` : ''
 
@@ -227,7 +232,14 @@ export default function AvatarRig({ slug, anim = 'idle', pose, cosId }) {
     clone.traverse((o) => {
       if (o.isMesh) {
         o.castShadow = true
+        o.receiveShadow = false
         o.frustumCulled = false
+        if (o.material && !Array.isArray(o.material)) {
+          o.material = o.material.clone()
+          o.material.metalness = 0
+          o.material.roughness = Math.max(o.material.roughness ?? 0.72, 0.72)
+          o.material.envMapIntensity = 0.25
+        }
       }
     })
     trimBase(clone, slug)
@@ -246,6 +258,18 @@ export default function AvatarRig({ slug, anim = 'idle', pose, cosId }) {
   }, [mixer])
 
   useFrame((_, dt) => {
+    // 10 m'den uzaktaki avatarlarda animasyon 30 Hz'e düşürülür (kalabalık mekânda CPU skinning yükünü yarılar)
+    let stepDt = dt
+    if (halfRateRef.current) {
+      skipRef.current.acc += dt
+      skipRef.current.odd = !skipRef.current.odd
+      if (skipRef.current.odd) return
+      stepDt = skipRef.current.acc
+      skipRef.current.acc = 0
+    } else if (skipRef.current.acc > 0) {
+      stepDt += skipRef.current.acc
+      skipRef.current.acc = 0
+    }
     const activePose = pose?.current ?? null
     const hpKey = activePose?.kind === 'eat' && activePose.item ? `${activePose.item.id}|${activePose.t0}` : ''
     if (hpKey !== handKeyRef.current) {
@@ -269,7 +293,7 @@ export default function AvatarRig({ slug, anim = 'idle', pose, cosId }) {
       }
       if (entering || activePose || rig.blend > 0.001) {
         applyUprightIdle(rig)
-        if (activePose || rig.blend > 0.001) applyPose(rig, activePose, dt)
+        if (activePose || rig.blend > 0.001) applyPose(rig, activePose, stepDt)
       }
       return
     }
@@ -282,8 +306,8 @@ export default function AvatarRig({ slug, anim = 'idle', pose, cosId }) {
       next.play()
       current.current = next
     }
-    mixer.update(dt)
-    if (pose) applyPose(rig, activePose, dt)
+    mixer.update(stepDt)
+    if (pose) applyPose(rig, activePose, stepDt)
   })
 
   // Taş meydan/kaldırım zeminleri y=0,04-0,08'de: ayakkabılar yere gömülüp kaybolmasın diye avatar topluca bu kadar yukarıda durur

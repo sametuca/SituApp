@@ -4,6 +4,13 @@ import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { RoundedBox } from '@react-three/drei'
 import { BEACH, G } from './layout'
+import { getClayPlasterPair } from './pastelTex'
+
+// Tüm prosedürel kasaba objelerinde GLB modellerle uyumlu yumuşak kil-oyuncak kabartma malzemesi
+function ClayMat({ color, roughness = 0.62, bumpScale = 0.018 }) {
+  const clay = useMemo(() => getClayPlasterPair(), [])
+  return <meshStandardMaterial color={color} bumpMap={clay.bump} bumpScale={bumpScale} roughness={roughness} metalness={0} />
+}
 
 // ---------- 1. ÇEŞİTLİ AĞAÇLAR (Portakal, Elma, Kiraz Çiçeği, Çam) ----------
 const TREE_SPOTS = [
@@ -37,13 +44,13 @@ function DiverseTrees() {
           return (
             <group key={i} position={[t.x, 0, t.z]} scale={t.s}>
               <mesh position={[0, 0.75, 0]} castShadow>
-                <cylinderGeometry args={[0.18, 0.28, 1.5, 10]} />
-                <meshStandardMaterial color="#b4835a" roughness={0.85} />
+                <cylinderGeometry args={[0.18, 0.28, 1.5, 12]} />
+                <ClayMat color="#b4835a" roughness={0.78} />
               </mesh>
               {[1.7, 2.55, 3.25].map((y, j) => (
                 <mesh key={j} position={[0, y, 0]} castShadow>
-                  <coneGeometry args={[1.35 - j * 0.3, 1.45 - j * 0.15, 12]} />
-                  <meshStandardMaterial color={j === 2 ? '#7ad4a5' : '#63be92'} roughness={0.75} />
+                  <coneGeometry args={[1.35 - j * 0.3, 1.45 - j * 0.15, 16]} />
+                  <ClayMat color={j === 2 ? '#7ad4a5' : '#63be92'} roughness={0.68} />
                 </mesh>
               ))}
             </group>
@@ -55,20 +62,20 @@ function DiverseTrees() {
         return (
           <group key={i} position={[t.x, 0, t.z]} scale={t.s}>
             <mesh position={[0, 0.9, 0]} castShadow>
-              <cylinderGeometry args={[0.2, 0.3, 1.8, 10]} />
-              <meshStandardMaterial color="#b9865c" roughness={0.85} />
+              <cylinderGeometry args={[0.2, 0.3, 1.8, 12]} />
+              <ClayMat color="#b9865c" roughness={0.78} />
             </mesh>
             <mesh position={[0, 2.3, 0]} castShadow>
-              <sphereGeometry args={[1.18, 14, 12]} />
-              <meshStandardMaterial color={leaf} roughness={0.75} />
+              <sphereGeometry args={[1.18, 16, 14]} />
+              <ClayMat color={leaf} roughness={0.66} />
             </mesh>
             <mesh position={[0.55, 2.6, 0.3]} castShadow>
-              <sphereGeometry args={[0.75, 12, 10]} />
-              <meshStandardMaterial color={leaf2} roughness={0.75} />
+              <sphereGeometry args={[0.75, 14, 12]} />
+              <ClayMat color={leaf2} roughness={0.66} />
             </mesh>
             <mesh position={[-0.52, 2.45, -0.35]} castShadow>
-              <sphereGeometry args={[0.72, 12, 10]} />
-              <meshStandardMaterial color={leaf2} roughness={0.75} />
+              <sphereGeometry args={[0.72, 14, 12]} />
+              <ClayMat color={leaf2} roughness={0.66} />
             </mesh>
             {/* Meyveler / çiçekler */}
             {[
@@ -150,16 +157,16 @@ function TrashBins() {
       {BIN_SPOTS.map(([x, z], i) => (
         <group key={i} position={[x, 0, z]}>
           <mesh position={[0, 0.36, 0]} castShadow>
-            <cylinderGeometry args={[0.24, 0.2, 0.72, 12]} />
-            <meshStandardMaterial color={cols[i % cols.length]} roughness={0.45} />
+            <cylinderGeometry args={[0.25, 0.21, 0.72, 16]} />
+            <ClayMat color={cols[i % cols.length]} roughness={0.5} />
           </mesh>
-          <mesh position={[0, 0.74, 0]} castShadow>
-            <cylinderGeometry args={[0.27, 0.27, 0.08, 12]} />
-            <meshStandardMaterial color="#4a3b5c" roughness={0.5} />
+          <mesh position={[0, 0.73, 0]} castShadow>
+            <sphereGeometry args={[0.26, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <ClayMat color="#594a6e" roughness={0.48} />
           </mesh>
-          <mesh position={[0, 0.82, 0]}>
-            <torusGeometry args={[0.07, 0.02, 6, 12, Math.PI]} />
-            <meshStandardMaterial color="#fffaf2" roughness={0.4} />
+          <mesh position={[0, 0.89, 0]}>
+            <torusGeometry args={[0.065, 0.02, 8, 14, Math.PI]} />
+            <ClayMat color="#fffaf2" roughness={0.4} />
           </mesh>
         </group>
       ))}

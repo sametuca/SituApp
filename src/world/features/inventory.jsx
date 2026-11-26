@@ -249,16 +249,22 @@ export function useInventory({ net, say, panel, setPanel, roster, focusRef, clos
             setTargetPeer(null)
             setPanel(null)
           }}
-          label="Envanter"
+          label="Karakter ve Çanta"
+          theme="bag"
         >
+          <div className="mb-3 grid grid-cols-3 gap-1.5 rounded-2xl bg-[#f3ece0] p-1">
+            <button type="button" className="rounded-xl bg-white py-1.5 text-xs font-black text-[#4a3b5c] shadow-sm">🎒 Çanta</button>
+            <button type="button" onClick={() => setPanel('stats')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">💪 Statlar</button>
+            <button type="button" onClick={() => setPanel('collection')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">🧺 Koleksiyon</button>
+          </div>
           <div className="flex items-center justify-between gap-2">
             <div>
-              <h2 className="text-xl font-black text-[#4a3b5c]">Envanterim</h2>
+              <h2 className="text-xl font-black text-[#4a3b5c]">Çanta</h2>
               <p className="text-xs font-bold text-[#8a7a9c]">
-                {targetPeer ? `${targetPeer.name} kişisine ısmarlamak için bir eşya seç!` : 'İçecekler, şarküteri ve hediyelerin burada.'}
+                {targetPeer ? `${targetPeer.name} için bir ikram seç.` : 'İçecekler, şarküteri ve hediyelerin burada.'}
               </p>
             </div>
-            <span className="rounded-full bg-[#f3ecff] px-3 py-1 text-xs font-black text-[#5b3fa8]">{items.length}/30</span>
+            <span className="rounded-full bg-[#f3ece0] px-3 py-1 text-xs font-black text-[#5b4678]">{items.length}/30</span>
           </div>
 
           {giftPick ? (

@@ -12,6 +12,13 @@ import { BIKE_POSE } from './bikeStore'
 import { playerPos } from './cull'
 
 const NEAR_DRAW = 42 // m: bu mesafeden uzaktaki oyuncular çizilmez
+const MAX_DRAW_DESKTOP = 25 // masaüstünde aynı anda tam çizilen en yakın oyuncu bütçesi
+const MAX_DRAW_TOUCH = 14 // mobil/dokunmatikte aynı anda tam çizilen en yakın oyuncu bütçesi
+const MAX_SHADOWS = 8 // gölge düşüren en yakın oyuncu sayısı (50 kişilik mekânda GPU'yu korur)
+const MAX_TAGS = 12 // sürekli isim etiketi görünen en yakın oyuncu sayısı (üzerine gelince her zaman görünür)
+const BUBBLE_RANGE_SQ = 8 * 8 // 8 m: konuşma balonu yalnızca yakındakilerde çıkar (uzaktakiler sohbet kutusundan okunur)
+const HALF_RATE_SQ = 10 * 10 // >10 m: animasyon güncellemesi 30 Hz'e düşer
+const SHADOW_RANGE_SQ = 24 * 24
 import BikeModel from './Bike'
 
 const REACT_BURSTS = {
@@ -101,15 +108,21 @@ function useLiveFlags(id, reactions, whispering) {
   return { reaction, whisper }
 }
 
-const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bubbles, reactions, whispering, onPick }) {
+const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bubbles, reactions, whispering, budgetRef, onPick }) {
   const group = useRef()
   const [anim, setAnim] = useState('idle')
   const [bubble, setBubble] = useState(null)
   const animRef = useRef('idle')
   const bubbleRef = useRef(null)
-  const [near, setNear] = useState(true) // uzaktaki oyuncular çizilmez (500 oyuncuda FPS için)
+  const [near, setNear] = useState(true) // çizim bütçesi dışındaki oyuncular çizilmez
   const nearRef = useRef(true)
-  const shadowRef = useRef(true)
+  const [showName, setShowName] = useState(true) // en yakın 12 oyuncu (veya imleç üstündeyken)
+  const showNameRef = useRef(true)
+  const [halfRate, setHalfRate] = useState(false) // >10 m: 30 Hz animasyon
+  const halfRateRef = useRef(false)
+  const [hovered, setHovered] = useState(false)
+  const shadowRef = useRef(null)
+  const meshCountRef = useRef(0)
   const [afk, setAfk] = useState(false)
   const idleRef = useRef({ since: Date.now(), x: 0, z: 0, afk: false })
   const { reaction, whisper } = useLiveFlags(id, reactions, whispering)
@@ -138,18 +151,37 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
     r.x = MathUtils.lerp(r.x, r.tx, k)
     r.z = MathUtils.lerp(r.z, r.tz, k)
     g.position.set(r.x, groundY(r.x, r.z), r.z)
+
+    const budget = budgetRef?.current
     const d2 = (r.x - playerPos.x) ** 2 + (r.z - playerPos.z) ** 2
-    // gölge kamerası ±20 m; uzaktaki oyuncular (frustumCulled=false) boşuna gölge geçişinde çizilmesin
-    const sh = d2 < (shadowRef.current ? 26 * 26 : 22 * 22)
-    if (sh !== shadowRef.current) {
-      shadowRef.current = sh
-      g.traverse((o) => { if (o.isMesh) o.castShadow = sh })
-    }
-    const nn = nearRef.current ? d2 < NEAR_DRAW * NEAR_DRAW * 1.15 : d2 < NEAR_DRAW * NEAR_DRAW
+    const nn = budget?.ready ? budget.draw.has(id) : d2 < NEAR_DRAW * NEAR_DRAW
     if (nn !== nearRef.current) {
       nearRef.current = nn
       setNear(nn)
     }
+
+    // gölge bütçesi: yalnızca en yakın 8 oyuncu gölge düşürür (Suspense yüklenince mesh sayısı değişirse tekrar uygula)
+    const sh = nn && (budget?.ready ? budget.shadow.has(id) : d2 < SHADOW_RANGE_SQ)
+    let meshCount = 0
+    if (nn) g.traverse((o) => { if (o.isMesh) meshCount += 1 })
+    if (sh !== shadowRef.current || meshCount !== meshCountRef.current) {
+      shadowRef.current = sh
+      meshCountRef.current = meshCount
+      g.traverse((o) => { if (o.isMesh) o.castShadow = sh })
+    }
+
+    const sn = nn && (budget?.ready ? budget.tag.has(id) : true)
+    if (sn !== showNameRef.current) {
+      showNameRef.current = sn
+      setShowName(sn)
+    }
+
+    const hr = nn && (budget?.ready ? budget.halfRate.has(id) : d2 > HALF_RATE_SQ)
+    if (hr !== halfRateRef.current) {
+      halfRateRef.current = hr
+      setHalfRate(hr)
+    }
+
     const diff = MathUtils.euclideanModulo(r.tr - g.rotation.y + Math.PI, Math.PI * 2) - Math.PI
     g.rotation.y += diff * k
 
@@ -157,7 +189,8 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
       animRef.current = r.anim
       setAnim(r.anim)
     }
-    const b = bubbles.current.get(id)
+    const allowBubble = nn && (budget?.ready ? budget.bubble.has(id) : d2 <= BUBBLE_RANGE_SQ)
+    const b = allowBubble ? bubbles.current.get(id) : null
     const live = b && b.until > Date.now() ? b : null
     if (live !== bubbleRef.current) {
       bubbleRef.current = live
@@ -187,22 +220,63 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
         e.stopPropagation()
         onPick?.(id)
       }}
-      onPointerOver={() => onPick && (document.body.style.cursor = 'pointer')}
-      onPointerOut={() => (document.body.style.cursor = '')}
+      onPointerOver={() => {
+        setHovered(true)
+        if (onPick) document.body.style.cursor = 'pointer'
+      }}
+      onPointerOut={() => {
+        setHovered(false)
+        document.body.style.cursor = ''
+      }}
     >
-      {near && <AvatarRig slug={avatar} anim={anim === 'ride' ? 'idle' : anim} pose={pose} cosId={id} />}
+      {near && <AvatarRig slug={avatar} anim={anim === 'ride' ? 'idle' : anim} pose={pose} cosId={id} halfRate={halfRate} />}
       {near && anim === 'ride' && (
         <Suspense fallback={null}>
           <BikeModel />
         </Suspense>
       )}
-      {near && <Tag name={name} bubble={bubble} reaction={reaction} whisper={whisper} afk={afk} />}
+      {near && <Tag name={name} bubble={bubble} reaction={reaction} whisper={whisper} showName={showName || hovered} afk={afk} />}
     </group>
   )
 })
 
-export default function RemotePlayers({ roster, remotes, bubbles, reactions, whispering, onPick }) {
-  return roster.map(({ key: _playerKey, ...p }) => <RemoteAvatar key={p.id} {...p} remotes={remotes} bubbles={bubbles} reactions={reactions} whispering={whispering} onPick={onPick} />)
+export default function RemotePlayers({ roster, remotes, bubbles, reactions, whispering, onPick, touch = false }) {
+  const budgetRef = useRef({ draw: new Set(), shadow: new Set(), tag: new Set(), halfRate: new Set(), bubble: new Set(), ready: false, count: -1 })
+  const timerRef = useRef(0)
+
+  // Saniyede 4 kez mesafeye göre çizim/gölge/etiket/balon/30Hz bütçesi hesaplanır (50+ kişilik mekânlarda sabit FPS)
+  useFrame((_, dt) => {
+    timerRef.current += dt
+    const size = remotes.current.size
+    if (budgetRef.current.ready && timerRef.current < 0.25 && size === budgetRef.current.count) return
+    timerRef.current = 0
+    const nearLimSq = NEAR_DRAW * NEAR_DRAW
+    const list = []
+    for (const r of remotes.current.values()) {
+      const d2 = (r.x - playerPos.x) ** 2 + (r.z - playerPos.z) ** 2
+      if (d2 <= nearLimSq) list.push([r.id, d2])
+    }
+    list.sort((a, b) => a[1] - b[1])
+    const maxDraw = touch ? MAX_DRAW_TOUCH : MAX_DRAW_DESKTOP
+    const draw = new Set()
+    const shadow = new Set()
+    const tag = new Set()
+    const halfRate = new Set()
+    const bubble = new Set()
+    for (let i = 0; i < list.length && i < maxDraw; i++) {
+      const [pid, d2] = list[i]
+      draw.add(pid)
+      if (shadow.size < MAX_SHADOWS && d2 <= SHADOW_RANGE_SQ) shadow.add(pid)
+      if (tag.size < MAX_TAGS) tag.add(pid)
+      if (d2 > HALF_RATE_SQ) halfRate.add(pid)
+      if (d2 <= BUBBLE_RANGE_SQ) bubble.add(pid)
+    }
+    budgetRef.current = { draw, shadow, tag, halfRate, bubble, ready: true, count: size }
+  })
+
+  return roster.map(({ key: _playerKey, ...p }) => (
+    <RemoteAvatar key={p.id} {...p} remotes={remotes} bubbles={bubbles} reactions={reactions} whispering={whispering} budgetRef={budgetRef} onPick={onPick} />
+  ))
 }
 
 /** Yerel oyuncunun isim etiketi ve kendi konuşma balonu (LocalPlayer'ın çocuğu olarak çizilir). */

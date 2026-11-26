@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { BLOCK_MS, BOX, CUE_META, CUE_TYPES, STAT_KEYS, STAT_META, STAT_MAX, STAT_START, boxCues, coinBonusPct, energyMax, gradeWindow, hitDamage, matchDuration, roundStart } from '../boxing'
 import { cosStore } from '../cosStore'
 import { fitnessStore } from '../fitnessStore'
+import { work } from './jobStore'
 import { DoorPrompt } from '../Social'
 import { Modal } from '../Hud'
 
@@ -106,9 +107,8 @@ function WeightWorkoutModal({ ski, energy, energyMaxVal, onDone, onClose }) {
   const [reps, setReps] = useState(0)
   const [perfects, setPerfects] = useState(0)
   const [left, setLeft] = useState(18)
-  const [feedback, setFeedback] = useState('Yeşil/Altın bölgeye gelince tıkla veya Boşluk tuşuna bas!')
+  const [feedback, setFeedback] = useState('İmleç parlak alana gelince Boşluk ya da düğmeye bas.')
   const [pos, setPos] = useState(0) // 0..100
-  const [lift, setLift] = useState(0) // 0..1 animasyon
   const stRef = useRef({ pos: 10, dir: 1, reps: 0, perfects: 0, done: false })
 
   // Beceri arttıkça hedef bölge genişler
@@ -133,7 +133,6 @@ function WeightWorkoutModal({ ski, energy, energyMaxVal, onDone, onClose }) {
         s.dir = 1
       }
       setPos(s.pos)
-      setLift((v) => Math.max(0, v - dt * 3.2))
       raf = requestAnimationFrame(loop)
     }
     raf = requestAnimationFrame(loop)
@@ -165,17 +164,15 @@ function WeightWorkoutModal({ ski, energy, energyMaxVal, onDone, onClose }) {
       stRef.current.perfects += 1
       setReps(stRef.current.reps)
       setPerfects(stRef.current.perfects)
-      setLift(1)
-      setFeedback('🔥 MÜKEMMEL KALDIRIŞ! (+1)')
+      setFeedback('Mükemmel kaldırış (+1)')
       window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'collect' }))
     } else if (dist <= halfGood) {
       stRef.current.reps += 1
       setReps(stRef.current.reps)
-      setLift(0.75)
-      setFeedback('💪 Güzel tekrar! (+1)')
+      setFeedback('İyi tekrar (+1)')
       window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'pop' }))
     } else {
-      setFeedback('😅 Kaçırdın — ortadaki parlak bölgeyi yakala!')
+      setFeedback('Kaçırdın — parlak alanı bekle.')
     }
   }, [phase, halfPerf, halfGood])
 
@@ -202,40 +199,28 @@ function WeightWorkoutModal({ ski, energy, energyMaxVal, onDone, onClose }) {
   }
 
   return (
-    <Modal onClose={onClose} label="Ağırlık Antrenmanı">
+    <Modal onClose={onClose} label="Ağırlık Antrenmanı" theme="gym" dockBottom>
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h2 className="text-xl font-black text-[#4a3b5c]">💪 Ağırlık Sehpası</h2>
-          <p className="text-xs font-bold text-[#8a7a9c]">Doğru anda kaldır, Güç statını artır!</p>
+          <h2 className="text-lg font-black text-white">💪 Ağırlık Sehpası</h2>
+          <p className="text-xs font-semibold text-white/70">İmleç parlak alana gelince kaldır.</p>
         </div>
-        <span className="rounded-full bg-[#fff3c8] px-3 py-1 text-xs font-black text-[#8a5a00]">⚡ {energy}/{energyMaxVal}</span>
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-black text-[#ffd35e]">⚡ {energy}/{energyMaxVal}</span>
+          <button type="button" onClick={onClose} aria-label="Kapat" className="grid h-8 w-8 place-items-center rounded-full bg-white/15 text-xs font-black text-white">✕</button>
+        </div>
       </div>
 
-      {/* Animasyonlu halter görseli */}
-      <div className="mt-4 flex flex-col items-center rounded-3xl bg-gradient-to-b from-[#f6f0ff] to-[#fff6ec] p-5">
-        <div className="relative flex h-24 w-full items-end justify-center">
-          <div
-            className="flex items-center transition-transform duration-75"
-            style={{ transform: `translateY(${-lift * 46}px)` }}
-          >
-            <div className="h-12 w-3.5 rounded-lg bg-[#ffd35e] shadow" />
-            <div className="h-16 w-4 rounded-lg bg-[#ff8a7a] shadow" />
-            <div className="h-2.5 w-36 bg-[#6e6485]" />
-            <div className="h-16 w-4 rounded-lg bg-[#ff8a7a] shadow" />
-            <div className="h-12 w-3.5 rounded-lg bg-[#ffd35e] shadow" />
-          </div>
-        </div>
-        <div className="mt-2 flex w-full items-center justify-between text-xs font-black text-[#4a3b5c]">
-          <span>Tekrar: {reps}</span>
-          <span>Mükemmel: {perfects}</span>
-          <span>⏱ {left} sn</span>
-        </div>
+      <div className="mt-3 flex items-center justify-between text-xs font-black text-white/85">
+        <span>Tekrar: {reps}</span>
+        <span>Mükemmel: {perfects}</span>
+        <span className="tabular-nums">⏱ {left} sn</span>
       </div>
 
       {/* Zamanlama çubuğu */}
-      <div className="relative mt-4 h-9 w-full overflow-hidden rounded-full border-2 border-white bg-[#efe6ff] shadow-inner">
+      <div className="relative mt-2.5 h-8 w-full overflow-hidden rounded-full border-2 border-white/25 bg-white/10">
         <div
-          className="absolute top-0 h-full bg-[#8fdcb4]/65"
+          className="absolute top-0 h-full bg-[#7fd3b8]/70"
           style={{ left: `${50 - halfGood}%`, width: `${halfGood * 2}%` }}
         />
         <div
@@ -243,22 +228,22 @@ function WeightWorkoutModal({ ski, energy, energyMaxVal, onDone, onClose }) {
           style={{ left: `${50 - halfPerf}%`, width: `${halfPerf * 2}%` }}
         />
         <div
-          className="absolute top-0.5 h-7 w-3 -translate-x-1/2 rounded-full border-2 border-white bg-[#4a3b5c] shadow"
+          className="absolute top-0.5 h-6 w-3 -translate-x-1/2 rounded-full border-2 border-[#221b38] bg-white shadow"
           style={{ left: `${pos}%` }}
         />
       </div>
 
-      <p className="mt-3 text-center text-xs font-extrabold text-[#6b4fc0]">{feedback}</p>
+      <p className="mt-2 text-center text-xs font-bold text-[#ffd35e]">{feedback}</p>
 
-      <div className="mt-4 flex gap-2">
+      <div className="mt-3 flex gap-2">
         {phase === 'ready' ? (
           <button
             type="button"
             disabled={energy <= 0}
             onClick={start}
-            className="w-full rounded-2xl border-b-4 border-[#d96c5b] bg-[#ff8a7a] py-3.5 text-base font-black text-white shadow-soft active:translate-y-[2px] disabled:opacity-50"
+            className="w-full rounded-2xl border-b-4 border-[#c75646] bg-[#ff7e70] py-3 text-sm font-black text-white shadow-soft active:translate-y-[2px] disabled:opacity-50"
           >
-            {energy <= 0 ? '⚡ Bugünkü enerjin bitti (Yarın yenilenir)' : '🏋️ Antrenmana Başla (1 ⚡)'}
+            {energy <= 0 ? 'Bugünkü enerji doldu' : 'Başla (1 ⚡)'}
           </button>
         ) : phase === 'play' ? (
           <button
@@ -267,17 +252,17 @@ function WeightWorkoutModal({ ski, energy, energyMaxVal, onDone, onClose }) {
               e.preventDefault()
               tapLift()
             }}
-            className="w-full select-none rounded-2xl border-b-4 border-[#d98a1c] bg-[#fdb252] py-4 text-lg font-black text-white shadow-soft active:translate-y-[2px]"
+            className="w-full select-none rounded-2xl border-b-4 border-[#d98a1c] bg-[#fdb252] py-3.5 text-base font-black text-white shadow-soft active:translate-y-[2px]"
           >
-            💪 KALDIR! (Boşluk)
+            KALDIR (Boşluk)
           </button>
         ) : (
           <button
             type="button"
             onClick={onClose}
-            className="w-full rounded-2xl border-b-4 border-[#5aa886] bg-[#7fd3b8] py-3 text-base font-black text-white shadow-soft"
+            className="w-full rounded-2xl border-b-4 border-[#5aa886] bg-[#7fd3b8] py-3 text-sm font-black text-[#1d3b2e]"
           >
-            Harika! Kapat
+            Bitir
           </button>
         )}
       </div>
@@ -367,22 +352,25 @@ function CardioWorkoutModal({ energy, energyMaxVal, onDone, onClose }) {
   }
 
   return (
-    <Modal onClose={onClose} label="Koşu Bandı">
+    <Modal onClose={onClose} label="Koşu Bandı" theme="gym" dockBottom>
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h2 className="text-xl font-black text-[#4a3b5c]">🏃 Koşu Bandı</h2>
-          <p className="text-xs font-bold text-[#8a7a9c]">Sol ve sağ adımlara sırayla bas, kondisyonunu artır!</p>
+          <h2 className="text-lg font-black text-white">🏃 Koşu Bandı</h2>
+          <p className="text-xs font-semibold text-white/70">Sol ve sağ adımlara sırayla bas.</p>
         </div>
-        <span className="rounded-full bg-[#e6f7ff] px-3 py-1 text-xs font-black text-[#2a6d90]">⚡ {energy}/{energyMaxVal}</span>
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-black text-[#7fcdf3]">⚡ {energy}/{energyMaxVal}</span>
+          <button type="button" onClick={onClose} aria-label="Kapat" className="grid h-8 w-8 place-items-center rounded-full bg-white/15 text-xs font-black text-white">✕</button>
+        </div>
       </div>
 
-      <div className="mt-4 rounded-3xl bg-gradient-to-b from-[#e9f7ff] to-[#f6f0ff] p-4">
-        <div className="flex items-center justify-between text-xs font-black text-[#4a3b5c]">
+      <div className="mt-3 rounded-2xl bg-white/10 p-3">
+        <div className="flex items-center justify-between text-xs font-black text-white/90">
           <span>Adım: {steps}</span>
           <span>Tempo: %{pace}</span>
-          <span>⏱ {left} sn</span>
+          <span className="tabular-nums">⏱ {left} sn</span>
         </div>
-        <div className="mt-3 h-4 w-full overflow-hidden rounded-full bg-white/80">
+        <div className="mt-2 h-3 w-full overflow-hidden rounded-full bg-white/15">
           <div className="h-full rounded-full bg-gradient-to-r from-[#7fcdf3] to-[#8fdcb4] transition-all duration-100" style={{ width: `${pace}%` }} />
         </div>
       </div>
@@ -1063,6 +1051,18 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
     [name],
   )
 
+  // MakFit içinde ağırlık/koşu antrenmanındayken karakteri aletin yanına konumlandırıp canlı 3B antrenman pozu oynat
+  useEffect(() => {
+    if (!workout) return undefined
+    if (venue === 'fitness' && focusRef.current) {
+      focusRef.current.teleport = workout === 'str' ? [3.55, -2.4, Math.PI / 2] : [4.4, 1.5, Math.PI]
+    }
+    work.self.current = { kind: 'work', style: workout === 'str' ? 'bench' : 'cardio', t0: performance.now() / 1000 }
+    return () => {
+      if (work.self.current?.style === 'bench' || work.self.current?.style === 'cardio') work.self.current = null
+    }
+  }, [workout, venue, focusRef])
+
   const closeBoxing = () => {
     if (queued || match) send({ t: 'box_leave' })
     setQueued(false)
@@ -1072,17 +1072,19 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
     setPanel(null)
   }
 
-  const extraButtons = [
-    {
-      key: 'stats',
-      emoji: '💪',
-      label: 'Karakter Statları & Enerji',
-      onClick: () => {
-        setPanel(inStatsModal ? null : 'stats')
+  const menuNodes = (
+    <button
+      onClick={() => {
+        setPanel('stats')
         send({ t: 'box_info' })
-      },
-    },
-  ]
+      }}
+      className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#fff8f0]"
+    >
+      <span className="text-lg">💪</span>
+      <span className="flex-1">Statlar ve Enerji</span>
+      <span className="rounded-full bg-[#fff3c8] px-2 py-0.5 text-[11px] font-black text-[#8a5a00]">⚡ {energy}/{eMax}</span>
+    </button>
+  )
 
   const promptMeta =
     nearEq === 'weights'
@@ -1130,16 +1132,16 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
       )}
 
       {inBoxingModal && !match && (
-        <Modal onClose={closeBoxing} label="MakFit Boks & Antrenman">
+        <Modal onClose={closeBoxing} label="MakFit Boks Ringi" theme="gym">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <h2 className="text-xl font-black text-[#4a3b5c]">🥊 MakFit Boks Ringi</h2>
-              <p className="text-xs font-bold text-[#8a7a9c]">Ritimle yumruk at, haftalık altın kemeri kap!</p>
+              <h2 className="text-xl font-black text-white">🥊 MakFit Ringi</h2>
+              <p className="text-xs font-semibold text-white/65">Ritmi yakala, haftalık kemeri al.</p>
             </div>
-            <span className="rounded-full bg-[#fff3c8] px-3 py-1 text-xs font-black text-[#8a5a00]">⚡ {energy}/{eMax}</span>
+            <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-black text-[#ffd35e]">⚡ {energy}/{eMax}</span>
           </div>
 
-          <div className="mt-3 grid grid-cols-3 gap-1.5 rounded-2xl bg-[#f3ecff] p-1">
+          <div className="mt-3 grid grid-cols-3 gap-1.5 rounded-2xl bg-white/10 p-1">
             {[
               ['lobby', '🥊 Ring'],
               ['train', '💪 Antrenman'],
@@ -1152,7 +1154,7 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
                   setTab(id)
                   if (id === 'board') send({ t: 'box_info' })
                 }}
-                className={`rounded-xl py-2 text-xs font-black transition ${tab === id ? 'bg-white text-[#5b3fa8] shadow-sm' : 'text-[#8a7a9c]'}`}
+                className={`rounded-xl py-2 text-xs font-black transition ${tab === id ? 'bg-[#ff7e70] text-white shadow-sm' : 'text-white/70'}`}
               >
                 {lbl}
               </button>
@@ -1279,13 +1281,18 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
       )}
 
       {inStatsModal && (
-        <Modal onClose={() => setPanel(null)} label="Karakter Statları">
+        <Modal onClose={() => setPanel(null)} label="Karakter Statları" theme="bag">
+          <div className="mb-3 grid grid-cols-3 gap-1.5 rounded-2xl bg-[#f3ece0] p-1">
+            <button type="button" onClick={() => setPanel('inventory')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">🎒 Çanta</button>
+            <button type="button" className="rounded-xl bg-white py-1.5 text-xs font-black text-[#4a3b5c] shadow-sm">💪 Statlar</button>
+            <button type="button" onClick={() => setPanel('collection')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">🧺 Koleksiyon</button>
+          </div>
           <div className="flex items-center justify-between gap-2">
             <div>
-              <h2 className="text-xl font-black text-[#4a3b5c]">Karakter Statları</h2>
-              <p className="text-xs font-bold text-[#8a7a9c]">MakFit’te çalış ve şehirde sosyalleşerek güçlen!</p>
+              <h2 className="text-xl font-black text-[#4a3b5c]">Statlar</h2>
+              <p className="text-xs font-bold text-[#8a7a9c]">MakFit antrenmanları ve sosyal aktivitelerle gelişir.</p>
             </div>
-            <span className="rounded-full bg-[#fff3c8] px-3 py-1 text-xs font-black text-[#8a5a00]">Enerji {energy}/{eMax}</span>
+            <span className="rounded-full bg-[#fff3c8] px-3 py-1 text-xs font-black text-[#8a5a00]">⚡ {energy}/{eMax}</span>
           </div>
 
           {isChamp && (
@@ -1325,5 +1332,5 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
     </>
   )
 
-  return { extraButtons, overlays }
+  return { menuNodes, overlays }
 }

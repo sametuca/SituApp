@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Ico } from '../../components/Icon'
 import { PLAY_BOUNDS, zoneAt } from '../layout'
 import { VENUE_BY_ID, venueIdOf } from '../venues'
 import { subscribeWorld, worldClock } from '../worldClock'
@@ -201,17 +202,20 @@ export function useAudio({ net, focusRef, home, panel }) {
       })
   }
 
-  const extraButtons = [
-    {
-      key: 'audio',
-      icon: st.muted ? 'soundOff' : 'soundOn',
-      label: st.muted ? 'Sesi aç' : 'Sesi kapat',
-      onClick: () => {
+  const extraNodes = (
+    <button
+      type="button"
+      onClick={() => {
         ensureStarted()
         setSettings({ muted: !st.muted })
-      },
-    },
-  ]
+      }}
+      aria-label={st.muted ? 'Sesi aç' : 'Sesi kapat'}
+      title={st.muted ? 'Sesi aç' : 'Sesi kapat'}
+      className="grid h-12 w-12 place-items-center rounded-full border-2 border-white bg-white/85 shadow-soft backdrop-blur-md transition hover:bg-white active:scale-95"
+    >
+      <Ico name={st.muted ? 'soundOff' : 'soundOn'} size={24} />
+    </button>
+  )
 
   const settingsSections = [
     <section key="audio" data-testid="audio-settings">
@@ -243,5 +247,5 @@ export function useAudio({ net, focusRef, home, panel }) {
     </section>,
   ]
 
-  return { extraButtons, settingsSections }
+  return { extraNodes, settingsSections }
 }
