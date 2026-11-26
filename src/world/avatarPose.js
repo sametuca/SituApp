@@ -113,7 +113,10 @@ export function applyPose(rig, pose, dt) {
     // havlu (yerde düz) şezlongdan çok daha alçak: gövde havlunun üstüne yatar (id'ler layout.js SEATS_TOWEL `tw<n>`)
     const onTowel = rig.style === 'lounger' && String(rig.seat ?? '').startsWith('tw')
     model.position.y = -(onTowel ? TOWEL_DROP : SIT_DROP[rig.style]) * b
-    model.position.z = rig.style === 'bike' ? -0.28 * b : 0
+    // kanepe (seat kimliği 'sofa…', stil bench): oturak/ön panel yüzünden ayaklar kaybolmasın diye biraz yukarı ve ileri
+    const onSofa = rig.style === 'bench' && /(^|\/)sofa/i.test(String(rig.seat ?? ''))
+    if (onSofa) model.position.y += 0.07 * b
+    model.position.z = rig.style === 'bike' ? -0.28 * b : onSofa ? 0.1 * b : 0
     if (rig.style === 'lounger') {
       // şezlong / havlu: keyifle arkaya uzan, baş hafif yukarıda, kollar yanlarda rahat
       // havlu yere düz serilir (neredeyse yatay); şezlongun arkalığı eğimlidir (≈55°): daha dik yaslan ki gövde arkalığa gömülmesin

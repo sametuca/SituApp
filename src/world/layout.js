@@ -95,7 +95,7 @@ export const BUILDINGS = [
   b(17, -17, 8, 8, 6, 'blue', 's', '🧭 Tripadvisör'),
   b(-17, -17, 8, 8, 6, 'pink', 's', '💇 Toni & Güy'),
   b(17, 17, 8, 8, 6, 'lilac', 's', '📸 Kodakk Foto'),
-  b(-17, 17, 8, 8, 6, 'peach', 'n', '🍰 Hafız Mustafam'),
+  b(-17, 17, 8, 8, 6, 'peach', 'n', '🍰 Tatlı Kafası'),
 
   // Kafe Sokağı (kuzey)
   b(-9.7, -18, 6, 7, 5, 'yellow', 'e', '☕ Starbucket', { shop: true }),
@@ -115,7 +115,7 @@ export const BUILDINGS = [
   b(41, 9.7, 7, 6, 5, 'mint', 'n'),
 
   // Plaj Yolu (güney)
-  b(-9.7, 19, 6, 7, 5, 'blue', 'e', '🍦 Baskın Robin', { shop: true }),
+  b(-9.7, 19, 6, 7, 5, 'blue', 'e', '🍦 Nevarlanda', { shop: true }),
   b(9.7, 19, 6, 7, 5, 'pink', 'w', '🏄 Quicksörf', { shop: true }),
   b(-9.7, 27, 6, 7, 4, 'yellow', 'e', '🥤 Kokabana'),
   b(9.7, 27, 6, 7, 4, 'mint', 'w'),
@@ -196,7 +196,7 @@ for (let t = 20; t <= 90; t += 10) {
   const eSouth = t === 30 ? 25.5 : t // Burger Kral kapısından (x=31.6) uzak
   const eNorth = t === 40 ? 35.5 : t // Hard Rök kapısından (x=40.45) uzak
   PROPS.push(p('lamp', eSouth, LAMP, 3, 0.35), p('lamp', eNorth, -LAMP, 3, 0.35)) // doğu uzantısı
-  if (t <= 20) PROPS.push(p('lamp', LAMP, 23.2, 3, 0.35), p('lamp', -LAMP, 23.2, 3, 0.35)) // güney: Baskın Robin & Quicksörf kapılarından uzak
+  if (t <= 20) PROPS.push(p('lamp', LAMP, 23.2, 3, 0.35), p('lamp', -LAMP, 23.2, 3, 0.35)) // güney: Nevarlanda & Quicksörf kapılarından uzak
 }
 // dönel kavşak lambaları: halkanın dış kaldırımında, yol bağlantılarından ve Evim binasından uzakta
 for (const a of [Math.PI / 4, (3 * Math.PI) / 4, (5 * Math.PI) / 4, (7 * Math.PI) / 4, Math.PI / 8, (7 * Math.PI) / 8, (9 * Math.PI) / 8, (15 * Math.PI) / 8]) PROPS.push(pw('lamp', Math.cos(a) * (RING.r1 + 0.7), Math.sin(a) * (RING.r1 + 0.7), 3, 0.35))

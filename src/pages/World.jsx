@@ -25,7 +25,7 @@ import { findFreeSpot, furnitureColliders, isValid, loadHome, newUid, saveHome }
 import LocalPlayer from '../world/LocalPlayer'
 import RemotePlayers, { GuideNpc, SelfTag } from '../world/RemotePlayers'
 import { useMultiplayer } from '../world/net'
-import { ChatPanel, HelpModal, HintBar, Minimap, StartGuide, TopBar } from '../world/Hud'
+import { ChatPanel, HelpModal, Minimap, StartGuide, TopBar } from '../world/Hud'
 import { ChatFab, ChatSheet, DoorPrompt, GestureChip, IncomingChip, InteractSheet, InviteChip, Joystick, MatchOverlay, NearbyCard, SkillBar } from '../world/Social'
 import { GESTURE_BY_KIND, REACTIONS, SKILL_COOLDOWN_MS, WHISPER_RANGE, loadSlots, saveSlots, skillFor } from '../world/interact'
 import SkillEditor from '../components/SkillEditor'
@@ -990,7 +990,6 @@ function WorldScene({ avatar }) {
       ) : (
         <>
           {chatTarget !== 'public' && !sheetPeer && !editing && <ChatPanel feed={feed} onSend={onSend} status={net.status} />}
-          <HintBar />
         </>
       ))}
       <DockSlot />

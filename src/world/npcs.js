@@ -61,7 +61,7 @@ const CITY = [
       { id: 'flower_tulip', label: 'Taze Lale', emoji: '🌷', price: 5, style: 'smell', color: '#ff8fb8', reply: 'Mis gibi taze laleler, keyfini çıkar 🌷✨' },
     ],
     options: [
-      { label: 'Öneri iste', reply: ['Çiçek göndermek için en iyi yer Park, hem bahar kokusu hem sakinlik 🌳', 'Hafız Mustafam’dan bir şey alıp çiçekle birlikte sürpriz yap 🍰'] },
+      { label: 'Öneri iste', reply: ['Çiçek göndermek için en iyi yer Park, hem bahar kokusu hem sakinlik 🌳', 'Tatlı Kafası’ndan bir şey alıp çiçekle birlikte sürpriz yap 🍰'] },
       { label: 'Hikâye anlat', reply: ['Her sabah aynı kişi bir papatya alırdı. Bir gün sebebini sordum: “Birine ‘sevmiyor’ dedirtmemek için” dedi 🌼', 'Bir gün iki kişi aynı buketi almak istedi, buketi ikiye bölüp birlikte yürüdüler 💐'] },
     ],
   },
@@ -101,7 +101,7 @@ const CITY = [
       { id: 'ice_choco', label: 'Çikolatalı Dondurma', emoji: '🍦', price: 5, style: 'eat', color: '#7a4b32', color2: '#f5d7b0', reply: 'Bol çikolatalı dondurman hazır, afiyet olsun! 🍫🍦' },
     ],
     options: [
-      { label: 'Öneri iste', reply: ['Dondurmanı al, kıyıya otur, dalga sesi eşlik etsin 🌊', 'Baskın Robin’e da uğra, külahlar özel 🍦'] },
+      { label: 'Öneri iste', reply: ['Dondurmanı al, kıyıya otur, dalga sesi eşlik etsin 🌊', 'Nevarlanda’e da uğra, külahlar özel 🍦'] },
       { label: 'Hikâye anlat', reply: ['İki kişi aynı anda son çilekli külahı istedi. Birbirlerine uzatınca külah kırıldı, kahkaha koptu 🍓😄', 'Bir kız “eksik para” çıkardı, arkasındaki çocuk “ben ısmarlayayım” dedi. İkisi de şimdi kuyrukta bekler 🍦'] },
     ],
   },

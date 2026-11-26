@@ -213,7 +213,7 @@ function FishingCard({ spot, onCatch, onClose, onPhase, result, touch }) {
 
   useEffect(() => {
     if (phase !== 'wait') return undefined
-    const ms = 1200 + Math.random() * 1400
+    const ms = 10000 + Math.random() * 5000 // iki balık arası bekleme 10-15 sn
     const t = setTimeout(() => {
       const f = pickFish()
       const maxStart = Math.max(0.12, 0.88 - f.zone)
