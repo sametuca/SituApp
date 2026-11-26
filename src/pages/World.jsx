@@ -35,6 +35,7 @@ import { useIsTouch } from '../world/useIsTouch'
 import { HOME_TIERS, applyHomeTier } from '../world/homeTiers'
 import { bike } from '../world/bikeStore'
 import { BEACH_START, HOME_DOOR, HOME_ROOM, HOME_ZONE, SPAWN, TELEPORTS, ZONES, resolveCollisions, resolveRoom, zoneAt } from '../world/layout'
+import { getGraphicsProfile } from '../world/performanceProfile'
 
 const NO_ITEMS = []
 const START_VENUE = 'havalimani'
@@ -228,6 +229,7 @@ function WorldScene({ avatar }) {
   const lookJoystickRef = useRef({ x: 0, y: 0 })
   const moveTargetRef = useRef(null)
   const touch = useIsTouch()
+  const graphics = useMemo(() => getGraphicsProfile(), [])
   const [nearId, setNearId] = useState(null)
   const [dismissedId, setDismissedId] = useState(null)
   const [chatTarget, setChatTarget] = useState(null) // null = kapalı, 'public' = herkese açık, aksi halde oyuncu id'si
@@ -902,9 +904,9 @@ function WorldScene({ avatar }) {
     <div className="fixed inset-0 touch-none select-none overflow-hidden bg-[#cfeaff]">
       <WorldErrorBoundary>
       <Canvas
-        shadows={PCFShadowMap}
-        dpr={touch ? [1, 1.25] : [1, 1.5]}
-        gl={{ powerPreference: 'high-performance', antialias: true, toneMapping: NeutralToneMapping, toneMappingExposure: 1.02 }}
+        shadows={graphics.shadows ? PCFShadowMap : false}
+        dpr={graphics.lowPower ? graphics.dpr : (touch ? [1, 1.25] : graphics.dpr)}
+        gl={{ powerPreference: graphics.lowPower ? 'default' : 'high-performance', antialias: graphics.antialias, toneMapping: NeutralToneMapping, toneMappingExposure: 1.02 }}
         camera={{ fov: 55, near: 0.3, far: 300, position: [start.x, 6.4, start.z + 9.4] }}
         onCreated={({ gl }) => {
           gl.domElement.addEventListener('webglcontextlost', (e) => {
@@ -916,12 +918,14 @@ function WorldScene({ avatar }) {
         <color attach="background" args={[sceneBase.bg]} />
         <fog attach="fog" args={sceneBase.fog} />
         {/* Tek karede üretilen hafif PBR ışık haritası (IBL): tüm kil/plastik/cam/su yüzeylerine modern yansıma ve derinlik katar */}
-        <Environment resolution={128} frames={1} environmentIntensity={home || venue ? 0.36 : 0.42}>
-          <Lightformer form="ring" intensity={1.8} color="#fff6e0" position={[10, 14, 8]} scale={14} target={[0, 0, 0]} />
-          <Lightformer form="rect" intensity={1.4} color="#bfe8ff" position={[0, 12, 0]} rotation={[Math.PI / 2, 0, 0]} scale={[26, 26, 1]} />
-          <Lightformer form="rect" intensity={0.9} color="#ffe0c2" position={[-12, 4, -8]} scale={[14, 8, 1]} target={[0, 0, 0]} />
-          <Lightformer form="rect" intensity={0.75} color="#ffe8d6" position={[0, -6, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[24, 24, 1]} />
-        </Environment>
+        {!graphics.lowPower && (
+          <Environment resolution={128} frames={1} environmentIntensity={home || venue ? 0.36 : 0.42}>
+            <Lightformer form="ring" intensity={1.8} color="#fff6e0" position={[10, 14, 8]} scale={14} target={[0, 0, 0]} />
+            <Lightformer form="rect" intensity={1.4} color="#bfe8ff" position={[0, 12, 0]} rotation={[Math.PI / 2, 0, 0]} scale={[26, 26, 1]} />
+            <Lightformer form="rect" intensity={0.9} color="#ffe0c2" position={[-12, 4, -8]} scale={[14, 8, 1]} target={[0, 0, 0]} />
+            <Lightformer form="rect" intensity={0.75} color="#ffe8d6" position={[0, -6, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[24, 24, 1]} />
+          </Environment>
+        )}
         <Sky home={Boolean(home)} interior={venueTh ? { bg: venueTh.bg, fog: sceneBase.fog, dim: venueDim } : null} focusRef={focusRef} />
 
         <TogetherScene focusRef={focusRef} home={Boolean(home || venue)} base={skyBase} />

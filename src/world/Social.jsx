@@ -62,6 +62,7 @@ export function Joystick({ inputRef }) {
       style={{ width: BASE, height: BASE, left: 'max(0.85rem, env(safe-area-inset-left))', bottom: 'max(1rem, env(safe-area-inset-bottom))' }}
       onPointerDown={(e) => {
         if (pointer.current !== null) return
+        e.preventDefault()
         pointer.current = e.pointerId
         setDragging(true)
         try {
@@ -74,6 +75,7 @@ export function Joystick({ inputRef }) {
       onPointerMove={(e) => pointer.current === e.pointerId && apply(e)}
       onPointerUp={release}
       onPointerCancel={release}
+      onLostPointerCapture={release}
     >
       <div
         className={`absolute rounded-full border-2 border-white shadow-md ${running ? 'bg-[#5fc0ea]' : 'bg-[#fdb252]'}`}
@@ -143,6 +145,7 @@ export function LookJoystick({ inputRef }) {
       }}
       onPointerDown={(e) => {
         if (pointer.current !== null) return
+        e.preventDefault()
         pointer.current = e.pointerId
         setDragging(true)
         try {
@@ -155,6 +158,7 @@ export function LookJoystick({ inputRef }) {
       onPointerMove={(e) => pointer.current === e.pointerId && apply(e)}
       onPointerUp={release}
       onPointerCancel={release}
+      onLostPointerCapture={release}
     >
       <div
         className="absolute rounded-full border-2 border-white bg-[#a88bff] shadow-md"

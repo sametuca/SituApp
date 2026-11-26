@@ -7,6 +7,7 @@ import { useLoader } from '@react-three/fiber'
 import { TextureLoader } from 'three'
 import { PROPS } from './layout'
 import { FURNITURE, furnitureUrl } from './furniture'
+import { canUseBackgroundPreload } from './performanceProfile'
 
 const AVATARS = ['zeynep', 'deniz', 'elif', 'kaan', 'mira', 'ege']
 const CITY = [...new Set([...PROPS.map((p) => p.model), '/models/venues/picnic-blanket.glb', '/models/plants/bush.glb', '/models/plants/tuft.glb', '/models/venues/surfboard-a.glb', '/models/venues/surfboard-b.glb', '/models/venues/dj-stand.glb', '/models/club/club-ball.glb', '/models/club/club-speaker.glb', '/models/beach/lifeguard.glb', '/models/beach/volleyball.glb', '/models/beach/sandcastle.glb', '/models/airport/toy-plane.glb'])]
@@ -42,6 +43,7 @@ export function preloadCritical(slug) {
 }
 
 export function preloadLater() {
+  if (!canUseBackgroundPreload()) return
   const run = () => load([...AIRPORT, ...COLLECT, ...AVATARS.map((a) => `/models/avatars/${a}.glb`), ...PETS, ...VENUE_ITEMS, ...GIFTS, ...FURNITURE.map((f) => furnitureUrl(f.id))])
   if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 4000 })
   else setTimeout(run, 1500)
