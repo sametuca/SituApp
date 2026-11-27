@@ -179,6 +179,7 @@ function WorldScene({ avatar }) {
     [say],
   )
   const net = useMultiplayer({ name, avatar: slug, onChat: addFeed, onDenied, onInfo: say, onInvited: setInvite, onRoom, onGesture, onMatch, startRoom: startAirport ? { to: 'venue', id: START_VENUE } : null })
+  const { roster: playersInRoom, sendGesture: sendNetGesture } = net
 
   useEffect(() => {
     const on = (e) => net.send({ t: 'tp', zone: e.detail })
@@ -302,6 +303,18 @@ function WorldScene({ avatar }) {
     localStorage.setItem(tipsKey, '1')
     setShowTips(false)
   }, [tipsKey])
+
+  const greetPeer = useCallback((id) => {
+    const peer = playersInRoom.find((p) => p.id === id)
+    if (!peer) return
+    if (!sendNetGesture(id, 'wave')) {
+      say('Selam göndermek için çevrimiçi olmalısın.')
+      return
+    }
+    window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'wave' }))
+    setInteractId(id)
+    closeTips()
+  }, [closeTips, playersInRoom, sendNetGesture, say])
 
   const runCommand = (text) =>
     runWorldCommand(text, { say, net, focusRef, home, venue, goTo, ownHome, leaveVenue, visit, setHelp, setPanel, setIntroActive })
@@ -566,9 +579,13 @@ function WorldScene({ avatar }) {
           ready={sceneReady}
           inCity={!home && !venue}
           inAirport={venue === START_VENUE}
+          focusRef={focusRef}
+          roster={net.roster}
+          remotes={net.remotes}
+          peerRange={GESTURE_RANGE - 0.2}
+          onGreet={greetPeer}
+          blocked={Boolean(panel || chatTarget || interactPeer)}
           onDone={closeTips}
-          onOpenWardrobe={() => setPanel('wardrobe')}
-          onOpenMap={() => window.dispatchEvent(new CustomEvent('situapp:open-map'))}
         />
       )}
       <IntroCutsceneOverlay active={introActive} onSkip={finishIntro} />

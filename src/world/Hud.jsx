@@ -434,108 +434,98 @@ export function CameraTutorial({ touch, onDone }) {
   )
 }
 
-// ---------- ilk girişte tek, küçük yönlendirme kartı ----------
-const GUIDE_STEPS = ['camera', 'wardrobe', 'map', 'home', 'bike']
-
-/**
- * Ekranı kalabalıklaştırmamak için tek kutu, şehirde sırayla adımlar: kamera → gardırop → harita → ev → bisiklet.
- * Evde/mekânda görünmez (orada kendi istemleri var). Bittiğinde (ya da ✕ ile) onDone çağrılır; tekrar gösterilmez.
- */
-export function StartGuide({ touch, ready = true, inCity, inAirport = false, onDone, onOpenWardrobe, onOpenMap }) {
-  const [stage, setStage] = useState('camera') // camera | wardrobe | map | home | bike
+// ---------- ilk giriş: hoş geldin → hareket et → yakındaki oyuncuya selam ver ----------
+export function StartGuide({ touch, ready = true, inCity, inAirport = false, focusRef, roster, remotes, peerRange, onGreet, onDone, blocked = false }) {
+  const [stage, setStage] = useState('welcome') // welcome | move | greet
   const [shown, setShown] = useState(false)
-  const wardrobeDone = (() => {
-    try {
-      return Boolean(localStorage.getItem('situapp_wardrobe_seen'))
-    } catch {
-      return false
-    }
-  })()
+  const [nearbyPeer, setNearbyPeer] = useState(null)
+  const moveStart = useRef(null)
 
   useEffect(() => {
-    if (!ready || !inCity) return
-    const t = setTimeout(() => setShown(true), 1500)
+    if (!ready || !inCity || inAirport || blocked) return
+    const t = setTimeout(() => setShown(true), 1200)
     return () => clearTimeout(t)
-  }, [ready, inCity])
+  }, [ready, inCity, inAirport, blocked])
 
   useEffect(() => {
-    if (!shown || !inCity) return
-    const next = () => {
-      const idx = GUIDE_STEPS.indexOf(stage)
-      let nextIdx = idx + 1
-      if (GUIDE_STEPS[nextIdx] === 'wardrobe' && wardrobeDone) nextIdx++
-      if (idx >= 0 && nextIdx < GUIDE_STEPS.length) setStage(GUIDE_STEPS[nextIdx])
-      else onDone()
-    }
-    const t = setTimeout(next, stage === 'camera' ? 12000 : 9500)
-    let moved = 0
-    const onMove = (e) => {
-      if (stage !== 'camera' || (e.pointerType === 'mouse' && e.buttons === 0)) return
-      if (++moved > 12) next()
-    }
-    window.addEventListener('pointermove', onMove)
-    return () => {
-      clearTimeout(t)
-      window.removeEventListener('pointermove', onMove)
-    }
-  }, [shown, inCity, stage, onDone, wardrobeDone])
+    if (!shown || !inCity || stage !== 'move' || blocked) return
+    const start = moveStart.current
+    const t = setInterval(() => {
+      const current = focusRef.current
+      if (start && Math.hypot(current.x - start.x, current.z - start.z) >= 1.2) setStage('greet')
+    }, 250)
+    return () => clearInterval(t)
+  }, [shown, inCity, stage, focusRef, blocked])
 
-  if (!shown || !inCity || inAirport) return null
-  if (stage === 'camera') return <CameraTutorial touch={touch} onDone={() => setStage(wardrobeDone ? 'map' : 'wardrobe')} />
+  useEffect(() => {
+    if (!shown || !inCity || stage !== 'greet' || blocked) return
+    const updateNearbyPeer = () => {
+      const current = focusRef.current
+      let closest = null
+      let closestDistance = peerRange
+      for (const peer of roster) {
+        if (peer.dnd) continue
+        const position = remotes.current.get(peer.id)
+        if (!position) continue
+        const distance = Math.hypot(position.x - current.x, position.z - current.z)
+        if (distance <= closestDistance) {
+          closest = peer
+          closestDistance = distance
+        }
+      }
+      setNearbyPeer((previous) => previous?.id === closest?.id ? previous : closest)
+    }
+    updateNearbyPeer()
+    const t = setInterval(updateNearbyPeer, 700)
+    return () => clearInterval(t)
+  }, [shown, inCity, stage, blocked, focusRef, roster, remotes, peerRange])
 
-  const visibleSteps = wardrobeDone ? GUIDE_STEPS.filter((s) => s !== 'wardrobe') : GUIDE_STEPS
-  const stepIdx = visibleSteps.indexOf(stage) + 1
-  const advance = () => {
-    const idx = visibleSteps.indexOf(stage)
-    if (idx >= 0 && idx < visibleSteps.length - 1) setStage(visibleSteps[idx + 1])
-    else onDone()
+  if (!shown || !inCity || inAirport || blocked || (stage === 'greet' && !nearbyPeer)) return null
+
+  const startMoving = () => {
+    const current = focusRef.current
+    moveStart.current = { x: current.x, z: current.z }
+    setStage('move')
   }
-
-  const content = {
-    wardrobe: {
-      icon: '👗',
-      text: <>Saç, kıyafet rengi, taç/kanat ve dostun için soldaki <b className="text-[#a88bff]">👗 Gardırop</b> düğmesine bas.</>,
-      action: onOpenWardrobe ? { label: 'Aç', fn: () => { onOpenWardrobe(); advance() }, cls: 'bg-[#a88bff] text-white' } : null,
-    },
-    map: {
-      icon: '🗺️',
-      text: <>Sağ üstteki <b className="text-[#5fc0ea]">Haritaya</b> basıp Kafe, Kulüp, Park, Plaj ve Toni & Güy’e ışınlanabilirsin.</>,
-      action: onOpenMap ? { label: 'Harita', fn: () => { onOpenMap(); advance() }, cls: 'bg-[#5fc0ea] text-white' } : null,
-    },
-    home: {
-      icon: '🏠',
-      text: <>Lobi’deki <b className="text-[#fdb252]">Evim</b> kapısından (ya da sohbete <b className="text-[#fdb252]">/ev</b> yazarak) kendi odanı döşeyebilirsin.</>,
-    },
-    bike: {
-      icon: '🚲',
-      text: touch ? (
-        <>Soldaki <b className="text-[#fdb252]">🚲 düğmesi</b> ile bisiklete binip yürüyüşten hızlı gezebilirsin.</>
-      ) : (
-        <><b className="text-[#fdb252]">B</b> tuşu (ya da soldaki 🚲) ile bisiklete binip yürüyüşten hızlı gezebilirsin.</>
-      ),
-    },
-  }[stage]
+  const movementHint = touch ? 'Sol joystick ile yürü; sağ joystick ile kamerayı çevir.' : 'WASD ile yürü; fareyle kamerayı çevir.'
 
   return (
-    <TopDock><div className={`relative pointer-events-auto flex w-[min(28rem,calc(100vw-1.5rem))] animate-pop items-center gap-3 rounded-3xl py-3.5 pl-4 pr-10 ${glass}`} role="status" key={stage}>
-      <span className="shrink-0 text-3xl">{content.icon}</span>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-extrabold leading-snug text-[#4a3b5c]">{content.text}</p>
-        <div className="mt-2 flex items-center gap-2">
-          <span className="text-xs font-black text-[#8a7a9c]">{stepIdx}/{visibleSteps.length}</span>
-          {content.action && (
-            <button onClick={content.action.fn} className={`rounded-full px-3 py-1 text-xs font-black shadow-sm active:scale-95 ${content.action.cls}`}>
-              {content.action.label}
-            </button>
+    <div
+      className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex justify-center px-3"
+      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 5.5rem)' }}
+    >
+      <div className={`pointer-events-auto relative flex w-[min(25rem,calc(100vw-1.5rem))] animate-pop items-center gap-3 rounded-3xl px-4 py-3.5 pr-11 ${glass}`} role="status" key={stage}>
+        <span className="shrink-0 text-3xl" aria-hidden>{stage === 'welcome' ? '🌴' : stage === 'move' ? '🕹️' : '👋'}</span>
+        <div className="min-w-0 flex-1">
+          {stage === 'welcome' ? (
+            <>
+              <p className="text-sm font-black text-[#4a3b5c]">Plaja hoş geldin!</p>
+              <p className="mt-0.5 text-xs font-bold text-[#8a7a9c]">Dans et, keşfet, yeni insanlarla tanış.</p>
+              <div className="mt-2 flex gap-2">
+                <button onClick={startMoving} className="rounded-full bg-[#fdb252] px-3.5 py-1.5 text-xs font-black text-white shadow-sm active:scale-95">Hadi keşfet</button>
+                <button onClick={onDone} className="rounded-full bg-[#f6f0ff] px-3.5 py-1.5 text-xs font-black text-[#6b4fc0] active:scale-95">Atla</button>
+              </div>
+            </>
+          ) : stage === 'move' ? (
+            <>
+              <p className="text-sm font-black text-[#4a3b5c]">Önce biraz yürü</p>
+              <p className="mt-0.5 text-xs font-bold text-[#8a7a9c]">{movementHint}</p>
+              <button onClick={onDone} className="mt-2 rounded-full bg-[#f6f0ff] px-3.5 py-1.5 text-xs font-black text-[#6b4fc0] active:scale-95">Keşfet</button>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-black text-[#4a3b5c]">Yakınında {nearbyPeer.name} var!</p>
+              <p className="mt-0.5 text-xs font-bold text-[#8a7a9c]">Ona el sallayıp sohbete başlayabilirsin.</p>
+              <button onClick={() => onGreet(nearbyPeer.id)} className="mt-2 rounded-full bg-[#fdb252] px-3.5 py-1.5 text-xs font-black text-white shadow-sm active:scale-95">
+                👋 Selam ver
+              </button>
+            </>
           )}
-          <button onClick={advance} className="rounded-full bg-[#f6f0ff] px-3 py-1 text-xs font-black text-[#6b4fc0] hover:bg-[#ede4ff] active:scale-95">
-            {stepIdx === visibleSteps.length ? 'Bitir ✔️' : 'İleri 👉'}
-          </button>
         </div>
+        <button onClick={onDone} aria-label="İpucunu kapat" className="absolute right-2.5 top-2.5 grid h-7 w-7 place-items-center rounded-full hover:bg-[#ffedd6]/70">
+          <Ico name="close" size={12} />
+        </button>
       </div>
-      <button onClick={onDone} aria-label="İpucunu kapat" className="absolute right-2.5 top-2.5 grid h-7 w-7 place-items-center rounded-full hover:bg-[#ffedd6]/70">
-        <Ico name="close" size={12} />
-      </button>
-    </div></TopDock>
+    </div>
   )
 }
