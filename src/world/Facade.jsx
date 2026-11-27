@@ -1,5 +1,6 @@
 // Mekân ön cepheleri: her mekânın kapısı, camları, tentesi, 3B tabelası ve süsleri farklıdır (veri: facadeData.js). Bina yerel çerçevesi: cephe z = d/2, x genişlik.
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
 import { RoundedBox } from '@react-three/drei'
 import { CanvasTexture, SRGBColorSpace } from 'three'
 import { SKY_MATS } from './Sky'
@@ -297,8 +298,14 @@ function GlassPane({ k, x, w, W, z }) {
 function Awning({ w, c, stripe, z }) {
   const n = Math.max(4, Math.round(w / 1.1))
   const sw = (w * 0.9) / n
+  const g = useRef()
+  const ph = (w * 1.7 + z * 3.1) % 6.28
+  useFrame(({ clock }) => {
+    // kumaş tente rüzgârda çok hafif salınır
+    if (g.current) g.current.rotation.x = 0.32 + Math.sin(clock.elapsedTime * 0.9 + ph) * 0.014
+  })
   return (
-    <group position={[0, 2.85, z + 0.7]} rotation={[0.32, 0, 0]}>
+    <group ref={g} position={[0, 2.85, z + 0.7]} rotation={[0.32, 0, 0]}>
       {Array.from({ length: n }, (_, i) => (
         <mesh key={i} position={[(i - (n - 1) / 2) * sw, 0, 0]} castShadow>
           <boxGeometry args={[sw, 0.1, 1.5]} />

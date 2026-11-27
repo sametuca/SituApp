@@ -4,6 +4,7 @@ import { useGLTF } from '@react-three/drei'
 import { Box3, Matrix4, Quaternion, Vector3 } from 'three'
 import { fixPropMaterialSeams } from './avatarTextureFix'
 import { playerPos, useCull } from './cull'
+import { applySway, isSwayModel } from './windSway'
 
 const PROP_CULL_R = 72 // m: süs nesneleri bu mesafenin ötesinde çizilmez
 const PROP_SHADOW_R = 26 // m: güneş gölge kamerası ±20 m; daha uzaktakiler gölge geçişine girmez
@@ -22,10 +23,11 @@ export default function Prop({ model, x, z, scale = 1, ry = 0 }) {
       if (o.isMesh) {
         o.castShadow = o.receiveShadow = true
         fixPropMaterialSeams(o.material)
+        if (isSwayModel(model)) applySway(o.material, o.geometry)
       }
     })
     return clone
-  }, [scene])
+  }, [scene, model])
   const g = useRef()
   useCull(g, x, z, PROP_CULL_R, PROP_SHADOW_R)
   return (
@@ -53,11 +55,12 @@ export function InstancedPropGroup({ model, items, cullR = PROP_CULL_R, shadowR 
     scene.traverse((o) => {
       if (o.isMesh) {
         fixPropMaterialSeams(o.material)
+        if (isSwayModel(model)) applySway(o.material, o.geometry)
         list.push({ geo: o.geometry, mat: o.material, local: fit.clone().multiply(o.matrixWorld) })
       }
     })
     return list
-  }, [scene])
+  }, [scene, model])
 
   const baked = useMemo(() => {
     const q = new Quaternion()

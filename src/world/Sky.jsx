@@ -20,6 +20,8 @@ import {
 } from 'three'
 import { BEACH, GAP, PIER, PROPS, ROAD_HALF } from './layout'
 import { playerPos } from './cull'
+import { VENUE_DOORS } from './venueDoors'
+import { WIND } from './windSway'
 import { nightAt, smooth, sunsetAt, worldClock } from './worldClock'
 
 const HOME_BG = '#faeee2'
@@ -216,6 +218,13 @@ const LAMPS = PROPS.filter((p) => p.model === LAMP_MODEL).map((p) => ({ x: p.x, 
 const LAMP_TOP = 2.75
 const REAL_LIGHTS = 2
 
+// lambalar sıra sıra yanar: her birinin kendi eşiği var (0..1 hash), ışık çoğaldıkça birer birer devreye girer
+const lampRamp = (i, lit) => {
+  const h = (i * 0.618034) % 1
+  const a = 0.02 + h * 0.3
+  return Math.min(1, Math.max(0, (lit - a) / 0.12))
+}
+
 function Lamps({ focusRef }) {
   const glow = useRef()
   const pool = useRef()
@@ -227,19 +236,7 @@ function Lamps({ focusRef }) {
   useEffect(() => () => tex.dispose(), [tex])
   const dummy = useMemo(() => new Object3D(), [])
   const camera = useThree((s) => s.camera)
-
-  useEffect(() => {
-    const m = pool.current
-    if (!m) return
-    LAMPS.forEach((l, i) => {
-      dummy.position.set(l.x, 0.13, l.z)
-      dummy.rotation.set(-Math.PI / 2, 0, 0)
-      dummy.scale.set(9.5, 9.5, 1)
-      dummy.updateMatrix()
-      m.setMatrixAt(i, dummy.matrix)
-    })
-    m.instanceMatrix.needsUpdate = true
-  }, [dummy])
+  const lastLit = useRef(-1)
 
   useFrame((_, dt) => {
     const lit = skyLive.lit
@@ -254,13 +251,28 @@ function Lamps({ focusRef }) {
     if (on && glow.current) {
       const m = glow.current
       for (let i = 0; i < LAMPS.length; i++) {
+        const r = lampRamp(i, lit)
         dummy.position.set(LAMPS[i].x, LAMP_TOP, LAMPS[i].z)
         dummy.quaternion.copy(camera.quaternion)
-        dummy.scale.set(3.4, 3.4, 1)
+        dummy.scale.set(3.4 * r + 0.001, 3.4 * r + 0.001, 1)
         dummy.updateMatrix()
         m.setMatrixAt(i, dummy.matrix)
       }
       m.instanceMatrix.needsUpdate = true
+      if (Math.abs(lit - lastLit.current) > 0.003) {
+        lastLit.current = lit
+        const pm = pool.current
+        for (let i = 0; i < LAMPS.length; i++) {
+          const r = lampRamp(i, lit)
+          dummy.position.set(LAMPS[i].x, 0.13, LAMPS[i].z)
+          dummy.rotation.set(-Math.PI / 2, 0, 0)
+          dummy.quaternion.setFromEuler(dummy.rotation)
+          dummy.scale.set(9.5 * r + 0.001, 9.5 * r + 0.001, 1)
+          dummy.updateMatrix()
+          pm.setMatrixAt(i, dummy.matrix)
+        }
+        pm.instanceMatrix.needsUpdate = true
+      }
       m.material.opacity = lit * 0.92
       pool.current.material.opacity = lit * 0.42
     }
@@ -291,6 +303,88 @@ function Lamps({ focusRef }) {
         <pointLight key={i} ref={(l) => (lights.current[i] = l)} color="#ffca7a" intensity={0} distance={15} decay={2} position={[0, LAMP_TOP, 0]} />
       ))}
     </>
+  )
+}
+
+// mekân kapılarının önüne sıcak, yumuşak zemin aydınlatması (kafe/dükkân içinden taşan ışık); lambalardan biraz geç yanar
+const DOOR_LIST = Object.values(VENUE_DOORS)
+function DoorGlow() {
+  const ref = useRef()
+  const tex = useMemo(() => glowTexture(SOFT), [])
+  useEffect(() => () => tex.dispose(), [tex])
+  const dummy = useMemo(() => new Object3D(), [])
+  const last = useRef(-1)
+  useFrame(() => {
+    const m = ref.current
+    if (!m) return
+    const lit = skyLive.lit
+    m.visible = lit > 0.08
+    if (!m.visible || Math.abs(lit - last.current) < 0.003) return
+    last.current = lit
+    DOOR_LIST.forEach((d, i) => {
+      const r = Math.min(1, Math.max(0, (lit - 0.1 - ((i * 0.37) % 1) * 0.25) / 0.12))
+      dummy.position.set(d.x, 0.12, d.z)
+      dummy.rotation.set(-Math.PI / 2, 0, 0)
+      dummy.quaternion.setFromEuler(dummy.rotation)
+      dummy.scale.set(7 * r + 0.001, 7 * r + 0.001, 1)
+      dummy.updateMatrix()
+      m.setMatrixAt(i, dummy.matrix)
+    })
+    m.instanceMatrix.needsUpdate = true
+    m.material.opacity = 0.3
+  })
+  return (
+    <instancedMesh ref={ref} args={[null, null, DOOR_LIST.length]} frustumCulled={false} renderOrder={3}>
+      <planeGeometry args={[1, 1]} />
+      <meshBasicMaterial map={tex} color="#ffb766" transparent opacity={0.3} depthWrite={false} blending={AdditiveBlending} fog={false} toneMapped={false} />
+    </instancedMesh>
+  )
+}
+
+// oyuncunun çevresinde çok seyrek, yavaş süzülen sıcak toz/polen zerrecikleri (rüzgârla +x yönünde akar)
+const MOTE_N = 44
+const MOTE_BOX = 26
+function Motes({ focusRef }) {
+  const ref = useRef()
+  const tex = useMemo(() => glowTexture(SOFT), [])
+  useEffect(() => () => tex.dispose(), [tex])
+  const st = useMemo(() => {
+    const r = mulberry(5)
+    return Array.from({ length: MOTE_N }, () => ({ x: r() * MOTE_BOX, y: 0.5 + r() * 4.5, z: r() * MOTE_BOX, sp: 0.15 + r() * 0.25, ph: r() * 6.28 }))
+  }, [])
+  const geo = useMemo(() => {
+    const g = new BufferGeometry()
+    g.setAttribute('position', new Float32BufferAttribute(new Float32Array(MOTE_N * 3), 3))
+    return g
+  }, [])
+  useEffect(() => () => geo.dispose(), [geo])
+  const acc = useRef(0)
+  useFrame(({ clock }, dt) => {
+    const p = ref.current
+    if (!p) return
+    const k = Math.max(skyLive.lit * 0.9, 0.35 + (1 - skyLive.night) * 0.25)
+    p.visible = true
+    p.material.opacity = 0.34 * k
+    acc.current += dt
+    if (acc.current < 0.033) return
+    const step = acc.current
+    acc.current = 0
+    const f = focusRef.current
+    const t = clock.elapsedTime
+    const arr = geo.attributes.position.array
+    for (let i = 0; i < MOTE_N; i++) {
+      const m = st[i]
+      m.x = (m.x + m.sp * step * 1.6) % MOTE_BOX
+      arr[i * 3] = f.x - MOTE_BOX / 2 + m.x
+      arr[i * 3 + 1] = m.y + Math.sin(t * 0.5 + m.ph) * 0.35
+      arr[i * 3 + 2] = f.z - MOTE_BOX / 2 + m.z + Math.sin(t * 0.3 + m.ph) * 0.6
+    }
+    geo.attributes.position.needsUpdate = true
+  })
+  return (
+    <points ref={ref} geometry={geo} frustumCulled={false} renderOrder={5}>
+      <pointsMaterial map={tex} size={0.16} color="#ffe2b0" transparent opacity={0.3} depthWrite={false} blending={AdditiveBlending} toneMapped={false} />
+    </points>
   )
 }
 
@@ -728,6 +822,7 @@ export default function Sky({ home: homeProp, interior = null, focusRef }) {
 
   useFrame((_, dtRaw) => {
     const dt = Math.min(dtRaw, 0.1)
+    WIND.time.value = (performance.now() / 1000) % 6000
     const s = st.current
     const target = worldClock.hour
     if (s.dh == null) s.dh = target
@@ -817,6 +912,8 @@ export default function Sky({ home: homeProp, interior = null, focusRef }) {
           <SkyDome />
           <Heavens />
           <Lamps focusRef={focusRef} />
+          <DoorGlow />
+          <Motes focusRef={focusRef} />
           <SummerFestoons />
           <Fireflies />
           <WetSheen focusRef={focusRef} />

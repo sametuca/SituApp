@@ -9,7 +9,7 @@ import { currentHour, nightAt, phaseOf, publishWorld, realHour, setHourSource, s
 const MODE_KEY = 'situapp_time_mode'
 
 const MODES = [
-  { id: 'dusk', emoji: '🌇', label: 'Hep gün batımı', hour: 19.2 },
+  { id: 'dusk', emoji: '🌇', label: 'Gün batımı (ışıklar yavaşça yanar)', hour: 19.2, from: 17.6, rampMin: 9 },
   { id: 'night', emoji: '🌙', label: 'Hep gece', hour: 23 },
 ]
 const DEFAULT_MODE = 'dusk'
@@ -52,6 +52,7 @@ export function useSky() {
 
   // her saniye dünya saatini yayımla (yalnızca worldClock'a yazar, gereksiz React yeniden çizimi yapmaz)
   useEffect(() => {
+    const t0 = performance.now()
     const tick = () => {
       const m = MODES.find((x) => x.id === mode)
       const current = currentHour()
@@ -60,7 +61,9 @@ export function useSky() {
           ? urlHour
           : dayLen
             ? current
-            : m?.hour ?? current
+            : m?.from != null
+              ? Math.min(m.hour, m.from + ((performance.now() - t0) / (m.rampMin * 60000)) * (m.hour - m.from)) // oturum açılınca güneş yavaşça batar, lambalar sırayla yanar
+              : m?.hour ?? current
       const phase = phaseOf(hour)
       publishWorld({ hour, phase, night: nightAt(hour), sunset: sunsetAt(hour), weather: 'clear' })
     }
