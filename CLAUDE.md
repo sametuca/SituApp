@@ -16,7 +16,7 @@ Pastel/oyuncak görünümlü, çok oyunculu, tarayıcıda çalışan 3B sosyal/f
 | `server/features/` | Sunucu özellik modülleri; kayıt: `features/index.js` |
 | `server/store.js`, `homes.js`, `supa.js`, `guard.js` | Kalıcı veri (dosya/Supabase), evler, Supabase istemcisi, hile koruması |
 | `src/world/*Data.js`, `layout.js`, `npcs.js`, `collectibles.js`, `vibeData.js`... | **Saf JS ortak veri**: istemci ve sunucu aynı dosyayı okur (tarayıcı/Node bağımsız tut) |
-| Parçalı büyük dosyalar | `City.jsx` → `CityBuildings/CitySea/CityDecor/cityShared`; `Sky.jsx` → `SkyDome/SkyLights/skyState` (`skyLive`, `SKY_MATS` hâlâ `./Sky`'dan da alınır); `Venue.jsx` → `venueParts/VenueSpecial/VenueLighting`; `Social.jsx` → `Joysticks/InteractSheet/SocialChips/ChatSheet`; `World.jsx` komutları → `worldCommands.js`; `cosmetics.jsx` → `Wardrobe/WardrobePreview/GiftsUi`; `fitness.jsx` → `BoxingArena`; `minigameArenas.jsx` → her arena ayrı dosya |
+| Parçalı büyük dosyalar | `City.jsx` → `CityBuildings/CitySea/CityDecor/cityShared`; `Sky.jsx` → `SkyDome/SkyLights/skyState` (`skyLive`, `SKY_MATS` hâlâ `./Sky`'dan da alınır); `Venue.jsx` → `venueParts/VenueSpecial/VenueLighting`; `Social.jsx` → `Joysticks/InteractSheet/SocialChips/ChatSheet`; `World.jsx` → `WorldCanvas` (R3F sahnesi, props ile), `WorldOverlays`, `worldConfig`, `worldCommands`, hook'lar `useHomeFurniture/useAirportTutorial/useSkills`; `SurfArena.jsx` → `surfDraw.js` (canvas çizimi) + `SurfHud.jsx`; `cosmetics.jsx` → `Wardrobe/WardrobePreview/GiftsUi`; `fitness.jsx` → `BoxingArena`; `minigameArenas.jsx` → her arena ayrı dosya |
 | `scripts/` | Asset üretimi (Meshy), ölçüm, yük testi, `file-map.mjs` |
 | `docs/` | `FILE_MAP.md` (otomatik), `FEATURES.md` (ayrıntılı sistem notları) |
 
