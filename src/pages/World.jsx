@@ -43,34 +43,8 @@ import GraphicsEffects from '../world/GraphicsEffects'
 import { DoorWatcher, LoadingOverlay, SceneReady, VenueDoorWatcher, WorldErrorBoundary, ZoneWatcher } from './WorldLoading'
 import { randomLoadingMessage } from './loadingMessages'
 import { runWorldCommand } from './worldCommands'
-
-const NO_ITEMS = []
-const START_VENUE = 'havalimani'
-const AVATARS = ['zeynep', 'deniz', 'elif', 'kaan', 'mira', 'ege']
-const GUIDE_TIPS = [
-  'Selam! Ben Rehber. Nasıl oynanır penceresi için bana tıkla ya da E / H tuşuna bas.',
-  'Soldaki Gardırop düğmesiyle saç, aksesuar ve dostunu dilediğin gibi değiştirebilirsin.',
-  'Sağ üstteki yuvarlak haritaya basarak Kafe, Kulüp, Park ve Plaj’a tek tıkla ışınlan.',
-  'Lobinin güneybatısındaki Evim kapısından (veya /ev yazarak) evine girip döşeyebilirsin.',
-  'Enter’a basıp yazarsan mesajın başının üstünde balon olur.',
-  'Alttaki 1–4 tuşlarıyla selam, dans, kalp ve kutlama tepkilerini kullanabilirsin.',
-]
-const TRAVEL_LOADING_MESSAGES = [
-  'Hop, yeni bir köşeye geçiyoruz…',
-  'Yeni mekân, yeni hikâyeler…',
-  'Manzara değişiyor, keyif aynı!',
-  'Bir kapıdan kocaman bir maceraya…',
-  'Yeni yer hazırlanıyor, az kaldı…',
-  'Yol kısacık, merak uzun…',
-]
-function readAvatar() {
-  try {
-    return JSON.parse(localStorage.getItem('situapp_avatar'))
-  } catch {
-    return null
-  }
-}
-
+import { ConnectionOverlays, TransitionOverlay } from './WorldOverlays'
+import { AVATARS, GUIDE_TIPS, NO_ITEMS, START_VENUE, TRAVEL_LOADING_MESSAGES, readAvatar } from './worldConfig'
 
 export default function World() {
   const avatar = readAvatar()
@@ -787,37 +761,7 @@ function WorldScene({ avatar }) {
       </Canvas>
       </WorldErrorBoundary>
 
-      {(net.status === 'noguard') && (
-        <div className="fixed inset-0 z-[90] grid place-items-center bg-white px-5" role="alertdialog">
-          <div className="w-full max-w-sm rounded-[2rem] border-2 border-white bg-white p-6 text-center shadow-toy">
-            <div className="text-5xl">🛡️</div>
-            <h2 className="mt-2 text-xl font-black text-ink">Güvenlik doğrulanamadı</h2>
-            <p className="mt-1 text-sm font-semibold text-ink-soft">Sunucunun hile koruması doğrulanamadığı için oyun yüklenmedi. Biraz sonra tekrar dene.</p>
-          </div>
-        </div>
-      )}
-
-      {(net.status === 'kicked' || net.status === 'auth' || net.status === 'banned') && (
-        <div className="fixed inset-0 z-[80] grid place-items-center bg-white/70 px-5 backdrop-blur-sm" role="alertdialog">
-          <div className="w-full max-w-sm rounded-[2rem] border-2 border-white bg-white p-6 text-center shadow-toy">
-            <div className="text-5xl">{net.status === 'kicked' ? '🔌' : net.status === 'banned' ? '⛔' : '🔑'}</div>
-            <h2 className="mt-2 text-xl font-black text-ink">{net.status === 'kicked' ? 'Hesabın başka yerde açıldı' : net.status === 'banned' ? 'Hesabın yasaklandı' : 'Oturumun geçersiz'}</h2>
-            <p className="mt-1 text-sm font-semibold text-ink-soft">
-              {net.status === 'kicked' ? 'Aynı hesapla yalnızca tek yerden oynanabilir. Burada devam etmek için sayfayı yenile.' : net.status === 'banned' ? 'Oyunun kurallarına aykırı davranış (hile/otomasyon) algılandı. İtirazın için geri bildirim gönderebilirsin.' : 'Devam etmek için yeniden giriş yapmalısın.'}
-            </p>
-            <div className="mt-4 flex justify-center gap-2">
-              {net.status === 'kicked' && (
-                <button type="button" onClick={() => location.reload()} className="rounded-2xl bg-candy-pink px-4 py-2 text-sm font-extrabold text-ink shadow-soft">
-                  Yeniden bağlan
-                </button>
-              )}
-              <button type="button" onClick={() => signOut()} className="rounded-2xl bg-candy-lilac/60 px-4 py-2 text-sm font-extrabold text-ink shadow-soft">
-                Çıkış yap
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConnectionOverlays status={net.status} signOut={signOut} />
       {!introActive && (
         <TopBar
           zone={zone}
@@ -1069,15 +1013,7 @@ function WorldScene({ avatar }) {
         />
       )}
       <IntroCutsceneOverlay active={introActive} onSkip={finishIntro} />
-      <div
-        aria-hidden
-        className={`pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-gradient-to-br from-[#fff2e3] via-[#f1e6ff] to-[#dff3ff] transition-opacity duration-200 ${fade ? 'opacity-100' : 'opacity-0'}`}
-      >
-        <div className="flex flex-col items-center gap-3 rounded-[1.75rem] border-2 border-white bg-white/85 px-7 py-5 shadow-[0_14px_36px_rgba(104,79,145,0.16)] backdrop-blur-md">
-          <div className="h-9 w-9 animate-spin rounded-full border-[3.5px] border-[#efe6ff] border-r-[#ff9ec7] border-t-[#a88bff]" />
-          <p className="text-sm font-black tracking-wide text-[#5b4678]">{transitionLine}</p>
-        </div>
-      </div>
+      <TransitionOverlay fade={fade} line={transitionLine} />
       <LoadingOverlay ready={sceneReady} />
     </div>
   )
