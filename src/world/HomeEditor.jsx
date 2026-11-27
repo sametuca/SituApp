@@ -1,3 +1,4 @@
+// Ev "Döşe" modu: mobilya ekle/sürükle/döndür/kaldır, dekor ve hediye sekmeleri.
 import { useEffect, useRef, useState } from 'react'
 import Prop from './Prop'
 import { PlacedGift } from './Gifts'

@@ -1,3 +1,4 @@
+// useMultiplayer: WebSocket bağlantısı, mesaj aboneliği (on/send), konum ref'leri, oda geçişi.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { authService } from '../lib/auth'
 import { photoStore } from './photoStore'

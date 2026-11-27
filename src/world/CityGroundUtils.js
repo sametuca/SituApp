@@ -1,3 +1,4 @@
+// Şehir zemini yardımcıları: paylaşımlı doku önbelleği, malzeme ve tekrar yuvarlama.
 import { CanvasTexture, DataTexture, LinearFilter, MeshStandardMaterial, RepeatWrapping, SRGBColorSpace } from 'three'
 
 const texCache = new Map()

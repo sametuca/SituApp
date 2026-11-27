@@ -1,3 +1,4 @@
+// Fısıltı gelen kutusu paneli.
 import { useEffect, useRef, useState } from 'react'
 import { Em } from '../components/emoji'
 import { CHAT_EMOJIS } from './interact'

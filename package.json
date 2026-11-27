@@ -12,7 +12,8 @@
     "dev:all": "concurrently -n web,api -c blue,magenta \"npm:dev\" \"npm:server\"",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "docs:map": "node scripts/file-map.mjs"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.4.0",

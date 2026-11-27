@@ -1,3 +1,4 @@
+// Kalabalık arayüzü: mekân kanal seçici ve yakındaki oyuncu seçici.
 import { useEffect, useRef, useState } from 'react'
 import { VENUE_SOFT_CAP } from './venues'
 

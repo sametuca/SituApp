@@ -1,3 +1,4 @@
+// Asset Studio karakter listesi API istemcisi (list/save/delete).
 import { studioHeaders } from './studioKey'
 
 const API_BASE = import.meta.env.VITE_API_BASE || ''

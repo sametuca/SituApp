@@ -1,3 +1,4 @@
+// Dünya sayfası orkestratörü: Canvas, ağ, HUD, özellik modülleri, odalar (şehir/ev/mekân).
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DockSlot, TopDockSlot } from '../components/Dock'
 import { Navigate, useNavigate } from 'react-router-dom'

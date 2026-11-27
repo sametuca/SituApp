@@ -1,3 +1,4 @@
+// Bisiklet modeli ve sürüş görünümü (bikeStore durumu).
 import { useMemo } from 'react'
 import { useGLTF } from '@react-three/drei'
 import { Box3, Vector3 } from 'three'

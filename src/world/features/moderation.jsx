@@ -1,3 +1,4 @@
+// Engelle/şikâyet/rahatsız etme arayüzü.
 import { useState } from 'react'
 import { Modal } from '../Hud'
 

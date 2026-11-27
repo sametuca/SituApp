@@ -1,3 +1,4 @@
+// Sunucu girişi: Express (/api, dist/ statik) + WebSocket (/ws) + başlangıç yüklemeleri (store/homes/guard).
 import express from 'express'
 import cors from 'cors'
 import compression from 'compression'

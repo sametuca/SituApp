@@ -1,3 +1,4 @@
+// Boks arenası 3B: boksörler, vuruş kıvılcımları.
 import { Suspense, useMemo, useRef } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { RoundedBox, useGLTF } from '@react-three/drei'

@@ -1,3 +1,4 @@
+// POST /api/register: kullanıcı adı + şifre ile sunucu tarafı kayıt (e-posta doğrulamasız).
 import { createHash } from 'node:crypto'
 import { ipOf } from './guard.js'
 import * as supa from './supa.js'

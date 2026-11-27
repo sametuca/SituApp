@@ -1,3 +1,4 @@
+// Şehir çizimi: zemin dokuları, binalar, yollar, deniz/ada, süs nesneleri, sınır şamandıraları.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { screenK } from './screenK'
 import { useFrame, useLoader } from '@react-three/fiber'

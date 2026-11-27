@@ -1,3 +1,4 @@
+// Havalimanı başlangıç eğitimi sahnesi: zemin okları, işaret ışıkları, hedef yıldızı.
 import { Suspense, useMemo, useRef, useState } from 'react'
 import { TopDock } from '../components/Dock'
 import { useFrame } from '@react-three/fiber'

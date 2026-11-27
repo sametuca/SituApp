@@ -1,3 +1,4 @@
+// Yerel oyuncu: hareket, çarpışma, kamera takibi, bisiklet, tıkla-git, ışınlanma.
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { MathUtils, Spherical, Vector3 } from 'three'

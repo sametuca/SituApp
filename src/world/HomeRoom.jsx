@@ -1,3 +1,4 @@
+// Ev iç mekânı (oyuncak evi gibi, duvarlar içe bakar), kademeye göre oda ölçüsü.
 import { useEffect, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Html, RoundedBox } from '@react-three/drei'

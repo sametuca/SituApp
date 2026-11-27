@@ -1,3 +1,4 @@
+// Yol işaretleri, kaldırım taşları ve yol süsleri.
 import { useEffect, useMemo, useRef } from 'react'
 import { CanvasTexture, Color, Object3D, SRGBColorSpace } from 'three'
 import { GAP, RING, ROAD_END, ROAD_HALF } from './layout'

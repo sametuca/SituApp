@@ -1,3 +1,4 @@
+// GLB süs nesneleri: tekil Prop ve instanced PropGroup (mesafe kırpma, gölge yarıçapı, palmiye salınımı).
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'

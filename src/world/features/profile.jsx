@@ -1,3 +1,4 @@
+// Profil kartı, düzenleyici, ilgi etiketleri, uyumluluk göstergeleri, ruh hali.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Dock } from '../../components/Dock'
 import { Modal } from '../Hud'

@@ -1,3 +1,4 @@
+// Giriş noktası: React kökü, global stiller, unisex shader yaması ve emoji kurulumu.
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'

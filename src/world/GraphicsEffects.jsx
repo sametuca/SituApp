@@ -1,3 +1,4 @@
+// Son işlem efektleri: N8AO ve hafif bloom (grafik profiline göre).
 import { Bloom, EffectComposer, N8AO } from '@react-three/postprocessing'
 
 export default function GraphicsEffects({ ao = true, bloom = true }) {

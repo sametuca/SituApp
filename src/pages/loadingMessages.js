@@ -1,3 +1,4 @@
+// Yükleme ekranı mesajları ve rastgele seçici.
 export const WORLD_LOADING_MESSAGES = [
   'Şehir hazırlanıyor, kaldırımlar son rötuşta…',
   'Pofuduk bulutlar kabartılıyor…',

@@ -1,3 +1,4 @@
+// Üst çubuk, ipuçları, yardım, modal ve ortak HUD bileşenleri.
 import { useEffect, useRef, useState } from 'react'
 import { TopDock } from '../components/Dock'
 import { Ico } from '../components/Icon'

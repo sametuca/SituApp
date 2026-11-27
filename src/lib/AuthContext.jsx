@@ -1,3 +1,4 @@
+// Auth bağlamı: demo/Supabase oturumu, RequireAuth, KVKK onay kapısı.
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { authService, subscribeToAuth } from './auth'

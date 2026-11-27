@@ -1,3 +1,4 @@
+// Karakter seçiminde dönen avatar önizlemesi (look rengi uygulanır).
 import { Suspense, useEffect, useMemo } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, useGLTF } from '@react-three/drei'

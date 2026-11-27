@@ -1,3 +1,4 @@
+// Cihaza göre grafik profili ve arka plan ön yükleme izni.
 export function getGraphicsProfile() {
   if (typeof navigator === 'undefined') {
     return { lowPower: false, dpr: [1, 1.5], antialias: true, shadows: true, ao: true, bloom: true }

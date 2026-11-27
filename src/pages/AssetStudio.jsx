@@ -1,3 +1,4 @@
+// Dahili geliştirici aracı: Meshy ile model üretme/önizleme (koyu tema).
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ModelViewer from '../components/3d/ModelViewer'

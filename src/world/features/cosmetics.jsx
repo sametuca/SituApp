@@ -1,3 +1,4 @@
+// Gardırop (aksesuar/evcil hayvan/look), hediye teklifleri, ev dekoru sekmeleri.
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { TopDock } from '../../components/Dock'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'

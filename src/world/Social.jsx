@@ -1,3 +1,4 @@
+// Joystick, beceri çubuğu, yakın oyuncu kartı ve DM çekmecesi.
 import { useEffect, useRef, useState } from 'react'
 import { Em } from '../components/emoji'
 import { SlotIcon } from '../components/SkillIcon'

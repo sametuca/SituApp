@@ -1,3 +1,4 @@
+// Sörf ortak verileri: tahta stilleri, bot adları, tohumlu rastgele üretici.
 export const LOCAL_BOARD_KEY = 'situapp_surf_board_v1'
 export const BOARD_STYLES = [
   { board: '#ff8fb8', stripe: '#fff8ee', suit: '#1ea8c7', shorts: '#ffd35e', hair: '#4a3326' },

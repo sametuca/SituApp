@@ -1,3 +1,4 @@
+// Meshy API istemcisi: önizleme/rafine görev oluşturma ve durum yoklama.
 import { studioHeaders } from './studioKey'
 
 const API_BASE = import.meta.env.VITE_API_BASE || ''

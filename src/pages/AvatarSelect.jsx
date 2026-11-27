@@ -1,3 +1,4 @@
+// Karakter seçimi + renk özelleştirme ekranı (tek karakter kilidi).
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGLTF } from '@react-three/drei'

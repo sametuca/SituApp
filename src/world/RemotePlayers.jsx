@@ -1,3 +1,4 @@
+// Uzak oyuncular + NPC çizimi, yumuşatma ve çizim bütçesi.
 import { memo, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { screenK } from './screenK'
 import { useFrame } from '@react-three/fiber'

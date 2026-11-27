@@ -1,3 +1,4 @@
+// Oyuncu portresi: profil fotoğrafı varsa o, yoksa avatar portresi.
 import { useState } from 'react'
 import { usePhoto } from './photoStore'
 

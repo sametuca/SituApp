@@ -1,3 +1,4 @@
+// Rig'li avatar: AnimationMixer, duruş katmanı (avatarPose), aksesuar/look, iş aksesuarı.
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Html, useGLTF } from '@react-three/drei'

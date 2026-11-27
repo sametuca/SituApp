@@ -1,3 +1,4 @@
+// Sohbet paneli (genel/özel mesajlar, yazma ve ikili sohbet bağlantıları).
 import { useEffect, useRef, useState } from 'react'
 import { Ico } from '../components/Icon'
 

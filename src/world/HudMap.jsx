@@ -1,3 +1,4 @@
+// Mini harita ve büyük harita çizimi (ada, yollar, mekânlar).
 import { useEffect, useRef, useState } from 'react'
 import { emojiSrc } from '../components/emoji'
 import { Ico } from '../components/Icon'

@@ -1,3 +1,4 @@
+// Asset Studio: public/models manifesti okuma ve Meshy çıktısını içe aktarma (geliştirici aracı).
 import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
