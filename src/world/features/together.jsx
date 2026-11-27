@@ -63,7 +63,7 @@ function PhotoPrompt({ touch, raised, onShoot, onAlbum }) {
         </button>
         <div className="w-24 shrink-0">
           <ToyButton className="!rounded-xl !py-2 !text-sm" onClick={onShoot}>
-            {touch ? 'Çek' : 'E · Çek'}
+            Çek
           </ToyButton>
         </div>
       </div>

@@ -3,7 +3,7 @@ export const NO_ITEMS = []
 export const START_VENUE = 'havalimani'
 export const AVATARS = ['zeynep', 'deniz', 'elif', 'kaan', 'mira', 'ege']
 export const GUIDE_TIPS = [
-  'Selam! Herkes yolculuğa burada, Rastla Sahili’nde başlar. Rehber için bana tıkla ya da E / H tuşuna bas.',
+  'Selam! Herkes yolculuğa burada, Rastla Sahili’nde başlar. Rehber için bana dokun veya yanındaki Aç düğmesine bas.',
   'Hemen yanımızdaki Beach Party masalarında en fazla 2 kişi karşılıklı oturup baş başa sohbet edebilir!',
   'Sahilde birileriyle kaynaştıktan sonra kuzey yolundan Şehir Meydanı’na, Kafe Sokağı’na ve Kulüp’e birlikte akabilirsiniz.',
   'Şezlonglarda ve kumsaldaki renkli havlularda tek başına uzanıp gün batımını izleyebilirsin.',

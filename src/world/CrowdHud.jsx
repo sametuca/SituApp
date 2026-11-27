@@ -1,5 +1,6 @@
 // Kalabalık arayüzü: mekân kanal seçici ve yakındaki oyuncu seçici.
 import { useEffect, useRef, useState } from 'react'
+import { TopDock } from '../components/Dock'
 import { VENUE_SOFT_CAP } from './venues'
 
 const glass = 'border-2 border-white bg-white/95 shadow-soft'
@@ -145,10 +146,10 @@ export function NearbyPicker({ remotes, roster, focusRef, touch = false, onPick 
 
   if (list.length < (touch ? 1 : 3)) return null
 
-  return (
+  const inner = (
     <div
       ref={boxRef}
-      className={`pointer-events-auto fixed z-20 ${touch ? 'left-1/2 top-11 -translate-x-1/2' : 'bottom-[15.6rem] left-3'}`}
+      className={`pointer-events-auto relative ${touch ? '' : 'fixed bottom-[15.6rem] left-3 z-20'}`}
     >
       <button
         type="button"
@@ -169,7 +170,7 @@ export function NearbyPicker({ remotes, roster, focusRef, touch = false, onPick 
       </button>
 
       {open && list.length > 1 && (
-        <div className={`mt-1.5 w-56 rounded-3xl border-2 border-white bg-white/96 p-2 shadow-toy backdrop-blur-md ${touch ? 'ml-auto' : ''}`}>
+        <div className={`mt-1.5 w-56 rounded-3xl border-2 border-white bg-white/96 p-2 shadow-toy backdrop-blur-md ${touch ? 'mx-auto' : ''}`}>
           <div className="mb-1 px-2 text-[11px] font-black text-[#8a7a9c]">Yakındaki Oyuncular</div>
           <div className="flex max-h-52 flex-col gap-0.5 overflow-y-auto">
             {list.map((p) => (
@@ -191,4 +192,6 @@ export function NearbyPicker({ remotes, roster, focusRef, touch = false, onPick 
       )}
     </div>
   )
+
+  return touch ? <TopDock>{inner}</TopDock> : inner
 }

@@ -15,7 +15,7 @@ const NAMES = {
 
 // Oturan avatar ayakta olduğu yüksekliğin bu kadar altına iner (m); negatif değer koltuk/sele üstüne çıkarır.
 const TOWEL_DROP = 0.36
-export const SIT_DROP = { bench: -0.08, chair: -0.05, stool: 0.14, lounger: 0.04, floor: 0.42, bike: -0.22 }
+export const SIT_DROP = { bench: -0.08, chair: -0.21, stool: 0.14, lounger: 0.04, floor: 0.42, bike: -0.22 }
 
 const q1 = new Quaternion()
 const q2 = new Quaternion()
@@ -132,7 +132,16 @@ export function applyPose(rig, pose, dt) {
     // kanepe (seat kimliği 'sofa…', stil bench): oturak/ön panel yüzünden ayaklar kaybolmasın diye biraz yukarı ve ileri
     const onSofa = rig.style === 'bench' && /(^|\/)sofa/i.test(String(rig.seat ?? ''))
     if (onSofa) model.position.y += 0.07 * b
-    model.position.z = rig.style === 'bike' ? -0.28 * b : rig.style === 'lounger' && !onTowel ? 0.16 * b : onSofa ? 0.1 * b : 0
+    model.position.z =
+      rig.style === 'bike'
+        ? -0.28 * b
+        : rig.style === 'lounger' && !onTowel
+          ? 0.16 * b
+          : rig.style === 'chair'
+            ? 0.09 * b
+            : onSofa
+              ? 0.1 * b
+              : 0
     if (rig.style === 'lounger') {
       // şezlong / havlu: keyifle arkaya uzan, baş hafif yukarıda, kollar yanlarda rahat, ayaklar üstte görünür
       turn(rig, bones.hips, AX, (onTowel ? -1.25 : -0.82) * b)
@@ -181,10 +190,11 @@ export function applyPose(rig, pose, dt) {
       turn(rig, bones.lHand, AX, 0.1 * b)
       turn(rig, bones.rHand, AX, 0.1 * b)
     } else {
-      turn(rig, bones.lUp, AX, -1.45 * b)
-      turn(rig, bones.rUp, AX, -1.45 * b)
-      turn(rig, bones.lLeg, AX, 1.5 * b)
-      turn(rig, bones.rLeg, AX, 1.5 * b)
+      const chair = rig.style === 'chair'
+      turn(rig, bones.lUp, AX, (chair ? -1.36 : -1.45) * b)
+      turn(rig, bones.rUp, AX, (chair ? -1.36 : -1.45) * b)
+      turn(rig, bones.lLeg, AX, (chair ? 1.16 : 1.5) * b)
+      turn(rig, bones.rLeg, AX, (chair ? 1.16 : 1.5) * b)
       turn(rig, bones.lArm, AX, -0.35 * b)
       turn(rig, bones.rArm, AX, -0.35 * b)
     }

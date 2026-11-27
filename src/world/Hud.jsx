@@ -10,7 +10,7 @@ const glass = 'border-2 border-white bg-white/92 shadow-soft'
 // ---------- üst çubuk ----------
 // extraButtons: özellik modüllerinin düğmeleri [{ key, emoji, label, onClick, badge? }] (sol sütunda, geri düğmesinin altında)
 // extraNodes: hazır JSX düğmeler (sağ grupta, ⚙️'nin solunda)
-export function TopBar({ online, status, dnd, touch = false, inCity = false, onExit, onHelp, onSettings, extraButtons = [], extraNodes = null, menuNodes = null, menuBadge = 0 }) {
+export function TopBar({ online, status, dnd, touch = false, inCity = false, tourStep = null, onExit, onHelp, onSettings, extraButtons = [], extraNodes = null, menuNodes = null, menuBadge = 0 }) {
   const [menu, setMenu] = useState(false)
   const [leftOpen, setLeftOpen] = useState(false)
   const [narrowHud, setNarrowHud] = useState(() => (typeof window !== 'undefined' ? window.innerWidth < 768 : false))
@@ -22,16 +22,29 @@ export function TopBar({ online, status, dnd, touch = false, inCity = false, onE
     window.addEventListener('resize', onR)
     return () => window.removeEventListener('resize', onR)
   }, [])
+  useEffect(() => {
+    if (tourStep === 'left-menu') {
+      setLeftOpen(true)
+      setMenu(false)
+    } else if (tourStep === 'right-menu') {
+      setLeftOpen(false)
+      setMenu(true)
+    } else if (tourStep) {
+      setLeftOpen(false)
+      setMenu(false)
+    }
+  }, [tourStep])
   const mobileBar = touch || narrowHud
   useEffect(() => {
-    if (!menu && !leftOpen) return
+    if (tourStep === 'left-menu' || tourStep === 'right-menu') return undefined
+    if (!menu && !leftOpen) return undefined
     const off = (e) => {
       if (menu && !menuRef.current?.contains(e.target)) setMenu(false)
       if (leftOpen && !leftRef.current?.contains(e.target)) setLeftOpen(false)
     }
     window.addEventListener('pointerdown', off)
     return () => window.removeEventListener('pointerdown', off)
-  }, [menu, leftOpen])
+  }, [menu, leftOpen, tourStep])
   const dot = status === 'online' ? 'bg-emerald-400' : status === 'connecting' ? 'bg-amber-400' : 'bg-rose-400'
   const label = status === 'online' ? `${online} çevrimiçi` : status === 'connecting' ? 'Bağlanıyor…' : 'Çevrimdışı (tek başına)'
   const hasSpotlight = extraButtons.some((b) => b.hint)
@@ -51,9 +64,10 @@ export function TopBar({ online, status, dnd, touch = false, inCity = false, onE
         style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}
       >
         {mobileBar && !hasSpotlight ? (
-          <div className="pointer-events-auto relative" ref={leftRef}>
+          <div className="pointer-events-auto relative" ref={leftRef} data-tour="left-menu-wrap">
             <button
               type="button"
+              data-tour="left-menu-btn"
               onClick={() => setLeftOpen((o) => !o)}
               aria-label="Hızlı menü"
               aria-expanded={leftOpen}
@@ -72,6 +86,7 @@ export function TopBar({ online, status, dnd, touch = false, inCity = false, onE
             </button>
             {leftOpen && (
               <div
+                data-tour="left-menu-panel"
                 className="absolute left-0 top-12 z-30 flex max-h-[72svh] w-56 flex-col gap-0.5 overflow-y-auto rounded-3xl border-2 border-white bg-white/95 p-2 shadow-toy backdrop-blur-md"
                 onClick={() => setLeftOpen(false)}
               >
@@ -114,7 +129,7 @@ export function TopBar({ online, status, dnd, touch = false, inCity = false, onE
             )}
           </div>
         ) : (
-          <div className="pointer-events-auto flex max-h-[calc(100svh-8.5rem)] flex-col flex-wrap content-start gap-1.5 sm:gap-2.5">
+          <div data-tour="desktop-left-bar" className="pointer-events-auto flex max-h-[calc(100svh-8.5rem)] flex-col flex-wrap content-start gap-1.5 sm:gap-2.5">
             {!hasSpotlight && (
               <button
                 onClick={onExit}
@@ -188,7 +203,7 @@ export function TopBar({ online, status, dnd, touch = false, inCity = false, onE
           {menuBadge > 0 && <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full border border-white bg-[#fdb252] px-1 text-[10px] font-black text-white sm:h-5 sm:min-w-5">{menuBadge}</span>}
         </button>
         {menu && (
-          <div className="absolute right-0 top-12 z-30 flex max-h-[75svh] w-64 flex-col gap-1 overflow-y-auto rounded-3xl border-2 border-white bg-white/95 p-2 shadow-soft backdrop-blur-md sm:top-14 sm:w-72" onClick={() => setMenu(false)}>
+          <div data-tour="right-menu-panel" className="absolute right-0 top-12 z-30 flex max-h-[75svh] w-64 flex-col gap-1 overflow-y-auto rounded-3xl border-2 border-white bg-white/95 p-2 shadow-soft backdrop-blur-md sm:top-14 sm:w-72" onClick={() => setMenu(false)}>
             {menuNodes}
             <button onClick={toggleFullscreen} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-xs font-extrabold text-[#4a3b5c] transition hover:bg-[#fff8f0] sm:py-2.5 sm:text-sm">
               <span className="grid h-6 w-6 place-items-center text-[#6b4fc0]"><FullscreenIcon active={isFullscreen} size={19} /></span>
@@ -471,9 +486,8 @@ export function HelpModal({ onClose, inCity = false, onOpenWardrobe, onGoHome, o
                 <div>
                   <h3 className="text-xs font-extrabold uppercase tracking-wide text-[#e8952c]">Temel Kontroller</h3>
                   <ul className="mt-2.5 flex flex-col gap-2">
-                    <Row k="W A S D">veya ok tuşlarıyla yürü</Row>
-                    <Row k="Shift">basılı tutarak koş</Row>
-                    <Row k="E">mekân kapısına gir, otur, topla ya da NPC ile konuş</Row>
+                    <Row k="W A S D">veya ok tuşlarıyla yürü (Shift ile koş)</Row>
+                    <Row k="Etkileşim">kapıya, koltuğa veya NPC’ye yaklaşınca çıkan düğmeye bas</Row>
                     <Row k="Fare">sürükle: kamerayı çevir · tekerlek: yakınlaştır</Row>
                     <Row k="1 – 4">alt beceri çubuğundaki tepki ve dansları kullan</Row>
                     <Row k="H">bu rehberi dilediğin zaman aç / kapat</Row>
@@ -524,7 +538,7 @@ export function HelpModal({ onClose, inCity = false, onOpenWardrobe, onGoHome, o
             {tab === 'world' && (
               <div className="flex flex-col gap-3">
                 <p className="text-xs font-bold text-[#8a7a9c]">
-                  Şehirdeki tüm mekanların kapısına yaklaşıp <b>E</b> ile içeri girebilir, sokak satıcılarından (Dondurmacı, Çiçekçi, Baloncu) altınla ürün alabilirsin.
+                  Şehirdeki tüm mekanların kapısına yaklaşıp içeri girebilir, sokak satıcılarından (Dondurmacı, Çiçekçi, Baloncu) ürün alabilirsin.
                 </p>
                 <ul className="flex flex-col gap-2">
                   {ZONES.map((z) => (
@@ -581,9 +595,9 @@ export function HelpModal({ onClose, inCity = false, onOpenWardrobe, onGoHome, o
             {tab === 'progress' && (
               <div className="flex flex-col gap-3">
                 <ul className="flex flex-col gap-2">
-                  <Row k="Koleksiyon">şehirde parlayan yıldız, çiçek ve gizli sandıkları E ile topla</Row>
+                  <Row k="Koleksiyon">şehirde parlayan yıldız, çiçek ve gizli sandıkları topla</Row>
                   <Row k="EXP & Seviye">topladığın her eşya alttaki EXP çubuğunu doldurur ve yeni ödüller açar</Row>
-                  <Row k="Balıkçılık">meslek seçmeden sahil iskelesinde veya park göletinde E ile olta at</Row>
+                  <Row k="Balıkçılık">meslek seçmeden sahil iskelesinde veya park göletinde olta at</Row>
                   <Row k="Postacılık">lobideki kırmızı posta kutusundan paket alıp mekanlara teslim et (+12 TL)</Row>
                   <Row k="Altın">balık tutarak, posta dağıtarak, kulüpte DJ olarak veya plaj etkinlikleriyle kazan</Row>
                   <Row k="Bisiklet">sol çubuktaki bisiklet düğmesiyle şehirde çok daha hızlı gez</Row>

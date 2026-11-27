@@ -233,7 +233,7 @@ for (const x of [-19.5, -24.5]) PROPS.push(p('lamp', x, 2.6, 3, 0.35), p('lamp',
 export const VOLLEY_NET = { x: BEACH.x - 9, z: BEACH.z + 2, r: 5 } // voleybol filesi (istemci + sunucu ortak)
 export const BEACH_PARTY = { x: 11.5, z: 58.5, ry: -0.58 } // sahil partisi sahnesi + dans pisti (plaja doğan oyuncuları karşılar)
 
-// Beach Party sosyal oturma masaları: her masada TAM 2 karşılıklı sandalye (en fazla 2 oyuncu oturabilir, üst üste binmez)
+// Beach Party sosyal oturma masaları: kahveli kafe masası yerine bambu/tiki sahil masası ve plaj koltukları (BeachParty.jsx çizer; her masada TAM 2 kişi oturabilir)
 export const BEACH_PARTY_TABLES = [
   { x: 15.2, z: 61.8, angle: 0.45, umbrella: true },
   { x: 13.8, z: 65.4, angle: -0.35, umbrella: true },
@@ -241,18 +241,21 @@ export const BEACH_PARTY_TABLES = [
   { x: 6.3, z: 62.7, angle: -0.52, umbrella: false },
   { x: 7.2, z: 56.2, angle: 0.65, umbrella: true },
 ]
+export const SEATS_BEACH_PARTY = []
 BEACH_PARTY_TABLES.forEach((tb, ti) => {
-  PROPS.push(pw('cafetable', tb.x, tb.z, 1.15, 0.48, tb.angle))
   if (tb.umbrella) {
     PROPS.push(pw('umbrella', +(tb.x + 0.85).toFixed(2), +(tb.z - 0.85).toFixed(2), 2.35, 0.25, tb.angle))
   }
-  const dx = Math.cos(tb.angle) * 0.88
-  const dz = Math.sin(tb.angle) * 0.88
-  const c1 = pw('cafechair', +(tb.x + dx).toFixed(2), +(tb.z + dz).toFixed(2), 1.02, 0, Math.atan2(-dx, -dz))
-  const c2 = pw('cafechair', +(tb.x - dx).toFixed(2), +(tb.z - dz).toFixed(2), 1.02, 0, Math.atan2(dx, dz))
-  c1.seatGroup = c2.seatGroup = `bpt${ti}`
-  c1.seatKind = c2.seatKind = 'table'
-  PROPS.push(c1, c2)
+  const dx = Math.cos(tb.angle) * 0.9
+  const dz = Math.sin(tb.angle) * 0.9
+  const c1x = +(tb.x + dx).toFixed(2)
+  const c1z = +(tb.z + dz).toFixed(2)
+  const c2x = +(tb.x - dx).toFixed(2)
+  const c2z = +(tb.z - dz).toFixed(2)
+  SEATS_BEACH_PARTY.push(
+    { id: `bp${ti}a`, kind: 'table', style: 'chair', group: `bpt${ti}`, x: c1x, z: c1z, ry: +Math.atan2(-dx, -dz).toFixed(3), slots: [{ x: c1x, z: c1z }] },
+    { id: `bp${ti}b`, kind: 'table', style: 'chair', group: `bpt${ti}`, x: c2x, z: c2z, ry: +Math.atan2(dx, dz).toFixed(3), slots: [{ x: c2x, z: c2z }] },
+  )
 })
 // Beach Party kenarına tek kişilik dinlenme şezlongları (her şezlongda en fazla 1 oyuncu yatabilir)
 PROPS.push(
@@ -389,7 +392,7 @@ loungers.forEach((a, i) => {
     if (Math.hypot(a.x - c.x, a.z - c.z) < 3.2) a.group = c.group = a.group ?? c.group ?? `lg${i}`
   })
 })
-export const SEATS = [...SEATS_PROPS, ...SEATS_TOWEL]
+export const SEATS = [...SEATS_PROPS, ...SEATS_BEACH_PARTY, ...SEATS_TOWEL]
 export const SEAT_LABEL = { bench: 'Banka otur', lounger: 'Şezlonga uzan', towel: 'Havluya uzan', chair: 'Sandalyeye otur', blanket: 'Battaniyeye otur', table: 'Masaya otur', stool: 'Taburede otur', sofa: 'Kanepeye otur' }
 
 // Fotoğraf Stüdyosu'nun (MakFit yanı; kapısı güneye bakar) kapı önü: "Fotoğraf çek" istemi burada çıkar.
@@ -407,6 +410,7 @@ export const COLLIDERS = [
   ...PROPS.filter((pr) => pr.r > 0).map((pr) => ({ type: 'circle', x: pr.x, z: pr.z, r: pr.r })),
   { type: 'box', x: -28.6, z: 14, hw: 1.5, hd: 1.85 }, // Posta Merkezi (jobsData.js POST_CENTER; doğuya bakar)
   { type: 'circle', x: BEACH_PARTY.x, z: BEACH_PARTY.z, r: 2.3 }, // Beach Party DJ sahnesi
+  ...BEACH_PARTY_TABLES.map((tb) => ({ type: 'circle', x: tb.x, z: tb.z, r: 0.5 })), // Beach Party bambu masaları
 ]
 
 export const PLAYER_RADIUS = 0.4

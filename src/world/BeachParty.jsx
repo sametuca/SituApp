@@ -218,31 +218,67 @@ export default function BeachParty() {
       </Html>
     </group>
 
-    {/* Sahil partisi masa üstü tropikal içecekler, ahşap altlıklar ve sıcak masa fenerleri */}
+    {/* Sahil partisi bambu/tiki kokteyl masaları ve hasır plaj koltukları (Meshy GLB üretilene kadar kahvesiz, plaj temalı 3B set) */}
     <group>
-      {BEACH_PARTY_TABLES.map((tb, i) => (
-        <group key={i} position={[tb.x, 0, tb.z]} rotation={[0, tb.angle, 0]}>
-          {/* Kum üstü yuvarlak hasır paspas */}
-          <mesh position={[0, 0.018, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-            <circleGeometry args={[1.38, 20]} />
-            <meshStandardMaterial color={i % 2 === 0 ? '#f6dfbe' : '#ffe8c9'} roughness={0.9} />
-          </mesh>
-          {/* Masa ortası sıcak fener */}
-          <mesh position={[0, 0.83, 0]}>
-            <cylinderGeometry args={[0.07, 0.085, 0.16, 10]} />
-            <meshStandardMaterial color="#fff3c4" emissive="#ffb347" emissiveIntensity={0.9} roughness={0.25} />
-          </mesh>
-          {/* 2 kişilik tropikal kokteyl bardakları */}
-          <mesh position={[0.22, 0.8, 0.08]}>
-            <cylinderGeometry args={[0.055, 0.04, 0.13, 8]} />
-            <meshStandardMaterial color="#ff8fb8" roughness={0.3} />
-          </mesh>
-          <mesh position={[-0.22, 0.8, -0.08]}>
-            <cylinderGeometry args={[0.055, 0.04, 0.13, 8]} />
-            <meshStandardMaterial color="#7fcdf3" roughness={0.3} />
-          </mesh>
-        </group>
-      ))}
+      {BEACH_PARTY_TABLES.map((tb, i) => {
+        const cushionCol = i % 2 === 0 ? '#5fc0ea' : '#ff8fb8'
+        return (
+          <group key={i} position={[tb.x, 0, tb.z]} rotation={[0, tb.angle, 0]}>
+            {/* Kum üstü hasır paspas */}
+            <mesh position={[0, 0.018, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+              <circleGeometry args={[1.45, 22]} />
+              <meshStandardMaterial color={i % 2 === 0 ? '#f6dfbe' : '#ffe8c9'} roughness={0.9} />
+            </mesh>
+            {/* Bambu Tiki Masa */}
+            <mesh position={[0, 0.36, 0]} castShadow>
+              <cylinderGeometry args={[0.11, 0.16, 0.72, 10]} />
+              <meshStandardMaterial color="#d8a36c" roughness={0.72} />
+            </mesh>
+            <mesh position={[0, 0.73, 0]} castShadow receiveShadow>
+              <cylinderGeometry args={[0.48, 0.45, 0.08, 16]} />
+              <meshStandardMaterial color="#e8bc88" roughness={0.62} />
+            </mesh>
+            {/* Hindistan cevizi / tropikal soğuk kokteyl bardakları */}
+            {[-0.18, 0.18].map((ox, ci) => (
+              <group key={ci} position={[ox, 0.82, ci === 0 ? 0.06 : -0.06]}>
+                <mesh castShadow>
+                  <sphereGeometry args={[0.075, 10, 8]} />
+                  <meshStandardMaterial color="#6e472b" roughness={0.8} />
+                </mesh>
+                <mesh position={[0.02, 0.09, 0]} rotation={[0, 0, -0.3]}>
+                  <cylinderGeometry args={[0.008, 0.008, 0.14, 6]} />
+                  <meshStandardMaterial color={ci === 0 ? '#ffd35e' : '#7fe0c3'} roughness={0.4} />
+                </mesh>
+              </group>
+            ))}
+            {/* Karşılıklı 2 adet bambu plaj koltuğu (+x ve -x yönünde, merkeze dönük) */}
+            {[0.9, -0.9].map((cx, idx) => (
+              <group key={idx} position={[cx, 0, 0]} rotation={[0, cx > 0 ? -Math.PI / 2 : Math.PI / 2, 0]}>
+                {/* Bambu ayaklar ve oturak kasası */}
+                <RoundedBox args={[0.62, 0.12, 0.58]} radius={0.04} position={[0, 0.44, 0]} castShadow receiveShadow>
+                  <meshStandardMaterial color="#deb07c" roughness={0.7} />
+                </RoundedBox>
+                {/* Yumuşak plaj minderi */}
+                <RoundedBox args={[0.56, 0.11, 0.52]} radius={0.05} position={[0, 0.54, 0.02]} castShadow>
+                  <meshStandardMaterial color={cushionCol} roughness={0.55} />
+                </RoundedBox>
+                {/* Hasır/bambu sırtlık */}
+                <RoundedBox args={[0.6, 0.46, 0.1]} radius={0.04} position={[0, 0.74, -0.24]} rotation={[-0.14, 0, 0]} castShadow>
+                  <meshStandardMaterial color="#d8a36c" roughness={0.7} />
+                </RoundedBox>
+                {[-0.22, 0.22].map((lx) =>
+                  [-0.2, 0.2].map((lz) => (
+                    <mesh key={`${lx}_${lz}`} position={[lx, 0.21, lz]} castShadow>
+                      <cylinderGeometry args={[0.038, 0.032, 0.42, 8]} />
+                      <meshStandardMaterial color="#c69058" roughness={0.75} />
+                    </mesh>
+                  )),
+                )}
+              </group>
+            ))}
+          </group>
+        )
+      })}
     </group>
     </>
   )

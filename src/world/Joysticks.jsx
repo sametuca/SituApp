@@ -59,6 +59,7 @@ export function Joystick({ inputRef }) {
   return (
     <div
       ref={base}
+      data-tour="move-joy"
       role="application"
       aria-label="Hareket joystick'i"
       className={`absolute z-10 touch-none select-none rounded-full transition-opacity ${padCls} ${
@@ -139,6 +140,7 @@ export function LookJoystick({ inputRef }) {
   return (
     <div
       ref={base}
+      data-tour="look-joy"
       role="application"
       aria-label="Görünüm joystick'i"
       className={`absolute z-10 touch-none select-none rounded-full transition-opacity ${padCls} ${

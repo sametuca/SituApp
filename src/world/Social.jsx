@@ -19,9 +19,9 @@ export function DoorPrompt({ emoji, label, action, touch, raised, onGo }) {
           </span>
         )}
         <p className="min-w-0 flex-1 truncate text-sm font-black text-[#4a3b5c]">{label}</p>
-        <div className="w-32 shrink-0">
+        <div className="w-28 shrink-0">
           <ToyButton className="!rounded-xl !py-2 !text-sm" onClick={onGo}>
-            {touch ? action : `E · ${action}`}
+            {action}
           </ToyButton>
         </div>
       </div>
@@ -84,6 +84,7 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch, slots =
   if (touch) {
     return (
       <div
+        data-tour="skill-bar"
         className="pointer-events-auto absolute z-10 flex flex-col gap-1 rounded-2xl border border-white/60 bg-white/68 p-1.5 shadow-sm backdrop-blur-sm"
         style={{ right: 'max(0.75rem, env(safe-area-inset-right))', bottom: 'max(0.8rem, env(safe-area-inset-bottom))' }}
         aria-label="Beceri ve deneyim çubuğu"
@@ -151,6 +152,7 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch, slots =
 
   return (
     <div
+      data-tour="skill-bar"
       className={`pointer-events-auto absolute bottom-3.5 left-1/2 z-10 flex w-[min(94vw,27rem)] -translate-x-1/2 flex-col gap-2 rounded-[1.75rem] px-3.5 py-2.5 ${glass}`}
       aria-label="Beceri ve deneyim çubuğu"
     >

@@ -23,7 +23,8 @@ import { useSkills } from './useSkills'
 import { NearbyPicker, VenueChannelPill } from '../world/CrowdHud'
 import WhisperInbox from '../world/WhisperInbox'
 import { useMultiplayer } from '../world/net'
-import { HelpModal, StartGuide, TopBar } from '../world/Hud'
+import { HelpModal, TopBar } from '../world/Hud'
+import { OnboardingTour, ONBOARD_STEPS } from '../world/OnboardingTour'
 import { ChatPanel } from '../world/HudChat'
 import { Minimap } from '../world/HudMap'
 import { ChatFab, ChatSheet, DoorPrompt, GestureChip, IncomingChip, InteractSheet, InviteChip, Joystick, LookJoystick, MatchOverlay, SkillBar } from '../world/Social'
@@ -148,8 +149,9 @@ function WorldScene({ avatar }) {
   const [help, setHelp] = useState(false)
   const [nearGuide, setNearGuide] = useState(false)
   const nearGuideRef = useRef(false)
-  const tipsKey = `situapp_tips_seen_${user?.id ?? 'guest'}`
+  const tipsKey = `situapp_onboard_v2_${user?.id ?? 'guest'}`
   const [showTips, setShowTips] = useState(() => !localStorage.getItem(tipsKey))
+  const [tourIdx, setTourIdx] = useState(0)
   const [feed, setFeed] = useState([])
   const [whisperInbox, setWhisperInbox] = useState([])
   const [whisperUnread, setWhisperUnread] = useState(0)
@@ -319,17 +321,9 @@ function WorldScene({ avatar }) {
     setShowTips(false)
   }, [tipsKey])
 
-  const greetPeer = useCallback((id) => {
-    const peer = playersInRoom.find((p) => p.id === id)
-    if (!peer) return
-    if (!sendNetGesture(id, 'wave')) {
-      say('Selam göndermek için çevrimiçi olmalısın.')
-      return
-    }
-    window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'wave' }))
-    setInteractId(id)
-    closeTips()
-  }, [closeTips, playersInRoom, sendNetGesture, say])
+  const tourActive = Boolean(showTips && sceneReady && !inTutorial && !help && !introActive && !home && !venue && !panel && !chatTarget && !interactPeer)
+  const isMobileTour = Boolean(touch || (typeof window !== 'undefined' && window.innerWidth < 768))
+  const activeTourStepId = tourActive ? (isMobileTour ? ONBOARD_STEPS.mobile : ONBOARD_STEPS.desktop)[tourIdx]?.id ?? null : null
 
   const runCommand = (text) =>
     runWorldCommand(text, { say, net, focusRef, home, venue, goTo, ownHome, leaveVenue, visit, setHelp, setPanel, setIntroActive })
@@ -357,6 +351,7 @@ function WorldScene({ avatar }) {
           dnd={net.dnd}
           touch={touch}
           inCity={!home && !venue}
+          tourStep={activeTourStepId}
           onSettings={() => setPanel('settings')}
           extraButtons={
             inTutorial
@@ -590,21 +585,13 @@ function WorldScene({ avatar }) {
           onOpenMap={() => { setHelp(false); window.dispatchEvent(new CustomEvent('situapp:open-map')) }}
         />
       )}
-      {showTips && !inTutorial && !help && !introActive && (
-        <StartGuide
-          touch={touch}
-          ready={sceneReady}
-          inCity={!home && !venue}
-          inAirport={venue === START_VENUE}
-          focusRef={focusRef}
-          roster={net.roster}
-          remotes={net.remotes}
-          peerRange={GESTURE_RANGE - 0.2}
-          onGreet={greetPeer}
-          blocked={Boolean(panel || chatTarget || interactPeer)}
-          onDone={closeTips}
-        />
-      )}
+      <OnboardingTour
+        active={tourActive}
+        touch={touch}
+        stepIndex={tourIdx}
+        onStepChange={setTourIdx}
+        onDone={closeTips}
+      />
       <IntroCutsceneOverlay active={introActive} onSkip={finishIntro} />
       <TransitionOverlay fade={fade} line={transitionLine} />
       <LoadingOverlay ready={sceneReady} />

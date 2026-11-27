@@ -26,9 +26,9 @@ const CONFETTI = Array.from({ length: 18 }, (_, i) => ({
 }))
 
 const STEPS = [
-  { id: 'collect', emoji: '⭐', title: 'Önündeki yıldızı al', hint: 'Okları takip edip yaklaş, E tuşuna bas.' },
+  { id: 'collect', emoji: '⭐', title: 'Önündeki yıldızı al', hint: 'Okları takip edip yaklaş ve topla.' },
   { id: 'inventory', emoji: '🎒', title: 'Çantanı aç', hint: 'Aldığın hediye soldaki çantanda.' },
-  { id: 'door', emoji: '🚪', title: 'Mekân kapısını dene', hint: 'Kapının önüne yürüyüp E tuşuna bas.' },
+  { id: 'door', emoji: '🚪', title: 'Mekân kapısını dene', hint: 'Kapının önüne yürüyüp içeri gir.' },
   { id: 'wardrobe', emoji: '👗', title: 'Tarzını ayarla', hint: 'Soldaki gardıroptan görünümünü kaydet.' },
   { id: 'exit', emoji: '🏖️', title: 'Kasabaya çık', hint: 'Güneydeki çıkış kapısından plaja in.' },
 ]
@@ -185,14 +185,14 @@ export function AirportTutorialScene({ step, focusRef, onNear }) {
     <>
       <FloorArrows focusRef={focusRef} target={target} />
       {step === 'collect' && (
-        <Beacon x={TUT_STAR.x} z={TUT_STAR.z} color="#ffd35e" label="⭐ Topla (E)">
+        <Beacon x={TUT_STAR.x} z={TUT_STAR.z} color="#ffd35e" label="⭐ Topla">
           <Suspense fallback={null}>
             <SpinningStar />
           </Suspense>
         </Beacon>
       )}
-      {step === 'door' && <Beacon x={TUT_DOOR.x} z={TUT_DOOR.z} color="#8fe3c0" label="🚪 Mekân Kapısı (E)" />}
-      {step === 'exit' && <Beacon x={TUT_EXIT.x} z={TUT_EXIT.z} color="#fdb252" label="🏖️ Şehre Çık (E)" />}
+      {step === 'door' && <Beacon x={TUT_DOOR.x} z={TUT_DOOR.z} color="#8fe3c0" label="🚪 Mekân Kapısı" />}
+      {step === 'exit' && <Beacon x={TUT_EXIT.x} z={TUT_EXIT.z} color="#fdb252" label="🏖️ Şehre Çık" />}
     </>
   )
 }
