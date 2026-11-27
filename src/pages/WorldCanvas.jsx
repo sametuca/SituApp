@@ -1,6 +1,6 @@
 // Dünya 3B sahnesi (R3F Canvas): ışık/ortam, şehir/ev/mekân, oyuncular, NPC'ler, özellik katmanları, kamera ve izleyiciler.
 // World.jsx'ten ayrıldı; tüm durum World.jsx'te kalır, buraya yalnızca prop olarak gelir.
-import { Suspense } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment, Lightformer, OrbitControls } from '@react-three/drei'
 import { NeutralToneMapping, PCFSoftShadowMap } from 'three'
@@ -16,11 +16,33 @@ import { IntroCutsceneCamera } from '../world/IntroCutscene'
 import LocalPlayer, { ClickToMoveGround } from '../world/LocalPlayer'
 import RemotePlayers, { GuideNpc, SelfTag } from '../world/RemotePlayers'
 import { HOME_DOOR, HOME_ROOM, HOME_ZONE, resolveCollisions, resolveRoom } from '../world/layout'
-import GraphicsEffects from '../world/GraphicsEffects'
 import { DoorWatcher, SceneReady, VenueDoorWatcher, WorldErrorBoundary, ZoneWatcher } from './WorldLoading'
 import { GUIDE_TIPS } from './worldConfig'
 
-export default function WorldCanvas({ chatTargetRef, controlsRef, editing, feat, finishIntro, focusRef, furnColliders, graphics, home, inTutorial, introActive, isOwnHome, joystickRef, lookJoystickRef, moveTargetRef, name, net, onSceneReady, roomTier, say, sceneBase, selected, setChatTarget, setFurn, setHelp, setInteractId, setNearDoor, setNearGuide, setNearVenue, setPanel, setSelected, setTutNear, setZone, shownItems, slug, start, touch, tutStep, venue, venueCollide, venueDim, venueTh, venueZone }) {
+const GraphicsEffects = lazy(() => import('../world/GraphicsEffects'))
+
+export default function WorldCanvas({ chatTargetRef, controlsRef, editing, feat, finishIntro, focusRef, furnColliders, graphics, home, inTutorial, introActive, isOwnHome, joystickRef, lookJoystickRef, moveTargetRef, name, net, onSceneReady, roomTier, say, sceneBase, sceneReady, selected, setChatTarget, setFurn, setHelp, setInteractId, setNearDoor, setNearGuide, setNearVenue, setPanel, setSelected, setTutNear, setZone, shownItems, slug, start, touch, tutStep, venue, venueCollide, venueDim, venueTh, venueZone }) {
+  const [effectsReady, setEffectsReady] = useState(false)
+
+  useEffect(() => {
+    if (!sceneReady || (!graphics.ao && !graphics.bloom)) return undefined
+    let active = true
+    let idleId
+    let timerId
+    const enable = () => {
+      if (active) setEffectsReady(true)
+    }
+
+    if (typeof requestIdleCallback === 'function') idleId = requestIdleCallback(enable, { timeout: 2500 })
+    else timerId = setTimeout(enable, 1000)
+
+    return () => {
+      active = false
+      if (idleId != null && typeof cancelIdleCallback === 'function') cancelIdleCallback(idleId)
+      if (timerId != null) clearTimeout(timerId)
+    }
+  }, [graphics.ao, graphics.bloom, sceneReady])
+
   return (
     <WorldErrorBoundary>
     <Canvas
@@ -119,7 +141,11 @@ export default function WorldCanvas({ chatTargetRef, controlsRef, editing, feat,
         minPolarAngle={0.35}
         maxPolarAngle={Math.PI / 2.15}
       />
-      <GraphicsEffects ao={graphics.ao} bloom={graphics.bloom} />
+      {effectsReady && (
+        <Suspense fallback={null}>
+          <GraphicsEffects ao={graphics.ao} bloom={graphics.bloom} />
+        </Suspense>
+      )}
     </Canvas>
     </WorldErrorBoundary>
   )

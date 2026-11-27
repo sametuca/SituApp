@@ -114,7 +114,9 @@ function WorldScene({ avatar }) {
     window.addEventListener('situapp:snap', on)
     return () => window.removeEventListener('situapp:snap', on)
   }, [])
-  useMemo(() => preloadCritical(slug), [slug]) // şehir + avatar modellerini sahne çizilmeden paralel indir (şelale yüklemeyi önler)
+  useEffect(() => {
+    preloadCritical(slug)
+  }, [slug])
   useEffect(() => {
     if (sceneReady) preloadLater()
   }, [sceneReady])
@@ -158,7 +160,7 @@ function WorldScene({ avatar }) {
       visitPending.current = false
       say(text)
     },
-    [say],
+    [say, visitPending],
   )
   const onGesture = useCallback(
     (m) => {
@@ -316,7 +318,7 @@ function WorldScene({ avatar }) {
 
   return (
     <div className="fixed inset-0 touch-none select-none overflow-hidden bg-[#cfeaff]">
-      <WorldCanvas chatTargetRef={chatTargetRef} controlsRef={controlsRef} editing={editing} feat={feat} finishIntro={finishIntro} focusRef={focusRef} furnColliders={furnColliders} graphics={graphics} home={home} inTutorial={inTutorial} introActive={introActive} isOwnHome={isOwnHome} joystickRef={joystickRef} lookJoystickRef={lookJoystickRef} moveTargetRef={moveTargetRef} name={name} net={net} onSceneReady={onSceneReady} roomTier={roomTier} say={say} sceneBase={sceneBase} selected={selected} setChatTarget={setChatTarget} setFurn={setFurn} setHelp={setHelp} setInteractId={setInteractId} setNearDoor={setNearDoor} setNearGuide={setNearGuide} setNearVenue={setNearVenue} setPanel={setPanel} setSelected={setSelected} setTutNear={setTutNear} setZone={setZone} shownItems={shownItems} slug={slug} start={start} touch={touch} tutStep={tutStep} venue={venue} venueCollide={venueCollide} venueDim={venueDim} venueTh={venueTh} venueZone={venueZone} />
+      <WorldCanvas chatTargetRef={chatTargetRef} controlsRef={controlsRef} editing={editing} feat={feat} finishIntro={finishIntro} focusRef={focusRef} furnColliders={furnColliders} graphics={graphics} home={home} inTutorial={inTutorial} introActive={introActive} isOwnHome={isOwnHome} joystickRef={joystickRef} lookJoystickRef={lookJoystickRef} moveTargetRef={moveTargetRef} name={name} net={net} onSceneReady={onSceneReady} roomTier={roomTier} say={say} sceneBase={sceneBase} sceneReady={sceneReady} selected={selected} setChatTarget={setChatTarget} setFurn={setFurn} setHelp={setHelp} setInteractId={setInteractId} setNearDoor={setNearDoor} setNearGuide={setNearGuide} setNearVenue={setNearVenue} setPanel={setPanel} setSelected={setSelected} setTutNear={setTutNear} setZone={setZone} shownItems={shownItems} slug={slug} start={start} touch={touch} tutStep={tutStep} venue={venue} venueCollide={venueCollide} venueDim={venueDim} venueTh={venueTh} venueZone={venueZone} />
 
       <ConnectionOverlays status={net.status} signOut={signOut} />
       {!introActive && (

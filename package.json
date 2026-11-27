@@ -12,6 +12,7 @@
     "dev:all": "concurrently -n web,api -c blue,magenta \"npm:dev\" \"npm:server\"",
     "build": "vite build",
     "lint": "oxlint",
+    "test": "node --test tests/server-smoke.test.mjs",
     "preview": "vite preview",
     "docs:map": "node scripts/file-map.mjs"
   },

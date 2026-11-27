@@ -1,5 +1,5 @@
 import { Suspense, useRef, useSyncExternalStore } from 'react'
-import { Billboard, useGLTF } from '@react-three/drei'
+import { Billboard } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { DoubleSide, MathUtils, Shape, ShapeGeometry } from 'three'
 import { cosStore } from './cosStore'
@@ -22,7 +22,6 @@ HEART_SHAPE.bezierCurveTo(-0.12, 0.4, -0.04, 0.31, 0, 0.24)
 HEART_SHAPE.bezierCurveTo(0.04, 0.31, 0.12, 0.4, 0.26, 0.37)
 HEART_SHAPE.bezierCurveTo(0.55, 0.3, 0.55, -0.08, 0, -0.45)
 const HEART_GEOMETRY = new ShapeGeometry(HEART_SHAPE, 16)
-Object.values(PET_URL).forEach((u) => useGLTF.preload(u))
 
 /** Evcil hayvan modeli (Meshy GLB; orijin = tabanın ortası, +z'ye bakar). Hareket PetFollower'da procedural. */
 export function PetModel({ kind, onClick }) {

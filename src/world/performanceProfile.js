@@ -17,7 +17,7 @@ export function getGraphicsProfile() {
 export function canUseBackgroundPreload() {
   if (typeof navigator === 'undefined') return true
   const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection
-  if (!connection) return true
+  if (!connection) return !(typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches)
   if (connection.saveData) return false
   return !['slow-2g', '2g', '3g'].includes(connection.effectiveType)
 }

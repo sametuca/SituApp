@@ -174,7 +174,7 @@ function SuggestCard({ s, onHi, onClose }) {
 }
 
 // ---------------------------------------------------------------- hook
-export function useProgress({ net, say, focusRef, home, venue, panel, setPanel, roster }) {
+export function useProgress({ net, focusRef, home, venue, panel, setPanel, roster }) {
   const { on, send, status } = net
   const [prog, setProg] = useState(null)
   const [event, setEvent] = useState(null)
@@ -226,7 +226,7 @@ export function useProgress({ net, say, focusRef, home, venue, panel, setPanel, 
       }),
     ]
     return () => offs.forEach((off) => off())
-  }, [on])
+  }, [on, net.homeKey])
 
   // günün önerisi: bağlanınca biraz bekle, kimse yoksa ara sıra yeniden sor
   useEffect(() => {

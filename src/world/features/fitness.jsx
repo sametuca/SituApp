@@ -1,5 +1,5 @@
 // Spor salonu ve boks özelliği (istemci): useFitness hook'u, paneller; arena BoxingArena.jsx'te.
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useGLTF } from '@react-three/drei'
 import { STAT_KEYS, STAT_META, STAT_MAX, STAT_START, coinBonusPct, energyMax } from '../boxing'
 import { cosStore } from '../cosStore'
@@ -7,9 +7,8 @@ import { fitnessStore } from '../fitnessStore'
 import { work } from './jobStore'
 import { DoorPrompt } from '../Social'
 import { Modal } from '../Hud'
-import { CardioWorkoutModal, WeightWorkoutModal } from './WorkoutModals'
 import { consumeLocalEnergy, isTyping, pushLocalBoard, readLocalAttr, readLocalBoard, readLocalEnergy, saveLocalAttr } from './fitnessLocal'
-import { BoxingArena } from './BoxingArena'
+import { BoxingArena, CardioWorkoutModal, WeightWorkoutModal } from './fitnessLazy'
 // ======================= 4. ANA HOOK: useFitness =======================
 export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, touch, atDoor }) {
   const { on, send } = net
@@ -244,12 +243,14 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
   // MakFit içinde ağırlık/koşu antrenmanındayken karakteri aletin yanına konumlandırıp canlı 3B antrenman pozu oynat
   useEffect(() => {
     if (!workout) return undefined
+    const workRef = work.self
     if (venue === 'fitness' && focusRef.current) {
       focusRef.current.teleport = workout === 'str' ? [3.55, -2.4, Math.PI / 2] : [4.4, 1.5, 0]
     }
-    work.self.current = { kind: 'work', style: workout === 'str' ? 'bench' : 'cardio', t0: performance.now() / 1000 }
+    workRef.current = { kind: 'work', style: workout === 'str' ? 'bench' : 'cardio', t0: performance.now() / 1000 }
     return () => {
-      if (work.self.current?.style === 'bench' || work.self.current?.style === 'cardio') work.self.current = null
+      const current = workRef.current
+      if (current?.style === 'bench' || current?.style === 'cardio') workRef.current = null
     }
   }, [workout, venue, focusRef])
 
@@ -292,33 +293,39 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
       )}
 
       {workout === 'str' && (
-        <WeightWorkoutModal
-          ski={Math.floor(attr.ski)}
-          energy={energy}
-          energyMaxVal={eMax}
-          onDone={(r, p) => finishWorkout('str', r, p)}
-          onClose={() => setWorkout(null)}
-        />
+        <Suspense fallback={<div className="fixed inset-0 z-50 grid place-items-center bg-[#2c1f4a]/75 text-lg font-black text-white">💪 Antrenman hazırlanıyor…</div>}>
+          <WeightWorkoutModal
+            ski={Math.floor(attr.ski)}
+            energy={energy}
+            energyMaxVal={eMax}
+            onDone={(r, p) => finishWorkout('str', r, p)}
+            onClose={() => setWorkout(null)}
+          />
+        </Suspense>
       )}
 
       {workout === 'sta' && (
-        <CardioWorkoutModal
-          energy={energy}
-          energyMaxVal={eMax}
-          onDone={(r, p) => finishWorkout('sta', r, p)}
-          onClose={() => setWorkout(null)}
-        />
+        <Suspense fallback={<div className="fixed inset-0 z-50 grid place-items-center bg-[#2c1f4a]/75 text-lg font-black text-white">🏃 Antrenman hazırlanıyor…</div>}>
+          <CardioWorkoutModal
+            energy={energy}
+            energyMaxVal={eMax}
+            onDone={(r, p) => finishWorkout('sta', r, p)}
+            onClose={() => setWorkout(null)}
+          />
+        </Suspense>
       )}
 
       {match && (
-        <BoxingArena
-          match={match}
-          selfName={name || 'Sen'}
-          liveState={liveState}
-          onSendHit={(i, type) => send({ t: 'box_hit', i, type })}
-          onSoloEnd={onSoloEnd}
-          onExit={closeBoxing}
-        />
+        <Suspense fallback={<div className="fixed inset-0 z-50 grid place-items-center bg-[#2c1f4a]/85 text-lg font-black text-white">🥊 Maç hazırlanıyor…</div>}>
+          <BoxingArena
+            match={match}
+            selfName={name || 'Sen'}
+            liveState={liveState}
+            onSendHit={(i, type) => send({ t: 'box_hit', i, type })}
+            onSoloEnd={onSoloEnd}
+            onExit={closeBoxing}
+          />
+        </Suspense>
       )}
 
       {inBoxingModal && !match && (

@@ -1,6 +1,6 @@
 // Mekân iç mekânı birleştirici: eşya haritası (Item), duvar/zemin/kapı ve ışık katmanlarının yerleşimi.
 import { Suspense, useEffect, useMemo } from 'react'
-import { RoundedBox } from '@react-three/drei'
+import { RoundedBox, useGLTF } from '@react-three/drei'
 import { DoubleSide } from 'three'
 import { mix, venueLayout } from './venueLayout'
 import { useFloorTexture } from './floorTex'
@@ -9,6 +9,37 @@ import Prop from './Prop'
 import { Backdrop, Board, Box, Chair, Cyl, Glb, Mat, Neon, OLD, Shelf, Sofa, Stage, V, Window, hd, hw, wallH } from './venueParts'
 import { BenchPress, BoxingRing, DanceFloor, DiscoBall, DumbbellRack, GlassCase, Lasers, PunchingBag, Treadmill } from './VenueSpecial'
 import { ClubLights, FocalLights, FocalPools, Lights, StringLights, focalPoints } from './VenueLighting'
+
+const MODEL_BY_ITEM_TYPE = {
+  counter: 'counter',
+  display: 'cake-display',
+  machine: 'coffee-machine',
+  samovar: 'samovar',
+  register: 'cash-register',
+  freezer: 'icecream-freezer',
+  oven: 'bakery-oven',
+  djgear: 'dj-stand',
+  camera: 'camera-tripod',
+  softbox: 'softbox-light',
+  cabinet: 'arcade-cabinet',
+  claw: 'claw-machine',
+  mirror: 'salon-mirror',
+  salonchair: 'salon-chair',
+  rack: 'clothes-rack',
+  globe: 'world-globe',
+  bottles: 'bottle-shelf',
+  mic: 'karaoke-mic',
+  stool: 'bar-stool',
+}
+
+function modelForItem(it) {
+  if (it.t === 'glb') return OLD[it.m]
+  if (it.t === 'decor') return it.model
+  if (it.t === 'surf') return V(it.c === '#fec172' || it.c === '#ffd35e' || it.c === '#b79cff' ? 'surfboard-a' : 'surfboard-b')
+  const model = MODEL_BY_ITEM_TYPE[it.t]
+  return model ? V(model) : null
+}
+
 function Item({ it }) {
   switch (it.t) {
     case 'box':
@@ -25,47 +56,47 @@ function Item({ it }) {
     case 'glass':
       return <GlassCase {...it} />
     case 'glb':
-      return <Prop model={OLD[it.m]} x={it.x} z={it.z} scale={it.s} ry={it.ry ?? 0} />
+      return <Prop model={modelForItem(it)} x={it.x} z={it.z} scale={it.s} ry={it.ry ?? 0} />
     case 'counter':
-      return <Glb model={V('counter')} x={it.x} z={it.z} w={it.w} d={it.d} h={it.h} />
+      return <Glb model={modelForItem(it)} x={it.x} z={it.z} w={it.w} d={it.d} h={it.h} />
     case 'display':
-      return <Glb model={V('cake-display')} x={it.x} z={it.z} y={it.y} w={it.w} />
+      return <Glb model={modelForItem(it)} x={it.x} z={it.z} y={it.y} w={it.w} />
     case 'machine':
-      return <Glb model={V('coffee-machine')} x={it.x} z={it.z} y={it.y} h={0.55} />
+      return <Glb model={modelForItem(it)} x={it.x} z={it.z} y={it.y} h={0.55} />
     case 'samovar':
-      return <Glb model={V('samovar')} x={it.x} z={it.z} y={it.y} h={0.7} />
+      return <Glb model={modelForItem(it)} x={it.x} z={it.z} y={it.y} h={0.7} />
     case 'register':
-      return <Glb model={V('cash-register')} x={it.x} z={it.z} y={it.y} h={0.45} />
+      return <Glb model={modelForItem(it)} x={it.x} z={it.z} y={it.y} h={0.45} />
     case 'freezer':
-      return <Glb model={V('icecream-freezer')} x={it.x} z={it.z} w={it.w} d={0.9} h={1.2} />
+      return <Glb model={modelForItem(it)} x={it.x} z={it.z} w={it.w} d={0.9} h={1.2} />
     case 'oven':
-      return <Glb model={V('bakery-oven')} x={it.x} z={it.z} h={1.7} />
+      return <Glb model={modelForItem(it)} x={it.x} z={it.z} h={1.7} />
     case 'djgear':
-      return <Glb model={V('dj-stand')} x={it.x} z={it.z} w={it.w} d={0.9} h={1.3} />
+      return <Glb model={modelForItem(it)} x={it.x} z={it.z} w={it.w} d={0.9} h={1.3} />
     case 'camera':
-      return <Glb model={V('camera-tripod')} x={it.x} z={it.z} y={it.y} h={0.7} />
+      return <Glb model={modelForItem(it)} x={it.x} z={it.z} y={it.y} h={0.7} />
     case 'softbox':
-      return <Glb model={V('softbox-light')} x={it.x} z={it.z} ry={it.ry} h={2.0} />
+      return <Glb model={modelForItem(it)} x={it.x} z={it.z} ry={it.ry} h={2.0} />
     case 'cabinet':
-      return <Glb model={V('arcade-cabinet')} x={it.x} z={it.z} ry={it.ry} h={1.35} />
+      return <Glb model={modelForItem(it)} x={it.x} z={it.z} ry={it.ry} h={1.35} />
     case 'claw':
-      return <Glb model={V('claw-machine')} x={it.x} z={it.z} ry={it.ry} h={1.7} />
+      return <Glb model={modelForItem(it)} x={it.x} z={it.z} ry={it.ry} h={1.7} />
     case 'mirror':
-      return <Glb model={V('salon-mirror')} x={it.x} z={it.z} ry={it.ry ?? 0} h={it.h ?? 1.35} />
+      return <Glb model={modelForItem(it)} x={it.x} z={it.z} ry={it.ry ?? 0} h={it.h ?? 1.35} />
     case 'salonchair':
-      return <Glb model={V('salon-chair')} x={it.x} z={it.z} ry={it.ry} h={1.05} />
+      return <Glb model={modelForItem(it)} x={it.x} z={it.z} ry={it.ry} h={1.05} />
     case 'surf':
-      return <Glb model={V(it.c === '#fec172' || it.c === '#ffd35e' || it.c === '#b79cff' ? 'surfboard-a' : 'surfboard-b')} x={it.x} z={it.z} ry={it.ry} h={it.len} tilt={-0.1} />
+      return <Glb model={modelForItem(it)} x={it.x} z={it.z} ry={it.ry} h={it.len} tilt={-0.1} />
     case 'rack':
-      return <Glb model={V('clothes-rack')} x={it.x} z={it.z} h={1.7} />
+      return <Glb model={modelForItem(it)} x={it.x} z={it.z} h={1.7} />
     case 'globe':
-      return <Glb model={V('world-globe')} x={it.x} z={it.z} h={1.0} />
+      return <Glb model={modelForItem(it)} x={it.x} z={it.z} h={1.0} />
     case 'bottles':
-      return <Glb model={V('bottle-shelf')} x={it.x} z={it.z} y={1.15} w={it.w} />
+      return <Glb model={modelForItem(it)} x={it.x} z={it.z} y={1.15} w={it.w} />
     case 'mic':
-      return <Glb model={V('karaoke-mic')} x={it.x} z={it.z} h={1.5} />
+      return <Glb model={modelForItem(it)} x={it.x} z={it.z} h={1.5} />
     case 'stool':
-      return <Glb model={V('bar-stool')} x={it.x} z={it.z} h={0.8} />
+      return <Glb model={modelForItem(it)} x={it.x} z={it.z} h={0.8} />
     case 'chair':
       return <Chair {...it} />
     case 'sofa':
@@ -139,7 +170,7 @@ function Item({ it }) {
         </group>
       )
     case 'decor':
-      return <Glb model={it.model} x={it.x} y={it.y ?? 0} z={it.z} ry={it.ry ?? 0} h={it.h ?? 1.4} />
+      return <Glb model={modelForItem(it)} x={it.x} y={it.y ?? 0} z={it.z} ry={it.ry ?? 0} h={it.h ?? 1.4} />
     default:
       return null
   }
@@ -242,6 +273,11 @@ export default function Venue({ id }) {
   const th = L.theme
   const wKind = WALL_KIND[L.type] ?? 'plaster'
   const pts = useMemo(() => focalPoints(L), [L])
+  useEffect(() => {
+    const models = new Set(L.items.map(modelForItem).filter(Boolean))
+    for (const model of models) useGLTF.preload(model)
+  }, [L])
+
   return (
     <group>
       <Lights th={th} />

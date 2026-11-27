@@ -99,7 +99,7 @@ export function useHomeCare({ net, home, focusRef, touch, say, panel }) {
       }),
     ]
     return () => offs.forEach((off) => off())
-  }, [on, ownerKey])
+  }, [on, ownerKey, isOwnHome, say])
 
   // Bahçe tarhlarına yaklaşma kontrolü (4 Hz)
   useEffect(() => {

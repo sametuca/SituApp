@@ -1,5 +1,6 @@
 // Ev "Döşe" modu: mobilya ekle/sürükle/döndür/kaldır, dekor ve hediye sekmeleri.
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
+import { useGLTF } from '@react-three/drei'
 import Prop from './Prop'
 import { PlacedGift } from './Gifts'
 import { GIFT_BY_ID } from './cosmeticsData'
@@ -20,6 +21,17 @@ const glass = 'border-2 border-white bg-white/85 shadow-soft backdrop-blur-md'
 export function FurnitureLayer({ items, setItems, editing, selected, setSelected, controlsRef }) {
   const drag = useRef(null) // { uid, start: {x,z}, origin: {x,z}|null }
   const itemsRef = useRef(items)
+  const modelIdsKey = [...new Set(items.map((item) => item.id))].sort().join(',')
+  useEffect(() => {
+    const models = new Set(
+      modelIdsKey
+        .split(',')
+        .map((id) => (GIFT_BY_ID[id] ? `/models/gifts/${id}.glb` : FURNITURE_BY_ID[id] ? furnitureUrl(id) : null))
+        .filter(Boolean),
+    )
+    for (const model of models) useGLTF.preload(model)
+  }, [modelIdsKey])
+
   useEffect(() => {
     itemsRef.current = items
   }, [items])
@@ -72,25 +84,29 @@ export function FurnitureLayer({ items, setItems, editing, selected, setSelected
 
   return (
     <group>
-      {items.map((it) => {
-        const def = FURNITURE_BY_ID[it.id] ?? GIFT_BY_ID[it.id] // hediyeler ayrı katalogdan (cosmeticsData)
-        if (!def) return null
-        const isSel = editing && selected === it.uid
-        const f = footprint(it.id)
-        return (
-          <group key={it.uid}>
-            {isSel && (
-              <mesh position={[it.x, 0.035, it.z]} rotation={[-Math.PI / 2, 0, -it.ry]}>
-                <planeGeometry args={[f.w + 0.3, f.d + 0.3]} />
-                <meshBasicMaterial color={isValid(items, it.uid) ? '#7be0a8' : '#fdb94e'} transparent opacity={0.55} />
-              </mesh>
-            )}
-            <group onPointerDown={(e) => grab(e, it)}>
-              {GIFT_BY_ID[it.id] ? <PlacedGift id={it.id} x={it.x} z={it.z} ry={it.ry} from={it.from} /> : <Prop model={furnitureUrl(it.id)} x={it.x} z={it.z} ry={it.ry} scale={def.size} />}
-            </group>
-          </group>
-        )
-      })}
+      <Suspense fallback={null}>
+        <group>
+          {items.map((it) => {
+            const def = FURNITURE_BY_ID[it.id] ?? GIFT_BY_ID[it.id] // hediyeler ayrı katalogdan (cosmeticsData)
+            if (!def) return null
+            const isSel = editing && selected === it.uid
+            const f = footprint(it.id)
+            return (
+              <group key={it.uid}>
+                {isSel && (
+                  <mesh position={[it.x, 0.035, it.z]} rotation={[-Math.PI / 2, 0, -it.ry]}>
+                    <planeGeometry args={[f.w + 0.3, f.d + 0.3]} />
+                    <meshBasicMaterial color={isValid(items, it.uid) ? '#7be0a8' : '#fdb94e'} transparent opacity={0.55} />
+                  </mesh>
+                )}
+                <group onPointerDown={(e) => grab(e, it)}>
+                  {GIFT_BY_ID[it.id] ? <PlacedGift id={it.id} x={it.x} z={it.z} ry={it.ry} from={it.from} /> : <Prop model={furnitureUrl(it.id)} x={it.x} z={it.z} ry={it.ry} scale={def.size} />}
+                </group>
+              </group>
+            )
+          })}
+        </group>
+      </Suspense>
       {editing && (
         <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]} onPointerDown={onFloorDown} onPointerMove={onFloorMove}>
           <planeGeometry args={[HOME_ROOM.hw * 2 + 6, HOME_ROOM.hd * 2 + 6]} />

@@ -1,5 +1,5 @@
 // 5 Çok Oyunculu Mini Oyun Merkezi: Lobi (2–10 kişi) + Botlarla Hemen Oyna + Otomatik Kıyafet + Genel Puan Tablosu.
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { cosStore } from '../cosStore'
 import { BalloonPopArena, BaristaArena, BikeSprintArena, ColorTilesArena, RhythmArena } from './minigameArenas'
 
@@ -207,7 +207,9 @@ export function useMinigames({ net, panel, setPanel, touch, say, name }) {
 
   const overlays = active ? (
     view === 'play' && match ? (
-      <Arena seed={match.seed} touch={touch} onFinish={onFinish} onExit={closeAll} />
+      <Suspense fallback={<div className="fixed inset-0 z-50 grid place-items-center bg-[#2c1f4a]/80 text-lg font-black text-white">🎮 Oyun hazırlanıyor…</div>}>
+        <Arena seed={match.seed} touch={touch} onFinish={onFinish} onExit={closeAll} />
+      </Suspense>
     ) : (
       <div className="fixed inset-0 z-40 grid place-items-center bg-[#2c1f4a]/45 p-4 backdrop-blur-[2px]" onClick={closeAll}>
         <div

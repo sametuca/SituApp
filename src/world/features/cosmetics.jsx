@@ -64,7 +64,7 @@ export function useCosmetics({ net, say, touch, home, homeItems, venue, focusRef
         setOthers(m.players)
         setGifts(m.gifts ?? [])
         setPetUntil(m.petUntil ?? 0)
-        setPetOffer(Boolean(m.petOffer) && !petOfferDone(net.homeKey))
+        setPetOffer(Boolean(m.petOffer) && !petOfferDone(homeKey))
         setCoins(m.coins ?? 0)
         if (m.collect?.s?.stars != null) setXp(m.collect.s.stars)
         if (m.home) setDecors((d) => ({ ...d, [m.home]: m.decor ?? null }))
@@ -73,7 +73,7 @@ export function useCosmetics({ net, say, touch, home, homeItems, venue, focusRef
       on('collect_state', (m) => {
         if (m.s?.stars != null) setXp(m.s.stars)
       }),
-      on('pet_until', (m) => (setPetUntil(m.until ?? 0), setPetOffer(false), petOfferMark(net.homeKey))),
+      on('pet_until', (m) => (setPetUntil(m.until ?? 0), setPetOffer(false), petOfferMark(homeKey))),
       on('coins', (m) => setCoins(m.n)),
       on('join', (m) => cosStore.set(m.p.id, m.p.cos)),
       on('leave', (m) => cosStore.remove(m.id)),
@@ -93,7 +93,7 @@ export function useCosmetics({ net, say, touch, home, homeItems, venue, focusRef
       on('gift_offer', (m) => setOffers((q) => [...q.filter((o) => o.offer !== m.offer), { ...m, ts: Date.now() }].slice(-5))),
     ]
     return () => offs.forEach((off) => off())
-  }, [on, send, net.selfId])
+  }, [on, send, net.selfId, homeKey])
 
   // süresi dolan teklifleri düşür
   useEffect(() => {

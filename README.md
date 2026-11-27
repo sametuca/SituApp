@@ -87,6 +87,8 @@ cp server/.env.example server/.env  # server (optional)
 
 ```bash
 npm run build   # writes dist/
+npm test        # local WebSocket join/room-transition smoke test
+npm run lint    # Oxlint checks
 npm start       # Express serves dist/ + /api + /ws on :3001
 ```
 

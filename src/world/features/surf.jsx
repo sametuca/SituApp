@@ -1,11 +1,11 @@
 // Sörf Yarışı — Dalgalardan Kaç! (2–10 oyunculu gerçek zamanlı + tek kişilik bot antrenmanı + genel puan tablosu).
 // Sörfçü Kaan'dan (Quicksörf) açılır. Sörf sırasında 3B avatar geçici olarak sörf kıyafetine (turkuaz wetsuit + gözlük) geçer.
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Ico } from '../../components/Icon'
 import { cosStore } from '../cosStore'
 
 import { BOT_NAMES, fmtSec, loadLocalBoard } from './surfData'
-import SurfArena from './SurfArena'
+import SurfArena from './SurfArenaLazy'
 export function useSurf({ net, panel, setPanel, touch, say, name }) {
   const { on, send } = net
   const [view, setView] = useState('lobby') // lobby | board | play | result
@@ -142,17 +142,19 @@ export function useSurf({ net, panel, setPanel, touch, say, name }) {
 
   const overlays = active ? (
     view === 'play' && match ? (
-      <SurfArena
-        match={match}
-        selfId={net.selfId.current ?? 'local'}
-        selfName={name || 'Sen'}
-        touch={touch}
-        remoteRef={remoteRef}
-        onSendPos={onSendPos}
-        onLocalOut={onLocalOut}
-        onBotFinish={onBotFinish}
-        onExit={closeAll}
-      />
+      <Suspense fallback={<div className="fixed inset-0 z-50 grid place-items-center bg-[#155a75]/80 text-lg font-black text-white">🏄 Yarış hazırlanıyor…</div>}>
+        <SurfArena
+          match={match}
+          selfId={net.selfId.current ?? 'local'}
+          selfName={name || 'Sen'}
+          touch={touch}
+          remoteRef={remoteRef}
+          onSendPos={onSendPos}
+          onLocalOut={onLocalOut}
+          onBotFinish={onBotFinish}
+          onExit={closeAll}
+        />
+      </Suspense>
     ) : (
       <div className="fixed inset-0 z-40 grid place-items-center bg-[#155a75]/45 p-4 backdrop-blur-[2px]" onClick={closeAll}>
         <div

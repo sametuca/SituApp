@@ -1,5 +1,5 @@
 import { Suspense, useMemo } from 'react'
-import { Html, useGLTF } from '@react-three/drei'
+import { Html } from '@react-three/drei'
 import Prop from './Prop'
 import { Shape } from 'three'
 
@@ -34,8 +34,6 @@ const GIFT_MODEL = {
   'gift-roses': { url: '/models/gifts/gift-roses.glb', size: 0.7 },
   'gift-choco': { url: '/models/gifts/gift-choco.glb', size: 0.6 },
 }
-Object.values(GIFT_MODEL).forEach((m) => useGLTF.preload(m.url))
-
 /** Hediye modeli (yerde; orijin = tabanın ortası). */
 export function GiftModel({ id }) {
   const m = GIFT_MODEL[id]
