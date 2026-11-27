@@ -23,7 +23,7 @@ function CollectionPanel({ data, onClose, onTab }) {
   const s = data?.s
   const found = new Set(s?.chests ?? [])
   return (
-    <Modal onClose={onClose} label="Karakter & Koleksiyon" theme="bag">
+    <Modal onClose={onClose} label="Karakter & Koleksiyon" theme="bag" hideClose>
       <div className="mb-3 flex items-center gap-2">
         <div className="grid flex-1 grid-cols-3 gap-1.5 rounded-2xl bg-[#f3ece0] p-1">
           <button type="button" onClick={() => onTab('inventory')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">Çanta</button>

@@ -103,7 +103,7 @@ export function WeightWorkoutModal({ ski, energy, energyMaxVal, onDone, onClose 
   }
 
   return (
-    <Modal onClose={onClose} label="Ağırlık Antrenmanı" theme="gym" dockBottom>
+    <Modal onClose={onClose} label="Ağırlık Antrenmanı" theme="gym" dockBottom hideClose>
       <div className="flex items-center justify-between gap-2">
         <div>
           <h2 className="text-lg font-black text-white">💪 Ağırlık Sehpası</h2>
@@ -311,7 +311,7 @@ export function CardioWorkoutModal({ energy, energyMaxVal, onDone, onClose }) {
   }
 
   return (
-    <Modal onClose={onClose} label="Koşu Bandı" theme="gym" dockBottom>
+    <Modal onClose={onClose} label="Koşu Bandı" theme="gym" dockBottom hideClose>
       <div className="flex items-center justify-between gap-2">
         <div>
           <h2 className="text-lg font-black text-white">🏃 Koşu Bandı</h2>

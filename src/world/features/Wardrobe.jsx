@@ -133,7 +133,7 @@ export function Wardrobe({ slug, cos, petUntil, coins, playerLv = 1, xp = 0, onL
   }
 
   return (
-    <Modal onClose={onClose} label="Gardırop" wide>
+    <Modal onClose={onClose} label="Gardırop" wide hideClose>
       <div className="flex items-center justify-between gap-2">
         <div>
           <div className="flex items-center gap-2">

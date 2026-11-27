@@ -267,6 +267,7 @@ export default function friends(ctx) {
         const target = onlineOf(key)
         if (!target || mod().blockedPair(me, target)) return send(me.ws, { t: 'info', text: 'Arkadaşın şu an çevrimdışı.' })
         if (target.dnd) return send(me.ws, { t: 'info', text: `🌙 ${target.name} şu an rahatsız edilmek istemiyor.` })
+        ctx.grantInvite?.(me.homeKey, target.id)
         send(target.ws, { t: 'home_invite', key: me.homeKey, name: me.name })
       },
 

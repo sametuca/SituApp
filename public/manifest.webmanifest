@@ -1,0 +1,16 @@
+{
+  "name": "Rastla",
+  "short_name": "Rastla",
+  "start_url": "/world",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#fff2e3",
+  "theme_color": "#fff2e3",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

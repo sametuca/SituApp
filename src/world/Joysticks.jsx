@@ -1,9 +1,9 @@
 // Dokunmatik joystick'ler: hareket (Joystick) ve kamera (LookJoystick).
 import { useRef, useState } from 'react'
 import { glass } from './socialShared'
-// ---------- sanal joystick (dokunmatik cihazlar) ----------
-export const BASE = 116
-export const KNOB = 50
+// ---------- sanal joystick (dokunmatik cihazlar — her iki joystick birebir aynı boyuttadır) ----------
+export const BASE = 104
+export const KNOB = 44
 export const MAX = (BASE - KNOB) / 2 + 6
 
 /**
@@ -47,7 +47,7 @@ export function Joystick({ inputRef }) {
       role="application"
       aria-label="Hareket joystick'i"
       className={`absolute z-10 touch-none select-none rounded-full ${glass} ${running ? 'ring-4 ring-[#a9ddf5]' : ''}`}
-      style={{ width: BASE, height: BASE, left: 'max(0.85rem, env(safe-area-inset-left))', bottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+      style={{ width: BASE, height: BASE, left: 'max(0.85rem, env(safe-area-inset-left))', bottom: 'max(0.85rem, env(safe-area-inset-bottom))' }}
       onPointerDown={(e) => {
         if (pointer.current !== null) return
         e.preventDefault()
@@ -83,9 +83,9 @@ export function Joystick({ inputRef }) {
   )
 }
 
-export const LOOK_BASE = 92
-export const LOOK_KNOB = 40
-export const LOOK_MAX = (LOOK_BASE - LOOK_KNOB) / 2 + 5
+export const LOOK_BASE = BASE
+export const LOOK_KNOB = KNOB
+export const LOOK_MAX = MAX
 
 /**
  * Hareket joystick'inin hemen yanında kamera/görünüm joystick'i (dokunmatik cihazlar).
@@ -128,8 +128,8 @@ export function LookJoystick({ inputRef }) {
       style={{
         width: LOOK_BASE,
         height: LOOK_BASE,
-        left: 'calc(max(0.85rem, env(safe-area-inset-left)) + 126px)',
-        bottom: 'max(1.75rem, env(safe-area-inset-bottom))',
+        left: `calc(max(0.85rem, env(safe-area-inset-left)) + ${BASE + 12}px)`,
+        bottom: 'max(0.85rem, env(safe-area-inset-bottom))',
       }}
       onPointerDown={(e) => {
         if (pointer.current !== null) return

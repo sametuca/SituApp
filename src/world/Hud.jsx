@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { TopDock } from '../components/Dock'
 import { Ico } from '../components/Icon'
 import { ZONES } from './layout'
+import { FullscreenButton, FullscreenIcon, useFullscreen } from './MobileViewport'
 
 const glass = 'border-2 border-white bg-white/92 shadow-soft'
 
@@ -12,6 +13,7 @@ const glass = 'border-2 border-white bg-white/92 shadow-soft'
 export function TopBar({ online, status, dnd, onExit, onHelp, onSettings, extraButtons = [], extraNodes = null, menuNodes = null, menuBadge = 0 }) {
   const [menu, setMenu] = useState(false)
   const menuRef = useRef(null)
+  const { isFullscreen, toggleFullscreen } = useFullscreen()
   useEffect(() => {
     if (!menu) return
     const off = (e) => { if (!menuRef.current?.contains(e.target)) setMenu(false) }
@@ -34,7 +36,7 @@ export function TopBar({ online, status, dnd, onExit, onHelp, onSettings, extraB
         className={`pointer-events-none absolute left-0 right-0 top-0 flex items-start justify-between gap-2 px-2.5 pb-2 sm:px-3 sm:py-3 ${hasSpotlight ? 'z-30' : 'z-20'}`}
         style={{ paddingTop: 'max(0.65rem, env(safe-area-inset-top))' }}
       >
-        <div className="pointer-events-auto flex flex-col gap-1.5 sm:gap-2.5">
+        <div className="pointer-events-auto flex max-h-[calc(100svh-8.5rem)] flex-col flex-wrap content-start gap-1.5 sm:gap-2.5">
           <button
             onClick={onExit}
             aria-label="Çıkış yap"
@@ -92,6 +94,7 @@ export function TopBar({ online, status, dnd, onExit, onHelp, onSettings, extraB
       </div>
       <div className="pointer-events-auto relative flex gap-1.5 sm:gap-2" ref={menuRef}>
         {extraNodes}
+        <FullscreenButton />
         <button
           onClick={() => setMenu((m) => !m)}
           aria-label="Menü"
@@ -104,6 +107,10 @@ export function TopBar({ online, status, dnd, onExit, onHelp, onSettings, extraB
         {menu && (
           <div className="absolute right-0 top-14 z-20 flex w-72 flex-col gap-1 rounded-3xl border-2 border-white bg-white/95 p-2 shadow-soft backdrop-blur-md" onClick={() => setMenu(false)}>
             {menuNodes}
+            <button onClick={toggleFullscreen} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#fff8f0]">
+              <span className="grid h-6 w-6 place-items-center text-[#6b4fc0]"><FullscreenIcon active={isFullscreen} size={20} /></span>
+              <span className="flex-1">{isFullscreen ? 'Tam Ekrandan Çık' : 'Tam Ekran Modu'}</span>
+            </button>
             {onSettings && (
               <button onClick={onSettings} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#fff8f0]">
                 <Ico name="settings" size={24} />
@@ -160,13 +167,22 @@ const MODAL_THEMES = {
   gym: 'border-[#ff9f8e]/70 bg-gradient-to-b from-[#271f3d]/96 to-[#1d1630]/96 text-white',
 }
 
-export function Modal({ children, onClose, label, wide = false, theme = 'default', dockBottom = false }) {
+export function Modal({ children, onClose, label, wide = false, theme = 'default', dockBottom = false, hideClose = false }) {
   useEffect(() => {
-    const onKey = (e) => e.key === 'Escape' && onClose()
+    const onKey = (e) => e.key === 'Escape' && onClose?.()
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
   const cls = MODAL_THEMES[theme] ?? MODAL_THEMES.default
+  const showClose = Boolean(onClose && !hideClose)
+  const closeCls =
+    theme === 'gym'
+      ? 'bg-white/15 text-white hover:bg-white/25'
+      : theme === 'dating'
+        ? 'bg-[#ffeef5] text-[#a83668] hover:bg-[#ffdceb]'
+        : theme === 'bag'
+          ? 'bg-[#f3ece0] text-[#6b5a4e] hover:bg-[#eadcc8]'
+          : 'bg-[#f6f0ff] text-[#6b4fc0] hover:bg-[#eadcff]'
   return (
     <div
       className={`absolute inset-0 z-30 flex p-4 ${dockBottom ? 'items-end justify-center bg-transparent pointer-events-none' : 'items-center justify-center bg-[#231938]/35 backdrop-blur-[2px]'}`}
@@ -177,8 +193,21 @@ export function Modal({ children, onClose, label, wide = false, theme = 'default
         aria-modal={!dockBottom}
         aria-label={label}
         onClick={(e) => e.stopPropagation()}
-        className={`pointer-events-auto relative max-h-[90svh] w-full animate-pop overflow-y-auto rounded-[2rem] border-2 p-5 sm:p-6 shadow-toy ${cls} ${wide ? 'max-w-lg' : 'max-w-md'}`}
+        className={`pointer-events-auto relative max-h-[90svh] w-full animate-pop overflow-y-auto rounded-[2rem] border-2 p-5 sm:p-6 shadow-toy ${cls} ${wide ? 'max-w-lg' : 'max-w-md'} ${
+          showClose ? '[&>h2:first-child]:pr-11 [&>div:first-child]:pr-11' : ''
+        }`}
       >
+        {showClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Kapat"
+            title="Kapat"
+            className={`absolute right-4 top-4 z-10 grid h-9 w-9 place-items-center rounded-full text-sm font-black transition active:scale-95 ${closeCls}`}
+          >
+            <Ico name="close" size={14} />
+          </button>
+        )}
         {children}
       </div>
     </div>

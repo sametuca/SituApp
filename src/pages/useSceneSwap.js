@@ -5,7 +5,7 @@ import { venueDoor } from '../world/venueDoors'
 import { BEACH_START, HOME_DOOR, HOME_ROOM, SPAWN } from '../world/layout'
 import { START_VENUE } from './worldConfig'
 
-export function useSceneSwap({ beginTransition, controlsRef, focusRef, moveTargetRef, seenKey, setEditing, setFade, setHome, setIntroActive, setNearDoor, setNearVenue, setSelected, setVenue, venueRef }) {
+export function useSceneSwap({ beginTransition, controlsRef, focusRef, moveTargetRef, seenKey, setEditing, setFade, setHome, setInteractId, setIntroActive, setNearDoor, setNearVenue, setPanel, setSelected, setVenue, venueRef }) {
   // Şehir ↔ ev geçişi: ekran kısa süre kararır, sonra oyuncu yeni yere ışınlanır.
   const swapScene = useCallback((target) => {
     moveTargetRef.current = null
@@ -22,7 +22,7 @@ export function useSceneSwap({ beginTransition, controlsRef, focusRef, moveTarge
         focusRef.current.teleport = [HOME_DOOR.x, HOME_DOOR.z, 0] // evden çıkınca sahile dönük Evim kapısına dön
       } else {
         setHome(target)
-        if (target?.isOwn) setEditing(true)
+        if (target?.isOwn && !target?.withGuest) setEditing(true)
         focusRef.current.teleport = [HOME_ROOM.spawn[0], HOME_ROOM.spawn[1], Math.PI]
       }
       setTimeout(() => setFade(false), 120)
@@ -94,11 +94,18 @@ export function useSceneSwap({ beginTransition, controlsRef, focusRef, moveTarge
           }, 60)
         }
       }
+      if (m.autoJoin && m.owner) {
+        visitPending.current = false
+        setInteractId?.(null)
+        setPanel?.(null)
+        swapScene({ owner: m.owner, ownerName: m.ownerName, isOwn: true, withGuest: true })
+        return
+      }
       if (!visitPending.current || !m.owner) return
       visitPending.current = false
       swapScene({ owner: m.owner, ownerName: m.ownerName })
     },
-    [swapScene, swapVenue],
+    [setInteractId, setPanel, swapScene, swapVenue],
   )
 
   return { onRoom, swapScene, swapVenue, visitPending }

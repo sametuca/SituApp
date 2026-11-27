@@ -274,6 +274,7 @@ export function useInventory({ net, say, panel, setPanel, roster, focusRef, clos
           }}
           label="Karakter ve Çanta"
           theme="bag"
+          hideClose
         >
           <div className="mb-3 flex items-center gap-2">
             <div className="grid flex-1 grid-cols-3 gap-1.5 rounded-2xl bg-[#f3ece0] p-1">

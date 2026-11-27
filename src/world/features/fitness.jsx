@@ -510,7 +510,7 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
       )}
 
       {inStatsModal && (
-        <Modal onClose={() => setPanel(null)} label="Karakter Statları" theme="bag">
+        <Modal onClose={() => setPanel(null)} label="Karakter Statları" theme="bag" hideClose>
           <div className="mb-3 flex items-center gap-2">
             <div className="grid flex-1 grid-cols-3 gap-1.5 rounded-2xl bg-[#f3ece0] p-1">
               <button type="button" onClick={() => setPanel('inventory')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">Çanta</button>

@@ -154,7 +154,7 @@ function WorldScene({ avatar }) {
     if (m.dm && !m.self && chatTargetRef.current !== m.id) setIncoming({ id: m.id, name: m.name, text: m.text, whisper: false })
   }, [])
   const say = useCallback((text) => setFeed((f) => [...f, { kind: 'system', ts: Date.now(), text }].slice(-100)), [])
-  const { onRoom, swapScene, swapVenue, visitPending } = useSceneSwap({ beginTransition, controlsRef, focusRef, moveTargetRef, seenKey, setEditing, setFade, setHome, setIntroActive, setNearDoor, setNearVenue, setSelected, setVenue, venueRef })
+  const { onRoom, swapScene, swapVenue, visitPending } = useSceneSwap({ beginTransition, controlsRef, focusRef, moveTargetRef, seenKey, setEditing, setFade, setHome, setInteractId, setIntroActive, setNearDoor, setNearVenue, setPanel, setSelected, setVenue, venueRef })
 
   const onDenied = useCallback(
     (text) => {

@@ -192,6 +192,8 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
             setVenueChannel(m.channel ?? 1)
             setVenueChannels(Array.isArray(m.channels) ? m.channels : [])
             if (m.venue && m.channel) wantRoom.current = { to: 'venue', id: m.venue, ch: m.channel }
+            else if (m.owner) wantRoom.current = { to: 'home', ...(m.owner === homeKeyRef.current ? {} : { owner: m.owner }) }
+            else if (m.room === 'city') wantRoom.current = null
             setVisit(m.owner && m.owner !== homeKeyRef.current ? { owner: m.owner, ownerName: m.ownerName, items: m.items ?? [], tier: m.tier ?? 1 } : null)
             remotes.current.clear()
             bubbles.current.clear()

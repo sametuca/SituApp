@@ -441,7 +441,7 @@ export function useDating({ net, say, panel, setPanel, focusRef, home, venue, cl
 
       {/* İlk giriş Mod (Vibe) seçici */}
       {showVibeIntro && !open && !sdSession && (
-        <Modal onClose={() => setShowVibeIntro(false)} label="Bugün Modun Ne?">
+        <Modal onClose={() => setShowVibeIntro(false)} label="Bugün Modun Ne?" hideClose>
           <div className="flex items-start justify-between gap-2">
             <div>
               <h2 className="text-xl font-black text-[#4a3b5c]">Bugün Modun Ne?</h2>
@@ -494,7 +494,7 @@ export function useDating({ net, say, panel, setPanel, focusRef, home, venue, cl
 
       {/* Flört Merkezi Modalı */}
       {open && !sdSession && (
-        <Modal onClose={() => setPanel(null)} label="Sosyal ve Buluşma" theme="dating">
+        <Modal onClose={() => setPanel(null)} label="Sosyal ve Buluşma" theme="dating" hideClose>
           <div className="flex items-start justify-between gap-2">
             <div>
               <h2 className="text-xl font-black text-[#4a3b5c]">Sosyal ve Buluşma</h2>

@@ -71,7 +71,7 @@
 import { WebSocketServer } from 'ws'
 import crypto from 'node:crypto'
 import * as guardLib from './guard.js'
-import { PIER, PLAY_BOUNDS, ZONES } from '../src/world/layout.js'
+import { HOME_ROOM, PIER, PLAY_BOUNDS, ZONES } from '../src/world/layout.js'
 import { getHome, getTier, homeExists, saveItems, setOpen } from './homes.js'
 import { moderate } from './profanity.js'
 import { FEATURE_FACTORIES } from './features/index.js'
@@ -180,7 +180,16 @@ export function attachGameServer(httpServer) {
 
   // ev anahtarı → davet edilen oyuncu id'leri (sunucu çalıştığı sürece; oyuncu çıkınca silinir)
   const invites = new Map()
+  const hostPull = new Map() // misafir daveti kabul ettiğinde dışarıdaki ev sahibini de eve çekmek için tek seferlik işaret
   const invited = (key, id) => invites.get(key)?.has(id)
+  const grantInvite = (ownerKey, guestId) => {
+    if (!ownerKey || !guestId) return
+    if (!invites.has(ownerKey)) invites.set(ownerKey, new Set())
+    invites.get(ownerKey).add(guestId)
+    if (!hostPull.has(ownerKey)) hostPull.set(ownerKey, new Set())
+    hostPull.get(ownerKey).add(guestId)
+  }
+  ctx.grantInvite = grantInvite
 
   // oyuncu odaya girebilir mi? Şehir serbest; ev: sahibi, davetli ya da ev herkese açıksa
   const canEnter = (p, room) => {
@@ -249,10 +258,11 @@ export function attachGameServer(httpServer) {
     return 1
   }
 
-  const changeRoom = (p, room) => {
+  const changeRoom = (p, room, extra = null) => {
     if (p.room === room) return
     const prevVid = venueIdOf(p.room)
     const nextVid = venueIdOf(room)
+    const key = room.startsWith('home:') ? room.slice(5) : null
     p.graceUntil = Date.now() + 3500 // oda değişiminde konum atlayışı serbest
     emit('onRoomChange', p) // özellik modülleri (oturma/dans) eski odadaki durumunu temizler
     broadcast({ t: 'leave', id: p.id }, p.id, p.room)
@@ -268,8 +278,14 @@ export function attachGameServer(httpServer) {
       p.ry = Math.PI
       p.vpos = { x: jx, z: jz, t: Date.now() }
       spawn = [jx, jz]
+    } else if (key) {
+      const hx = +(HOME_ROOM.spawn[0] + (Math.random() - 0.5) * 1.4).toFixed(2)
+      const hz = +(HOME_ROOM.spawn[1] + (Math.random() - 0.5) * 0.6).toFixed(2)
+      p.x = hx
+      p.z = hz
+      p.ry = Math.PI
+      p.vpos = { x: hx, z: hz, t: Date.now() }
     }
-    const key = room.startsWith('home:') ? room.slice(5) : null
     const channels = nextVid ? venueChannelsOf(nextVid) : null
     send(p.ws, {
       t: 'room',
@@ -283,6 +299,7 @@ export function attachGameServer(httpServer) {
       ownerName: key ? ownerNameOf(key) : null,
       items: key ? (getHome(key)?.items ?? []) : [],
       players: inRoom(room, p.id).map(publicInfo),
+      ...(extra ?? {}),
     })
     broadcast({ t: 'join', p: publicInfo(p) }, p.id, room)
     if (prevVid && prevVid !== nextVid) broadcastVenueChannels(prevVid, p.id)
@@ -555,13 +572,24 @@ export function attachGameServer(httpServer) {
           room = `home:${typeof msg.owner === 'string' ? homeKey(msg.owner) : me.homeKey}`
         }
         if (!canEnter(me, room)) return send(ws, { t: 'denied', reason: isVenueRoom(room) ? 'Bu mekân bulunamadı.' : 'Bu eve girmek için davet gerekiyor ya da ev kapalı.' })
+        const ownerKey = room.startsWith('home:') ? room.slice(5) : null
+        const pullHost = Boolean(ownerKey && ownerKey !== me.homeKey && hostPull.get(ownerKey)?.delete(me.id))
         changeRoom(me, room)
         if (isVenueRoom(room)) {
           emitEvent(me, 'venue_enter', 1, venueIdOf(room))
           emitEvent(me, 'zone', 1, `v-${venueIdOf(room)}`) // mekâna girmek "yeni mekân gezmek" sayılır
-        } else if (room !== 'city' && room.slice(5) !== me.homeKey) {
+        } else if (ownerKey && ownerKey !== me.homeKey) {
           emitEvent(me, 'home_visit')
-          emitEvent({ key: room.slice(5) }, 'guest', 1, me)
+          emitEvent({ key: ownerKey }, 'guest', 1, me)
+          const host = [...players.values()].find((o) => o.homeKey === ownerKey && o.ws.readyState === 1)
+          if (pullHost && host) {
+            if (host.room !== room) {
+              changeRoom(host, room, { autoJoin: true })
+              send(host.ws, { t: 'info', text: `🏠 ${me.name} davetini kabul etti — birlikte evine geçtiniz!` })
+            } else {
+              send(host.ws, { t: 'info', text: `🏠 ${me.name} davetini kabul edip evine geldi!` })
+            }
+          }
         }
       } else if (msg.t === 'home_save') {
         const now = Date.now()
@@ -583,8 +611,7 @@ export function attachGameServer(httpServer) {
         const target = typeof msg.to === 'string' ? players.get(msg.to) : [...players.values()].find((o) => o.name.toLowerCase() === wanted)
         if (!target || target.id === me.id) return send(ws, { t: 'info', text: 'Bu isimde çevrimiçi biri bulunamadı.' })
         if (refuse(me, target, 'invite')) return
-        if (!invites.has(me.homeKey)) invites.set(me.homeKey, new Set())
-        invites.get(me.homeKey).add(target.id)
+        grantInvite(me.homeKey, target.id)
         send(target.ws, { t: 'invited', owner: me.homeKey, ownerName: me.name })
         send(ws, { t: 'info', text: `🏠 ${target.name} evine davet edildi.` })
         emitEvent(me, 'invite', 1, target)
@@ -673,6 +700,7 @@ export function attachGameServer(httpServer) {
       players.delete(me.id)
       emit('onLeave', me)
       for (const set of invites.values()) set.delete(me.id)
+      for (const set of hostPull.values()) set.delete(me.id)
       for (const o of players.values()) o.hearts?.delete(me.id)
       broadcast({ t: 'leave', id: me.id }, undefined, me.room)
       if (leftVid) broadcastVenueChannels(leftVid)
