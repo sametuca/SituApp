@@ -24,6 +24,7 @@ import { IntroCutsceneCamera, IntroCutsceneOverlay } from '../world/IntroCutscen
 import { GIFT_BY_ID } from '../world/cosmeticsData'
 import { furnitureColliders } from '../world/homeLayout'
 import { useHomeFurniture } from './useHomeFurniture'
+import { useAirportTutorial } from './useAirportTutorial'
 import LocalPlayer, { ClickToMoveGround } from '../world/LocalPlayer'
 import RemotePlayers, { GuideNpc, SelfTag } from '../world/RemotePlayers'
 import { NearbyPicker, VenueChannelPill } from '../world/CrowdHud'
@@ -105,10 +106,6 @@ function WorldScene({ avatar }) {
   }, [])
   const [sceneReady, setSceneReady] = useState(false) // ilk yükleme bitti mi (yükleme ekranı için)
   const onSceneReady = useCallback(() => setSceneReady(true), [])
-  // Havalimanı başlangıç eğitim holü: yıldız topla → çanta (envanter) → örnek kapı → gardırop → çıkış
-  const [tutStep, setTutStep] = useState('collect') // collect | inventory | door | wardrobe | exit | done
-  const [tutNear, setTutNear] = useState(null)
-  const [tutCelebrate, setTutCelebrate] = useState(null)
   const [introActive, setIntroActive] = useState(false)
   const finishIntro = useCallback(() => {
     setIntroActive(false)
@@ -120,21 +117,12 @@ function WorldScene({ avatar }) {
       c.update()
     }
   }, [])
-  const tutOpenedWardrobe = useRef(false)
-  const tutOpenedInv = useRef(false)
-  const tutCelebTimer = useRef(null)
-  const flashTutCelebrate = useCallback((msg) => {
-    setTutCelebrate(msg)
-    clearTimeout(tutCelebTimer.current)
-    tutCelebTimer.current = setTimeout(() => setTutCelebrate(null), 2600)
-  }, [])
   // sunucu konumu düzelttiyse (hız/sınır denetimi) oyuncuyu son geçerli konuma geri al
   useEffect(() => {
     const on = (e) => (focusRef.current.teleport = [e.detail.x, e.detail.z])
     window.addEventListener('situapp:snap', on)
     return () => window.removeEventListener('situapp:snap', on)
   }, [])
-  useEffect(() => () => clearTimeout(tutCelebTimer.current), [])
   useMemo(() => preloadCritical(slug), [slug]) // şehir + avatar modellerini sahne çizilmeden paralel indir (şelale yüklemeyi önler)
   useEffect(() => {
     if (sceneReady) preloadLater()
@@ -495,48 +483,7 @@ function WorldScene({ avatar }) {
     }
   }, [])
 
-  const inTutorial = venue === START_VENUE && tutStep !== 'done'
-  const onTutCollect = useCallback(() => {
-    if (tutStep !== 'collect') return
-    setTutNear(null)
-    window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'collect' }))
-    window.dispatchEvent(new CustomEvent('situapp:inv-add', { detail: { id: 'welcome_soda', label: 'Hoş Geldin Limonata', emoji: '🍋', alcohol: false, style: 'eat' } }))
-    flashTutCelebrate('⭐ Süper! Hediyen 🎒 çantana eklendi (1/5)')
-    setTutStep('inventory')
-  }, [tutStep, flashTutCelebrate])
-  useEffect(() => {
-    if (!inTutorial || tutStep !== 'inventory') return
-    if (panel === 'inventory') {
-      tutOpenedInv.current = true
-    } else if (panel === null && tutOpenedInv.current) {
-      tutOpenedInv.current = false
-      window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'quest' }))
-      flashTutCelebrate('🎒 Harika! Şimdi okları takip edip kapıyı dene (2/5)')
-      setTutStep('door')
-    }
-  }, [inTutorial, tutStep, panel, flashTutCelebrate])
-  const onTutDoor = useCallback(() => {
-    if (tutStep !== 'door' || fade) return
-    setTutNear(null)
-    beginTransition()
-    window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'quest' }))
-    setTimeout(() => {
-      setFade(false)
-      setTutStep('wardrobe')
-      flashTutCelebrate('🚪 Süper! Soldaki 👗 Gardırop açıldı (3/5)')
-    }, 420)
-  }, [beginTransition, tutStep, fade, flashTutCelebrate])
-  useEffect(() => {
-    if (!inTutorial || tutStep !== 'wardrobe') return
-    if (panel === 'wardrobe') {
-      tutOpenedWardrobe.current = true
-    } else if (panel === null && tutOpenedWardrobe.current) {
-      tutOpenedWardrobe.current = false
-      window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'quest' }))
-      flashTutCelebrate('👗 Çok şık! Şimdi okları takip edip şehre çık (4/5)')
-      setTutStep('exit')
-    }
-  }, [inTutorial, tutStep, panel, flashTutCelebrate])
+  const { tutStep, setTutStep, tutNear, setTutNear, tutCelebrate, inTutorial, onTutCollect, onTutDoor } = useAirportTutorial({ venue, panel, fade, setFade, beginTransition })
 
   const editKeysRef = useRef({ on: false, rotate: () => {}, remove: () => {} })
   useEffect(() => {
