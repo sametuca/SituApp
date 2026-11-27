@@ -128,14 +128,17 @@
 | `AssetStudio.jsx` | 274 | Dahili geliştirici aracı: Meshy ile model üretme/önizleme (koyu tema). |
 | `AuthPage.jsx` | 297 | three.js yalnızca giriş ekranı çizildikten sonra yüklensin |
 | `AvatarSelect.jsx` | 172 | Karakter seçimi + renk özelleştirme ekranı (tek karakter kilidi). |
-| `World.jsx` | 770 | Dünya sayfası orkestratörü: Canvas, ağ, HUD, özellik modülleri, odalar (şehir/ev/mekân). |
+| `World.jsx` | 578 | Dünya sayfası orkestratörü: Canvas, ağ, HUD, özellik modülleri, odalar (şehir/ev/mekân). |
 | `WorldCanvas.jsx` | 127 | Dünya 3B sahnesi (R3F Canvas): ışık/ortam, şehir/ev/mekân, oyuncular, NPC'ler, özellik katmanları, kamera ve izleyiciler. |
 | `WorldLoading.jsx` | 125 | 3B sahne çökerse boş ekran yerine kurtarma kartı gösterir. |
 | `WorldOverlays.jsx` | 56 | Dünya sayfası tam ekran katmanları: bağlantı/oturum uyarıları ve sahne geçişi karartması (World.jsx'ten ayrıldı). |
 | `loadingMessages.js` | 15 | Yükleme ekranı mesajları ve rastgele seçici. |
 | `useAirportTutorial.js` | 64 | Havalimanı başlangıç eğitimi adımları: yıldız topla → çanta → örnek kapı → gardırop → çıkış (World.jsx'ten ayrıldı). |
 | `useHomeFurniture.js` | 61 | Kendi evimin mobilya düzeni: sunucuyla eşitleme (bağlanınca al, değişince kısa beklemeyle yolla), yerel önbellek ve Döşe modu eylemleri. |
+| `useRoomNav.js` | 63 | Oda gezinmesi: eve gir/çık, ziyaret, mekâna gir/çık, kanal değiştir, havalimanı başlangıç denetimi (World.jsx'ten ayrıldı). |
+| `useSceneSwap.js` | 106 | Şehir ↔ ev/mekân sahne geçişleri (karartma, ışınlama, kamera) ve sunucunun 'room' yanıtına tepki (World.jsx'ten ayrıldı). |
 | `useSkills.js` | 50 | Beceri çubuğu: 4 yuvalı ifade/dans becerileri, bekleme süreleri, tek kişilik dans duruşu ve tepki gönderme (World.jsx'ten ayrıldı). |
+| `useWorldKeys.js` | 60 | Dünya klavye kısayolları: E (kapı/mekân/rehber/eğitim), H, M, Esc, 1-9/0 (beceri ve tepki), R/Del (mobilya). |
 | `worldCommands.js` | 96 | Sohbet komutları (/yardım, /ev, /f, /ışınlan ...): World.jsx'ten ayrıldı; bağımlılıklar `c` ile verilir. |
 | `worldConfig.js` | 28 | Dünya sayfası sabitleri: başlangıç mekânı, avatar listesi, rehber ipuçları, geçiş mesajları ve kayıtlı avatar okuyucu. |
 

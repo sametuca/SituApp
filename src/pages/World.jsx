@@ -4,9 +4,7 @@ import { DockSlot, TopDockSlot } from '../components/Dock'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { VENUE_BY_ID, VENUE_ROOM } from '../world/venues'
-import { venueDoor } from '../world/venueDoors'
 import { resolveVenueRoom, venueLayout, venueTheme } from '../world/venueLayout'
-import { together } from '../world/features/togetherStore'
 import { EditToggle, FurnitureSheet } from '../world/HomeEditor'
 import { FURNITURE_BY_ID } from '../world/furniture'
 import { useFeatures } from '../world/features'
@@ -16,6 +14,9 @@ import { IntroCutsceneOverlay } from '../world/IntroCutscene'
 import { GIFT_BY_ID } from '../world/cosmeticsData'
 import { furnitureColliders } from '../world/homeLayout'
 import { useHomeFurniture } from './useHomeFurniture'
+import { useWorldKeys } from './useWorldKeys'
+import { useRoomNav } from './useRoomNav'
+import { useSceneSwap } from './useSceneSwap'
 import { useAirportTutorial } from './useAirportTutorial'
 import WorldCanvas from './WorldCanvas'
 import { useSkills } from './useSkills'
@@ -26,11 +27,11 @@ import { HelpModal, StartGuide, TopBar } from '../world/Hud'
 import { ChatPanel } from '../world/HudChat'
 import { Minimap } from '../world/HudMap'
 import { ChatFab, ChatSheet, DoorPrompt, GestureChip, IncomingChip, InteractSheet, InviteChip, Joystick, LookJoystick, MatchOverlay, SkillBar } from '../world/Social'
-import { GESTURE_BY_KIND, GESTURE_RANGE, REACTIONS } from '../world/interact'
+import { GESTURE_BY_KIND, GESTURE_RANGE } from '../world/interact'
 import SkillEditor from '../components/SkillEditor'
 import { useIsTouch } from '../world/useIsTouch'
 import { HOME_TIERS, applyHomeTier } from '../world/homeTiers'
-import { BEACH_START, HOME_DOOR, HOME_ROOM, SPAWN, zoneAt } from '../world/layout'
+import { HOME_ROOM, SPAWN, zoneAt } from '../world/layout'
 import { getGraphicsProfile } from '../world/performanceProfile'
 import { LoadingOverlay } from './WorldLoading'
 import { randomLoadingMessage } from './loadingMessages'
@@ -150,100 +151,8 @@ function WorldScene({ avatar }) {
     if (m.dm && !m.self && chatTargetRef.current !== m.id) setIncoming({ id: m.id, name: m.name, text: m.text, whisper: false })
   }, [])
   const say = useCallback((text) => setFeed((f) => [...f, { kind: 'system', ts: Date.now(), text }].slice(-100)), [])
-  // Şehir ↔ ev geçişi: ekran kısa süre kararır, sonra oyuncu yeni yere ışınlanır.
-  const swapScene = useCallback((target) => {
-    moveTargetRef.current = null
-    beginTransition()
-    setEditing(false)
-    setSelected(null)
-    setTimeout(() => {
-      setNearDoor(false)
-      setVenue(null)
-      venueRef.current = null
-      if (target === 'city') {
-        setHome(null)
-        // Konut Mahallesi kapısından girildiyse o kapının önüne, aksi halde lobideki Evim kapısına dön
-        focusRef.current.teleport = [HOME_DOOR.x, HOME_DOOR.z, 0] // evden çıkınca sahile dönük Evim kapısına dön
-      } else {
-        setHome(target)
-        if (target?.isOwn) setEditing(true)
-        focusRef.current.teleport = [HOME_ROOM.spawn[0], HOME_ROOM.spawn[1], Math.PI]
-      }
-      setTimeout(() => setFade(false), 120)
-    }, 220)
-  }, [beginTransition])
+  const { onRoom, swapScene, swapVenue, visitPending } = useSceneSwap({ beginTransition, controlsRef, focusRef, moveTargetRef, seenKey, setEditing, setFade, setHome, setIntroActive, setNearDoor, setNearVenue, setSelected, setVenue, venueRef })
 
-  // Şehir ↔ mekân geçişi (ev geçişinin paralelidir). Girerken kamera güneye sıfırlanır (oyuncak evi kesiti).
-  const swapVenue = useCallback((target, serverSpawn = null) => {
-    moveTargetRef.current = null
-    const from = venueRef.current
-    beginTransition()
-    setEditing(false)
-    setSelected(null)
-    setTimeout(() => {
-      setNearDoor(false)
-      setNearVenue(null)
-      if (target === 'city') {
-        venueRef.current = null
-        setVenue(null)
-        if (from === START_VENUE) {
-          try {
-            localStorage.setItem(seenKey, '1')
-          } catch {
-            /* önemli değil */
-          }
-          setIntroActive(true)
-        }
-        const d = from && venueDoor(from)
-        focusRef.current.teleport = d ? d.exit : from === START_VENUE ? [BEACH_START.x, BEACH_START.z, BEACH_START.ry] : [SPAWN.x, SPAWN.z, Math.PI] // havalimanından çıkış: kumsal
-      } else {
-        venueRef.current = target
-        setHome(null)
-        setVenue(target)
-        const spawn =
-          Array.isArray(serverSpawn) && serverSpawn.length === 2 && serverSpawn.every(Number.isFinite)
-            ? serverSpawn
-            : VENUE_ROOM.spawn
-        const [sx, sz] = spawn
-        focusRef.current.teleport = [sx, sz, Math.PI]
-        setTimeout(() => {
-          const c = controlsRef.current
-          if (!c) return
-          c.object.position.set(sx, 6.4, sz + 9.4)
-          c.target.set(sx, 0.8, sz)
-          c.update()
-        }, 60)
-      }
-      setTimeout(() => setFade(false), 160)
-    }, 220)
-  }, [beginTransition, seenKey])
-
-  // Başkasının evine girerken sahne, sunucu izin verince ('room' mesajı) değişir; reddedilirse olduğun yerde kalırsın.
-  // Mekân girişinde/salon değişiminde sunucunun verdiği dağılımlı kapı konumu uygulanır (üst üste binmeyi önler).
-  const visitPending = useRef(false)
-  const onRoom = useCallback(
-    (m) => {
-      if (m.venue && Array.isArray(m.spawn) && m.spawn.length === 2) {
-        if (venueRef.current !== m.venue) {
-          swapVenue(m.venue, m.spawn)
-        } else {
-          const [sx, sz] = m.spawn
-          focusRef.current.teleport = [sx, sz, Math.PI]
-          setTimeout(() => {
-            const c = controlsRef.current
-            if (!c) return
-            c.object.position.set(sx, 6.4, sz + 9.4)
-            c.target.set(sx, 0.8, sz)
-            c.update()
-          }, 60)
-        }
-      }
-      if (!visitPending.current || !m.owner) return
-      visitPending.current = false
-      swapScene({ owner: m.owner, ownerName: m.ownerName })
-    },
-    [swapScene, swapVenue],
-  )
   const onDenied = useCallback(
     (text) => {
       visitPending.current = false
@@ -277,59 +186,7 @@ function WorldScene({ avatar }) {
 
   // Sohbeti sade tutmak için otomatik katılma bildirimleri sohbet akışına basılmaz.
 
-  const goTo = useCallback(
-    (target) => {
-      swapScene(target)
-      net.enterRoom(target === 'city' ? 'city' : { owner: target.owner })
-    },
-    [net, swapScene],
-  )
-  const visit = useCallback(
-    (owner) => {
-      setInvite(null)
-      visitPending.current = true
-      if (!net.enterRoom({ owner })) {
-        visitPending.current = false
-        say('Şu an çevrimdışısın, ziyaret edemezsin.')
-      }
-    },
-    [net, say],
-  )
-  const enterVenue = useCallback(
-    (id) => {
-      if (!VENUE_BY_ID[id]) return
-      net.enterRoom({ venue: id })
-    },
-    [net],
-  )
-  const switchVenueChannel = useCallback(
-    (ch) => {
-      if (!venue || ch === net.venueChannel) return
-      beginTransition()
-      setInteractId(null)
-      net.enterRoom({ venue, ch })
-      setTimeout(() => setFade(false), 260)
-    },
-    [beginTransition, venue, net],
-  )
-  const leaveVenue = useCallback(() => {
-    swapVenue('city')
-    net.enterRoom('city')
-  }, [net, swapVenue])
-  // sunucu hesabın yeni olup olmadığını söyler (welcome.first): havalimanı yalnızca yeni hesapta
-  const airportChecked = useRef(false)
-  useEffect(
-    () =>
-      net.on('welcome', (m) => {
-        if (airportChecked.current) return
-        airportChecked.current = true
-        if (m.first && !venueRef.current) enterVenue(START_VENUE)
-        else if (!m.first && venueRef.current === START_VENUE) leaveVenue()
-      }),
-    [net, enterVenue, leaveVenue],
-  )
-  const ownHome = useCallback(() => ({ owner: net.homeKey ?? undefined, ownerName: name, isOwn: true }), [net.homeKey, name])
-  const doorGo = useCallback(() => (venue ? leaveVenue() : goTo(home ? 'city' : ownHome())), [goTo, home, ownHome, venue, leaveVenue])
+  const { doorGo, enterVenue, goTo, leaveVenue, ownHome, switchVenueChannel, visit } = useRoomNav({ beginTransition, home, name, net, say, setFade, setInteractId, setInvite, swapScene, swapVenue, venue, venueRef, visitPending })
 
   const isOwnHome = Boolean(home) && (!home.owner || home.owner === net.homeKey)
   // ev odasının ölçüsü kademeye göre (kendi evim: sunucudan; ziyaretteyken sahibinin kademesi)
@@ -437,56 +294,7 @@ function WorldScene({ avatar }) {
 
   const { tutStep, setTutStep, tutNear, setTutNear, tutCelebrate, inTutorial, onTutCollect, onTutDoor } = useAirportTutorial({ venue, panel, fade, setFade, beginTransition })
 
-  const editKeysRef = useRef({ on: false, rotate: () => {}, remove: () => {} })
-  useEffect(() => {
-    editKeysRef.current = { on: editing && Boolean(selected), rotate: rotateFurn, remove: removeFurn }
-  })
-  const nearDoorRef = useRef(false)
-  const doorGoRef = useRef(() => {})
-  const nearVenueRef = useRef(null)
-  const enterVenueRef = useRef(() => {})
-  const tutActionRef = useRef(null)
-  useEffect(() => {
-    nearDoorRef.current = nearDoor && !fade && !(inTutorial && tutStep !== 'exit') // eğitim bitmeden havalimanından çıkılmaz
-    doorGoRef.current = doorGo
-    nearVenueRef.current = !fade && !home && !venue && !nearDoor ? nearVenue : null
-    enterVenueRef.current = enterVenue
-    nearGuideRef.current = !fade && !home && !venue && !nearDoor && !nearVenue && nearGuide
-    tutActionRef.current = inTutorial && !fade ? (tutNear === 'collect' && tutStep === 'collect' ? onTutCollect : tutNear === 'door' && tutStep === 'door' ? onTutDoor : null) : null
-  }, [nearDoor, fade, doorGo, nearVenue, home, venue, enterVenue, nearGuide, inTutorial, tutNear, tutStep, onTutCollect, onTutDoor])
-
-  // H tuşu: yardım, M tuşu: harita, Esc: açık pencereyi kapat, E: kapı / eğitim etkileşimi
-  useEffect(() => {
-    const onKey = (e) => {
-      const typing = e.target instanceof HTMLElement && ['INPUT', 'TEXTAREA'].includes(e.target.tagName)
-      if (e.code === 'Escape' && !typing) {
-        setHelp(false)
-        setPanel(null)
-        setInteractId(null)
-        return
-      }
-      if (e.code === 'KeyH' && !typing) setHelp((h) => !h)
-      if (e.code === 'KeyM' && !typing) window.dispatchEvent(new CustomEvent('situapp:toggle-map'))
-      if (e.code === 'KeyE' && !typing && tutActionRef.current) tutActionRef.current()
-      else if (e.code === 'KeyE' && !typing && nearDoorRef.current) doorGoRef.current()
-      else if (e.code === 'KeyE' && !typing && nearVenueRef.current && !together.self.current) enterVenueRef.current(nearVenueRef.current)
-      else if (e.code === 'KeyE' && !typing && nearGuideRef.current) setHelp(true)
-      if (!typing && /^Digit[0-9]$/.test(e.code) && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        const n = Number(e.code.slice(5))
-        if (n >= 1 && n <= 4) {
-          skillRef.current(skillListRef.current[n - 1])
-        } else {
-          const emoji = REACTIONS[(n + 9) % 10]
-          if (emoji) reactRef.current(emoji)
-        }
-      }
-      if (typing || !editKeysRef.current.on) return
-      if (e.code === 'KeyR') editKeysRef.current.rotate()
-      if (e.code === 'Delete' || e.code === 'Backspace') editKeysRef.current.remove()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  useWorldKeys({ doorGo, editing, enterVenue, fade, home, inTutorial, nearDoor, nearGuide, nearGuideRef, nearVenue, onTutCollect, onTutDoor, reactRef, removeFurn, rotateFurn, selected, setHelp, setInteractId, setPanel, skillListRef, skillRef, tutNear, tutStep, venue })
 
   const closeTips = useCallback(() => {
     localStorage.setItem(tipsKey, '1')
