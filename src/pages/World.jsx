@@ -72,23 +72,23 @@ function WorldScene({ avatar }) {
       return 0
     }
   })
-  // Havalimanı çıkış salonu YALNIZCA hesap yeni açıldığında bir kez görülür (geri dönüş yok). Sunucu welcome.first ile doğrular;
-  // istemci hızlı başlamak için yerel işarete bakar. Diğer herkes doğrudan parkta başlar. Ev ise ayrı bir oda (lobideki Evim kapısı).
-  const seenKey = `situapp_airport_seen_${user?.id ?? name}`
-  const [startAirport] = useState(() => {
+  // Tüm oyuncular (yeni hesaplar dahil) doğrudan Rastla Sahili'nde diğer oyuncuların arasında başlar;
+  // ilk gelişte sahil sinematiği oynar ve hoş geldin içeceği çantaya eklenir.
+  const seenKey = `situapp_beach_intro_${user?.id ?? name}`
+  const [firstBeachVisit] = useState(() => {
     try {
       return !localStorage.getItem(seenKey)
     } catch {
       return false
     }
   })
-  const [start] = useState(() => (startAirport ? { x: VENUE_ROOM.spawn[0], z: VENUE_ROOM.spawn[1] } : { x: SPAWN.x + (Math.random() - 0.5) * 4, z: SPAWN.z + Math.random() * 2 }))
-  const [zone, setZone] = useState(() => (startAirport ? { id: `venue:${START_VENUE}`, name: VENUE_BY_ID[START_VENUE].name, emoji: VENUE_BY_ID[START_VENUE].emoji, desc: VENUE_BY_ID[START_VENUE].desc } : zoneAt(SPAWN.x, SPAWN.z)))
+  const [start] = useState(() => ({ x: SPAWN.x + (Math.random() - 0.5) * 3.8, z: SPAWN.z + Math.random() * 1.8 }))
+  const [zone, setZone] = useState(() => zoneAt(SPAWN.x, SPAWN.z))
   const [home, setHome] = useState(null) // null = şehir/mekân; { owner, ownerName } = bir evin içindeyiz
   const [nearDoor, setNearDoor] = useState(false)
-  const [venue, setVenue] = useState(startAirport ? START_VENUE : null) // null = şehir/ev; mekân kimliği = o mekânın içindeyiz (venues.js); yeni hesapta başlangıç: havalimanı
+  const [venue, setVenue] = useState(null) // null = sahil/şehir/ev; mekân kimliği = o mekânın içindeyiz
   const [nearVenue, setNearVenue] = useState(null) // şehirde kapısına yaklaştığımız mekân
-  const venueRef = useRef(startAirport ? START_VENUE : null)
+  const venueRef = useRef(null)
   const [fade, setFade] = useState(false)
   const [transitionLine, setTransitionLine] = useState(() => randomLoadingMessage(TRAVEL_LOADING_MESSAGES))
   const beginTransition = useCallback(() => {
@@ -114,6 +114,20 @@ function WorldScene({ avatar }) {
     window.addEventListener('situapp:snap', on)
     return () => window.removeEventListener('situapp:snap', on)
   }, [])
+  useEffect(() => {
+    if (!sceneReady || !firstBeachVisit) return
+    try {
+      localStorage.setItem(seenKey, '1')
+    } catch {
+      /* ignore */
+    }
+    setIntroActive(true)
+    window.dispatchEvent(
+      new CustomEvent('situapp:inv-add', {
+        detail: { id: 'welcome_soda', label: 'Sahil Hoş Geldin Limonatası', emoji: '🍹', alcohol: false, style: 'eat' },
+      }),
+    )
+  }, [sceneReady, firstBeachVisit, seenKey])
   useEffect(() => {
     preloadCritical(slug)
   }, [slug])
@@ -179,7 +193,7 @@ function WorldScene({ avatar }) {
     },
     [say],
   )
-  const net = useMultiplayer({ name, avatar: slug, onChat: addFeed, onDenied, onInfo: say, onInvited: setInvite, onRoom, onGesture, onMatch, startRoom: startAirport ? { to: 'venue', id: START_VENUE } : null })
+  const net = useMultiplayer({ name, avatar: slug, onChat: addFeed, onDenied, onInfo: say, onInvited: setInvite, onRoom, onGesture, onMatch, startRoom: null })
   const { roster: playersInRoom, sendGesture: sendNetGesture } = net
 
   useEffect(() => {
@@ -341,6 +355,8 @@ function WorldScene({ avatar }) {
           online={net.online}
           status={net.status}
           dnd={net.dnd}
+          touch={touch}
+          inCity={!home && !venue}
           onSettings={() => setPanel('settings')}
           extraButtons={
             inTutorial

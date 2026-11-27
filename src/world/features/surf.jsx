@@ -2,6 +2,7 @@
 // Sörfçü Kaan'dan (Quicksörf) açılır. Sörf sırasında 3B avatar geçici olarak sörf kıyafetine (turkuaz wetsuit + gözlük) geçer.
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Ico } from '../../components/Icon'
+import { Modal } from '../Hud'
 import { cosStore } from '../cosStore'
 
 import { BOT_NAMES, fmtSec, loadLocalBoard } from './surfData'
@@ -156,48 +157,41 @@ export function useSurf({ net, panel, setPanel, touch, say, name }) {
         />
       </Suspense>
     ) : (
-      <div className="fixed inset-0 z-40 grid place-items-center bg-[#155a75]/45 p-4 backdrop-blur-[2px]" onClick={closeAll}>
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Sörf Yarışı"
-          onClick={(e) => e.stopPropagation()}
-          className="flex max-h-[90svh] w-[min(94vw,29rem)] animate-pop flex-col overflow-hidden rounded-[2rem] border-2 border-white bg-white/95 p-5 shadow-toy backdrop-blur-md"
-        >
-          {/* Başlık */}
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <h2 className="text-xl font-black text-[#4a3b5c]">Sörf Yarışı</h2>
-              <p className="text-xs font-bold text-[#8a7a9c]">Dalgalardan kaç, en sona kalan kazanır! (2–10 kişi)</p>
-            </div>
-            <button type="button" onClick={closeAll} aria-label="Kapat" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f0ff] text-sm font-black text-[#8a7a9c] hover:bg-[#ffedd6]">
-              ✖️
-            </button>
+      <Modal onClose={closeAll} label="Sörf Yarışı" wide hideClose>
+        {/* Başlık */}
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <h2 className="text-xl font-black text-[#4a3b5c]">Sörf Yarışı</h2>
+            <p className="text-xs font-bold text-[#8a7a9c]">Dalgalardan kaç, en sona kalan kazanır! (2–10 kişi)</p>
           </div>
+          <button type="button" onClick={closeAll} aria-label="Kapat" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#f6f0ff] text-sm font-black text-[#8a7a9c] hover:bg-[#ffedd6]">
+            ✖️
+          </button>
+        </div>
 
-          {/* Sekmeler */}
-          <div className="mt-3 grid grid-cols-2 gap-1.5 rounded-2xl bg-[#eef8fc] p-1">
-            <button
-              type="button"
-              onClick={() => setView('lobby')}
-              className={`rounded-xl py-2 text-xs font-black transition ${view !== 'board' ? 'bg-white text-[#12688a] shadow-sm' : 'text-[#6c8a99]'}`}
-            >
-              Yarış Lobisi
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setView('board')
-                send({ t: 'surf_board' })
-              }}
-              className={`rounded-xl py-2 text-xs font-black transition ${view === 'board' ? 'bg-white text-[#8a5a00] shadow-sm' : 'text-[#6c8a99]'}`}
-            >
-              Puan Tablosu
-            </button>
-          </div>
+        {/* Sekmeler */}
+        <div className="mt-3 grid grid-cols-2 gap-1.5 rounded-2xl bg-[#eef8fc] p-1">
+          <button
+            type="button"
+            onClick={() => setView('lobby')}
+            className={`rounded-xl py-2 text-xs font-black transition ${view !== 'board' ? 'bg-white text-[#12688a] shadow-sm' : 'text-[#6c8a99]'}`}
+          >
+            Yarış Lobisi
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setView('board')
+              send({ t: 'surf_board' })
+            }}
+            className={`rounded-xl py-2 text-xs font-black transition ${view === 'board' ? 'bg-white text-[#8a5a00] shadow-sm' : 'text-[#6c8a99]'}`}
+          >
+            Puan Tablosu
+          </button>
+        </div>
 
-          {/* İçerik */}
-          <div className="mt-3 flex-1 overflow-y-auto">
+        {/* İçerik */}
+        <div className="mt-3">
             {view === 'board' ? (
               <div className="flex flex-col gap-1.5">
                 {board.length === 0 ? (
@@ -334,9 +328,8 @@ export function useSurf({ net, panel, setPanel, touch, say, name }) {
                 </button>
               </div>
             )}
-          </div>
         </div>
-      </div>
+      </Modal>
     )
   ) : null
 

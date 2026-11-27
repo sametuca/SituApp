@@ -5,7 +5,12 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 export function DockSlot() {
-  return <div id="hud-dock" className="pointer-events-none absolute inset-x-0 bottom-[9.75rem] z-20 flex flex-col-reverse items-center gap-2 px-3" />
+  return (
+    <div
+      id="hud-dock"
+      className="pointer-events-none absolute inset-x-0 bottom-[5.8rem] z-20 flex flex-col-reverse items-center gap-1.5 px-3 sm:bottom-[9.75rem] sm:gap-2 max-sm:[&>*]:origin-bottom max-sm:[&>*]:scale-[0.88]"
+    />
+  )
 }
 
 export function Dock({ children }) {
@@ -19,7 +24,12 @@ export function Dock({ children }) {
 // ---- Üst orta HUD yığını: bölge başlığı, etkinlik/davet bannerları, bekleme kartları, ipuçları vb. yukarıdan aşağı SIRALI akar ----
 // Yığın tıklamaları geçirir; etkileşimli kartların kendi köküne pointer-events-auto ekle.
 export function TopDockSlot() {
-  return <div id="hud-top" className="pointer-events-none absolute inset-x-0 top-[4.6rem] z-30 flex flex-col items-center gap-2 px-3" />
+  return (
+    <div
+      id="hud-top"
+      className="pointer-events-none absolute inset-x-0 top-2.5 z-30 flex flex-col items-center gap-1 px-14 sm:top-[4.6rem] sm:gap-2 sm:px-3 max-sm:[&>*]:origin-top max-sm:[&>*]:scale-[0.85]"
+    />
+  )
 }
 
 export function TopDock({ children }) {

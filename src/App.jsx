@@ -3,7 +3,6 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider, RequireAuth } from './lib/AuthContext'
 import AuthPage from './pages/AuthPage'
-import { LandscapeGuard } from './world/MobileViewport'
 
 const AvatarSelect = lazy(() => import('./pages/AvatarSelect'))
 const World = lazy(() => import('./pages/World'))
@@ -24,7 +23,6 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <LandscapeGuard />
         <Suspense fallback={PageFallback}>
           <Routes>
             <Route path="/" element={<AuthPage />} />

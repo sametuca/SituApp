@@ -217,3 +217,32 @@ html {
 .animate-point-left {
   animation: point-left 0.85s ease-in-out infinite;
 }
+
+@keyframes scroll-nudge {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(3px); }
+}
+.animate-scroll-nudge {
+  animation: scroll-nudge 1.15s ease-in-out infinite;
+}
+
+/* Kart ve modallarda her zaman belirgin, dokunmatik dostu kaydırma çubuğu */
+.situ-scroll {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(122, 95, 208, 0.65) rgba(230, 220, 245, 0.55);
+}
+.situ-scroll::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+.situ-scroll::-webkit-scrollbar-track {
+  background: rgba(230, 220, 245, 0.55);
+  border-radius: 999px;
+  margin-block: 12px;
+}
+.situ-scroll::-webkit-scrollbar-thumb {
+  background: rgba(122, 95, 208, 0.68);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}

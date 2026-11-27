@@ -124,7 +124,7 @@ export default function AuthPage() {
             className="mx-auto h-14 w-auto select-none drop-shadow-[0_6px_14px_rgba(74,59,92,0.18)] sm:h-16"
           />
           <p className="mt-1 text-xs font-bold tracking-wide text-ink-soft">
-            Hayatının aşkına rastla. 💫
+            Hikâye sahilde başlar; kaynaş, tanış ve birlikte şehre ak. 🌴✨
           </p>
           <div className="mt-1.5 flex items-center justify-center gap-2">
             <span className="inline-block rounded-full border-2 border-white bg-[#fff3c8] px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-[#8a5a00] shadow-soft">

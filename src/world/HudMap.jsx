@@ -222,19 +222,21 @@ export function Minimap({ focusRef, remotes, compact }) {
   const [big, setBig] = useState(false)
   const [zoneName, setZoneName] = useState('')
   const [winSize, setWinSize] = useState(() => ({ w: typeof window !== 'undefined' ? window.innerWidth : 1280, h: typeof window !== 'undefined' ? window.innerHeight : 720 }))
+  const hideMini = Boolean(compact || winSize.w < 768)
+  useEffect(() => {
+    const onResize = () => setWinSize({ w: window.innerWidth, h: window.innerHeight })
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
   useEffect(() => {
     if (!big) return undefined
-    const onResize = () => setWinSize({ w: window.innerWidth, h: window.innerHeight })
     const onKey = (e) => e.key === 'Escape' && setBig(false)
-    window.addEventListener('resize', onResize)
     window.addEventListener('keydown', onKey)
-    return () => {
-      window.removeEventListener('resize', onResize)
-      window.removeEventListener('keydown', onKey)
-    }
+    return () => window.removeEventListener('keydown', onKey)
   }, [big])
-  const S = big ? Math.max(260, Math.min(compact ? 340 : 580, Math.round(Math.min(winSize.w * 0.86, winSize.h * 0.56)))) : compact ? 96 : 204 // ekranda CSS boyutu (px)
+  const S = big ? Math.max(260, Math.min(compact ? 340 : 580, Math.round(Math.min(winSize.w * 0.86, winSize.h * 0.56)))) : 204 // ekranda CSS boyutu (px)
   useEffect(() => {
+    if (hideMini && !big) return undefined
     const cv = canvas.current
     if (!cv) return
     const ctx = cv.getContext('2d')
@@ -263,7 +265,7 @@ export function Minimap({ focusRef, remotes, compact }) {
     }
     raf = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(raf)
-  }, [focusRef, remotes, big, S])
+  }, [focusRef, remotes, big, S, hideMini])
 
   useEffect(() => {
     const onOpen = () => setBig(true)
@@ -318,10 +320,12 @@ export function Minimap({ focusRef, remotes, compact }) {
     )
   }
 
+  if (hideMini) return null
+
   return (
     <div
-      className="pointer-events-auto absolute right-2.5 z-10 sm:right-3"
-      style={{ top: compact ? 'calc(max(0.65rem, env(safe-area-inset-top)) + 3.4rem)' : '5rem' }}
+      className="pointer-events-auto absolute right-3 z-10"
+      style={{ top: '5rem' }}
       aria-label="Harita"
     >
       <div className={`overflow-hidden rounded-full p-1.5 ${glass}`}>

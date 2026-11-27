@@ -113,6 +113,7 @@ export function NearbyPicker({ remotes, roster, focusRef, touch = false, onPick 
   const boxRef = useRef(null)
 
   useEffect(() => {
+    const range = touch ? 11.5 : NEARBY_PICK_RANGE
     const refresh = () => {
       const f = focusRef.current
       if (!f) return
@@ -120,7 +121,7 @@ export function NearbyPicker({ remotes, roster, focusRef, touch = false, onPick 
       const found = []
       for (const r of remotes.current.values()) {
         const d = Math.hypot(r.x - f.x, r.z - f.z)
-        if (d <= NEARBY_PICK_RANGE) {
+        if (d <= range) {
           const info = byId.get(r.id)
           found.push({ id: r.id, name: info?.name ?? r.name, dist: d })
         }
@@ -129,9 +130,9 @@ export function NearbyPicker({ remotes, roster, focusRef, touch = false, onPick 
       setList(found.slice(0, 18))
     }
     refresh()
-    const id = setInterval(refresh, 600)
+    const id = setInterval(refresh, 550)
     return () => clearInterval(id)
-  }, [remotes, roster, focusRef])
+  }, [remotes, roster, focusRef, touch])
 
   useEffect(() => {
     if (!open) return
@@ -142,24 +143,32 @@ export function NearbyPicker({ remotes, roster, focusRef, touch = false, onPick 
     return () => window.removeEventListener('pointerdown', off)
   }, [open])
 
-  if (list.length < 3) return null
+  if (list.length < (touch ? 1 : 3)) return null
 
   return (
     <div
       ref={boxRef}
-      className={`pointer-events-auto fixed z-20 ${touch ? 'right-3 top-16' : 'bottom-[15.6rem] left-3'}`}
+      className={`pointer-events-auto fixed z-20 ${touch ? 'left-1/2 top-11 -translate-x-1/2' : 'bottom-[15.6rem] left-3'}`}
     >
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          if (touch && list.length === 1) {
+            onPick?.(list[0].id)
+            return
+          }
+          setOpen((o) => !o)
+        }}
         className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-extrabold text-[#4a3b5c] transition hover:bg-white active:scale-95 ${glass}`}
       >
-        <span>👥</span>
-        <span>Yakındakiler</span>
-        <span className="rounded-full bg-[#ffe8cc] px-1.5 py-0.5 text-[11px] font-black text-[#c26a1b]">{list.length}</span>
+        <span>{touch && list.length === 1 ? '👤' : '👥'}</span>
+        <span className="max-w-[9.5rem] truncate">{touch && list.length === 1 ? list[0].name : 'Yakındakiler'}</span>
+        <span className="rounded-full bg-[#ffe8cc] px-1.5 py-0.5 text-[11px] font-black text-[#c26a1b]">
+          {touch && list.length === 1 ? 'Seç' : list.length}
+        </span>
       </button>
 
-      {open && (
+      {open && list.length > 1 && (
         <div className={`mt-1.5 w-56 rounded-3xl border-2 border-white bg-white/96 p-2 shadow-toy backdrop-blur-md ${touch ? 'ml-auto' : ''}`}>
           <div className="mb-1 px-2 text-[11px] font-black text-[#8a7a9c]">Yakındaki Oyuncular</div>
           <div className="flex max-h-52 flex-col gap-0.5 overflow-y-auto">

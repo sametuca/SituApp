@@ -240,13 +240,24 @@ export function useTogether(ctx) {
       const seats = venue ? venueSeats(venue) : home ? null : SEATS // evde koltuk yok; mekânda iç mekân koltukları
       if (seats && !posed) {
         const taken = together.takenSeats()
+        const groupCount = new Map()
+        for (const s of seats) {
+          if (!s.group) continue
+          let cnt = 0
+          s.slots.forEach((_, idx) => {
+            if (taken.has(`${s.id}:${idx}`)) cnt++
+          })
+          if (cnt > 0) groupCount.set(s.group, (groupCount.get(s.group) ?? 0) + cnt)
+        }
         let best = SIT_PROMPT
         let bestFull = SIT_PROMPT
         for (const seat of seats) {
           if (Math.abs(seat.x - f.x) > 4 || Math.abs(seat.z - f.z) > 4) continue
+          const tableFull = seat.kind === 'table' && seat.group && (groupCount.get(seat.group) ?? 0) >= 2
+          const singleFull = (seat.kind === 'lounger' || seat.kind === 'towel') && seat.slots.some((_, k) => taken.has(`${seat.id}:${k}`))
           seat.slots.forEach((sl, i) => {
             const d = Math.hypot(sl.x - f.x, sl.z - f.z)
-            if (taken.has(`${seat.id}:${i}`)) {
+            if (taken.has(`${seat.id}:${i}`) || tableFull || singleFull) {
               if (d < bestFull) {
                 bestFull = d
                 full = seat.kind
@@ -411,7 +422,15 @@ export function useTogether(ctx) {
         <Dock><div className="pointer-events-none relative w-[min(92vw,18rem)] animate-pop" role="status">
           <div className={`flex items-center justify-center gap-2 rounded-3xl px-4 py-2.5 text-sm font-black text-[#8a7a9c] ${glass}`}>
             <span aria-hidden>{fullSeat === 'lounger' || fullSeat === 'towel' ? '🏖️' : '🪑'}</span>
-            <span>Boş yer yok</span>
+            <span>
+              {fullSeat === 'table'
+                ? 'Masa dolu (en fazla 2 kişi)'
+                : fullSeat === 'lounger'
+                  ? 'Şezlong dolu (1/1)'
+                  : fullSeat === 'towel'
+                    ? 'Havlu dolu (1/1)'
+                    : 'Boş yer yok'}
+            </span>
           </div>
         </div></Dock>
       )}

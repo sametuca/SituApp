@@ -41,7 +41,7 @@ const BURST_SLOTS = [
 ]
 
 /** Karakterin üstünde tıklanınca görünen oyuncu adı, konuşma balonu, emoji tepkisi ve fısıltı göstergesi. */
-function Tag({ name, bubble: rawBubble, reaction, whisper, showName = false }) {
+function Tag({ name, bubble: rawBubble, reaction, whisper, showName = false, onTapName = null }) {
   // bubble: metin ya da { text, big } (çıkartmalar büyük gösterilir)
   const bubble = typeof rawBubble === 'string' ? { text: rawBubble } : rawBubble
   const reacts = Array.isArray(reaction) ? reaction : reaction ? [reaction] : []
@@ -78,9 +78,23 @@ function Tag({ name, bubble: rawBubble, reaction, whisper, showName = false }) {
           <div className="animate-pop rounded-full border-2 border-white bg-[#e9ddff] px-2.5 py-0.5 text-xs font-extrabold text-[#6b4fc0] shadow">🤫 fısıldıyor…</div>
         )}
         {showName && name && (
-          <div className="whitespace-nowrap rounded-full border-2 border-white bg-gradient-to-r from-[#f3e8ff] via-[#ede9fe] to-[#fce7f3] px-3.5 py-0.5 text-[11px] font-black tracking-wide text-[#5b4678] shadow-[0_4px_14px_rgba(168,139,255,0.45)]">
-            {name}
-          </div>
+          onTapName ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onTapName()
+              }}
+              style={{ pointerEvents: 'auto' }}
+              className="whitespace-nowrap rounded-full border-2 border-white bg-gradient-to-r from-[#f3e8ff] via-[#ede9fe] to-[#fce7f3] px-4 py-1 text-xs font-black tracking-wide text-[#5b4678] shadow-[0_4px_14px_rgba(168,139,255,0.5)] active:scale-95"
+            >
+              {name}
+            </button>
+          ) : (
+            <div className="whitespace-nowrap rounded-full border-2 border-white bg-gradient-to-r from-[#f3e8ff] via-[#ede9fe] to-[#fce7f3] px-3.5 py-0.5 text-[11px] font-black tracking-wide text-[#5b4678] shadow-[0_4px_14px_rgba(168,139,255,0.45)]">
+              {name}
+            </div>
+          )
         )}
       </div>
     </Html>
@@ -114,7 +128,7 @@ function useLiveFlags(id, reactions, whispering) {
   return { reaction, whisper }
 }
 
-const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bubbles, reactions, whispering, budgetRef, onPick }) {
+const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bubbles, reactions, whispering, budgetRef, onPick, touch = false }) {
   const group = useRef()
   const [anim, setAnim] = useState('idle')
   const [bubble, setBubble] = useState(null)
@@ -122,10 +136,14 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
   const bubbleRef = useRef(null)
   const [near, setNear] = useState(true) // çizim bütçesi dışındaki oyuncular çizilmez
   const nearRef = useRef(true)
+  const [closeBy, setCloseBy] = useState(false)
+  const closeByRef = useRef(false)
   const [halfRate, setHalfRate] = useState(false) // >10 m: 30 Hz animasyon
   const halfRateRef = useRef(false)
   const [nameRevealed, setNameRevealed] = useState(false)
   const nameTimerRef = useRef(null)
+  const tapStartRef = useRef(null)
+  const lastPickAtRef = useRef(0)
   const shadowRef = useRef(null)
   const shadowCheckRef = useRef(0)
   const [afk, setAfk] = useState(false)
@@ -135,6 +153,13 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
     setNameRevealed(true)
     clearTimeout(nameTimerRef.current)
     nameTimerRef.current = setTimeout(() => setNameRevealed(false), 2500)
+  }
+  const triggerPick = () => {
+    const now = Date.now()
+    if (now - lastPickAtRef.current < 260) return
+    lastPickAtRef.current = now
+    revealName()
+    onPick?.(id)
   }
   const { reaction, whisper } = useLiveFlags(id, reactions, whispering)
   const pose = useMemo(
@@ -179,6 +204,12 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
       shadowCheckRef.current = 0
     }
 
+    const cb = nn && d2 <= 13 * 13
+    if (cb !== closeByRef.current) {
+      closeByRef.current = cb
+      setCloseBy(cb)
+    }
+
     const hr = nn && (budget?.ready ? budget.halfRate.has(id) : d2 > HALF_RATE_SQ)
     if (hr !== halfRateRef.current) {
       halfRateRef.current = hr
@@ -219,10 +250,21 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
   return (
     <group
       ref={group}
+      onPointerDown={(e) => {
+        tapStartRef.current = { x: e.clientX, y: e.clientY, t: Date.now() }
+      }}
+      onPointerUp={(e) => {
+        const st = tapStartRef.current
+        tapStartRef.current = null
+        if (!st) return
+        if (Math.hypot(e.clientX - st.x, e.clientY - st.y) <= 22 && Date.now() - st.t <= 550) {
+          e.stopPropagation()
+          triggerPick()
+        }
+      }}
       onClick={(e) => {
         e.stopPropagation()
-        revealName()
-        onPick?.(id)
+        triggerPick()
       }}
       onPointerOver={() => {
         if (onPick) document.body.style.cursor = 'pointer'
@@ -231,13 +273,30 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
         document.body.style.cursor = ''
       }}
     >
+      {/* Dokunmatikte ve farede oyuncuyu kolayca seçmek için görünmez geniş dokunma silindiri */}
+      {near && (
+        <mesh position={[0, touch ? 1.15 : 1.0, 0]}>
+          <cylinderGeometry args={[touch ? 0.88 : 0.5, touch ? 0.88 : 0.5, touch ? 2.35 : 2.0, 10]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
+      )}
       {near && <AvatarRig slug={avatar} anim={anim === 'ride' ? 'idle' : anim} pose={pose} cosId={id} halfRate={halfRate} />}
       {near && anim === 'ride' && (
         <Suspense fallback={null}>
           <BikeModel />
         </Suspense>
       )}
-      {near && <Tag name={name} bubble={bubble} reaction={reaction} whisper={whisper} showName={nameRevealed} afk={afk} />}
+      {near && (
+        <Tag
+          name={name}
+          bubble={bubble}
+          reaction={reaction}
+          whisper={whisper}
+          showName={nameRevealed || (touch && closeBy)}
+          onTapName={touch ? triggerPick : null}
+          afk={afk}
+        />
+      )}
     </group>
   )
 })
@@ -294,7 +353,7 @@ export default function RemotePlayers({ roster, remotes, bubbles, reactions, whi
     const p = rosterById.get(id)
     if (!p) return null
     const { key: _playerKey, ...peer } = p
-    return <RemoteAvatar key={id} {...peer} remotes={remotes} bubbles={bubbles} reactions={reactions} whispering={whispering} budgetRef={budgetRef} onPick={onPick} />
+    return <RemoteAvatar key={id} {...peer} remotes={remotes} bubbles={bubbles} reactions={reactions} whispering={whispering} budgetRef={budgetRef} onPick={onPick} touch={touch} />
   })
 }
 

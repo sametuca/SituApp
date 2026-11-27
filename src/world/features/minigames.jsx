@@ -1,5 +1,6 @@
 // 5 Çok Oyunculu Mini Oyun Merkezi: Lobi (2–10 kişi) + Botlarla Hemen Oyna + Otomatik Kıyafet + Genel Puan Tablosu.
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { Modal } from '../Hud'
 import { cosStore } from '../cosStore'
 import { BalloonPopArena, BaristaArena, BikeSprintArena, ColorTilesArena, RhythmArena } from './minigameArenas'
 
@@ -211,43 +212,36 @@ export function useMinigames({ net, panel, setPanel, touch, say, name }) {
         <Arena seed={match.seed} touch={touch} onFinish={onFinish} onExit={closeAll} />
       </Suspense>
     ) : (
-      <div className="fixed inset-0 z-40 grid place-items-center bg-[#2c1f4a]/45 p-4 backdrop-blur-[2px]" onClick={closeAll}>
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={meta.title}
-          onClick={(e) => e.stopPropagation()}
-          className="flex max-h-[90svh] w-[min(94vw,29rem)] animate-pop flex-col overflow-hidden rounded-[2rem] border-2 border-white bg-white/95 p-5 shadow-toy backdrop-blur-md"
-        >
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <h2 className="flex items-center gap-2 text-xl font-black text-[#4a3b5c]">
-                <span>{meta.emoji}</span> {meta.title}
-              </h2>
-              <p className="text-xs font-bold text-[#8a7a9c]">{meta.desc}</p>
-            </div>
-            <button type="button" onClick={closeAll} aria-label="Kapat" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f0ff] text-sm font-black text-[#8a7a9c]">
-              ✖️
-            </button>
+      <Modal onClose={closeAll} label={meta.title} wide hideClose>
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <h2 className="flex items-center gap-2 text-xl font-black text-[#4a3b5c]">
+              <span>{meta.emoji}</span> {meta.title}
+            </h2>
+            <p className="text-xs font-bold text-[#8a7a9c]">{meta.desc}</p>
           </div>
+          <button type="button" onClick={closeAll} aria-label="Kapat" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#f6f0ff] text-sm font-black text-[#8a7a9c]">
+            ✖️
+          </button>
+        </div>
 
-          <div className="mt-3 grid grid-cols-2 gap-1.5 rounded-2xl bg-[#f3ecff] p-1">
-            <button type="button" onClick={() => setView('lobby')} className={`rounded-xl py-2 text-xs font-black transition ${view !== 'board' ? 'bg-white text-[#5b3fa8] shadow-sm' : 'text-[#8a7a9c]'}`}>
-              🎮 Lobi (2–10 Kişi)
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setView('board')
-                send({ t: 'mg_board', game: gameId })
-              }}
-              className={`rounded-xl py-2 text-xs font-black transition ${view === 'board' ? 'bg-white text-[#8a5a00] shadow-sm' : 'text-[#8a7a9c]'}`}
-            >
-              🏆 Puan Tablosu
-            </button>
-          </div>
+        <div className="mt-3 grid grid-cols-2 gap-1.5 rounded-2xl bg-[#f3ecff] p-1">
+          <button type="button" onClick={() => setView('lobby')} className={`rounded-xl py-2 text-xs font-black transition ${view !== 'board' ? 'bg-white text-[#5b3fa8] shadow-sm' : 'text-[#8a7a9c]'}`}>
+            🎮 Lobi (2–10 Kişi)
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setView('board')
+              send({ t: 'mg_board', game: gameId })
+            }}
+            className={`rounded-xl py-2 text-xs font-black transition ${view === 'board' ? 'bg-white text-[#8a5a00] shadow-sm' : 'text-[#8a7a9c]'}`}
+          >
+            🏆 Puan Tablosu
+          </button>
+        </div>
 
-          <div className="mt-3 flex-1 overflow-y-auto">
+        <div className="mt-3">
             {view === 'board' ? (
               <div className="flex flex-col gap-1.5">
                 {board.length === 0 ? (
@@ -321,9 +315,8 @@ export function useMinigames({ net, panel, setPanel, touch, say, name }) {
                 </button>
               </div>
             )}
-          </div>
         </div>
-      </div>
+      </Modal>
     )
   ) : null
 

@@ -10,19 +10,33 @@ const glass = 'border-2 border-white bg-white/92 shadow-soft'
 // ---------- üst çubuk ----------
 // extraButtons: özellik modüllerinin düğmeleri [{ key, emoji, label, onClick, badge? }] (sol sütunda, geri düğmesinin altında)
 // extraNodes: hazır JSX düğmeler (sağ grupta, ⚙️'nin solunda)
-export function TopBar({ online, status, dnd, onExit, onHelp, onSettings, extraButtons = [], extraNodes = null, menuNodes = null, menuBadge = 0 }) {
+export function TopBar({ online, status, dnd, touch = false, inCity = false, onExit, onHelp, onSettings, extraButtons = [], extraNodes = null, menuNodes = null, menuBadge = 0 }) {
   const [menu, setMenu] = useState(false)
+  const [leftOpen, setLeftOpen] = useState(false)
+  const [narrowHud, setNarrowHud] = useState(() => (typeof window !== 'undefined' ? window.innerWidth < 768 : false))
   const menuRef = useRef(null)
-  const { isFullscreen, toggleFullscreen } = useFullscreen()
+  const leftRef = useRef(null)
+  const { isFullscreen, toggleFullscreen, iosTip } = useFullscreen()
   useEffect(() => {
-    if (!menu) return
-    const off = (e) => { if (!menuRef.current?.contains(e.target)) setMenu(false) }
+    const onR = () => setNarrowHud(window.innerWidth < 768)
+    window.addEventListener('resize', onR)
+    return () => window.removeEventListener('resize', onR)
+  }, [])
+  const mobileBar = touch || narrowHud
+  useEffect(() => {
+    if (!menu && !leftOpen) return
+    const off = (e) => {
+      if (menu && !menuRef.current?.contains(e.target)) setMenu(false)
+      if (leftOpen && !leftRef.current?.contains(e.target)) setLeftOpen(false)
+    }
     window.addEventListener('pointerdown', off)
     return () => window.removeEventListener('pointerdown', off)
-  }, [menu])
+  }, [menu, leftOpen])
   const dot = status === 'online' ? 'bg-emerald-400' : status === 'connecting' ? 'bg-amber-400' : 'bg-rose-400'
   const label = status === 'online' ? `${online} çevrimiçi` : status === 'connecting' ? 'Bağlanıyor…' : 'Çevrimdışı (tek başına)'
   const hasSpotlight = extraButtons.some((b) => b.hint)
+  const leftTotalBadge = extraButtons.reduce((sum, b) => sum + (Number(b.badge) || 0), 0)
+  const leftAnyHighlight = extraButtons.some((b) => b.highlight)
   return (
     <>
       {/* "Buraya tıkla" rehber odağı: ekranı karartıp hedef düğmeyi öne çıkarır */}
@@ -34,58 +48,125 @@ export function TopBar({ online, status, dnd, onExit, onHelp, onSettings, extraB
       )}
       <div
         className={`pointer-events-none absolute left-0 right-0 top-0 flex items-start justify-between gap-2 px-2.5 pb-2 sm:px-3 sm:py-3 ${hasSpotlight ? 'z-30' : 'z-20'}`}
-        style={{ paddingTop: 'max(0.65rem, env(safe-area-inset-top))' }}
+        style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}
       >
-        <div className="pointer-events-auto flex max-h-[calc(100svh-8.5rem)] flex-col flex-wrap content-start gap-1.5 sm:gap-2.5">
-          <button
-            onClick={onExit}
-            aria-label="Çıkış yap"
-            title="Çıkış yap"
-            className={`grid h-11 w-11 place-items-center rounded-full text-xl font-black text-[#4a3b5c] transition hover:bg-white active:scale-95 sm:h-14 sm:w-14 sm:text-2xl ${glass} ${hasSpotlight ? 'opacity-40' : ''}`}
-          >
-            <Ico name="back" size={28} />
-          </button>
-          {extraButtons.map((b) => {
-            const spot = Boolean(b.hint)
-            return (
-              <button
-                key={b.key}
-                onClick={b.onClick}
-                aria-label={b.label}
-                title={b.label}
-                className={`relative grid h-11 w-11 place-items-center rounded-full text-2xl transition hover:bg-white active:scale-95 sm:h-14 sm:w-14 sm:text-3xl ${glass} ${
-                  spot
-                    ? 'z-40 scale-110 bg-white ring-4 ring-[#ffd35e] shadow-[0_0_34px_rgba(255,211,94,0.95)]'
-                    : b.highlight
-                      ? 'ring-4 ring-[#fdb252] shadow-[0_0_20px_rgba(253,178,82,0.85)]'
-                      : hasSpotlight
-                        ? 'opacity-35'
-                        : ''
-                }`}
+        {mobileBar && !hasSpotlight ? (
+          <div className="pointer-events-auto relative" ref={leftRef}>
+            <button
+              type="button"
+              onClick={() => setLeftOpen((o) => !o)}
+              aria-label="Hızlı menü"
+              aria-expanded={leftOpen}
+              className={`relative grid h-10 w-10 place-items-center rounded-full text-[#4a3b5c] transition hover:bg-white active:scale-95 ${glass} ${
+                leftAnyHighlight ? 'ring-2 ring-[#fdb252]' : ''
+              }`}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" aria-hidden>
+                <path d="M4 7h16M4 12h16M4 17h16" />
+              </svg>
+              {leftTotalBadge > 0 && (
+                <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full border border-white bg-[#fdb252] px-1 text-[10px] font-black text-white">
+                  {leftTotalBadge}
+                </span>
+              )}
+            </button>
+            {leftOpen && (
+              <div
+                className="absolute left-0 top-12 z-30 flex max-h-[72svh] w-56 flex-col gap-0.5 overflow-y-auto rounded-3xl border-2 border-white bg-white/95 p-2 shadow-toy backdrop-blur-md"
+                onClick={() => setLeftOpen(false)}
               >
-                {b.highlight || spot ? <span className="pointer-events-none absolute -inset-1.5 animate-ping rounded-full border-2 border-[#ffd35e]/85" /> : null}
-                {b.icon ? <Ico name={b.icon} size={28} /> : b.emoji}
-                {b.badge ? <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full border-2 border-white bg-[#fdb252] px-1 text-[11px] font-black text-white">{b.badge}</span> : null}
-                {!b.badge && b.highlight ? <span className="absolute -right-0.5 -top-0.5 h-3 w-3 animate-ping rounded-full bg-[#fdb252]" /> : null}
-                {!b.badge && b.highlight ? <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-[#fdb252]" /> : null}
-                {spot ? (
-                  <span className="pointer-events-none absolute left-full top-1/2 ml-3 flex -translate-y-1/2 items-center gap-2 whitespace-nowrap">
-                    <span className="flex items-center gap-0.5 drop-shadow-[0_2px_8px_rgba(0,0,0,0.65)] animate-point-left">
-                      <Ico name="prev" size={28} />
+                {inCity && (
+                  <button
+                    type="button"
+                    onClick={() => window.dispatchEvent(new CustomEvent('situapp:open-map'))}
+                    className="flex w-full items-center gap-2.5 rounded-2xl px-3 py-2 text-left text-xs font-extrabold text-[#4a3b5c] transition hover:bg-[#fff8f0] active:scale-[0.99]"
+                  >
+                    <span className="grid h-6 w-6 shrink-0 place-items-center"><Ico name="map" size={20} /></span>
+                    <span className="min-w-0 flex-1 truncate">Harita ve Işınlan</span>
+                  </button>
+                )}
+                {extraButtons.map((b) => (
+                  <button
+                    key={b.key}
+                    type="button"
+                    onClick={b.onClick}
+                    className="flex w-full items-center gap-2.5 rounded-2xl px-3 py-2 text-left text-xs font-extrabold text-[#4a3b5c] transition hover:bg-[#fff8f0] active:scale-[0.99]"
+                  >
+                    <span className="grid h-6 w-6 shrink-0 place-items-center text-lg">
+                      {b.icon ? <Ico name={b.icon} size={20} /> : b.emoji}
                     </span>
-                    <span className="rounded-full border-2 border-white bg-gradient-to-r from-[#ff9f43] to-[#fdb252] px-4 py-1.5 text-sm font-black text-white shadow-[0_6px_22px_rgba(253,178,82,0.75)]">
-                      {b.hint}
-                    </span>
-                  </span>
-                ) : null}
+                    <span className="min-w-0 flex-1 truncate">{b.label}</span>
+                    {b.badge ? (
+                      <span className="rounded-full bg-[#fdb252] px-2 py-0.5 text-[10px] font-black text-white">{b.badge}</span>
+                    ) : null}
+                  </button>
+                ))}
+                <div className="my-1 h-px bg-[#efe6ff]" />
+                <button
+                  type="button"
+                  onClick={onExit}
+                  className="flex w-full items-center gap-2.5 rounded-2xl px-3 py-2 text-left text-xs font-extrabold text-rose-500 transition hover:bg-rose-50"
+                >
+                  <span className="grid h-6 w-6 shrink-0 place-items-center"><Ico name="back" size={20} /></span>
+                  <span className="flex-1">Çıkış Yap</span>
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="pointer-events-auto flex max-h-[calc(100svh-8.5rem)] flex-col flex-wrap content-start gap-1.5 sm:gap-2.5">
+            {!hasSpotlight && (
+              <button
+                onClick={onExit}
+                aria-label="Çıkış yap"
+                title="Çıkış yap"
+                className={`grid h-11 w-11 place-items-center rounded-full text-xl font-black text-[#4a3b5c] transition hover:bg-white active:scale-95 sm:h-14 sm:w-14 sm:text-2xl ${glass}`}
+              >
+                <Ico name="back" size={28} />
               </button>
-            )
-          })}
-        </div>
-      <div className="flex min-w-0 flex-col items-center gap-1.5 sm:gap-2">
+            )}
+            {extraButtons.map((b) => {
+              const spot = Boolean(b.hint)
+              return (
+                <button
+                  key={b.key}
+                  onClick={b.onClick}
+                  aria-label={b.label}
+                  title={b.label}
+                  className={`relative grid h-11 w-11 place-items-center rounded-full text-2xl transition hover:bg-white active:scale-95 sm:h-14 sm:w-14 sm:text-3xl ${glass} ${
+                    spot
+                      ? 'z-40 scale-110 bg-white ring-4 ring-[#ffd35e] shadow-[0_0_34px_rgba(255,211,94,0.95)]'
+                      : b.highlight
+                        ? 'ring-4 ring-[#fdb252] shadow-[0_0_20px_rgba(253,178,82,0.85)]'
+                        : hasSpotlight
+                          ? 'opacity-35'
+                          : ''
+                  }`}
+                >
+                  {b.highlight || spot ? <span className="pointer-events-none absolute -inset-1.5 animate-ping rounded-full border-2 border-[#ffd35e]/85" /> : null}
+                  {b.icon ? <Ico name={b.icon} size={28} /> : b.emoji}
+                  {b.badge ? <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full border-2 border-white bg-[#fdb252] px-1 text-[11px] font-black text-white">{b.badge}</span> : null}
+                  {!b.badge && b.highlight ? <span className="absolute -right-0.5 -top-0.5 h-3 w-3 animate-ping rounded-full bg-[#fdb252]" /> : null}
+                  {!b.badge && b.highlight ? <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-[#fdb252]" /> : null}
+                  {spot ? (
+                    <span className="pointer-events-none absolute left-full top-1/2 ml-3 flex -translate-y-1/2 items-center gap-2 whitespace-nowrap">
+                      <span className="flex items-center gap-0.5 drop-shadow-[0_2px_8px_rgba(0,0,0,0.65)] animate-point-left">
+                        <Ico name="prev" size={28} />
+                      </span>
+                      <span className="rounded-full border-2 border-white bg-gradient-to-r from-[#ff9f43] to-[#fdb252] px-4 py-1.5 text-sm font-black text-white shadow-[0_6px_22px_rgba(253,178,82,0.75)]">
+                        {b.hint}
+                      </span>
+                    </span>
+                  ) : null}
+                </button>
+              )
+            })}
+          </div>
+        )}
+      <div className="flex min-w-0 flex-col items-center gap-1 sm:gap-2">
         {/* yalnızca bağlantı sorunu ya da rahatsız etme açıkken bilgi çıkar */}
         {(status !== 'online' || dnd) && (
-          <div className={`flex items-center gap-1.5 rounded-full px-3 py-0.5 text-[11px] font-extrabold text-[#8a7a9c] sm:px-3.5 sm:py-1 sm:text-xs ${glass}`}>
+          <div className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold text-[#8a7a9c] sm:px-3.5 sm:py-1 sm:text-xs ${glass}`}>
             {status !== 'online' && <span className={`h-2 w-2 rounded-full ${dot}`} />}
             {status !== 'online' && label}
             {dnd && <span title="Rahatsız etme açık">{status !== 'online' ? ' · ' : ''}🌙 Rahatsız etme</span>}
@@ -93,38 +174,45 @@ export function TopBar({ online, status, dnd, onExit, onHelp, onSettings, extraB
         )}
       </div>
       <div className="pointer-events-auto relative flex gap-1.5 sm:gap-2" ref={menuRef}>
-        {extraNodes}
-        <FullscreenButton />
+        {!mobileBar && extraNodes}
+        {!mobileBar && <FullscreenButton />}
         <button
           onClick={() => setMenu((m) => !m)}
-          aria-label="Menü"
+          aria-label="Menü ve Ayarlar"
           aria-expanded={menu}
-          className={`relative grid h-11 w-11 place-items-center rounded-full text-xl transition hover:bg-white active:scale-95 sm:h-14 sm:w-14 sm:text-2xl ${glass}`}
+          className={`relative grid place-items-center rounded-full text-xl transition hover:bg-white active:scale-95 ${
+            mobileBar ? 'h-10 w-10' : 'h-11 w-11 sm:h-14 sm:w-14 sm:text-2xl'
+          } ${glass}`}
         >
-          <Ico name="settings" size={28} />
-          {menuBadge > 0 && <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full border-2 border-white bg-[#fdb252] px-1 text-[10px] font-black text-white">{menuBadge}</span>}
+          <Ico name="settings" size={mobileBar ? 22 : 28} />
+          {menuBadge > 0 && <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full border border-white bg-[#fdb252] px-1 text-[10px] font-black text-white sm:h-5 sm:min-w-5">{menuBadge}</span>}
         </button>
         {menu && (
-          <div className="absolute right-0 top-14 z-20 flex w-72 flex-col gap-1 rounded-3xl border-2 border-white bg-white/95 p-2 shadow-soft backdrop-blur-md" onClick={() => setMenu(false)}>
+          <div className="absolute right-0 top-12 z-30 flex max-h-[75svh] w-64 flex-col gap-1 overflow-y-auto rounded-3xl border-2 border-white bg-white/95 p-2 shadow-soft backdrop-blur-md sm:top-14 sm:w-72" onClick={() => setMenu(false)}>
             {menuNodes}
-            <button onClick={toggleFullscreen} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#fff8f0]">
-              <span className="grid h-6 w-6 place-items-center text-[#6b4fc0]"><FullscreenIcon active={isFullscreen} size={20} /></span>
+            <button onClick={toggleFullscreen} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-xs font-extrabold text-[#4a3b5c] transition hover:bg-[#fff8f0] sm:py-2.5 sm:text-sm">
+              <span className="grid h-6 w-6 place-items-center text-[#6b4fc0]"><FullscreenIcon active={isFullscreen} size={19} /></span>
               <span className="flex-1">{isFullscreen ? 'Tam Ekrandan Çık' : 'Tam Ekran Modu'}</span>
             </button>
             {onSettings && (
-              <button onClick={onSettings} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#fff8f0]">
-                <Ico name="settings" size={24} />
+              <button onClick={onSettings} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-xs font-extrabold text-[#4a3b5c] transition hover:bg-[#fff8f0] sm:py-2.5 sm:text-sm">
+                <Ico name="settings" size={22} />
                 <span className="flex-1">Ayarlar</span>
               </button>
             )}
-            <button onClick={onHelp} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#fff8f0]">
-              <Ico name="help" size={24} />
+            <button onClick={onHelp} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-xs font-extrabold text-[#4a3b5c] transition hover:bg-[#fff8f0] sm:py-2.5 sm:text-sm">
+              <Ico name="help" size={22} />
               <span className="flex-1">Yardım</span>
             </button>
           </div>
         )}
       </div>
       </div>
+      {touch && iosTip && (
+        <div className="pointer-events-none fixed left-1/2 top-14 z-[90] w-[min(88vw,21rem)] -translate-x-1/2 rounded-2xl border border-white/60 bg-[#23183d]/92 px-3.5 py-2 text-center text-[11px] font-extrabold text-white shadow-lg">
+          📱 Safari adres çubuğunu gizlemek için <strong>Aa → Araç Çubuğunu Gizle</strong> veya <strong>Paylaş → Ana Ekrana Ekle</strong> seçebilirsin.
+        </div>
+      )}
     </>
   )
 }
@@ -134,17 +222,17 @@ export function ZoneToast({ zone }) {
   const [shown, setShown] = useState(null)
   useEffect(() => {
     setShown(zone)
-    const t = setTimeout(() => setShown(null), 4200)
+    const t = setTimeout(() => setShown(null), 2800)
     return () => clearTimeout(t)
   }, [zone])
   if (!shown || !shown.desc) return null
   return (
-    <TopDock><div className="relative pointer-events-none w-[min(92vw,22rem)] animate-pop">
-      <div className={`rounded-3xl px-5 py-3 text-center ${glass}`}>
-        <p className="text-base font-black text-[#4a3b5c]">
+    <TopDock><div className="relative pointer-events-none w-[min(76vw,16rem)] animate-pop sm:w-[min(92vw,22rem)]">
+      <div className={`rounded-2xl px-3 py-1.5 text-center sm:rounded-3xl sm:px-5 sm:py-3 ${glass}`}>
+        <p className="text-xs font-black text-[#4a3b5c] sm:text-base">
           {shown.emoji} {shown.name}
         </p>
-        <p className="text-sm font-semibold text-[#8a7a9c]">{shown.desc}</p>
+        <p className="hidden text-sm font-semibold text-[#8a7a9c] sm:block">{shown.desc}</p>
       </div>
     </div></TopDock>
   )
@@ -168,11 +256,55 @@ const MODAL_THEMES = {
 }
 
 export function Modal({ children, onClose, label, wide = false, theme = 'default', dockBottom = false, hideClose = false }) {
+  const scrollRef = useRef(null)
+  const [scrollSt, setScrollSt] = useState({ canScroll: false, moreBelow: false, thumbH: 35, thumbTop: 0 })
+
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose?.()
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
+
+  const syncScroll = () => {
+    const el = scrollRef.current
+    if (!el) return
+    const { scrollTop, scrollHeight, clientHeight } = el
+    const canScroll = scrollHeight > clientHeight + 8
+    const moreBelow = canScroll && scrollTop + clientHeight < scrollHeight - 10
+    const ratio = canScroll ? Math.max(0.18, clientHeight / scrollHeight) : 1
+    const maxScroll = Math.max(1, scrollHeight - clientHeight)
+    const progress = canScroll ? Math.min(1, Math.max(0, scrollTop / maxScroll)) : 0
+    const thumbH = Math.round(ratio * 100)
+    const thumbTop = Math.round(progress * (100 - thumbH))
+    setScrollSt((prev) =>
+      prev.canScroll === canScroll &&
+      prev.moreBelow === moreBelow &&
+      Math.abs(prev.thumbH - thumbH) <= 1 &&
+      Math.abs(prev.thumbTop - thumbTop) <= 1
+        ? prev
+        : { canScroll, moreBelow, thumbH, thumbTop },
+    )
+  }
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return undefined
+    syncScroll()
+    const t = setTimeout(syncScroll, 80)
+    let ro = null
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(syncScroll)
+      ro.observe(el)
+      if (el.firstElementChild) ro.observe(el.firstElementChild)
+    }
+    window.addEventListener('resize', syncScroll)
+    return () => {
+      clearTimeout(t)
+      ro?.disconnect()
+      window.removeEventListener('resize', syncScroll)
+    }
+  }, [children])
+
   const cls = MODAL_THEMES[theme] ?? MODAL_THEMES.default
   const showClose = Boolean(onClose && !hideClose)
   const closeCls =
@@ -183,9 +315,16 @@ export function Modal({ children, onClose, label, wide = false, theme = 'default
         : theme === 'bag'
           ? 'bg-[#f3ece0] text-[#6b5a4e] hover:bg-[#eadcc8]'
           : 'bg-[#f6f0ff] text-[#6b4fc0] hover:bg-[#eadcff]'
+  const fadeCls =
+    theme === 'gym'
+      ? 'from-[#1d1630] via-[#1d1630]/85 to-transparent'
+      : theme === 'bag'
+        ? 'from-[#fffdf9] via-[#fffdf9]/85 to-transparent'
+        : 'from-white via-white/85 to-transparent'
+
   return (
     <div
-      className={`absolute inset-0 z-30 flex p-4 ${dockBottom ? 'items-end justify-center bg-transparent pointer-events-none' : 'items-center justify-center bg-[#231938]/35 backdrop-blur-[2px]'}`}
+      className={`fixed inset-0 z-30 flex p-3 sm:p-4 ${dockBottom ? 'items-end justify-center bg-transparent pointer-events-none' : 'items-center justify-center bg-[#231938]/38 backdrop-blur-[2px]'}`}
       onClick={dockBottom ? undefined : onClose}
     >
       <div
@@ -193,8 +332,8 @@ export function Modal({ children, onClose, label, wide = false, theme = 'default
         aria-modal={!dockBottom}
         aria-label={label}
         onClick={(e) => e.stopPropagation()}
-        className={`pointer-events-auto relative max-h-[90svh] w-full animate-pop overflow-y-auto rounded-[2rem] border-2 p-5 sm:p-6 shadow-toy ${cls} ${wide ? 'max-w-lg' : 'max-w-md'} ${
-          showClose ? '[&>h2:first-child]:pr-11 [&>div:first-child]:pr-11' : ''
+        className={`pointer-events-auto relative flex max-h-[82dvh] w-full animate-pop flex-col overflow-hidden rounded-3xl border-2 shadow-toy sm:max-h-[88svh] sm:rounded-[2rem] ${cls} ${
+          wide ? 'max-w-[min(92vw,26rem)] sm:max-w-lg' : 'max-w-[min(90vw,22.5rem)] sm:max-w-md'
         }`}
       >
         {showClose && (
@@ -203,12 +342,52 @@ export function Modal({ children, onClose, label, wide = false, theme = 'default
             onClick={onClose}
             aria-label="Kapat"
             title="Kapat"
-            className={`absolute right-4 top-4 z-10 grid h-9 w-9 place-items-center rounded-full text-sm font-black transition active:scale-95 ${closeCls}`}
+            className={`absolute right-3.5 top-3.5 z-20 grid h-9 w-9 place-items-center rounded-full text-sm font-black shadow-sm transition active:scale-95 sm:right-4 sm:top-4 ${closeCls}`}
           >
             <Ico name="close" size={14} />
           </button>
         )}
-        {children}
+
+        <div
+          ref={scrollRef}
+          onScroll={syncScroll}
+          className={`situ-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y p-4 sm:p-6 ${
+            scrollSt.canScroll ? 'pr-5 sm:pr-6' : ''
+          } ${showClose ? '[&>h2:first-child]:pr-11 [&>div:first-child]:pr-11' : ''}`}
+        >
+          {children}
+        </div>
+
+        {/* iOS/Android dahil her cihazda sürekli görünür özel kaydırma çubuğu */}
+        {scrollSt.canScroll && (
+          <div
+            aria-hidden
+            className={`pointer-events-none absolute bottom-4 right-1.5 z-20 w-1.5 rounded-full ${
+              showClose ? 'top-14' : 'top-4'
+            } ${theme === 'gym' ? 'bg-white/15' : 'bg-[#ded2f4]/80'}`}
+          >
+            <div
+              className={`w-full rounded-full transition-[top,height] duration-75 ${
+                theme === 'gym' ? 'bg-[#ffd35e]' : 'bg-[#7a5fd0]'
+              }`}
+              style={{ height: `${scrollSt.thumbH}%`, top: `${scrollSt.thumbTop}%`, position: 'absolute' }}
+            />
+          </div>
+        )}
+
+        {/* Altta gizli içerik/tuş varken belirgin gölge + zıplayan "Aşağı kaydır" uyarısı */}
+        {scrollSt.moreBelow && (
+          <div className={`pointer-events-none absolute inset-x-0 bottom-0 z-10 flex h-12 items-end justify-center bg-gradient-to-t pb-1.5 ${fadeCls}`}>
+            <button
+              type="button"
+              onClick={() => scrollRef.current?.scrollBy({ top: 180, behavior: 'smooth' })}
+              className="pointer-events-auto animate-scroll-nudge flex items-center gap-1 rounded-full border border-white bg-[#6b4fc0] px-3 py-1 text-[11px] font-black text-white shadow-md active:scale-95"
+            >
+              <span>↓</span>
+              <span>Aşağıda devamı var · Kaydır</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -282,6 +461,13 @@ export function HelpModal({ onClose, inCity = false, onOpenWardrobe, onGoHome, o
           <div className="min-h-0 flex-1 overflow-y-auto p-5">
             {tab === 'start' && (
               <div className="flex flex-col gap-4">
+                <div className="rounded-2xl border-2 border-[#ffe3b8] bg-[#fff8ec] p-3.5">
+                  <p className="text-xs font-black uppercase tracking-wide text-[#e8952c]">🌴 Rastla Hikâyesi: Sahilden Şehre</p>
+                  <p className="mt-1 text-xs font-bold leading-relaxed text-[#5c4b6e]">
+                    Rastla’da herkes yolculuğa <b>Rastla Sahili</b>’nde başlar! Önce Beach Party pistinde dans et, iki kişilik masalarda oturup insanlarla kaynaş, voleybol ya da sörf oyna. Kafa dengi birilerini bulduğunda kuzey yolundan yürüyerek (veya haritadan) <b>Kafe Sokağı</b>’na, <b>Gece Kulübü</b>’ne, <b>MakFit</b>’e ve kendi evine birlikte akarsınız!
+                  </p>
+                </div>
+
                 <div>
                   <h3 className="text-xs font-extrabold uppercase tracking-wide text-[#e8952c]">Temel Kontroller</h3>
                   <ul className="mt-2.5 flex flex-col gap-2">
@@ -523,29 +709,29 @@ export function StartGuide({ touch, ready = true, inCity, inAirport = false, foc
       className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex justify-center px-3"
       style={{ paddingBottom: touch ? 'calc(env(safe-area-inset-bottom) + 7.25rem)' : 'calc(env(safe-area-inset-bottom) + 9.5rem)' }}
     >
-      <div className={`pointer-events-auto relative flex w-[min(25rem,calc(100vw-1.5rem))] animate-pop items-center gap-3 rounded-3xl px-4 py-3.5 pr-11 ${glass}`} role="status" key={stage}>
-        <span className="shrink-0 text-3xl" aria-hidden>{stage === 'welcome' ? '🌴' : stage === 'move' ? '🕹️' : '👋'}</span>
+      <div className={`pointer-events-auto relative flex w-[min(22rem,calc(100vw-1.5rem))] animate-pop items-center gap-2.5 rounded-2xl px-3.5 py-2.5 pr-9 sm:w-[min(25rem,calc(100vw-1.5rem))] sm:gap-3 sm:rounded-3xl sm:px-4 sm:py-3.5 sm:pr-11 ${glass}`} role="status" key={stage}>
+        <span className="shrink-0 text-2xl sm:text-3xl" aria-hidden>{stage === 'welcome' ? '🌴' : stage === 'move' ? '🎶' : '👋'}</span>
         <div className="min-w-0 flex-1">
           {stage === 'welcome' ? (
             <>
-              <p className="text-sm font-black text-[#4a3b5c]">Plaja hoş geldin!</p>
-              <p className="mt-0.5 text-xs font-bold text-[#8a7a9c]">Dans et, keşfet, yeni insanlarla tanış.</p>
+              <p className="text-xs font-black text-[#4a3b5c] sm:text-sm">Hikâye sahilde başlıyor!</p>
+              <p className="mt-0.5 text-[11px] font-bold text-[#8a7a9c] sm:text-xs">Önce Beach Party masalarında ve pistte kaynaş; sonra birlikte şehre akarsınız.</p>
               <div className="mt-2 flex gap-2">
-                <button onClick={startMoving} className="rounded-full bg-[#fdb252] px-3.5 py-1.5 text-xs font-black text-white shadow-sm active:scale-95">Hadi keşfet</button>
-                <button onClick={onDone} className="rounded-full bg-[#f6f0ff] px-3.5 py-1.5 text-xs font-black text-[#6b4fc0] active:scale-95">Atla</button>
+                <button onClick={startMoving} className="rounded-full bg-[#fdb252] px-3 py-1 text-[11px] font-black text-white shadow-sm active:scale-95 sm:px-3.5 sm:py-1.5 sm:text-xs">Sahile karış</button>
+                <button onClick={onDone} className="rounded-full bg-[#f6f0ff] px-3 py-1 text-[11px] font-black text-[#6b4fc0] active:scale-95 sm:px-3.5 sm:py-1.5 sm:text-xs">Atla</button>
               </div>
             </>
           ) : stage === 'move' ? (
             <>
-              <p className="text-sm font-black text-[#4a3b5c]">Önce biraz yürü</p>
-              <p className="mt-0.5 text-xs font-bold text-[#8a7a9c]">{movementHint}</p>
-              <button onClick={onDone} className="mt-2 rounded-full bg-[#f6f0ff] px-3.5 py-1.5 text-xs font-black text-[#6b4fc0] active:scale-95">Keşfet</button>
+              <p className="text-xs font-black text-[#4a3b5c] sm:text-sm">Sahil partisine doğru yürü</p>
+              <p className="mt-0.5 text-[11px] font-bold text-[#8a7a9c] sm:text-xs">{movementHint}</p>
+              <button onClick={onDone} className="mt-2 rounded-full bg-[#f6f0ff] px-3 py-1 text-[11px] font-black text-[#6b4fc0] active:scale-95 sm:px-3.5 sm:py-1.5 sm:text-xs">Tamam</button>
             </>
           ) : (
             <>
-              <p className="text-sm font-black text-[#4a3b5c]">Yakınında {nearbyPeer.name} var!</p>
-              <p className="mt-0.5 text-xs font-bold text-[#8a7a9c]">Ona el sallayıp sohbete başlayabilirsin.</p>
-              <button onClick={() => onGreet(nearbyPeer.id)} className="mt-2 rounded-full bg-[#fdb252] px-3.5 py-1.5 text-xs font-black text-white shadow-sm active:scale-95">
+              <p className="text-xs font-black text-[#4a3b5c] sm:text-sm">Yakınında {nearbyPeer.name} var!</p>
+              <p className="mt-0.5 text-[11px] font-bold text-[#8a7a9c] sm:text-xs">Selam verip iki kişilik masaya davet et; kaynaşınca şehre inersiniz.</p>
+              <button onClick={() => onGreet(nearbyPeer.id)} className="mt-2 rounded-full bg-[#fdb252] px-3 py-1 text-[11px] font-black text-white shadow-sm active:scale-95 sm:px-3.5 sm:py-1.5 sm:text-xs">
                 👋 Selam ver
               </button>
             </>

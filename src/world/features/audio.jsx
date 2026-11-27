@@ -43,7 +43,7 @@ function Slider({ label, value, onChange, onRelease }) {
   )
 }
 
-export function useAudio({ net, focusRef, home, panel }) {
+export function useAudio({ net, focusRef, home, panel, touch }) {
   const [st, setSt] = useState(getSettings)
   const netRef = useRef(net)
   const roomRef = useRef('city')
@@ -193,5 +193,23 @@ export function useAudio({ net, focusRef, home, panel }) {
     </section>,
   ]
 
-  return { extraNodes, settingsSections }
+  const menuNodes = (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation()
+        ensureStarted()
+        setSettings({ muted: !st.muted })
+      }}
+      className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-xs font-extrabold text-[#4a3b5c] transition hover:bg-[#fff8f0] ${touch ? '' : 'md:hidden'}`}
+    >
+      <Ico name={st.muted ? 'soundOff' : 'soundOn'} size={20} />
+      <span className="flex-1">Ses</span>
+      <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${st.muted ? 'bg-rose-50 text-rose-500' : 'bg-emerald-50 text-emerald-600'}`}>
+        {st.muted ? 'Kapalı' : 'Açık'}
+      </span>
+    </button>
+  )
+
+  return { extraNodes, menuNodes, settingsSections }
 }

@@ -1,15 +1,30 @@
-// Dokunmatik joystick'ler: hareket (Joystick) ve kamera (LookJoystick).
-import { useRef, useState } from 'react'
-import { glass } from './socialShared'
-// ---------- sanal joystick (dokunmatik cihazlar — her iki joystick birebir aynı boyuttadır) ----------
-export const BASE = 104
-export const KNOB = 44
-export const MAX = (BASE - KNOB) / 2 + 6
+// Dokunmatik joystick'ler: yarı saydam (transparent), eşit boyutlu hareket (Joystick) ve kamera (LookJoystick).
+// Dikey (portrait) ekranda sağdaki beceri çubuğuyla çakışmamak için kamera joystick'i sağda beceri çubuğunun üstünde durur.
+import { useEffect, useRef, useState } from 'react'
 
-/**
- * Sol altta sanal joystick. inputRef.current = { x, y } (-1..1; y aşağı = geri) değerini günceller.
- * Kenara kadar itersen (>%85) karakter koşar.
- */
+export const BASE = 88
+export const KNOB = 38
+export const MAX = (BASE - KNOB) / 2 + 6
+export const LOOK_BASE = BASE
+export const LOOK_KNOB = KNOB
+export const LOOK_MAX = MAX
+
+const padCls = 'border border-white/35 bg-white/14 backdrop-blur-[2px] shadow-[0_4px_14px_rgba(35,24,61,0.12)]'
+
+function useNarrowViewport() {
+  const [narrow, setNarrow] = useState(() => (typeof window !== 'undefined' ? window.innerWidth < 560 : false))
+  useEffect(() => {
+    const check = () => setNarrow(window.innerWidth < 560)
+    window.addEventListener('resize', check)
+    window.addEventListener('orientationchange', check)
+    return () => {
+      window.removeEventListener('resize', check)
+      window.removeEventListener('orientationchange', check)
+    }
+  }, [])
+  return narrow
+}
+
 export function Joystick({ inputRef }) {
   const base = useRef(null)
   const pointer = useRef(null)
@@ -46,17 +61,24 @@ export function Joystick({ inputRef }) {
       ref={base}
       role="application"
       aria-label="Hareket joystick'i"
-      className={`absolute z-10 touch-none select-none rounded-full ${glass} ${running ? 'ring-4 ring-[#a9ddf5]' : ''}`}
-      style={{ width: BASE, height: BASE, left: 'max(0.85rem, env(safe-area-inset-left))', bottom: 'max(0.85rem, env(safe-area-inset-bottom))' }}
+      className={`absolute z-10 touch-none select-none rounded-full transition-opacity ${padCls} ${
+        dragging ? 'opacity-95 ring-2 ring-white/50' : 'opacity-65'
+      } ${running ? 'ring-2 ring-[#7fcdf3]/80' : ''}`}
+      style={{
+        width: BASE,
+        height: BASE,
+        left: 'max(0.75rem, env(safe-area-inset-left))',
+        bottom: 'max(0.8rem, env(safe-area-inset-bottom))',
+      }}
       onPointerDown={(e) => {
         if (pointer.current !== null) return
         e.preventDefault()
         pointer.current = e.pointerId
         setDragging(true)
         try {
-          e.currentTarget.setPointerCapture(e.pointerId) // parmak joystick'ten kaysa bile takip et
+          e.currentTarget.setPointerCapture(e.pointerId)
         } catch {
-          /* bazı tarayıcılarda yapay olaylarda desteklenmez */
+          /* ignore */
         }
         apply(e)
       }}
@@ -66,7 +88,9 @@ export function Joystick({ inputRef }) {
       onLostPointerCapture={release}
     >
       <div
-        className={`absolute rounded-full border-2 border-white shadow-md ${running ? 'bg-[#5fc0ea]' : 'bg-[#fdb252]'}`}
+        className={`absolute rounded-full border border-white/70 shadow-sm ${
+          running ? 'bg-[#5fc0ea]/75' : dragging ? 'bg-[#fdb252]/75' : 'bg-[#fdb252]/45'
+        }`}
         style={{
           width: KNOB,
           height: KNOB,
@@ -76,26 +100,19 @@ export function Joystick({ inputRef }) {
           transition: dragging ? 'none' : 'transform 120ms ease-out',
         }}
       />
-      <span aria-hidden className="pointer-events-none absolute inset-0 grid place-items-center text-xl opacity-30">
+      <span aria-hidden className="pointer-events-none absolute inset-0 grid place-items-center text-base text-white/55">
         ✥
       </span>
     </div>
   )
 }
 
-export const LOOK_BASE = BASE
-export const LOOK_KNOB = KNOB
-export const LOOK_MAX = MAX
-
-/**
- * Hareket joystick'inin hemen yanında kamera/görünüm joystick'i (dokunmatik cihazlar).
- * inputRef.current = { x, y } (-1..1; x = yatay dönüş, y = dikey açı).
- */
 export function LookJoystick({ inputRef }) {
   const base = useRef(null)
   const pointer = useRef(null)
   const [knob, setKnob] = useState({ x: 0, y: 0 })
   const [dragging, setDragging] = useState(false)
+  const narrow = useNarrowViewport()
 
   const apply = (e) => {
     const r = base.current.getBoundingClientRect()
@@ -124,13 +141,24 @@ export function LookJoystick({ inputRef }) {
       ref={base}
       role="application"
       aria-label="Görünüm joystick'i"
-      className={`absolute z-10 touch-none select-none rounded-full ${glass} ${dragging ? 'ring-4 ring-[#d6c7ff]' : ''}`}
-      style={{
-        width: LOOK_BASE,
-        height: LOOK_BASE,
-        left: `calc(max(0.85rem, env(safe-area-inset-left)) + ${BASE + 12}px)`,
-        bottom: 'max(0.85rem, env(safe-area-inset-bottom))',
-      }}
+      className={`absolute z-10 touch-none select-none rounded-full transition-opacity ${padCls} ${
+        dragging ? 'opacity-95 ring-2 ring-[#d6c7ff]/70' : 'opacity-65'
+      }`}
+      style={
+        narrow
+          ? {
+              width: LOOK_BASE,
+              height: LOOK_BASE,
+              right: 'max(0.75rem, env(safe-area-inset-right))',
+              bottom: 'calc(max(0.8rem, env(safe-area-inset-bottom)) + 5.75rem)',
+            }
+          : {
+              width: LOOK_BASE,
+              height: LOOK_BASE,
+              left: `calc(max(0.75rem, env(safe-area-inset-left)) + ${BASE + 10}px)`,
+              bottom: 'max(0.8rem, env(safe-area-inset-bottom))',
+            }
+      }
       onPointerDown={(e) => {
         if (pointer.current !== null) return
         e.preventDefault()
@@ -149,7 +177,7 @@ export function LookJoystick({ inputRef }) {
       onLostPointerCapture={release}
     >
       <div
-        className="absolute rounded-full border-2 border-white bg-[#a88bff] shadow-md"
+        className={`absolute rounded-full border border-white/70 shadow-sm ${dragging ? 'bg-[#a88bff]/75' : 'bg-[#a88bff]/45'}`}
         style={{
           width: LOOK_KNOB,
           height: LOOK_KNOB,
@@ -159,7 +187,7 @@ export function LookJoystick({ inputRef }) {
           transition: dragging ? 'none' : 'transform 120ms ease-out',
         }}
       />
-      <span aria-hidden className="pointer-events-none absolute inset-0 grid place-items-center text-lg font-black text-white/90">
+      <span aria-hidden className="pointer-events-none absolute inset-0 grid place-items-center text-base font-black text-white/65">
         ⟳
       </span>
     </div>

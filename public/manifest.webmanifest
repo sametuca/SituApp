@@ -3,7 +3,7 @@
   "short_name": "Rastla",
   "start_url": "/world",
   "display": "fullscreen",
-  "orientation": "landscape",
+  "orientation": "any",
   "background_color": "#fff2e3",
   "theme_color": "#fff2e3",
   "icons": [

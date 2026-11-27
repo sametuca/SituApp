@@ -4,7 +4,7 @@ import { Suspense, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Html, RoundedBox, useGLTF } from '@react-three/drei'
 import { Box3, Color, Vector3 } from 'three'
-import { BEACH_PARTY } from './layout'
+import { BEACH_PARTY, BEACH_PARTY_TABLES } from './layout'
 import { screenK } from './screenK'
 
 const TILE_COLORS = ['#fdb252', '#ff8fb8', '#7fcdf3', '#8fdcb4', '#b79cff', '#ffd35e']
@@ -170,6 +170,7 @@ export default function BeachParty() {
   })
 
   return (
+    <>
     <group position={[BEACH_PARTY.x, 0, BEACH_PARTY.z]} rotation={[0, BEACH_PARTY.ry, 0]}>
       {/* Yükseltilmiş pastel sahne platformu */}
       <RoundedBox args={[4.8, 0.36, 2.2]} radius={0.12} smoothness={2} position={[0, 0.18, -0.3]} castShadow receiveShadow>
@@ -216,5 +217,33 @@ export default function BeachParty() {
         </div>
       </Html>
     </group>
+
+    {/* Sahil partisi masa üstü tropikal içecekler, ahşap altlıklar ve sıcak masa fenerleri */}
+    <group>
+      {BEACH_PARTY_TABLES.map((tb, i) => (
+        <group key={i} position={[tb.x, 0, tb.z]} rotation={[0, tb.angle, 0]}>
+          {/* Kum üstü yuvarlak hasır paspas */}
+          <mesh position={[0, 0.018, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+            <circleGeometry args={[1.38, 20]} />
+            <meshStandardMaterial color={i % 2 === 0 ? '#f6dfbe' : '#ffe8c9'} roughness={0.9} />
+          </mesh>
+          {/* Masa ortası sıcak fener */}
+          <mesh position={[0, 0.83, 0]}>
+            <cylinderGeometry args={[0.07, 0.085, 0.16, 10]} />
+            <meshStandardMaterial color="#fff3c4" emissive="#ffb347" emissiveIntensity={0.9} roughness={0.25} />
+          </mesh>
+          {/* 2 kişilik tropikal kokteyl bardakları */}
+          <mesh position={[0.22, 0.8, 0.08]}>
+            <cylinderGeometry args={[0.055, 0.04, 0.13, 8]} />
+            <meshStandardMaterial color="#ff8fb8" roughness={0.3} />
+          </mesh>
+          <mesh position={[-0.22, 0.8, -0.08]}>
+            <cylinderGeometry args={[0.055, 0.04, 0.13, 8]} />
+            <meshStandardMaterial color="#7fcdf3" roughness={0.3} />
+          </mesh>
+        </group>
+      ))}
+    </group>
+    </>
   )
 }

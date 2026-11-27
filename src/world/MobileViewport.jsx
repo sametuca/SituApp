@@ -1,7 +1,5 @@
-// Mobil yatay ekran zorunluluğu (LandscapeGuard) ve Tam Ekran (Fullscreen) geçiş bileşenleri.
+// Tam Ekran (Fullscreen) geçiş kancası ve düğmesi (yatay/dikey ekran serbest).
 import { useCallback, useEffect, useState } from 'react'
-import { useLocation } from 'react-router-dom'
-import { useIsTouch } from './useIsTouch'
 
 const getNativeFsElement = () =>
   typeof document !== 'undefined'
@@ -52,12 +50,10 @@ export function useFullscreen() {
     try {
       if (el.requestFullscreen) {
         await el.requestFullscreen({ navigationUI: 'hide' })
-        await screen.orientation?.lock?.('landscape')?.catch?.(() => {})
         return true
       }
       if (el.webkitRequestFullscreen) {
         el.webkitRequestFullscreen()
-        await screen.orientation?.lock?.('landscape')?.catch?.(() => {})
         return true
       }
     } catch {
@@ -78,7 +74,6 @@ export function useFullscreen() {
       } catch {
         /* ignore */
       }
-      screen.orientation?.unlock?.()
     }
     if (pseudoActive) setPseudoFs(false)
     setIosTip(false)
@@ -126,92 +121,10 @@ export function FullscreenButton({ className = '' }) {
         <FullscreenIcon active={isFullscreen} size={22} />
       </button>
       {iosTip && (
-        <div className="pointer-events-none fixed left-1/2 top-16 z-[90] w-[min(92vw,24rem)] -translate-x-1/2 rounded-2xl border-2 border-white bg-[#23183d]/92 px-4 py-2.5 text-center text-xs font-extrabold text-white shadow-lg">
-          📱 Safari adres çubuğunu tamamen gizlemek için <strong>Aa → Araç Çubuğunu Gizle</strong> veya <strong>Paylaş → Ana Ekrana Ekle</strong> seçebilirsin.
+        <div className="pointer-events-none fixed left-1/2 top-14 z-[90] w-[min(88vw,21rem)] -translate-x-1/2 rounded-2xl border border-white/60 bg-[#23183d]/92 px-3.5 py-2 text-center text-[11px] font-extrabold text-white shadow-lg">
+          📱 Safari adres çubuğunu gizlemek için <strong>Aa → Araç Çubuğunu Gizle</strong> veya <strong>Paylaş → Ana Ekrana Ekle</strong> seçebilirsin.
         </div>
       )}
     </>
-  )
-}
-
-export function LandscapeGuard() {
-  const touch = useIsTouch()
-  const { pathname } = useLocation()
-  const { enterFullscreen, nativeSupported } = useFullscreen()
-  const [portrait, setPortrait] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return window.matchMedia?.('(orientation: portrait)')?.matches ?? window.innerHeight > window.innerWidth
-  })
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined
-    const mq = window.matchMedia?.('(orientation: portrait)')
-    const check = () => {
-      const p = mq ? mq.matches : window.innerHeight > window.innerWidth
-      setPortrait(p)
-    }
-    check()
-    mq?.addEventListener?.('change', check)
-    window.addEventListener('resize', check)
-    window.addEventListener('orientationchange', check)
-    return () => {
-      mq?.removeEventListener?.('change', check)
-      window.removeEventListener('resize', check)
-      window.removeEventListener('orientationchange', check)
-    }
-  }, [])
-
-  // Dokunmatik cihazlarda ilk dokunuşta tarayıcı destekliyorsa yatay kilidi dene
-  useEffect(() => {
-    if (!touch) return undefined
-    const tryLock = () => {
-      screen.orientation?.lock?.('landscape')?.catch?.(() => {})
-    }
-    window.addEventListener('pointerdown', tryLock, { once: true })
-    return () => window.removeEventListener('pointerdown', tryLock)
-  }, [touch])
-
-  if (!touch || !portrait || pathname.startsWith('/admin') || pathname.startsWith('/studio')) return null
-
-  return (
-    <div className="fixed inset-0 z-[120] flex flex-col items-center justify-center bg-gradient-to-br from-[#23183d] via-[#34235a] to-[#1d1433] p-6 text-center text-white select-none">
-      <style>{`
-        @keyframes situPhoneTilt {
-          0%, 18% { transform: rotate(0deg); }
-          52%, 82% { transform: rotate(-90deg); }
-          100% { transform: rotate(0deg); }
-        }
-      `}</style>
-      <div className="flex max-w-xs flex-col items-center gap-4 rounded-[2rem] border-2 border-white/20 bg-white/10 px-7 py-8 shadow-2xl backdrop-blur-md">
-        <div className="grid h-24 w-24 place-items-center rounded-full bg-white/10">
-          <div
-            className="relative flex h-16 w-10 flex-col items-center justify-between rounded-xl border-[3px] border-[#ffd35e] bg-[#2a1d49] py-1.5 shadow-lg"
-            style={{ animation: 'situPhoneTilt 2.4s infinite ease-in-out' }}
-          >
-            <span className="h-1 w-3 rounded-full bg-white/50" />
-            <span className="text-xs font-black text-[#ffd35e]">⟳</span>
-            <span className="h-1.5 w-1.5 rounded-full bg-white/70" />
-          </div>
-        </div>
-
-        <div>
-          <h2 className="text-xl font-black text-white">Telefonunu Yan Çevir</h2>
-          <p className="mt-1.5 text-xs font-bold leading-relaxed text-white/80">
-            Rastla yatay ekran için tasarlandı. Oynamaya başlamak için telefonunu yan konuma getir.
-          </p>
-        </div>
-
-        {nativeSupported && (
-          <button
-            type="button"
-            onClick={enterFullscreen}
-            className="mt-1 flex w-full items-center justify-center gap-2 rounded-2xl border-b-4 border-[#d98a1c] bg-[#fdb252] px-4 py-3 text-xs font-black text-white shadow-lg active:translate-y-[2px]"
-          >
-            <FullscreenIcon active={false} size={16} />
-            <span>Tam Ekran & Yatay Başlat</span>
-          </button>
-        )}
-      </div>
-    </div>
   )
 }

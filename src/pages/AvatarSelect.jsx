@@ -77,8 +77,8 @@ export default function AvatarSelect() {
             draggable={false}
             className="h-14 w-auto select-none drop-shadow-[0_6px_14px_rgba(74,59,92,0.16)] sm:h-16"
           />
-          <h1 className="mt-2 text-3xl font-black text-ink sm:text-4xl">Karakterini Seç</h1>
-          <p className="mt-1 text-sm font-bold text-ink-soft">Dünyada bu karakterle dolaşacak ve yeni insanlarla tanışacaksın.</p>
+          <h1 className="mt-2 text-3xl font-black text-ink sm:text-4xl">Sahile İnmeye Hazır mısın?</h1>
+          <p className="mt-1 text-sm font-bold text-ink-soft">Önce Rastla Sahili’nde müzik ve sohbetle kaynaşacak, kafa dengi insanlarla şehre akacaksın.</p>
         </header>
 
         {/* sahne */}

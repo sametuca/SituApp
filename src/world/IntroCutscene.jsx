@@ -100,13 +100,13 @@ export function IntroCutsceneOverlay({ active, onSkip }) {
       <div className="relative flex w-full flex-col items-center bg-gradient-to-t from-[#2b1f3a]/75 via-[#2b1f3a]/35 to-transparent px-5 pb-7 pt-14 text-center sm:pb-10">
         <div className="animate-pop flex max-w-xl flex-col items-center gap-1.5">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-white/40 bg-white/15 px-3 py-0.5 text-[11px] font-black tracking-[0.2em] text-[#ffe8a3] backdrop-blur-sm">
-            ☀️ HAZİRAN SABAHI
+            🌴 RASTLA SAHİLİ · YAZ BAŞLANGICI
           </span>
-          <p className="text-lg font-black leading-snug text-white drop-shadow-[0_2px_12px_rgba(32,20,50,0.65)] sm:text-2xl">
-            “Bir Haziran sabahı… Belki de yeni insanlarla tanışmalısın.”
+          <p className="text-base font-black leading-snug text-white drop-shadow-[0_2px_12px_rgba(32,20,50,0.65)] sm:text-2xl">
+            “Her güzel hikâye sahilde başlar… Önce kumsalda kaynaş, sonra birlikte şehre ak.”
           </p>
-          <p className="text-xs font-bold text-white/80 drop-shadow sm:text-sm">
-            Sahil ve şehir seni bekliyor ✨
+          <p className="text-xs font-bold text-white/85 drop-shadow sm:text-sm">
+            Sahil partisinde dans et, iki kişilik masalarda tanış; ısındığında kuzeydeki şehir sizi bekliyor ✨
           </p>
         </div>
 

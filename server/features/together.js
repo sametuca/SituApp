@@ -108,8 +108,14 @@ export default function together(ctx) {
       if (!slot) return
       if (Math.hypot(me.x - slot.x, me.z - slot.z) > SIT_RANGE) return info(me, 'Biraz yaklaş, sonra otur 🪑')
       if (taken.has(`${seat.id}:${slotIdx}`)) return info(me, 'Boş yer yok 🪑')
+      // Tek kişilik şezlong ve plaj havlusunda en fazla 1 oyuncu yatabilir
+      if ((seat.kind === 'lounger' || seat.kind === 'towel') && seat.slots.some((_, k) => taken.has(`${seat.id}:${k}`))) {
+        return info(me, 'Bu yer dolu (en fazla 1 kişi uzanabilir) 🏖️')
+      }
       // yanındaki koltukta seni engelleyen/engellediğin biri varsa yer "dolu" görünür (sebep sezdirilmez)
       const neighbours = groupKeys(table, seat).map((key) => players.get(taken.get(key))).filter((o) => o && o.id !== me.id)
+      // Bir masada en fazla 2 oyuncu oturabilir (üst üste binmeyi önler)
+      if (seat.kind === 'table' && neighbours.length >= 2) return info(me, 'Bu masada en fazla 2 kişi oturabilir 🪑')
       if (neighbours.some((o) => mod().blockedPair(me, o))) return info(me, 'Boş yer yok 🪑')
 
       taken.set(`${seat.id}:${slotIdx}`, me.id)

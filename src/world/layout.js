@@ -46,11 +46,11 @@ const ROOF = { pink: '#fec172', blue: '#7fcdf3', yellow: '#ffd35e', mint: '#8fdc
 
 // ---------- mahalleler ----------
 export const ZONES = [
-  { id: 'lobby', name: 'Lobi Meydanı', emoji: '⛲', desc: 'Herkesin buluşma noktası. Yollar buradan her yöne açılır.', shape: 'circle', x: 0, z: 0, r: 19.4, spawn: [0, 11] },
-  { id: 'cafe', name: 'Kafe Sokağı', emoji: '☕', desc: 'Sakin, samimi sohbetler için.', shape: 'rect', x0: -14, x1: 14, z0: -51.6, z1: -19.4, spawn: [0, -26] },
-  { id: 'club', name: 'Gece Kulübü', emoji: '🪩', desc: 'Müzik, dans ve enerji.', shape: 'rect', x0: 19.4, x1: 51.6, z0: -14, z1: 14, spawn: [28, 0] },
-  { id: 'park', name: 'Park', emoji: '🌳', desc: 'Açık havada yürüyüş ve sohbet.', shape: 'rect', x0: -51.6, x1: -19.4, z0: -14, z1: 14, spawn: [-28, 0] },
-  { id: 'beach', name: 'Plaj', emoji: '🏖️', desc: 'Gün batımı, deniz ve rahat sohbetler.', shape: 'rect', x0: -37, x1: 37, z0: 30, z1: 104, spawn: [0, 63] },
+  { id: 'beach', name: 'Rastla Sahili', emoji: '🏖️', desc: 'Her hikâyenin başladığı yer! Sahil partisi, iki kişilik masalar ve ilk tanışmalar burada.', shape: 'rect', x0: -37, x1: 37, z0: 30, z1: 104, spawn: [1.8, 63.4] },
+  { id: 'lobby', name: 'Şehir Meydanı', emoji: '⛲', desc: 'Sahilden şehre uzanan merkez meydan. Kafeler, kulüp ve park buradan açılır.', shape: 'circle', x: 0, z: 0, r: 19.4, spawn: [0, 11] },
+  { id: 'cafe', name: 'Kafe Sokağı', emoji: '☕', desc: 'Sahilde tanıştığın kişilerle baş başa kahve ve samimi sohbet sokağı.', shape: 'rect', x0: -14, x1: 14, z0: -51.6, z1: -19.4, spawn: [0, -26] },
+  { id: 'club', name: 'Gece Kulübü', emoji: '🪩', desc: 'Sahil partisinden sonra gecenin devam ettiği müzik ve dans durağı.', shape: 'rect', x0: 19.4, x1: 51.6, z0: -14, z1: 14, spawn: [28, 0] },
+  { id: 'park', name: 'Park', emoji: '🌳', desc: 'Açık havada sakin yürüyüş ve gölge banklar.', shape: 'rect', x0: -51.6, x1: -19.4, z0: -14, z1: 14, spawn: [-28, 0] },
   // dış mahalleler (ada büyüdü): ana yolların uzantısı + geniş yeşil alanlar
   { id: 'north', name: 'Kuzey Caddesi', emoji: '🏙️', desc: 'Kafe Sokağı’nın devamı: sakin, geniş bir cadde.', shape: 'rect', x0: -14, x1: 14, z0: -103.6, z1: -51.6, spawn: [0, -76] },
   { id: 'eastend', name: 'Doğu Bulvarı', emoji: '🌆', desc: 'Kulüp caddesinin uzantısı.', shape: 'rect', x0: 51.6, x1: 103.6, z0: -14, z1: 14, spawn: [76, 0] },
@@ -80,9 +80,9 @@ export const TELEPORTS = {
   golet: 'pond', 'gölet': 'pond', mahalle: 'hills', hills: 'hills', liman: 'harbor', harbor: 'harbor',
 }
 
-export const SPAWN = { x: 0, z: 63 } // tüm oyuncular sahilde (plaj meydanında) başlar
-export const BEACH = { x: 0, z: 63, r: 34 } // yuvarlak, sıcak plaj meydanı (adanın güneyinde; yol buraya açılır)
-export const BEACH_START = { x: 0, z: 63, ry: Math.PI } // yeni hesap havalimanından çıkınca plajın tam ortasında doğar, kuzeye (şehre) bakar // yeni hesap havalimanından çıkınca kumsalda doğar, kuzeye (şehre) bakar
+export const SPAWN = { x: 1.8, z: 63.4 } // tüm oyuncular doğrudan Rastla Sahili'nde (Beach Party ve iki kişilik masaların hemen yanında) başlar
+export const BEACH = { x: 0, z: 63, r: 34 } // yuvarlak, sıcak plaj meydanı (adanın güneyinde; kuzey yolu buradan şehre akar)
+export const BEACH_START = { x: 1.8, z: 63.4, ry: Math.PI }
 
 // ---------- binalar ----------
 // facing: kapının baktığı yön ('n' = -z, 's' = +z, 'e' = +x, 'w' = -x)
@@ -232,12 +232,41 @@ for (const x of [-19.5, -24.5]) PROPS.push(p('lamp', x, 2.6, 3, 0.35), p('lamp',
 // plaj meydanı (yuvarlak, yarıçap 34): dış ve iç halkada şemsiyeli şezlong çiftleri merkeze bakar; ortada serbest alan (doğuş noktası, voleybol, etkinlikler), kıyıda palmiyeler
 export const VOLLEY_NET = { x: BEACH.x - 9, z: BEACH.z + 2, r: 5 } // voleybol filesi (istemci + sunucu ortak)
 export const BEACH_PARTY = { x: 11.5, z: 58.5, ry: -0.58 } // sahil partisi sahnesi + dans pisti (plaja doğan oyuncuları karşılar)
+
+// Beach Party sosyal oturma masaları: her masada TAM 2 karşılıklı sandalye (en fazla 2 oyuncu oturabilir, üst üste binmez)
+export const BEACH_PARTY_TABLES = [
+  { x: 15.2, z: 61.8, angle: 0.45, umbrella: true },
+  { x: 13.8, z: 65.4, angle: -0.35, umbrella: true },
+  { x: 9.8, z: 66.2, angle: 0.18, umbrella: false },
+  { x: 6.3, z: 62.7, angle: -0.52, umbrella: false },
+  { x: 7.2, z: 56.2, angle: 0.65, umbrella: true },
+]
+BEACH_PARTY_TABLES.forEach((tb, ti) => {
+  PROPS.push(pw('cafetable', tb.x, tb.z, 1.15, 0.48, tb.angle))
+  if (tb.umbrella) {
+    PROPS.push(pw('umbrella', +(tb.x + 0.85).toFixed(2), +(tb.z - 0.85).toFixed(2), 2.35, 0.25, tb.angle))
+  }
+  const dx = Math.cos(tb.angle) * 0.88
+  const dz = Math.sin(tb.angle) * 0.88
+  const c1 = pw('cafechair', +(tb.x + dx).toFixed(2), +(tb.z + dz).toFixed(2), 1.02, 0, Math.atan2(-dx, -dz))
+  const c2 = pw('cafechair', +(tb.x - dx).toFixed(2), +(tb.z - dz).toFixed(2), 1.02, 0, Math.atan2(dx, dz))
+  c1.seatGroup = c2.seatGroup = `bpt${ti}`
+  c1.seatKind = c2.seatKind = 'table'
+  PROPS.push(c1, c2)
+})
+// Beach Party kenarına tek kişilik dinlenme şezlongları (her şezlongda en fazla 1 oyuncu yatabilir)
+PROPS.push(
+  pw('lounger', 16.4, 58.2, 1.7, 0, -0.75),
+  pw('lounger', 17.5, 59.6, 1.7, 0, -0.75),
+)
+
 {
-  // Evim (-18, 36.5), MakFit (20, 36.5) ve Beach Party (11.5, 58.5) önü ağaç/şezlongla kapanmasın
+  // Evim (-18, 36.5), MakFit (20, 36.5) ve Beach Party (11.5, 58.5) + parti masaları önü ağaç/şezlongla kapanmasın
   const nearBeachFront = (x, z) =>
     Math.hypot(x + 18, z - 38.5) < 6.4 ||
     Math.hypot(x - 20, z - 38.5) < 7.4 ||
-    Math.hypot(x - BEACH_PARTY.x, z - BEACH_PARTY.z) < 6.8
+    Math.hypot(x - BEACH_PARTY.x, z - BEACH_PARTY.z) < 6.8 ||
+    BEACH_PARTY_TABLES.some((tb) => Math.hypot(x - tb.x, z - tb.z) < 2.8)
   const ring = (R, n, off, skipNorth) => {
     for (let i = 0; i < n; i++) {
       const a = (i / n) * Math.PI * 2 + off
@@ -275,7 +304,13 @@ export const TOWELS = (() => {
       const a = (i / n) * Math.PI * 2 + off
       const x = BEACH.x + Math.cos(a) * R
       const z = BEACH.z + Math.sin(a) * R
-      if (Math.hypot(x - VOLLEY_NET.x, z - VOLLEY_NET.z) < VOLLEY_NET.r + 3 || Math.hypot(x - BEACH_PARTY.x, z - BEACH_PARTY.z) < 6.8 || z < BEACH.z - 20) continue
+      if (
+        Math.hypot(x - VOLLEY_NET.x, z - VOLLEY_NET.z) < VOLLEY_NET.r + 3 ||
+        Math.hypot(x - BEACH_PARTY.x, z - BEACH_PARTY.z) < 6.8 ||
+        BEACH_PARTY_TABLES.some((tb) => Math.hypot(x - tb.x, z - tb.z) < 2.6) ||
+        z < BEACH.z - 20
+      )
+        continue
       out.push({ x: +x.toFixed(2), z: +z.toFixed(2), ry: +(((i * 0.7) % 1.2) - 0.6).toFixed(2), c: cols[out.length % cols.length] })
     }
   }
@@ -332,7 +367,18 @@ const slotsOf = (x, z, ry, d) => {
 const SEATS_PROPS = PROPS.flatMap((pr, i) => {
   const d = SEAT_DEFS[pr.model]
   if (!d) return []
-  return [{ id: `s${i}`, kind: d.kind, x: pr.x, z: pr.z, ry: pr.ry + d.face, slots: slotsOf(pr.x, pr.z, pr.ry, d) }]
+  return [
+    {
+      id: `s${i}`,
+      kind: pr.seatKind ?? d.kind,
+      style: d.kind,
+      ...(pr.seatGroup ? { group: pr.seatGroup } : {}),
+      x: pr.x,
+      z: pr.z,
+      ry: pr.ry + d.face,
+      slots: slotsOf(pr.x, pr.z, pr.ry, d),
+    },
+  ]
 })
 const SEATS_BLANKET = BLANKETS.map((bl, i) => ({ id: `bl${i}`, kind: 'blanket', style: 'floor', x: bl.x, z: bl.z, ry: bl.ry, slots: slotsOf(bl.x, bl.z, bl.ry, { cap: 2, gap: 1.2, along: 'x' }) }))
 const SEATS_TOWEL = TOWELS.map((tw, i) => ({ id: `tw${i}`, kind: 'towel', style: 'lounger', x: tw.x, z: tw.z, ry: tw.ry, slots: [{ x: tw.x, z: tw.z }] }))

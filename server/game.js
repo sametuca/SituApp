@@ -370,9 +370,9 @@ export function attachGameServer(httpServer) {
       ws: msg.__ws,
       name: ident ? ident.username : guestName,
       avatar: ident ? ident.avatar : AVATARS.has(msg.avatar) ? msg.avatar : 'zeynep',
-      // tüm oyuncular sahilde (plaj meydanında, SPAWN { x: 0, z: 63 }) doğar
-      x: (Math.random() - 0.5) * 6,
-      z: 63 + Math.random() * 2,
+      // tüm oyuncular doğrudan Rastla Sahili'nde (Beach Party ve sosyal masaların yanında) doğar
+      x: +(1.8 + (Math.random() - 0.5) * 4.2).toFixed(2),
+      z: +(63.2 + Math.random() * 2.0).toFixed(2),
       ry: Math.PI,
       anim: 'idle',
       dirty: false,

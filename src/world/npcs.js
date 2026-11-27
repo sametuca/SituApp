@@ -131,23 +131,35 @@ const CITY = [
   // Sahil Partisi (Beach Party) NPC'leri: her biri farklı dans stiliyle plaja inen oyuncuları karşılar
   {
     id: 'beach_dj', worldPos: true, avatar: 'kaan', name: 'Beach DJ Mert', role: '🎧', x: 12.1, z: 57.6, ry: -0.58, pose: { kind: 'dance', style: 'dj', t0: 0 },
-    lines: ['Sahil partisine hoş geldin! 🌴🪩', 'Müziği açtık, pist senin — birine 💃 gönderip dansa kaldır!', 'Güneş, deniz ve en iyi ritimler burada 🌊🎶'],
+    lines: [
+      'Rastla’da her hikâye burada, sahilde başlar! 🌴🪩',
+      'Önce masalarda ikişer kişi oturup kaynaşın, sonra hep beraber şehre akarsınız! 🍹🎶',
+      'Müziği açtık, pist senin — birine 💃 gönderip dansa kaldır!',
+    ],
     options: [
-      { label: 'Parti nasıl gidiyor?', reply: ['Enerji tavan! Yeni gelenler ilk burada tanışıyor 🪩✨', 'Birazdan gün batımı setine geçiyoruz, kaçırma 🌅'] },
+      { label: 'Sahilden sonra nereye gidilir?', reply: ['Burada kafa dengi birini bulunca kuzey yolundan Kafe Sokağı’na veya Gece Kulübü’ne akıyoruz! 🪩✨', 'Önce yan masalarda bir kokteyl içip tanışın, şehir yukarıda sizi bekliyor 🌅'] },
     ],
   },
   {
     id: 'beach_dancer1', worldPos: true, avatar: 'zeynep', name: 'Selin', role: '🪩', x: 9.2, z: 60.4, ry: -0.3, pose: { kind: 'dance', style: 'handsup', t0: 0.7 },
-    lines: ['Bu şarkıya bayılıyorum!! 🪩✨', 'Yeni mi geldin? Piste gel, birlikte dans edelim 💃', 'Sahil partisi her gün ayrı güzel 🌴🌊'],
+    lines: [
+      'Yeni gelen herkes ilk bu kumsalda buluşuyor! 🪩✨',
+      'Yandaki iki kişilik masalar tanışmak için birebir, oturunca sohbet hemen açılıyor 🍹',
+      'Burada ısınıp akşam Kafe Sokağı’na geçmek en güzeli 🌴🌊',
+    ],
     options: [
-      { label: 'Nasıl dans ederim?', reply: ['Alttaki 2 tuşuna bas ya da birine tıklayıp dans teklifi gönder 💃✨'] },
+      { label: 'Nasıl kaynaşırım?', reply: ['Bir oyuncuya tıkla, selam gönder ya da yandaki iki kişilik masalardan birine karşılıklı oturun! 💃✨'] },
     ],
   },
   {
     id: 'beach_dancer2', worldPos: true, avatar: 'ege', name: 'Arda', role: '🌴', x: 11.4, z: 61.8, ry: -0.9, pose: { kind: 'dance', style: 'groove', t0: 1.9 },
-    lines: ['Rastla’ya hoş geldin! 🌴🔥', 'Plajda tanışmak çok kolay, selam vermekten çekinme 👋', 'Akşam da Kulüp’e geçiyoruz, unutma 🪩'],
+    lines: [
+      'Rastla Sahili’ne hoş geldin! Herkes önce burada tanışır 🌴🔥',
+      'İster voleybol oyna ister şezlonga uzan, ortam çok sıcak 👋',
+      'Arkadaş grubunu kurunca kuzey caddesinden şehre akarız 🪩',
+    ],
     options: [
-      { label: 'Burada neler var?', reply: ['Hemen arkada voleybol, karşıda Teknel, sağda MakFit… Ada dopdolu! 🏖️'] },
+      { label: 'Şehir ne tarafta?', reply: ['Tam arkamızdaki kuzey yolunu takip et; Evim, MakFit, Kafe Sokağı ve Kulüp Babil orada! 🏖️➡️🏙️'] },
     ],
   },
 ]

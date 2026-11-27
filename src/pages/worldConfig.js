@@ -3,20 +3,20 @@ export const NO_ITEMS = []
 export const START_VENUE = 'havalimani'
 export const AVATARS = ['zeynep', 'deniz', 'elif', 'kaan', 'mira', 'ege']
 export const GUIDE_TIPS = [
-  'Selam! Ben Rehber. Nasıl oynanır penceresi için bana tıkla ya da E / H tuşuna bas.',
-  'Soldaki Gardırop düğmesiyle saç, aksesuar ve dostunu dilediğin gibi değiştirebilirsin.',
-  'Sağ üstteki yuvarlak haritaya basarak Kafe, Kulüp, Park ve Plaj’a tek tıkla ışınlan.',
-  'Lobinin güneybatısındaki Evim kapısından (veya /ev yazarak) evine girip döşeyebilirsin.',
-  'Enter’a basıp yazarsan mesajın başının üstünde balon olur.',
-  'Alttaki 1–4 tuşlarıyla selam, dans, kalp ve kutlama tepkilerini kullanabilirsin.',
+  'Selam! Herkes yolculuğa burada, Rastla Sahili’nde başlar. Rehber için bana tıkla ya da E / H tuşuna bas.',
+  'Hemen yanımızdaki Beach Party masalarında en fazla 2 kişi karşılıklı oturup baş başa sohbet edebilir!',
+  'Sahilde birileriyle kaynaştıktan sonra kuzey yolundan Şehir Meydanı’na, Kafe Sokağı’na ve Kulüp’e birlikte akabilirsiniz.',
+  'Şezlonglarda ve kumsaldaki renkli havlularda tek başına uzanıp gün batımını izleyebilirsin.',
+  'Menüdeki Gardırop ile stilini seçebilir, Evim kapısından kendi evini döşeyip sahilde tanıştıklarını davet edebilirsin.',
+  'Alttaki 1–4 beceri tuşlarıyla el salla, dans et ve kalp gönder; karşılıklı kalp atarsanız eşleşirsiniz!',
 ]
 export const TRAVEL_LOADING_MESSAGES = [
-  'Hop, yeni bir köşeye geçiyoruz…',
-  'Yeni mekân, yeni hikâyeler…',
-  'Manzara değişiyor, keyif aynı!',
-  'Bir kapıdan kocaman bir maceraya…',
+  'Sahilden yeni bir köşeye geçiyoruz…',
+  'Yeni mekân, yeni sohbetler…',
+  'Kumsaldan şehrin ışıklarına doğru…',
+  'Manzara değişiyor, muhabbet devam ediyor!',
   'Yeni yer hazırlanıyor, az kaldı…',
-  'Yol kısacık, merak uzun…',
+  'Birlikte keşfedilecek daha çok sokak var…',
 ]
 export function readAvatar() {
   try {

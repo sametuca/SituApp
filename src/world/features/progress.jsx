@@ -1,5 +1,6 @@
 // İlerleme (istemci): günlük görevler, rozetler, günün önerisi ve sezon etkinliği. Sunucu: server/features/progress.js.
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { TopDock } from '../../components/Dock'
 import { ToyButton } from '../../components/ui'
 import { Modal } from '../Hud'
 import EventFx from './EventFx'
@@ -155,21 +156,23 @@ function EventCard({ event, fxOn, onToggleFx, onClose }) {
 function SuggestCard({ s, onHi, onClose }) {
   const tags = s.common?.length ? s.common.join(' ') : ''
   return (
-    <div className="absolute left-[4.5rem] right-32 top-24 z-20 flex max-w-[22rem] animate-pop items-center gap-3 rounded-3xl border-2 border-white bg-white/90 p-3 shadow-toy backdrop-blur-md">
-      <img src={`/avatars/${s.avatar}.png`} alt="" width="44" height="44" className="h-11 w-11 shrink-0 rounded-full border-2 border-white bg-white/60 object-cover object-top" />
-      <div className="min-w-0 flex-1">
-        <p className="text-[0.6875rem] font-extrabold uppercase tracking-wide text-[#fdb252]">Bugünün önerisi</p>
-        <p className="line-clamp-2 text-sm font-black text-[#4a3b5c]">
-          {s.name} {tags ? <>{tags} <span className="font-bold text-[#8a7a9c]">ortak ilgi</span></> : <span className="font-bold text-[#8a7a9c]">✨ tanışmaya ne dersin?</span>}
-        </p>
-        <button onClick={onHi} className="mt-1.5 rounded-xl border-b-4 border-[#e8952c] bg-[#fdb252] px-3 py-1.5 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2">
-          👋 Merhaba de
+    <TopDock>
+      <div className="pointer-events-auto flex w-[min(80vw,19rem)] animate-pop items-center gap-2.5 rounded-2xl border-2 border-white bg-white/92 p-2 shadow-toy backdrop-blur-md sm:w-[22rem] sm:gap-3 sm:rounded-3xl sm:p-3">
+        <img src={`/avatars/${s.avatar}.png`} alt="" width="36" height="36" className="h-9 w-9 shrink-0 rounded-full border-2 border-white bg-white/60 object-cover object-top sm:h-11 sm:w-11" />
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-extrabold uppercase tracking-wide text-[#fdb252]">Bugünün önerisi</p>
+          <p className="truncate text-xs font-black text-[#4a3b5c] sm:text-sm">
+            {s.name} {tags ? <>{tags} <span className="font-bold text-[#8a7a9c]">ortak ilgi</span></> : <span className="font-bold text-[#8a7a9c]">✨ tanış!</span>}
+          </p>
+        </div>
+        <button onClick={onHi} className="shrink-0 rounded-xl border-b-2 border-[#e8952c] bg-[#fdb252] px-2.5 py-1 text-xs font-extrabold text-white active:scale-95">
+          👋 Selam
+        </button>
+        <button onClick={onClose} aria-label="Öneriyi kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
+          ✖️
         </button>
       </div>
-      <button onClick={onClose} aria-label="Öneriyi kapat" className="grid h-9 w-9 shrink-0 place-items-center self-start rounded-full text-sm font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
-        ✖️
-      </button>
-    </div>
+    </TopDock>
   )
 }
 

@@ -206,13 +206,15 @@ export function useBeach({ net, focusRef, home, venue, touch }) {
   const overlays = (
     <>
       {showMeetup && (
-        <TopDock><div className={`relative pointer-events-none rounded-2xl px-4 py-1.5 text-center ${glass}`}>
-          <p className="text-xs font-black text-[#c9731a]">
+        <TopDock><div className={`relative pointer-events-none rounded-2xl px-3 py-1 text-center sm:px-4 sm:py-1.5 ${glass}`}>
+          <p className="text-[11px] font-black text-[#c9731a] sm:text-xs">
             🌅 Gün batımı buluşması · {meetup.phase === 'soon' ? `${mmss(meetup.start - now)} sonra` : `${mmss(meetup.end - now)} kaldı`}
           </p>
-          <p className="text-[0.6875rem] font-bold text-[#8a7a9c]">
-            {meetup.phase === 'soon' ? 'Plajın ortasına gel, TL kazan!' : dist <= BEACH.r + 4 ? `Plajdasın · ${meetup.n} kişi burada` : `Plaja gel (${dist} m) · ${meetup.n} kişi bekliyor`}
-          </p>
+          {!touch && (
+            <p className="text-[0.6875rem] font-bold text-[#8a7a9c]">
+              {meetup.phase === 'soon' ? 'Plajın ortasına gel, TL kazan!' : dist <= BEACH.r + 4 ? `Plajdasın · ${meetup.n} kişi burada` : `Plaja gel (${dist} m) · ${meetup.n} kişi bekliyor`}
+            </p>
+          )}
         </div></TopDock>
       )}
       {res && (

@@ -84,11 +84,11 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch, slots =
   if (touch) {
     return (
       <div
-        className={`pointer-events-auto absolute z-10 flex flex-col gap-1.5 rounded-3xl p-2 ${glass}`}
-        style={{ right: 'max(0.85rem, env(safe-area-inset-right))', bottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+        className="pointer-events-auto absolute z-10 flex flex-col gap-1 rounded-2xl border border-white/60 bg-white/68 p-1.5 shadow-sm backdrop-blur-sm"
+        style={{ right: 'max(0.75rem, env(safe-area-inset-right))', bottom: 'max(0.8rem, env(safe-area-inset-bottom))' }}
         aria-label="Beceri ve deneyim çubuğu"
       >
-        <div className="grid grid-cols-4 gap-1.5">
+        <div className="grid grid-cols-4 gap-1">
           {slots.map((sk) => {
             const rem = Math.min(SKILL_COOLDOWN_MS, Math.max(0, (cooldowns[sk.id] ?? 0) - now))
             const onCd = rem > 0
@@ -101,11 +101,11 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch, slots =
                 disabled={onCd}
                 onClick={() => onSkill(sk)}
                 aria-label={`${sk.label}${onCd ? ` (${secs} saniye bekle)` : ''}`}
-                className={`relative flex h-11 w-11 flex-col items-center justify-center overflow-hidden rounded-2xl border-2 transition ${
-                  onCd ? 'cursor-not-allowed border-white/70 bg-[#ede6fa]' : 'border-white bg-[#faf6ff] shadow-sm active:scale-95'
+                className={`relative flex h-9 w-9 flex-col items-center justify-center overflow-hidden rounded-xl border transition ${
+                  onCd ? 'cursor-not-allowed border-white/60 bg-[#ede6fa]/75' : 'border-white/80 bg-[#faf6ff]/85 shadow-sm active:scale-95'
                 }`}
               >
-                <SlotIcon sk={sk} size={26} dim={onCd} />
+                <SlotIcon sk={sk} size={22} dim={onCd} />
                 {onCd && (
                   <>
                     <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-[#4a3b5c]/35 transition-[height] duration-100" style={{ height: `${fillPct}%` }} />

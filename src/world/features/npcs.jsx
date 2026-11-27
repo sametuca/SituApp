@@ -31,16 +31,16 @@ function Typed({ text }) {
 
 function NpcSheet({ npc, text, onOption, onBuy, onClose, touch }) {
   return (
-    <div className={`pointer-events-auto absolute inset-0 z-30 m-auto h-fit max-h-[84svh] w-[min(94vw,max(28rem,34vw))] overflow-y-auto animate-pop rounded-[2rem] p-4 pb-5 text-[clamp(0.95rem,0.25vw+0.75rem,1.15rem)] ${glass}`} role="dialog" aria-label={npc.name}>
+    <Modal onClose={onClose} label={npc.name} wide hideClose>
       <div className="flex items-start gap-3">
-        <img src={`/avatars/${npc.avatar}.png`} alt="" width="64" height="64" className="h-[4em] w-[4em] shrink-0 rounded-2xl border-2 border-white bg-[#fff8f0] object-cover object-top shadow" />
+        <img src={`/avatars/${npc.avatar}.png`} alt="" width="64" height="64" className="h-14 w-14 shrink-0 rounded-2xl border-2 border-white bg-[#fff8f0] object-cover object-top shadow sm:h-16 sm:w-16" />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[0.9em] font-black text-[#ff7a3d]">{displayName(npc)}</p>
-          <div className="mt-1 rounded-2xl rounded-tl-md bg-[#fff6ee] px-3 py-2">
+          <p className="truncate text-sm font-black text-[#ff7a3d] sm:text-base">{displayName(npc)}</p>
+          <div className="mt-1 rounded-2xl rounded-tl-md bg-[#fff6ee] px-3 py-2 text-xs sm:text-sm">
             <Typed key={text} text={text} />
           </div>
         </div>
-        <button onClick={onClose} aria-label="Kapat" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/80 text-sm font-black text-[#8a7a9c] shadow">
+        <button onClick={onClose} aria-label="Kapat" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#f6f0ff] text-sm font-black text-[#8a7a9c] shadow-sm">
           ✖️
         </button>
       </div>
@@ -51,32 +51,32 @@ function NpcSheet({ npc, text, onOption, onBuy, onClose, touch }) {
               key={item.id}
               type="button"
               onClick={() => onBuy?.(npc, item)}
-              className="flex h-10 w-full items-center justify-between gap-2 rounded-2xl border-b-[3px] border-[#e8952c] bg-[#fdb252] px-4 text-[0.88em] font-extrabold text-white shadow-soft active:translate-y-[2px] active:border-b-[1px]"
+              className="flex h-10 w-full items-center justify-between gap-2 rounded-2xl border-b-[3px] border-[#e8952c] bg-[#fdb252] px-4 text-xs font-extrabold text-white shadow-soft active:translate-y-[2px] active:border-b-[1px] sm:text-sm"
             >
               <span className="flex items-center gap-2 truncate">
                 <span>{item.emoji}</span>
                 <span className="truncate">{item.label}</span>
               </span>
-              <span className="shrink-0 rounded-full bg-white/25 px-2.5 py-0.5 text-[0.82em] font-black">{item.price} ₺</span>
+              <span className="shrink-0 rounded-full bg-white/25 px-2.5 py-0.5 text-xs font-black">{item.price} ₺</span>
             </button>
           ))}
         </div>
       )}
-      <div className={`mt-2 flex flex-col gap-1.5 ${touch ? 'pb-2' : ''}`}>
+      <div className={`mt-2 flex flex-col gap-1.5 ${touch ? 'pb-1' : ''}`}>
         {npc.options.map((o) => (
           <button
             key={o.label}
             onClick={() => onOption(o)}
-            className="flex h-10 w-full items-center justify-center rounded-2xl border-b-[3px] border-[#e4b780] bg-[#ffeed9] px-4 text-[0.88em] font-extrabold text-[#8b5f2b] active:translate-y-[2px] active:border-b-[1px]"
+            className="flex h-10 w-full items-center justify-center rounded-2xl border-b-[3px] border-[#e4b780] bg-[#ffeed9] px-4 text-xs font-extrabold text-[#8b5f2b] active:translate-y-[2px] active:border-b-[1px] sm:text-sm"
           >
             {o.label.replace(/^[\p{Extended_Pictographic}\uFE0F\u200d\s]+/u, '')}
           </button>
         ))}
-        <button onClick={onClose} className="flex h-10 w-full items-center justify-center rounded-2xl border-b-[3px] border-[#c9bde6] bg-[#ece4ff] px-4 text-[0.88em] font-extrabold text-[#6b4fc0] active:translate-y-[2px] active:border-b-[1px]">
+        <button onClick={onClose} className="flex h-10 w-full items-center justify-center rounded-2xl border-b-[3px] border-[#c9bde6] bg-[#ece4ff] px-4 text-xs font-extrabold text-[#6b4fc0] active:translate-y-[2px] active:border-b-[1px] sm:text-sm">
           Hoşça kal
         </button>
       </div>
-    </div>
+    </Modal>
   )
 }
 
@@ -104,7 +104,7 @@ function AfkPlayerModal({ bot, onClose, say }) {
   }
 
   return (
-    <Modal onClose={onClose} label={bot.name}>
+    <Modal onClose={onClose} label={bot.name} hideClose>
       <div className="flex items-center gap-3.5">
         <img src={`/avatars/${bot.avatar}.png`} alt="" width="72" height="72" className="h-16 w-16 rounded-2xl border-2 border-white bg-[#fff3e6] object-cover object-top shadow" />
         <div className="min-w-0 flex-1">

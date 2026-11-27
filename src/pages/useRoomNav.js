@@ -43,17 +43,16 @@ export function useRoomNav({ beginTransition, home, name, net, say, setFade, set
     swapVenue('city')
     net.enterRoom('city')
   }, [net, swapVenue])
-  // sunucu hesabın yeni olup olmadığını söyler (welcome.first): havalimanı yalnızca yeni hesapta
+  // Tüm oyuncular (yeni hesaplar dahil) doğrudan Rastla Sahili'nde doğar; havalimanına zorla yönlendirme yapılmaz.
   const airportChecked = useRef(false)
   useEffect(
     () =>
-      net.on('welcome', (m) => {
+      net.on('welcome', () => {
         if (airportChecked.current) return
         airportChecked.current = true
-        if (m.first && !venueRef.current) enterVenue(START_VENUE)
-        else if (!m.first && venueRef.current === START_VENUE) leaveVenue()
+        if (venueRef.current === START_VENUE) leaveVenue()
       }),
-    [net, enterVenue, leaveVenue],
+    [net, leaveVenue, venueRef],
   )
   const ownHome = useCallback(() => ({ owner: net.homeKey ?? undefined, ownerName: name, isOwn: true }), [net.homeKey, name])
   const doorGo = useCallback(() => (venue ? leaveVenue() : goTo(home ? 'city' : ownHome())), [goTo, home, ownHome, venue, leaveVenue])

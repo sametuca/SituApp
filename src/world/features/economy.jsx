@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 const glass = 'border-2 border-white bg-white/75 shadow-soft backdrop-blur-md'
 const WHY = { dj: 'DJ kazancı', meetup: 'Buluşma', voley: 'Voleybol', kale: 'Kum kalesi', surf: 'Sörf yarışı', minigame: 'Mini oyun', boxing: 'Boks maçı', workout: 'Antrenman', fish: 'Balıkçılık', post: 'Postacılık', job_crop: 'Pazar', job_fish: 'Pazar', job_post: 'Teslimat', job_quest: 'Meslek görevi', duo: 'Ortak görev', pet: '', ev: '', kira: '' }
 
-export function useEconomy({ net }) {
+export function useEconomy({ net, touch }) {
   const { on } = net
   const [coins, setCoins] = useState(0)
   const [pops, setPops] = useState([]) // { k, d, why }
@@ -43,5 +43,12 @@ export function useEconomy({ net }) {
       </div>
     ) : null
 
-  return { extraNodes, overlays }
+  const menuNodes = (
+    <div className={`flex items-center justify-between rounded-2xl bg-[#fff8ec] px-3 py-2 text-xs font-extrabold text-[#4a3b5c] ${touch ? '' : 'md:hidden'}`}>
+      <span className="text-[#8a5a00]">Bakiyen</span>
+      <span className="rounded-full bg-white px-2.5 py-0.5 text-xs font-black text-[#e8952c] shadow-sm">₺ {coins}</span>
+    </div>
+  )
+
+  return { extraNodes, menuNodes, overlays }
 }
