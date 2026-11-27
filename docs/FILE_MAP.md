@@ -128,9 +128,10 @@
 | `AssetStudio.jsx` | 274 | Dahili geliştirici aracı: Meshy ile model üretme/önizleme (koyu tema). |
 | `AuthPage.jsx` | 297 | three.js yalnızca giriş ekranı çizildikten sonra yüklensin |
 | `AvatarSelect.jsx` | 172 | Karakter seçimi + renk özelleştirme ekranı (tek karakter kilidi). |
-| `World.jsx` | 1171 | Dünya sayfası orkestratörü: Canvas, ağ, HUD, özellik modülleri, odalar (şehir/ev/mekân). |
+| `World.jsx` | 1085 | Dünya sayfası orkestratörü: Canvas, ağ, HUD, özellik modülleri, odalar (şehir/ev/mekân). |
 | `WorldLoading.jsx` | 125 | 3B sahne çökerse boş ekran yerine kurtarma kartı gösterir. |
 | `loadingMessages.js` | 15 | Yükleme ekranı mesajları ve rastgele seçici. |
+| `worldCommands.js` | 96 | Sohbet komutları (/yardım, /ev, /f, /ışınlan ...): World.jsx'ten ayrıldı; bağımlılıklar `c` ile verilir. |
 
 ## src/world/
 
@@ -141,9 +142,13 @@
 | `AvatarRig.jsx` | 363 | Rig'li avatar: AnimationMixer, duruş katmanı (avatarPose), aksesuar/look, iş aksesuarı. |
 | `BeachParty.jsx` | 221 | Sahil Partisi (Beach Party): plajda doğan oyuncuları ilk anda karşılayan müzikli, ışıklı, danslı sahil sahnesi. |
 | `Bike.jsx` | 33 | Bisiklet modeli ve sürüş görünümü (bikeStore durumu). |
-| `City.jsx` | 1321 | Şehir çizimi: zemin dokuları, binalar, yollar, deniz/ada, süs nesneleri, sınır şamandıraları. |
+| `ChatSheet.jsx` | 190 | Özel sohbet (DM) çekmecesi ve sohbet açma düğmesi. |
+| `City.jsx` | 113 | Şehir çizimi (birleştirici): zemin dokuları, yollar ve alt bileşenlerin (bina/deniz/süs) yerleşimi. |
+| `CityBuildings.jsx` | 342 | Şehir binaları: stil çeşitliliği (cephe dokusu, çatı, pencere), kentsel doku ve Building bileşeni. |
+| `CityDecor.jsx` | 506 | Şehir süsleri ve canlı efektler: çardak, havlular, güneş ışığı, bulutlar, çeşme, balon, hız halkaları. |
 | `CityGround.jsx` | 74 | tex: GROUND_TEX adı. Doku dünya ölçüsünde döşenir (kiremit boyu metre), renk tonu `color` ile çarpılır (pastel ton). feather: kenar yumuşatma (m). |
 | `CityGroundUtils.js` | 155 | Şehir zemini yardımcıları: paylaşımlı doku önbelleği, malzeme ve tekrar yuvarlama. |
+| `CitySea.jsx` | 326 | Deniz, güneş yolu parıltısı, kıyı dalgaları, sınır şamandıraları, gölet ve iskele. |
 | `CollectiblesLayer.jsx` | 372 | Toplanabilirler katmanı (Canvas içi): şehirdeki ya da mekândaki toplanabilirleri tek katmanda çizer. |
 | `CrowdHud.jsx` | 186 | Kalabalık arayüzü: mekân kanal seçici ve yakındaki oyuncu seçici. |
 | `Facade.jsx` | 492 | Mekân ön cepheleri: her mekânın kapısı, camları, tentesi, 3B tabelası ve süsleri farklıdır (veri: facadeData.js). Bina yerel çerçevesi: cephe z = d/2, x genişlik. |
@@ -157,8 +162,10 @@
 | `Hud.jsx` | 542 | Üst çubuk, ipuçları, yardım, modal ve ortak HUD bileşenleri. |
 | `HudChat.jsx` | 200 | Sohbet paneli (genel/özel mesajlar, yazma ve ikili sohbet bağlantıları). |
 | `HudMap.jsx` | 341 | Mini harita ve büyük harita çizimi (ada, yollar, mekânlar). |
+| `InteractSheet.jsx` | 184 | Oyuncuya tıklayınca açılan etkileşim çekmecesi: tepki, jest, fısıltı, hediye, davet, arkadaşlık eylemleri. |
 | `IntroCutscene.jsx` | 124 | İlk giriş kamera sinematiği ve atla düğmesi. |
 | `JobsWorld.jsx` | 282 | Mesleklerin şehirdeki sahneleri: balıkçı iskeleleri (güney kıyısı), Posta Merkezi (park) ve teslimat kapısı ışıkları. |
+| `Joysticks.jsx` | 168 | Dokunmatik joystick'ler: hareket (Joystick) ve kamera (LookJoystick). |
 | `LocalPlayer.jsx` | 355 | Yerel oyuncu: hareket, çarpışma, kamera takibi, bisiklet, tıkla-git, ışınlanma. |
 | `NeighborhoodView.jsx` | 334 | Konut Mahallesi çizimi (City.jsx içinden): sokak, parseller, evler, çitler, bahçe öğeleri, tabelalar. |
 | `NpcLayer.jsx` | 482 | NPC'ler: rig'li avatarlar, isim etiketi, selam balonu, oyuncuya dönme, gezen NPC'ler (paylaşılan saatten deterministik konum). |
@@ -168,12 +175,17 @@
 | `Prop.jsx` | 145 | GLB süs nesneleri: tekil Prop ve instanced PropGroup (mesafe kırpma, gölge yarıçapı, palmiye salınımı). |
 | `RemotePlayers.jsx` | 387 | Uzak oyuncular + NPC çizimi, yumuşatma ve çizim bütçesi. |
 | `RoadInfrastructure.jsx` | 200 | Yol işaretleri, kaldırım taşları ve yol süsleri. |
-| `Sky.jsx` | 939 | Gökyüzü, ışık ve gece görünümü (Canvas içi): güneş/ay yönü, ambient/hemisphere, arka plan + sis, yıldızlar, ay, güneş diski, |
-| `Social.jsx` | 881 | Joystick, beceri çubuğu, yakın oyuncu kartı ve DM çekmecesi. |
+| `Sky.jsx` | 130 | Gökyüzü ve ışık orkestratörü (Canvas içi): saat → anahtar kare renkleri, ambient/hemisphere, sis/arka plan; alt parçalar SkyDome/SkyLights. |
+| `SkyDome.jsx` | 247 | Gökyüzü kubbesi (katmanlı gradyan shader, bulutlar) ve gökcisimleri (yıldız, ay, güneş diski). |
+| `SkyLights.jsx` | 462 | Akşam ışıkları ve canlı efektler: sokak lambaları (sırayla yanar), kapı ışıkları, polen, feston ışık zincirleri, ateşböcekleri, ıslak zemin. |
+| `Social.jsx` | 229 | Sosyal arayüz birleştirici: beceri çubuğu, kapı istemi, tepki çubuğu; diğer parçalar alt dosyalardan yeniden dışa aktarılır. |
+| `SocialChips.jsx` | 132 | Sosyal bildirim kartları: jest, eşleşme, ev daveti, gelen mesaj. |
 | `SpeedFx.jsx` | 78 | Hız halkasından geçince geçici hız efekti (yalnızca benim avatarımın yanında): arkaya akan rüzgâr çizgileri, ayakta yayılan halka, "HIZ!" yazısı (kartsız). |
 | `TownDetails.jsx` | 557 | Kasaba detayları: çeşitli meyve/kiraz/çam ağaçları, pastel çalılıklar, çöp kutuları, |
 | `TurkishFlags.jsx` | 140 | Plaka82 genelinde rüzgârda dalgalanan Türk bayrakları. |
-| `Venue.jsx` | 973 | Girilebilen mekânların iç mekânı: ev odası gibi oyuncak evi kesiti (duvarlar yalnızca içe bakar, kamera güneyden). |
+| `Venue.jsx` | 272 | Mekân iç mekânı birleştirici: eşya haritası (Item), duvar/zemin/kapı ve ışık katmanlarının yerleşimi. |
+| `VenueLighting.jsx` | 220 | Mekân ışık rolleri: atmosfer (Lights), odak (FocalLights), dekoratif (FocalPools/StringLights), kulüp ışık gösterisi (ClubLights). |
+| `VenueSpecial.jsx` | 276 | Mekâna özel eşyalar: kulüp dans pisti/disko topu/lazerler, vitrin, boks ringi, spor aletleri. |
 | `WhisperInbox.jsx` | 256 | Fısıltı gelen kutusu paneli. |
 | `WorkProp.jsx` | 286 | Mesleklerde avatarın elindeki eşyalar: olta (+ misina, şamandıra, sıçrama, yakalanan balık), kargo paketi, bahçe tozu. |
 | `avatarLook.js` | 342 | Avatar renklendirme: GLB dokuları düz renkli yamalardan oluşur. Saç ve kıyafet = (kemik bölgesi: baş / gövde) + (dokudaki orijinal renge yakınlık), |
@@ -181,6 +193,7 @@
 | `avatarTextureFix.js` | 194 | Meshy avatar GLB dokularındaki siyah UV boşluklarını (gutter) üçgen kenarlarından dışarı doğru boyar |
 | `bikeStore.js` | 33 | Bisiklet durumu (React dışı paylaşılan depo): LocalPlayer hız/duruşu okur, BikeModel görünür, düğme/tuş değiştirir. |
 | `boxing.js` | 69 | Boks + karakter statları: istemci ve sunucunun ORTAK saf mantığı (aynı tohumla aynı vuruş dizisi, aynı hasar formülü). |
+| `cityShared.jsx` | 66 | Şehir bileşenlerinin ortak sabitleri ve bina pin etiketi (CityBuildings/CityDecor/City kullanır). |
 | `collectibles.js` | 94 | Toplanabilirler: şehre ve mekân içlerine dağılmış küçük pastel objeler + gizli hazine sandıkları. |
 | `cosStore.js` | 51 | Oyuncuların kozmetik seçimleri (aksesuar + evcil hayvan) için küçük bir dış depo. |
 | `cosmeticsData.js` | 126 | Kişiselleştirme kataloğu: aksesuar, evcil hayvan, ev dekoru, hediye. Hem sunucu (doğrulama) hem istemci (çizim) kullanır; |
@@ -209,10 +222,13 @@
 | `plantSpots.js` | 49 | Süs bitkisi yerleri (saf JS, deterministik): çalı ve çim öbekleri yalnızca ÇİMLİ boş alanlara serpiştirilir — |
 | `preload.js` | 51 | Model önyükleme. React 19'da yükleme bekleyen bir bileşen kardeşlerinin çizilmesini durdurur; bu yüzden bir sahnedeki onlarca |
 | `screenK.js` | 4 | Ekran boyutuna göre 3D etiket (drei <Html distanceFactor>) ölçeği: piksel boyutlu etiketler büyük ekranda küçük kalmasın. |
+| `skyState.js` | 103 | Gökyüzü modülleri arası paylaşılan durum: skyLive (canlı ışık/saat), SKY_MATS (pencere/neon malzemeleri), saat→renk anahtar kareleri, güneş/ay yönü. |
+| `socialShared.js` | 5 | Sosyal arayüz ortak sınıfı: cam görünümlü kart stili (glass). |
 | `unisex.js` | 45 | Unisex palet: 3D sahnedeki pembe/magenta tonları (GLB dokuları dahil) sıcak turuncu-amber tonuna çevirilir. Tüm MeshStandard/Basic malzemeler |
 | `useIsTouch.js` | 47 | Test için ?touch=1 ile masaüstünde de dokunmatik arayüz açılır. |
 | `venueDoors.js` | 29 | Mekânların şehirdeki kapıları. Bina (layout.js BUILDINGS) `venue` kimliğiyle bağlanır; kapı bina yerel +z yüzünde, `facing` yönündedir. |
 | `venueLayout.js` | 610 | Mekân iç mekânlarının VERİSİ (çizim: Venue.jsx). Saf veri: hem istemci hem sunucu okur (sunucu koltukları buradan bilir). |
+| `venueParts.jsx` | 224 | Mekân iç mekânı temel parçaları: GLB yerleştirici (Glb), kutu/silindir/tahta ilkelleri, sandalye, kanepe, pencere, raf, neon, sahne. |
 | `venues.js` | 59 | Girilebilen mekânların ortak verisi. Mekân iç odası, ev odası gibi ayrı bir sahnedir (oda adı: `venue:<id>`). |
 | `vibeData.js` | 63 | Uyumluluk göstergeleri: müzik zevki, ruh hali ve burç (ortak veri; sunucu ve istemci aynı dosyayı okur). |
 | `windSway.js` | 40 | Hafif rüzgâr salınımı: GLB malzemesine tepe-ağırlıklı yatay sallanma ekler (palmiye yaprakları gibi). |
@@ -231,10 +247,19 @@
 
 | Dosya | Satır | Ne yapar |
 |---|---:|---|
+| `BalloonPopArena.jsx` | 173 | Balon patlatma mini oyunu arenası. |
+| `BaristaArena.jsx` | 125 | Barista (sipariş hazırlama) mini oyunu arenası. |
+| `BikeSprintArena.jsx` | 193 | Bisiklet sprint mini oyunu arenası. |
+| `BoxingArena.jsx` | 320 | Boks maçı arenası: girdi, vuruş/blok mantığı, HUD ve sonuç ekranı. |
 | `BoxingArena3D.jsx` | 214 | Boks arenası 3B: boksörler, vuruş kıvılcımları. |
+| `ColorTilesArena.jsx` | 228 | Renkli fayans mini oyunu arenası. |
 | `EventFx.jsx` | 90 | Sezon efekti: oyuncunun çevresinde hafif parçacıklar (tek InstancedMesh, ≤ 36 örnek). |
+| `GiftsUi.jsx` | 104 | Hediye seçici, gelen hediye teklifi kartı, ev dekoru ve hediye yerleştirme sekmeleri. |
+| `RhythmArena.jsx` | 223 | Ritim mini oyunu arenası. |
 | `SurfArena.jsx` | 1047 | 60 FPS perspektif 3B-hissi veren, dinamik okyanus & animasyonlu sörf arenası. |
 | `TogetherScene.jsx` | 103 | "Birlikte yapılan şeyler"in 3D parçaları (Canvas içinde): dans efektleri, fotoğraf noktası işareti ve kare alma. |
+| `Wardrobe.jsx` | 435 | Gardırop paneli (aksesuar, evcil hayvan, saç/göz/kıyafet rengi) ve evcil hayvan sahiplenme penceresi. |
+| `WardrobePreview.jsx` | 95 | Gardırop canlı 3B önizlemesi: kamera, sahne, evcil hayvan. |
 | `WorkoutModals.jsx` | 401 | ======================= 1. AĞIRLIK ÇALIŞMA MİNİ OYUNU (+GÜÇ) ======================= |
 | `arcade.jsx` | 183 | Playstasyon makineleri: yakındaki kabine E ile "Oyna" → tam ekran retro oyun (src/arcade/games.js). Oyunlar tamamen istemcide çalışır; |
 | `audio.jsx` | 198 | Ses efektleri (tamamen procedural, Web Audio). Motor: ../audio/engine.js, efektler: sfx.js. (Müzik şimdilik devre dışı.) |
@@ -244,14 +269,16 @@
 | `cityLife.jsx` | 131 | Şehir yaşamı oynanışı: Lobi Çeşmesi dilek tutma, hız halkaları ve günlük 5 bölge keşif turu. |
 | `collect.jsx` | 238 | Toplanabilirler (istemci): Canvas katmanı (CollectiblesLayer), "Topla" istemi (E / dokunma / objeye tıklama) ve koleksiyon paneli. |
 | `collectCelebration.jsx` | 95 | Toplama kutlamaları: her toplamada parlak rozet + halka + parıltılar + "+N ⭐" + seviye çubuğu; seviye atlayınca tam ekran kutlama. |
-| `cosmetics.jsx` | 1012 | Gardırop (aksesuar/evcil hayvan/look), hediye teklifleri, ev dekoru sekmeleri. |
+| `cosmetics.jsx` | 268 | Kişiselleştirme özelliği (istemci): useCosmetics hook'u (ağ mesajları, gardırop/hediye/dekor katmanları). |
+| `cosmeticsShared.jsx` | 106 | Kişiselleştirme ortak parçaları: localStorage yardımcıları (look/favori/evcil hayvan teklifi), seçim düğmeleri (ItemButton/Swatches/Pills). |
 | `dating.jsx` | 716 | Flört & Sosyal Akış Merkezi: Mod (Vibe) seçimi, Canlı Sıcak Nokta, Zamanlı Kasaba Etkinlikleri, |
 | `dj.jsx` | 342 | Küçük iş (istemci): Gece Kulübü'nde DJ olma. Sunucu: server/features/dj.js; bağlantı ayrıştırıcı: src/world/djLinks.js. |
 | `duo.jsx` | 51 | Günlük Ortak Görevler: tek başına yapılamayan, biriyle birlikte tamamlanan görevler. Sunucu: server/features/duo.js. |
 | `economy.jsx` | 48 | Altın göstergesi (üst çubukta 🪙 sayısı) ve kazanç bildirimi. Sunucu: server/features/economy.js. |
 | `edge.jsx` | 30 | Dünya sınırı ipucu: oyuncu sınıra (şamandıra halatı) yaklaşınca tatlı, kısa bir bilgi kartı. Sunucu da sınırı zorlar (hile denetimi). |
 | `feedback.jsx` | 204 | Geri bildirim: ⚙️ menüsünde "Geri bildirim" + ara sıra beliren küçük davet kartı. Gönderim: POST /api/feedback (server/feedback.js); |
-| `fitness.jsx` | 943 | Fitness Kulübü (MakFit): 4 karakter statı, günlük enerji, ağırlık & koşu bandı mini oyunları, |
+| `fitness.jsx` | 534 | Spor salonu ve boks özelliği (istemci): useFitness hook'u, paneller; arena BoxingArena.jsx'te. |
+| `fitnessLocal.js` | 95 | Spor/boks yerel (çevrimdışı) veriler: nitelik, enerji ve skor tablosu localStorage yardımcıları. |
 | `friends.jsx` | 623 | Arkadaşlık, varlık, mesaj kutusu, okundu bilgisi ve tarayıcı bildirimi (sunucu: server/features/friends.js). |
 | `games.jsx` | 421 | İki kişilik mini oyunlar (istemci). Durumu sunucu tutar; burada yalnızca gösterim ve hamle gönderme var. |
 | `homeCare.jsx` | 563 | Ev bahçesi & bakım sorumluluğu + arkadaşını eve davet etme özelliği. |
@@ -262,7 +289,8 @@
 | `jobs.jsx` | 656 | Serbest meslekler (istemci): meslek seçme yok — herkes istediği zaman sahil iskelesinde/gölette balık tutabilir veya lobiden posta dağıtabilir. |
 | `media.jsx` | 306 | Medya özelliği (istemci): özel sohbette sesli mesaj ve çıkartmalar. Sunucu tarafı: server/features/media.js. |
 | `meetupDialogs.jsx` | 55 | Buluşma daveti seçici ve gelen davet penceresi. |
-| `minigameArenas.jsx` | 939 | 5 yüksek kaliteli, 60 FPS animasyonlu mini oyun arenası (masaüstü + mobil dokunmatik uyumlu): |
+| `minigameArenas.jsx` | 8 | Mini oyun arenaları: her oyun kendi dosyasında, buradan yeniden dışa aktarılır. |
+| `minigameShared.js` | 10 | Mini oyun arenaları ortak yardımcısı: tohumlu rastgele sayı üretici. |
 | `minigames.jsx` | 330 | 5 Çok Oyunculu Mini Oyun Merkezi: Lobi (2–10 kişi) + Botlarla Hemen Oyna + Otomatik Kıyafet + Genel Puan Tablosu. |
 | `moderation.jsx` | 99 | Engelle/şikâyet/rahatsız etme arayüzü. |
 | `neighborhood.jsx` | 202 | Konut Mahallesi (istemci): parsel verisi ağdan, kapıya yaklaşınca "Gir" istemi, Döşe → 🏡 Dış görünüm sekmesi. |

@@ -16,6 +16,7 @@ Pastel/oyuncak görünümlü, çok oyunculu, tarayıcıda çalışan 3B sosyal/f
 | `server/features/` | Sunucu özellik modülleri; kayıt: `features/index.js` |
 | `server/store.js`, `homes.js`, `supa.js`, `guard.js` | Kalıcı veri (dosya/Supabase), evler, Supabase istemcisi, hile koruması |
 | `src/world/*Data.js`, `layout.js`, `npcs.js`, `collectibles.js`, `vibeData.js`... | **Saf JS ortak veri**: istemci ve sunucu aynı dosyayı okur (tarayıcı/Node bağımsız tut) |
+| Parçalı büyük dosyalar | `City.jsx` → `CityBuildings/CitySea/CityDecor/cityShared`; `Sky.jsx` → `SkyDome/SkyLights/skyState` (`skyLive`, `SKY_MATS` hâlâ `./Sky`'dan da alınır); `Venue.jsx` → `venueParts/VenueSpecial/VenueLighting`; `Social.jsx` → `Joysticks/InteractSheet/SocialChips/ChatSheet`; `World.jsx` komutları → `worldCommands.js`; `cosmetics.jsx` → `Wardrobe/WardrobePreview/GiftsUi`; `fitness.jsx` → `BoxingArena`; `minigameArenas.jsx` → her arena ayrı dosya |
 | `scripts/` | Asset üretimi (Meshy), ölçüm, yük testi, `file-map.mjs` |
 | `docs/` | `FILE_MAP.md` (otomatik), `FEATURES.md` (ayrıntılı sistem notları) |
 
@@ -30,6 +31,7 @@ Pastel/oyuncak görünümlü, çok oyunculu, tarayıcıda çalışan 3B sosyal/f
 - **Odalar**: `city`, `home:<anahtar>`, `venue:<id>`; konum/sohbet yalnızca aynı odada yayılır.
 - **HUD**: kartlar `Dock`/`TopDock` (portal) ile alt alta akar, üst üste binmez.
 - **Yeni GLB** kullanıyorsan `src/world/preload.js` listelerine ekle (yükleme şelalesi sorunu).
+- **Dosya boyutu**: bir dosya ~600 satırı geçerse bileşenlerini ayrı dosyalara böl (ortak sabitler `*Shared.js`'e, döngüsel import olmasın); eski yol yeniden dışa aktarımla (`export * from`) geriye uyumlu kalsın.
 - **Dosya başlığı**: her yeni dosyanın ilk satırı tek cümlelik açıklama yorumu olsun (`FILE_MAP.md` bunu okur).
 - Metinler Türkçe, mobil öncelikli, pastel stil (`candy-*` token'ları, `ToyButton`, `PastelBackground`).
 
