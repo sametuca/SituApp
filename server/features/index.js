@@ -26,5 +26,6 @@ import pvp from './pvp.js'
 import jobs from './jobs.js'
 import surf from './surf.js'
 import minigames from './minigames.js'
+import duo from './duo.js'
 
-export const FEATURE_FACTORIES = [moderation, games, friends, profile, progress, media, together, cosmetics, npcs, weather, venues, collect, economy, dj, housing, rental, pets, beach, pvp, jobs, surf, minigames]
+export const FEATURE_FACTORIES = [moderation, games, friends, profile, progress, media, together, cosmetics, npcs, weather, venues, collect, economy, dj, housing, rental, pets, beach, pvp, jobs, surf, minigames, duo]
