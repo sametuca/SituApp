@@ -1,10 +1,10 @@
-// Dünya saati ve hava durumu için ortak durum. Gün-gece/hava modülü yazar (publishWorld), ses/müzik ve diğerleri okur.
+// Dünya saati ve gökyüzü görünümü için ortak durum. Gün/gece modülü yazar (publishWorld).
 // worldClock alanları (modül dışından yalnızca OKU):
 //   hour      0-24 arası kesirli saat (dünyanın saati)
 //   phase     'dawn' | 'day' | 'dusk' | 'night'
 //   night     0..1 gece yoğunluğu (0 gündüz, 1 tam gece)
 //   sunset    0..1 gün batımı yoğunluğu
-//   weather   'clear' | 'rain' | 'snow' | 'leaves' | 'petals'
+//   weather   sabit 'clear' değeri (hava olayları kaldırıldı)
 export const worldClock = { hour: 12, phase: 'day', night: 0, sunset: 0, weather: 'clear' }
 
 const subs = new Set()

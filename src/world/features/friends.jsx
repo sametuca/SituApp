@@ -526,6 +526,7 @@ export function useFriends({ net, say, focusRef, home, venue, panel, setPanel, o
       : [
           {
             key: 'friend',
+            category: 'social',
             emoji: '💗',
             label: 'Arkadaş ekle',
             onClick: () => {

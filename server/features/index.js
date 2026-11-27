@@ -13,7 +13,6 @@ import progress from './progress.js'
 import media from './media.js'
 import together from './together.js'
 import npcs from './npcs.js'
-import weather from './weather.js'
 import venues from './venues.js'
 import collect from './collect.js'
 import economy from './economy.js'
@@ -29,4 +28,4 @@ import fitness from './fitness.js'
 import inventory from './inventory.js'
 import dating from './dating.js'
 
-export const FEATURE_FACTORIES = [moderation, games, friends, profile, progress, media, together, cosmetics, npcs, weather, venues, collect, economy, dj, housing, rental, pets, beach, jobs, surf, minigames, fitness, inventory, dating]
+export const FEATURE_FACTORIES = [moderation, games, friends, profile, progress, media, together, cosmetics, npcs, venues, collect, economy, dj, housing, rental, pets, beach, jobs, surf, minigames, fitness, inventory, dating]

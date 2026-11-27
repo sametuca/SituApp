@@ -17,7 +17,7 @@ import { FURNITURE_BY_ID } from '../world/furniture'
 import { useFeatures } from '../world/features'
 import { preloadCritical, preloadLater } from '../world/preload'
 import TogetherScene from '../world/features/TogetherScene'
-import Sky, { skyBase } from '../world/Sky'
+import Sky from '../world/Sky'
 import { AirportTutorialHud, AirportTutorialScene } from '../world/AirportTutorial'
 import { IntroCutsceneCamera, IntroCutsceneOverlay } from '../world/IntroCutscene'
 import { GIFT_BY_ID } from '../world/cosmeticsData'
@@ -28,7 +28,7 @@ import { NearbyPicker, VenueChannelPill } from '../world/CrowdHud'
 import WhisperInbox from '../world/WhisperInbox'
 import { useMultiplayer } from '../world/net'
 import { ChatPanel, HelpModal, Minimap, StartGuide, TopBar } from '../world/Hud'
-import { ChatFab, ChatSheet, DoorPrompt, GestureChip, IncomingChip, InteractSheet, InviteChip, Joystick, LookJoystick, MatchOverlay, NearbyCard, SkillBar } from '../world/Social'
+import { ChatFab, ChatSheet, DoorPrompt, GestureChip, IncomingChip, InteractSheet, InviteChip, Joystick, LookJoystick, MatchOverlay, SkillBar } from '../world/Social'
 import { GESTURE_BY_KIND, GESTURE_RANGE, REACTIONS, SKILL_COOLDOWN_MS, loadSlots, saveSlots, skillFor } from '../world/interact'
 import SkillEditor from '../components/SkillEditor'
 import { useIsTouch } from '../world/useIsTouch'
@@ -40,9 +40,6 @@ import GraphicsEffects from '../world/GraphicsEffects'
 
 const NO_ITEMS = []
 const START_VENUE = 'havalimani'
-const NEAR_ENTER = 4.5 // m: bu mesafeye girince "sohbet et" kartı çıkar
-const NEAR_LEAVE = 6.5 // m: bu mesafeyi aşınca kart kaybolur (titremesin diye ikisi farklı)
-
 const AVATARS = ['zeynep', 'deniz', 'elif', 'kaan', 'mira', 'ege']
 const GUIDE_TIPS = [
   'Selam! Ben Rehber. Nasıl oynanır penceresi için bana tıkla ya da E / H tuşuna bas.',
@@ -214,35 +211,6 @@ function VenueDoorWatcher({ focusRef, onChange }) {
   return null
 }
 
-/** Yakındaki en yakın oyuncuyu izler (4 kez/sn); değişince bildirir. */
-function ProximityWatcher({ focusRef, remotes, onChange }) {
-  const last = useRef(null)
-  const clock = useRef(0)
-  useFrame((_, dt) => {
-    clock.current += dt
-    if (clock.current < 0.25) return
-    clock.current = 0
-    const f = focusRef.current
-    const dist = (r) => Math.hypot(r.x - f.x, r.z - f.z)
-    const kept = last.current && remotes.current.get(last.current)
-    if (kept && dist(kept) < NEAR_LEAVE) return
-    let best = null
-    let bestD = NEAR_ENTER
-    for (const r of remotes.current.values()) {
-      const d = dist(r)
-      if (d < bestD) {
-        bestD = d
-        best = r.id
-      }
-    }
-    if (best !== last.current) {
-      last.current = best
-      onChange(best)
-    }
-  })
-  return null
-}
-
 export default function World() {
   const avatar = readAvatar()
   if (!avatar?.name) return <Navigate to="/avatar" replace />
@@ -262,8 +230,6 @@ function WorldScene({ avatar }) {
   const moveTargetRef = useRef(null)
   const touch = useIsTouch()
   const graphics = useMemo(() => getGraphicsProfile(), [])
-  const [nearId, setNearId] = useState(null)
-  const [dismissedId, setDismissedId] = useState(null)
   const [chatTarget, setChatTarget] = useState(null) // null = kapalı, 'public' = herkese açık, aksi halde oyuncu id'si
   const chatTargetRef = useRef(null)
   const [incoming, setIncoming] = useState(null)
@@ -396,7 +362,7 @@ function WorldScene({ avatar }) {
   }, [beginTransition])
 
   // Şehir ↔ mekân geçişi (ev geçişinin paralelidir). Girerken kamera güneye sıfırlanır (oyuncak evi kesiti).
-  const swapVenue = useCallback((target) => {
+  const swapVenue = useCallback((target, serverSpawn = null) => {
     moveTargetRef.current = null
     const from = venueRef.current
     beginTransition()
@@ -422,7 +388,11 @@ function WorldScene({ avatar }) {
         venueRef.current = target
         setHome(null)
         setVenue(target)
-        const [sx, sz] = VENUE_ROOM.spawn
+        const spawn =
+          Array.isArray(serverSpawn) && serverSpawn.length === 2 && serverSpawn.every(Number.isFinite)
+            ? serverSpawn
+            : VENUE_ROOM.spawn
+        const [sx, sz] = spawn
         focusRef.current.teleport = [sx, sz, Math.PI]
         setTimeout(() => {
           const c = controlsRef.current
@@ -442,21 +412,25 @@ function WorldScene({ avatar }) {
   const onRoom = useCallback(
     (m) => {
       if (m.venue && Array.isArray(m.spawn) && m.spawn.length === 2) {
-        const [sx, sz] = m.spawn
-        focusRef.current.teleport = [sx, sz, Math.PI]
-        setTimeout(() => {
-          const c = controlsRef.current
-          if (!c) return
-          c.object.position.set(sx, 6.4, sz + 9.4)
-          c.target.set(sx, 0.8, sz)
-          c.update()
-        }, 60)
+        if (venueRef.current !== m.venue) {
+          swapVenue(m.venue, m.spawn)
+        } else {
+          const [sx, sz] = m.spawn
+          focusRef.current.teleport = [sx, sz, Math.PI]
+          setTimeout(() => {
+            const c = controlsRef.current
+            if (!c) return
+            c.object.position.set(sx, 6.4, sz + 9.4)
+            c.target.set(sx, 0.8, sz)
+            c.update()
+          }, 60)
+        }
       }
       if (!visitPending.current || !m.owner) return
       visitPending.current = false
       swapScene({ owner: m.owner, ownerName: m.ownerName })
     },
-    [swapScene],
+    [swapScene, swapVenue],
   )
   const onDenied = useCallback(
     (text) => {
@@ -512,10 +486,9 @@ function WorldScene({ avatar }) {
   const enterVenue = useCallback(
     (id) => {
       if (!VENUE_BY_ID[id]) return
-      swapVenue(id)
       net.enterRoom({ venue: id })
     },
-    [net, swapVenue],
+    [net],
   )
   const switchVenueChannel = useCallback(
     (ch) => {
@@ -624,7 +597,6 @@ function WorldScene({ avatar }) {
   }, [])
   const closeChat = useCallback(() => openChat(null), [openChat])
   const peerOf = (id) => net.roster.find((p) => p.id === id)
-  const nearPeer = nearId && nearId !== dismissedId && chatTarget !== nearId ? peerOf(nearId) : null
   const sheetPeer = chatTarget && chatTarget !== 'public' ? peerOf(chatTarget) : null
 
   // ---- etkileşim: jest, fısıltı, tepki ----
@@ -964,7 +936,7 @@ function WorldScene({ avatar }) {
         )}
         <Sky home={Boolean(home)} interior={venueTh ? { bg: venueTh.bg, fog: sceneBase.fog, dim: venueDim } : null} focusRef={focusRef} />
 
-        <TogetherScene focusRef={focusRef} home={Boolean(home || venue)} base={skyBase} />
+        <TogetherScene home={Boolean(home || venue)} />
         <Suspense fallback={null}>
           {venue ? (
             <Venue id={venue} />
@@ -1021,14 +993,6 @@ function WorldScene({ avatar }) {
         <ZoneWatcher key={home ? 'home' : venue ? `v-${venue}` : 'city'} focusRef={focusRef} onChange={setZone} fixed={home ? HOME_ZONE : venueZone} />
         <DoorWatcher key={`door-${home ? `home${roomTier}` : venue ? 'venue' : 'city'}`} focusRef={focusRef} door={home ? HOME_ROOM.exit : venue ? VENUE_ROOM.exit : HOME_DOOR} onChange={setNearDoor} />
         {!home && !venue && <VenueDoorWatcher focusRef={focusRef} onChange={setNearVenue} />}
-        <ProximityWatcher
-          focusRef={focusRef}
-          remotes={net.remotes}
-          onChange={(id) => {
-            setNearId(id)
-            if (!id) setDismissedId(null) // uzaklaşınca bir sonraki yaklaşmada kart yine çıksın
-          }}
-        />
         <OrbitControls
           ref={controlsRef}
           makeDefault
@@ -1097,7 +1061,7 @@ function WorldScene({ avatar }) {
                   {
                     key: 'inbox',
                     icon: 'feedback',
-                    label: 'Gelen Fısıltılar',
+                    label: 'Fısıltı Sohbetleri',
                     badge: whisperUnread > 0 ? whisperUnread : 0,
                     highlight: whisperUnread > 0,
                     onClick: () => setInboxOpen((o) => !o),
@@ -1208,9 +1172,6 @@ function WorldScene({ avatar }) {
           <SkillBar xp={feat.xp} cooldowns={skillCd} slots={skillList} onEdit={() => setSkillEdit(true)} onSkill={triggerSkill} onOpenExp={() => setPanel('collection')} touch={touch} />
         </>
       )}
-      {nearPeer && !chatTarget && !interactPeer && (
-        <NearbyCard peer={nearPeer} touch={touch} onChat={() => openChat(nearPeer.id)} onInteract={() => setInteractId(nearPeer.id)} onDismiss={() => setDismissedId(nearPeer.id)} />
-      )}
       {interactPeer && !chatTarget && (
         <InteractSheet
           peer={interactPeer}
@@ -1260,13 +1221,13 @@ function WorldScene({ avatar }) {
         />
       )}
       {nearDoor && !(inTutorial && tutStep !== 'exit') && !chatTarget && !fade && (
-        <DoorPrompt emoji={home || venue ? '🚪' : '🏠'} label={home || venue ? 'Dışarı çık' : 'Evine gir'} action={home || venue ? 'Çık' : 'Gir'} touch={touch} raised={Boolean(nearPeer || editing)} onGo={doorGo} />
+        <DoorPrompt emoji={home || venue ? '🚪' : '🏠'} label={home || venue ? 'Dışarı çık' : 'Evine gir'} action={home || venue ? 'Çık' : 'Gir'} touch={touch} raised={Boolean(editing)} onGo={doorGo} />
       )}
       {!home && !venue && !nearDoor && nearVenue && !chatTarget && !fade && !editing && (
-        <DoorPrompt label={VENUE_BY_ID[nearVenue].name} action="Gir" touch={touch} raised={Boolean(nearPeer)} onGo={() => enterVenue(nearVenue)} />
+        <DoorPrompt label={VENUE_BY_ID[nearVenue].name} action="Gir" touch={touch} onGo={() => enterVenue(nearVenue)} />
       )}
       {!home && !venue && !nearDoor && !nearVenue && nearGuide && !help && !chatTarget && !fade && !editing && (
-        <DoorPrompt label="Rehber · Nasıl Oynanır" action="Aç" touch={touch} raised={Boolean(nearPeer)} onGo={() => setHelp(true)} />
+        <DoorPrompt label="Rehber · Nasıl Oynanır" action="Aç" touch={touch} onGo={() => setHelp(true)} />
       )}
       {invite && !chatTarget && !editing && <InviteChip from={invite} onGo={() => visit(invite.owner)} onClose={() => setInvite(null)} />}
       {incoming && !chatTarget && !interactPeer && !gestureIn && peerOf(incoming.id) && (

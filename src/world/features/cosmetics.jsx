@@ -907,6 +907,7 @@ export function useCosmetics({ net, say, touch, home, homeItems, venue, focusRef
   const peerActions = (peer) => [
     {
       key: 'gift',
+      category: 'gifts',
       emoji: '🎁',
       label: 'Hediye gönder',
       onClick: () => {

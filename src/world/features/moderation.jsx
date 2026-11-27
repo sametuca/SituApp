@@ -34,9 +34,10 @@ export function useModeration({ net, closeInteract }) {
   const [reporting, setReporting] = useState(null)
 
   const peerActions = (peer) => [
-    { key: 'report', emoji: '⚠️', label: 'Şikâyet', onClick: () => setReporting(peer) },
+    { key: 'report', category: 'safety', emoji: '⚠️', label: 'Şikâyet', onClick: () => setReporting(peer) },
     {
       key: 'block',
+      category: 'safety',
       emoji: '🚫',
       label: 'Engelle',
       danger: true,

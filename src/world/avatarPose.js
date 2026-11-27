@@ -169,17 +169,17 @@ export function applyPose(rig, pose, dt) {
       turn(rig, bones.rUp, AX, (-0.95 + Math.sin(pR) * 0.38) * b)
       turn(rig, bones.lLeg, AX, (1.15 - Math.cos(pL) * 0.34) * b)
       turn(rig, bones.rLeg, AX, (1.15 - Math.cos(pR) * 0.34) * b)
-      turn(rig, bones.spine, AX, 0.28 * b)
-      turn(rig, bones.lArm, AX, -0.98 * b)
-      turn(rig, bones.rArm, AX, -0.98 * b)
+      turn(rig, bones.spine, AX, 0.45 * b)
+      turn(rig, bones.lArm, AX, -1.55 * b)
+      turn(rig, bones.rArm, AX, -1.55 * b)
       turn(rig, bones.lArm, AY, 0.18 * b)
       turn(rig, bones.rArm, AY, -0.18 * b)
       turn(rig, bones.lArm, AZ, -0.04 * b)
       turn(rig, bones.rArm, AZ, 0.04 * b)
-      turn(rig, bones.lForeArm, AX, -0.08 * b)
-      turn(rig, bones.rForeArm, AX, -0.08 * b)
-      turn(rig, bones.lHand, AX, 0.28 * b)
-      turn(rig, bones.rHand, AX, 0.28 * b)
+      turn(rig, bones.lForeArm, AX, -0.18 * b)
+      turn(rig, bones.rForeArm, AX, -0.18 * b)
+      turn(rig, bones.lHand, AX, 0.1 * b)
+      turn(rig, bones.rHand, AX, 0.1 * b)
     } else {
       turn(rig, bones.lUp, AX, -1.45 * b)
       turn(rig, bones.rUp, AX, -1.45 * b)
@@ -239,6 +239,16 @@ export function applyPose(rig, pose, dt) {
       turn(rig, bones.lForeArm, AX, -0.7 * b)
       turn(rig, bones.rForeArm, AX, -0.7 * b)
     }
+  } else if (rig.kind === 'pet') {
+    const t = performance.now() / 1000 - rig.t0
+    const stroke = Math.sin(t * 7)
+    turn(rig, bones.hips, AX, 0.1 * b)
+    turn(rig, bones.spine, AX, 0.5 * b)
+    turn(rig, bones.head, AX, -0.24 * b)
+    turn(rig, bones.rArm, AX, (-1.25 + stroke * 0.12) * b)
+    turn(rig, bones.rArm, AZ, -0.16 * b)
+    turn(rig, bones.rForeArm, AX, (-0.55 + stroke * 0.1) * b)
+    turn(rig, bones.lArm, AX, -0.2 * b)
   } else if (rig.kind === 'dance') {
     model.position.z = 0
     const t = performance.now() / 1000 - rig.t0

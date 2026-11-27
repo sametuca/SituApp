@@ -63,12 +63,12 @@ function QuestPanel({ prog, onClose }) {
     <Modal onClose={onClose} label="Görevler ve rozetler">
       <div className="flex items-center gap-2">
         <h2 className="min-w-0 flex-1 text-2xl font-black text-[#4a3b5c]">{tab === 'quests' ? 'Günlük görevler' : 'Rozetlerim'}</h2>
-        <span className="rounded-full bg-[#ffe48f] px-3 py-1 text-sm font-black text-[#7a5b00]">⭐ {prog?.stars ?? 0}</span>
+        <span className="rounded-full bg-[#ffe48f] px-3 py-1 text-sm font-black text-[#7a5b00]">{prog?.stars ?? 0} yıldız</span>
       </div>
       <div className="mt-3 flex gap-2" role="tablist">
         {[
-          ['quests', '🎯 Görevler'],
-          ['badges', `🏅 Rozetler ${earned}/${badges.length || 12}`],
+          ['quests', 'Görevler'],
+          ['badges', `Rozetler ${earned}/${badges.length || 12}`],
         ].map(([id, label]) => (
           <button
             key={id}
@@ -86,14 +86,13 @@ function QuestPanel({ prog, onClose }) {
         <p className="mt-6 text-center text-sm font-semibold text-[#8a7a9c]">Yükleniyor… (çevrimdışıysan görevler görünmez)</p>
       ) : tab === 'quests' ? (
         <>
-          {prog.streak > 0 && <p className="mt-3 text-sm font-extrabold text-[#e8952c]">🔥 {prog.streak} günlük seri</p>}
+          {prog.streak > 0 && <p className="mt-3 text-sm font-extrabold text-[#e8952c]">{prog.streak} günlük seri</p>}
           <ul className="mt-3 flex flex-col gap-2.5">
             {prog.quests.map((q) => (
               <li key={q.id} className={`rounded-2xl border-2 px-3 py-2.5 ${q.done ? 'border-[#b9ebcf] bg-[#effcf4]' : 'border-white bg-[#fbf7ff]'} shadow-soft`}>
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl">{q.done ? '✅' : q.emoji}</span>
                   <p className={`min-w-0 flex-1 text-sm font-extrabold ${q.done ? 'text-[#2f7a55]' : 'text-[#4a3b5c]'}`}>{q.title}</p>
-                  <span className="shrink-0 rounded-full bg-[#fff3c4] px-2 py-0.5 text-xs font-black text-[#7a5b00]">+{q.stars} ⭐</span>
+                  <span className="shrink-0 rounded-full bg-[#fff3c4] px-2 py-0.5 text-xs font-black text-[#7a5b00]">+{q.stars} yıldız</span>
                 </div>
                 <div className="mt-2 flex items-center gap-2">
                   <Bar value={q.progress} max={q.goal} tone={q.done ? '#7ed6a4' : '#fdb252'} />
@@ -114,7 +113,6 @@ function QuestPanel({ prog, onClose }) {
               title={b.desc}
               className={`flex flex-col items-center gap-1 rounded-2xl border-2 px-1.5 py-2.5 text-center ${b.earned ? 'border-[#ffe48f] bg-[#fffbea] shadow-soft' : 'border-white bg-[#f3eef9] opacity-55 grayscale'}`}
             >
-              <span className="text-3xl">{b.emoji}</span>
               <span className="text-[0.6875rem] font-black leading-tight text-[#4a3b5c]">{b.name}</span>
               <span className="text-[0.625rem] font-semibold leading-tight text-[#8a7a9c]">{b.desc}</span>
               {!b.earned && b.goal > 1 && (

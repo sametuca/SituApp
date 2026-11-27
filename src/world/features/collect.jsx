@@ -26,17 +26,17 @@ function CollectionPanel({ data, onClose, onTab }) {
     <Modal onClose={onClose} label="Karakter & Koleksiyon" theme="bag">
       <div className="mb-3 flex items-center gap-2">
         <div className="grid flex-1 grid-cols-3 gap-1.5 rounded-2xl bg-[#f3ece0] p-1">
-          <button type="button" onClick={() => onTab('inventory')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">🎒 Çanta</button>
-          <button type="button" onClick={() => onTab('stats')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">💪 Statlar</button>
-          <button type="button" className="rounded-xl bg-white py-1.5 text-xs font-black text-[#4a3b5c] shadow-sm">🧺 Koleksiyon</button>
+          <button type="button" onClick={() => onTab('inventory')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">Çanta</button>
+          <button type="button" onClick={() => onTab('stats')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">Statlar</button>
+          <button type="button" className="rounded-xl bg-white py-1.5 text-xs font-black text-[#4a3b5c] shadow-sm">Koleksiyon</button>
         </div>
         <button
           type="button"
           onClick={onClose}
           aria-label="Kapat"
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#f3ece0] text-sm font-black text-[#6b5a4e] transition hover:bg-[#eadcc8] active:scale-95"
+          className="h-9 shrink-0 rounded-full bg-[#f3ece0] px-3 text-xs font-black text-[#6b5a4e] transition hover:bg-[#eadcc8] active:scale-95"
         >
-          ✖️
+          Kapat
         </button>
       </div>
       <div className="flex items-center gap-2">
@@ -45,8 +45,8 @@ function CollectionPanel({ data, onClose, onTab }) {
       </div>
       <div className="mt-3 flex gap-2" role="tablist">
         {[
-          ['kinds', '✨ Türler'],
-          ['hidden', `🧰 Gizli ${found.size}/${HIDDEN_CHESTS.length}`],
+          ['kinds', 'Türler'],
+          ['hidden', `Gizli ${found.size}/${HIDDEN_CHESTS.length}`],
         ].map(([id, label]) => (
           <button
             key={id}
@@ -70,17 +70,13 @@ function CollectionPanel({ data, onClose, onTab }) {
               const done = s.series.includes(id)
               return (
                 <li key={id} className={`rounded-2xl border-2 px-3 py-2.5 shadow-soft ${done ? 'border-[#ffe48f] bg-[#fffbea]' : 'border-white bg-[#fbf7ff]'}`}>
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">{k.emoji}</span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-extrabold text-[#4a3b5c]">
-                        {k.plural} <span className="font-bold text-[#8a7a9c]">· {n} toplandı</span>
-                      </p>
-                      <p className="text-[0.6875rem] font-semibold text-[#8a7a9c]">
-                        Bugün kalan: {s.left[id] ?? 0}/{TOTAL_BY_KIND[id]} · her biri +{k.stars} ⭐
-                      </p>
-                    </div>
-                    {done && <span className="text-lg">🏆</span>}
+                  <div className="min-w-0">
+                    <p className="text-sm font-extrabold text-[#4a3b5c]">
+                      {k.plural} <span className="font-bold text-[#8a7a9c]">· {n} toplandı</span>
+                    </p>
+                    <p className="text-[0.6875rem] font-semibold text-[#8a7a9c]">
+                      Bugün kalan: {s.left[id] ?? 0}/{TOTAL_BY_KIND[id]} · her biri +{k.stars} yıldız
+                    </p>
                   </div>
                   <div className="mt-2 flex items-center gap-2">
                     <Bar value={n} max={k.series.goal} tone={done ? '#ffc94d' : '#fdb252'} />
@@ -89,7 +85,7 @@ function CollectionPanel({ data, onClose, onTab }) {
                     </span>
                   </div>
                   <p className="mt-1 text-[0.6875rem] font-bold text-[#7a5fd0]">
-                    {done ? `✅ ${k.series.name} tamamlandı` : `${k.series.name}: ${k.series.goal} tane topla → +${k.series.bonus} ⭐`}
+                    {done ? `${k.series.name} tamamlandı` : `${k.series.name}: ${k.series.goal} tane topla → +${k.series.bonus} yıldız`}
                   </p>
                 </li>
               )
@@ -104,16 +100,15 @@ function CollectionPanel({ data, onClose, onTab }) {
             {HIDDEN_CHESTS.map((h, i) => {
               const ok = found.has(h.id)
               return (
-                <li key={h.id} className={`flex items-center gap-2 rounded-2xl border-2 px-3 py-2 ${ok ? 'border-[#b9ebcf] bg-[#effcf4]' : 'border-white bg-[#fbf7ff]'}`}>
-                  <span className="text-2xl">{ok ? '✅' : '🧰'}</span>
-                  <p className="min-w-0 flex-1 text-xs font-extrabold text-[#4a3b5c]">
-                    {ok ? `${h.name} · ${h.area}` : `#${i + 1} · ${h.hint}`}
+                <li key={h.id} className={`rounded-2xl border-2 px-3 py-2 ${ok ? 'border-[#b9ebcf] bg-[#effcf4]' : 'border-white bg-[#fbf7ff]'}`}>
+                  <p className="text-xs font-extrabold text-[#4a3b5c]">
+                    {ok ? `${h.name} · ${h.area} · Bulundu` : `#${i + 1} · ${h.hint}`}
                   </p>
                 </li>
               )
             })}
           </ul>
-          {s.series.includes('hidden_all') && <p className="mt-3 text-sm font-extrabold text-[#2f7a55]">🏆 Tüm gizli hazineleri buldun!</p>}
+          {s.series.includes('hidden_all') && <p className="mt-3 text-sm font-extrabold text-[#2f7a55]">Tüm gizli hazineleri buldun!</p>}
         </>
       )}
       <ToyButton onClick={onClose} className="mt-5 !py-3 !text-base">

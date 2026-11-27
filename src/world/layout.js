@@ -254,7 +254,7 @@ export const BEACH_PARTY = { x: 11.5, z: 58.5, ry: -0.58 } // sahil partisi sahn
     }
   }
   ring(25.5, 12, Math.PI / 12, true)
-  ring(17.5, 6, Math.PI / 6, false)
+  ring(17.5, 6, Math.PI / 6, true)
   for (const a of [-2.9, -2.5, -2.0, -1.2, -0.6, -0.2, 0.3, 0.8, 1.3, 1.9, 2.4, 2.8]) {
     const px = BEACH.x + Math.cos(a) * 31.5
     const pz = BEACH.z + Math.sin(a) * 29

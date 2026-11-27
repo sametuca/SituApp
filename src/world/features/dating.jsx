@@ -2,9 +2,10 @@
 // 3 Dakikalık Hızlı Randevu Masası (Canlı + Demo), Uyum Seviyesi (Bond 1–5), Tek Tık Buz Kırıcılar ve Gizlilik.
 import { useCallback, useEffect, useState } from 'react'
 import { Em } from '../../components/emoji'
-import { BOND_LEVELS, ICEBREAKERS, SPEED_QUESTIONS, VIBE_BY_ID, VIBES, townEventStatus } from '../datingData'
+import { BOND_LEVELS, ICEBREAKERS, MEETUP_BY_ID, SPEED_QUESTIONS, VIBE_BY_ID, VIBES, townEventStatus } from '../datingData'
 import { ZONES } from '../layout'
 import { Modal } from '../Hud'
+import { MeetupInviteModal, MeetupPicker } from './meetupDialogs'
 
 const VIBE_KEY = 'situapp_vibe_v1'
 const ZONE_BY_ID = Object.fromEntries(ZONES.map((z) => [z.id, z]))
@@ -152,6 +153,8 @@ export function useDating({ net, say, panel, setPanel, focusRef, home, venue, cl
   const [sdMsgs, setSdMsgs] = useState([])
   const [sdResult, setSdResult] = useState(null)
   const [ibBanner, setIbBanner] = useState(null)
+  const [meetupTarget, setMeetupTarget] = useState(null)
+  const [meetupInvite, setMeetupInvite] = useState(null)
   const [now, setNow] = useState(() => Date.now())
 
   const open = panel === 'dating'
@@ -213,9 +216,23 @@ export function useDating({ net, say, panel, setPanel, focusRef, home, venue, cl
         window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'heart' }))
         setTimeout(() => setIbBanner((cur) => (cur === m ? null : cur)), 6500)
       }),
+      on('meetup_invite', (m) => setMeetupInvite(m)),
+      on('meetup_sent', (m) => {
+        const option = MEETUP_BY_ID[m.activity]
+        say(`${option?.emoji ?? '📍'} ${m.toName} kişisine buluşma daveti gönderdin.`)
+      }),
+      on('meetup_declined', (m) => say(`${m.fromName} buluşma teklifini şimdi kabul etmedi.`)),
+      on('meetup_cancelled', (m) => {
+        setMeetupInvite((current) => (current?.id === m.id ? null : current))
+        if (m.text) say(m.text)
+      }),
+      on('meetup_started', (m) => {
+        setMeetupInvite(null)
+        say(`✨ Buluşma başladı! ${m.place} mekânına birlikte geçtiniz.`)
+      }),
     ]
     return () => offs.forEach((off) => off())
-  }, [on])
+  }, [on, say])
 
   useEffect(() => {
     const onOpenSpeed = () => {
@@ -338,9 +355,20 @@ export function useDating({ net, say, panel, setPanel, focusRef, home, venue, cl
     )
   }
 
-  const peerActions = (peer) =>
-    ICEBREAKERS.map((ib) => ({
+  const peerActions = (peer) => [
+    {
+      key: 'meetup',
+      category: 'events',
+      emoji: '📍',
+      label: 'Buluşmaya davet et',
+      onClick: () => {
+        setMeetupTarget(peer)
+        closeInteract?.()
+      },
+    },
+    ...ICEBREAKERS.map((ib) => ({
       key: `ib_${ib.id}`,
+      category: 'social',
       emoji: ib.emoji,
       label: ib.text,
       onClick: () => {
@@ -349,7 +377,23 @@ export function useDating({ net, say, panel, setPanel, focusRef, home, venue, cl
           say(`${ib.emoji} ${peer.name} kişisine "${ib.text}" gönderildi!`)
         }
       },
-    }))
+    })),
+  ]
+
+  const pickMeetup = (option) => {
+    const peer = meetupTarget
+    setMeetupTarget(null)
+    if (peer && !send({ t: 'meetup_invite', to: peer.id, activity: option.id })) {
+      say('Bağlantı olmadığı için buluşma daveti gönderilemedi.')
+    }
+  }
+
+  const answerMeetup = (accept) => {
+    if (!meetupInvite) return
+    const sent = send({ t: 'meetup_reply', id: meetupInvite.id, accept })
+    setMeetupInvite(null)
+    if (!sent) say('Bağlantı olmadığı için davet yanıtlanamadı.')
+  }
 
   const settingsSections = [
     <div key="dating-privacy" className="rounded-2xl bg-[#f8f4ff] p-3.5">
@@ -391,6 +435,9 @@ export function useDating({ net, say, panel, setPanel, focusRef, home, venue, cl
           </div>
         </div>
       )}
+
+      {meetupTarget && <MeetupPicker peer={meetupTarget} onPick={pickMeetup} onClose={() => setMeetupTarget(null)} />}
+      {meetupInvite && <MeetupInviteModal invite={meetupInvite} onReply={answerMeetup} />}
 
       {/* İlk giriş Mod (Vibe) seçici */}
       {showVibeIntro && !open && !sdSession && (

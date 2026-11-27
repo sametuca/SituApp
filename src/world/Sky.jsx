@@ -21,13 +21,9 @@ import {
 import { BEACH, GAP, PIER, PROPS, ROAD_HALF } from './layout'
 import { playerPos } from './cull'
 import { nightAt, smooth, sunsetAt, worldClock } from './worldClock'
-import { together } from './features/togetherStore'
 
 const HOME_BG = '#faeee2'
 const HOME_FOG = [HOME_BG, 30, 60]
-
-/** TogetherScene.SkyTint'e verilen canlı "taban" renkleri (bu modül her karede günceller). */
-export const skyBase = { bg: new Color('#bce4ff'), fog: [new Color('#bce4ff'), 78, 210] }
 
 /** Diğer bileşenlerin okuduğu canlı gökyüzü durumu. */
 export const skyLive = {
@@ -790,25 +786,14 @@ export default function Sky({ home: homeProp, interior = null, focusRef }) {
     if (warmFill.current) warmFill.current.intensity = (home ? 0.08 : 0.2) * (1 - over * 0.35) * (1 - night * 0.4) * dimK
     if (coolRim.current) coolRim.current.intensity = (home ? 0.06 : 0.24) * (1 - over * 0.45) * (1 - night * 0.55) * dimK
     const bg = interior ? tmp.set(interior.bg) : home ? tmp.set(HOME_BG) : k.bg
-    skyBase.bg.copy(bg)
-    if (home) {
-      const fg = interior ? interior.fog : HOME_FOG
-      skyBase.fog[0].set(fg[0])
-      skyBase.fog[1] = fg[1]
-      skyBase.fog[2] = fg[2]
-    } else {
-      skyBase.fog[0].copy(k.fog)
-      skyBase.fog[1] = fn
-      skyBase.fog[2] = ff
-    }
-    if (together.sky.t === 0) {
-      // gün batımı anı etkinken TogetherScene.SkyTint bu değerlerin üstüne biner
-      if (scene.background?.isColor) scene.background.copy(skyBase.bg)
-      if (scene.fog) {
-        scene.fog.color.copy(skyBase.fog[0])
-        scene.fog.near = skyBase.fog[1]
-        scene.fog.far = skyBase.fog[2]
-      }
+    const fogColor = home ? (interior ? interior.fog[0] : HOME_FOG[0]) : k.fog
+    const fogNear = home ? (interior ? interior.fog[1] : HOME_FOG[1]) : fn
+    const fogFar = home ? (interior ? interior.fog[2] : HOME_FOG[2]) : ff
+    if (scene.background?.isColor) scene.background.copy(bg)
+    if (scene.fog) {
+      scene.fog.color.set(fogColor)
+      scene.fog.near = fogNear
+      scene.fog.far = fogFar
     }
     if (amb.current) {
       amb.current.color.copy(home ? tmp.set('#ffffff') : k.amb)

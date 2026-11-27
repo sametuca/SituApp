@@ -25,6 +25,7 @@
 //     { t: 'dnd', on }                             rahatsız etme modu
 //     { t: 'sit', seat, slot } / { t: 'pose_end' } / { t: 'poses' }      oturma (features/together.js; ayrıntı orada)
 //     { t: 'dance_invite', to } / { t: 'dance_reply', id, accept }       çift dans
+//     { t: 'meetup_invite', to, activity } / { t: 'meetup_reply', id, accept }   buluşma daveti ve yanıtı (features/dating.js)
 //     { t: 'look_set', look: {h,e,o} }             saç/göz/kıyafet rengi (palet indeksi, -1 = orijinal; features/cosmetics). join'e `look` ile ilk karakter oluşur
 //     { t: 'cos_set', acc?, pet? }                 aksesuar {id,color}|null / evcil hayvan id|null seç (features/cosmetics)
 //     { t: 'decor_set', decor } / { t: 'decor_get', owner }   ev dekoru (yalnızca sahibi yazar; bulunduğun evi okursun)
@@ -43,14 +44,13 @@
 //     { t: 'gesture', id, name, avatar, kind, emoji }  biri sana jest yaptı;  { t: 'match', id, name, avatar }: karşılıklı kalp!
 //     { t: 'typing', id }                              karşıdaki yazıyor
 //     { t: 'pose', id, pose } / { t: 'poses', list } / { t: 'dance_offer' | 'dance_cancel' | 'sit_pair' }   bkz. features/together.js
+//     { t: 'meetup_invite', id, activity, fromId, fromName } / { t: 'meetup_started', activity, venue, place }   buluşma daveti/başlangıcı (features/dating.js)
 //     { t: 'blocks', list: [{key,name}] }              engel listen;  { t: 'dnd', id, on }: birinin rahatsız etme durumu
 // Özellik modülleri (engel, profil, arkadaş, oyun…) server/features/ altındadır; bkz. features/index.js.
 //     { t: 'cos', id, cos } (+ join/room oyuncularında `cos`)    birinin aksesuarı/evcil hayvanı;  welcome: cos, gifts, decor
 //     { t: 'decor', owner, decor }  { t: 'gifts', list }  { t: 'gift_offer', offer, from, fromName, kind }
 //     profil (features/profile.js): { t:'profile_save', profile:{bio,age,city,tags} } → { t:'profile_saved', profile } ;
 //       { t:'profile', id } → { t:'profile', id, profile|null } ; welcome'a profile + profileTags (katalog) eklenir
-//     profil buz kırıcı: { t:'profile_icebreaker', to } → alıcıya { t:'profile_icebreaker', id, name, qid, q, a, b } ;
-//       { t:'profile_icebreaker_answer', to, qid, pick:'a'|'b' } → gönderene { t:'profile_icebreaker_answer', id, name, a, b, choice }
 //     { t: 'info', text } / { t: 'denied', reason }    kullanıcıya gösterilecek kısa mesaj
 //     { t: 'join', p } / { t: 'leave', id }
 //     { t: 'state', p: [[id, x, z, ry, animIdx], ...] }   ~10 Hz, yalnızca değişenler
@@ -286,6 +286,45 @@ export function attachGameServer(httpServer) {
     broadcast({ t: 'join', p: publicInfo(p) }, p.id, room)
     if (prevVid && prevVid !== nextVid) broadcastVenueChannels(prevVid, p.id)
     if (nextVid) broadcastVenueChannels(nextVid, p.id)
+  }
+
+  ctx.moveGroupToVenue = (group, vid) => {
+    if (!Array.isArray(group) || group.length !== 2 || !Object.hasOwn(VENUE_BY_ID, vid)) return false
+    if (group.some((p) => !p || typeof p.id !== 'string')) return false
+    if (new Set(group.map((p) => p?.id)).size !== group.length) return false
+    if (group.some((p) => players.get(p.id) !== p || p.ws.readyState !== 1)) return false
+    if (new Set(group.map((p) => p.room)).size !== 1) return false
+    if (group.every((p) => venueIdOf(p.room) === vid)) return true
+
+    const memberIds = new Set(group.map((p) => p.id))
+    const counts = new Map()
+    for (const p of players.values()) {
+      if (memberIds.has(p.id) || venueIdOf(p.room) !== vid) continue
+      const ch = venueChannelOf(p.room)
+      counts.set(ch, (counts.get(ch) ?? 0) + 1)
+    }
+
+    let channel = null
+    for (let ch = 1; ch <= 20; ch++) {
+      if ((counts.get(ch) ?? 0) + group.length <= VENUE_SOFT_CAP) {
+        channel = ch
+        break
+      }
+    }
+    if (channel === null) {
+      for (let ch = 1; ch <= 20; ch++) {
+        if ((counts.get(ch) ?? 0) + group.length <= VENUE_HARD_CAP) {
+          channel = ch
+          break
+        }
+      }
+    }
+    if (channel === null) return false
+
+    const room = venueRoom(vid, channel)
+    if (group.some((p) => !canEnter(p, room))) return false
+    for (const p of group) changeRoom(p, room)
+    return true
   }
 
   // Supabase modu: token doğrula, kullanıcı adı/avatarı profiles'tan al (istemcinin gönderdiği ad yok sayılır).

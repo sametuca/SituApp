@@ -1,38 +1,9 @@
-// "Birlikte yapılan şeyler"in 3D parçaları (Canvas içinde): gün batımı gökyüzü tonu, süzülen kalpler/yıldızlar,
-// fotoğraf noktası işareti ve Canvas'tan kare alma.
+// "Birlikte yapılan şeyler"in 3D parçaları (Canvas içinde): dans efektleri, fotoğraf noktası işareti ve kare alma.
 import { useEffect, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
-import { Color } from 'three'
 import { PHOTO_SPOT } from '../layout'
 import { together } from './togetherStore'
-
-const SUNSET_BG = new Color('#ffa38a') // turuncu-pembe gökyüzü
-const SUNSET_FOG = new Color('#ffc2b0')
-
-/** Gün batımı anında gökyüzü/sis/ışığı turuncu-pembeye yumuşakça geçirir. base: { bg, fog: [renk, yakın, uzak] } */
-function SkyTint({ base }) {
-  const scene = useThree((s) => s.scene)
-  const ambient = useRef()
-  const touched = useRef(false)
-
-  useFrame((_, dt) => {
-    const s = together.sky
-    const d = s.target - s.t
-    if (d !== 0) s.t += Math.sign(d) * Math.min(Math.abs(d), dt / 2.5) // ~2,5 sn'de geçiş
-    const e = s.t * s.t * (3 - 2 * s.t)
-    if (ambient.current) ambient.current.intensity = e * 0.55
-    if (e === 0 && !touched.current) return
-    touched.current = e > 0
-    if (scene.background?.isColor) scene.background.set(base.bg).lerp(SUNSET_BG, e * 0.92)
-    if (scene.fog) {
-      scene.fog.color.set(base.fog[0]).lerp(SUNSET_FOG, e * 0.9)
-      scene.fog.near = base.fog[1] * (1 - e * 0.5)
-      scene.fog.far = base.fog[2] * (1 - e * 0.25)
-    }
-  })
-  return <ambientLight ref={ambient} color="#ff9d78" intensity={0} />
-}
 
 /** Canvas'tan kare alır: aynı olay turunda yeniden çizip okuduğu için preserveDrawingBuffer gerekmez. */
 function Capturer() {
@@ -53,8 +24,8 @@ function Capturer() {
 
 const FLOAT_EMOJIS = ['💗', '✨', '💞', '⭐', '🌸', '💖']
 
-/** Dans eden çiftlerin ve gün batımı anındaki oyuncunun çevresinde süzülen emojiler (en çok 14 adet). */
-function Floaters({ focusRef }) {
+/** Dans eden çiftlerin çevresinde süzülen emojiler (en çok 14 adet). */
+function Floaters() {
   const [items, setItems] = useState([])
   const clock = useRef(0)
   const seq = useRef(0)
@@ -72,10 +43,6 @@ function Floaters({ focusRef }) {
     const s = together.self.current
     if (s?.kind === 'dance' && s.lead) add(s.cx, s.cz, 0.9)
     for (const p of together.poses.values()) if (p.kind === 'dance' && p.lead) add(p.cx, p.cz, 0.9)
-    if (together.sky.t > 0.35) {
-      const f = focusRef.current
-      add(f.x, f.z, 1.3)
-    }
     if (!spawn.length) {
       setItems((l) => (l.length ? l.filter((i) => performance.now() - i.born < 2600) : l))
       return
@@ -124,13 +91,12 @@ function PhotoSpotMark() {
   )
 }
 
-export default function TogetherScene({ focusRef, home, base }) {
+export default function TogetherScene({ home }) {
   return (
     <>
-      <SkyTint base={base} />
       <Capturer />
       {!home && <PhotoSpotMark />}
-      <Floaters focusRef={focusRef} />
+      <Floaters />
     </>
   )
 }

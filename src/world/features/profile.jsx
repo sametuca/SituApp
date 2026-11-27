@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { TopDock } from '../../components/Dock'
 import { Dock } from '../../components/Dock'
 import { Modal } from '../Hud'
 import { PhotoSection } from './photoUpload'
@@ -7,20 +6,19 @@ import { Ico, TagIcon } from '../../components/Icon'
 
 const NUDGE_KEY = 'situapp_profile_nudge'
 const MAX_TAGS = 6
-const glass = 'border-2 border-white bg-white/90 shadow-toy backdrop-blur-md'
 
 const isEmpty = (p) => !p || (!p.bio && !p.age && !p.birthDate && !p.city && !p.instagram && !p.x && !p.instagramLocked && !p.xLocked && !(p.tags?.length > 0))
 
-function SocialValue({ icon, value, locked }) {
+function SocialValue({ label, value, locked }) {
   return (
     <p className="flex items-center gap-1.5 truncate">
-      <Ico name={icon} size={14} />
+      <span className="shrink-0">{label}:</span>
       <span className="truncate">
         {value ? (
           `@${value}`
         ) : locked ? (
-          <span title="Sadece arkadaşlara açık" className="inline-flex items-center gap-1 font-bold text-[#8a7a9c]">
-            <Ico name="lock" size={12} /> Sadece arkadaşlar
+          <span title="Sadece arkadaşlara açık" className="font-bold text-[#8a7a9c]">
+            Sadece arkadaşlar
           </span>
         ) : (
           <span className="font-semibold text-[#8a7a9c]/75">—</span>
@@ -62,13 +60,13 @@ const safeStore = {
   },
 }
 
-function Chip({ tag, on, common, onClick, small }) {
+function Chip({ tag, on, common, onClick, small, showIcon = true }) {
   const cls = `inline-flex items-center gap-1.5 rounded-full border-2 font-extrabold transition ${small ? 'px-2.5 py-0.5 text-[11px]' : 'px-3 py-1.5 text-sm'} ${
     on ? 'border-[#fdb252] bg-[#ffead0] text-[#926021]' : common ? 'border-[#ffb703] bg-[#fff3c4] text-[#8a5a00]' : 'border-white bg-[#f6f0ff] text-[#5b4a70]'
   }`
   const body = (
     <>
-      <TagIcon id={tag.id} label={tag.label} size={small ? 13 : 15} />
+      {showIcon && <TagIcon id={tag.id} label={tag.label} size={small ? 13 : 15} />}
       {tag.label}
     </>
   )
@@ -81,8 +79,8 @@ function Chip({ tag, on, common, onClick, small }) {
   )
 }
 
-/** Etkileşim menüsünde kişinin mini profili + buz kırıcı düğmesi. */
-function ProfileCard({ peer, profile, mine, catalog, request, onIce }) {
+/** Etkileşim menüsünde kişinin mini profili. */
+function ProfileCard({ peer, profile, mine, catalog, request }) {
   useEffect(() => {
     request(peer.id)
   }, [peer.id, request])
@@ -100,50 +98,44 @@ function ProfileCard({ peer, profile, mine, catalog, request, onIce }) {
         <p className="text-xs font-bold text-[#8a7a9c]">Profil yükleniyor…</p>
       ) : !has ? (
         <div className="grid grid-cols-2 gap-1.5 text-[11px] font-bold text-[#8a7a9c]">
-          <p className="flex items-center gap-1.5"><Ico name="cake" size={14} /> Doğum: <span className="font-semibold opacity-70">Belirtilmedi</span></p>
-          <p className="flex items-center gap-1.5"><Ico name="pin" size={14} /> Şehir: <span className="font-semibold opacity-70">Belirtilmedi</span></p>
-          <p className="flex items-center gap-1.5"><Ico name="instagram" size={14} /> Instagram: <span className="font-semibold opacity-70">—</span></p>
-          <p className="flex items-center gap-1.5"><Ico name="x" size={14} /> X: <span className="font-semibold opacity-70">—</span></p>
+          <p>Doğum: <span className="font-semibold opacity-70">Belirtilmedi</span></p>
+          <p>Şehir: <span className="font-semibold opacity-70">Belirtilmedi</span></p>
+          <p>Instagram: <span className="font-semibold opacity-70">—</span></p>
+          <p>X: <span className="font-semibold opacity-70">—</span></p>
         </div>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-1.5 text-xs font-extrabold text-[#6b4fc0]">
             <p className="flex items-center gap-1.5 truncate">
-              <Ico name="cake" size={14} />
+              <span className="shrink-0">Doğum:</span>
               <span className="truncate">
                 {profile.birthDate ? `${fmtBirth(profile.birthDate)}${profile.age ? ` (${profile.age})` : ''}` : profile.age ? `${profile.age} yaş` : <span className="font-semibold text-[#8a7a9c]/75">Belirtilmedi</span>}
               </span>
             </p>
             <p className="flex items-center gap-1.5 truncate">
-              <Ico name="pin" size={14} />
+              <span className="shrink-0">Şehir:</span>
               <span className="truncate">
                 {profile.city ? profile.city : <span className="font-semibold text-[#8a7a9c]/75">Belirtilmedi</span>}
               </span>
             </p>
-            <SocialValue icon="instagram" value={profile.instagram} locked={profile.instagramLocked} />
-            <SocialValue icon="x" value={profile.x} locked={profile.xLocked} />
+            <SocialValue label="Instagram" value={profile.instagram} locked={profile.instagramLocked} />
+            <SocialValue label="X" value={profile.x} locked={profile.xLocked} />
           </div>
           {profile.bio && <p className="text-sm font-semibold italic text-[#4a3b5c]">“{profile.bio}”</p>}
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {tags.map((t) => (
-                <Chip key={t.id} tag={t} small common={mineSet.has(t.id)} />
+                <Chip key={t.id} tag={t} small common={mineSet.has(t.id)} showIcon={false} />
               ))}
             </div>
           )}
           {common.length > 0 && (
-            <p className="flex items-center gap-1 text-xs font-extrabold text-[#b07a00]">
-              <Ico name="sparkles" size={14} /> {common.length} ortak ilgi: {common.map((t) => t.label).join(', ')}
+            <p className="text-xs font-extrabold text-[#b07a00]">
+              {common.length} ortak ilgi: {common.map((t) => t.label).join(', ')}
             </p>
           )}
         </>
       )}
-      <button
-        onClick={onIce}
-        className="flex items-center justify-center gap-1.5 rounded-2xl border-b-4 border-[#5fb0d8] bg-[#9bdcf7] py-2 text-sm font-extrabold text-[#1f5d7a] active:translate-y-[2px] active:border-b-2"
-      >
-        <Ico name="ice" size={16} color="#1f5d7a" /> Buz kırıcı
-      </button>
     </div>
   )
 }
@@ -259,7 +251,7 @@ function ProfileEditor({ initial, catalog, onSave, onClose, net, photoEnabled, p
   )
 }
 
-/** Profil, ilgi etiketleri ve buz kırıcı kartlar (sunucu: server/features/profile.js). */
+/** Profil ve ilgi etiketleri (sunucu: server/features/profile.js). */
 export function useProfile({ net, say, panel, setPanel, home }) {
   const [mine, setMine] = useState(null)
   const [catalog, setCatalog] = useState([])
@@ -267,8 +259,6 @@ export function useProfile({ net, say, panel, setPanel, home }) {
   const [nudge, setNudge] = useState(false)
   const [photoEnabled, setPhotoEnabled] = useState(false)
   const [privacy, setPrivacy] = useState('all')
-  const [incoming, setIncoming] = useState([]) // yanıt bekleyen buz kırıcılar
-  const [answers, setAnswers] = useState([]) // karşı tarafın seçimleri
   const reqAt = useRef({})
 
   useEffect(() => {
@@ -279,7 +269,6 @@ export function useProfile({ net, say, panel, setPanel, home }) {
         setPrivacy(m.photoPrivacy ?? 'all')
         setCatalog(m.profileTags ?? [])
         setCache({})
-        setIncoming([])
         if (isEmpty(m.profile) && !safeStore.get()) {
           safeStore.set()
           // girişte ekran zaten kalabalık (öneri, rozet, ipuçları): hatırlatmayı biraz sonra göster
@@ -300,12 +289,6 @@ export function useProfile({ net, say, panel, setPanel, home }) {
         reqAt.current = {}
         setCache({})
       }),
-      net.on('profile_icebreaker', (m) => setIncoming((l) => [...l.filter((x) => x.id !== m.id), m].slice(-3))),
-      net.on('profile_icebreaker_answer', (m) => {
-        const k = Date.now() + Math.random()
-        setAnswers((l) => [...l, { ...m, k }].slice(-3))
-        setTimeout(() => setAnswers((l) => l.filter((x) => x.k !== k)), 12000)
-      }),
     ]
     return () => offs.forEach((off) => off())
   }, [net, say])
@@ -321,7 +304,7 @@ export function useProfile({ net, say, panel, setPanel, home }) {
   )
 
   const peerHeader = (peer) => (
-    <ProfileCard peer={peer} profile={cache[peer.id]} mine={mine} catalog={catalog} request={request} onIce={() => net.send({ t: 'profile_icebreaker', to: peer.id })} />
+    <ProfileCard peer={peer} profile={cache[peer.id]} mine={mine} catalog={catalog} request={request} />
   )
 
   const settingsSections = [
@@ -336,7 +319,6 @@ export function useProfile({ net, say, panel, setPanel, home }) {
     </section>,
   ]
 
-  const first = incoming[0]
   const overlays = (
     <>
       {panel === 'profile' && (
@@ -373,43 +355,6 @@ export function useProfile({ net, say, panel, setPanel, home }) {
             </button>
           </div>
         </div></Dock>
-      )}
-      {first && (
-        <TopDock><div className={`pointer-events-auto relative flex w-[min(92vw,22rem)] animate-pop flex-col gap-2 rounded-3xl p-4 ${glass}`} role="dialog" aria-label="Buz kırıcı">
-          <p className="text-xs font-extrabold text-[#5fb0d8]">🧊 {first.name} sana bir soru gönderdi</p>
-          <p className="text-base font-black text-[#4a3b5c]">{first.q}</p>
-          <div className="grid grid-cols-2 gap-2">
-            {['a', 'b'].map((pick) => (
-              <button
-                key={pick}
-                onClick={() => {
-                  net.send({ t: 'profile_icebreaker_answer', to: first.id, qid: first.qid, pick })
-                  setIncoming((l) => l.slice(1))
-                }}
-                className="rounded-2xl border-b-4 border-[#5fb0d8] bg-[#9bdcf7] px-2 py-3 text-sm font-extrabold text-[#1f5d7a] active:translate-y-[2px] active:border-b-2"
-              >
-                {first[pick]}
-              </button>
-            ))}
-          </div>
-          <button onClick={() => setIncoming((l) => l.slice(1))} className="self-center text-xs font-extrabold text-[#8a7a9c] hover:underline">
-            Şimdi değil
-          </button>
-        </div></TopDock>
-      )}
-      {answers.length > 0 && (
-        <TopDock><div className="relative flex w-[min(92vw,22rem)] flex-col gap-2">
-          {answers.map((a) => (
-            <div key={a.k} className={`animate-pop rounded-3xl p-3 pl-4 ${glass}`} role="status">
-              <p className="text-sm font-extrabold text-[#4a3b5c]">
-                🧊 {a.name} şunu seçti: <span className="text-[#fda533]">{a.choice}</span>
-              </p>
-              <p className="text-[11px] font-semibold text-[#8a7a9c]">
-                {a.a} · {a.b}
-              </p>
-            </div>
-          ))}
-        </div></TopDock>
       )}
     </>
   )

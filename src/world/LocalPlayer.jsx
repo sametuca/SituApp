@@ -8,6 +8,7 @@ import { work } from './features/jobStore'
 import { playerPos } from './cull'
 import { BIKE_POSE, BIKE_SPEED, bike, speedBoost, useRiding } from './bikeStore'
 import { fitnessStore } from './fitnessStore'
+import { petting } from './pettingStore'
 import BikeModel from './Bike'
 import SpeedFx from './SpeedFx'
 
@@ -50,7 +51,12 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
           bikePoseRef.current.moving = movingRef.current
           return bikePoseRef.current
         }
-        return together.self.current ?? work.self.current
+        const currentPose = together.self.current ?? work.self.current
+        if (currentPose) return currentPose
+        const petPose = petting.self
+        if (petPose && petPose.until > performance.now() / 1000) return petPose
+        if (petPose) petting.self = null
+        return null
       },
     }),
     [],
@@ -147,10 +153,20 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
     }
     let moving = !locked && (manualInput || Boolean(clickDir))
 
+    let petPose = petting.self
+    if (petPose && petPose.until <= performance.now() / 1000) {
+      petting.self = null
+      petPose = null
+    }
+    if (petPose) {
+      if (moveTargetRef) moveTargetRef.current = null
+      moving = false
+    }
+
     // oturuyor / dans ediyor: hareket girdisi duruşu bitirir (sunucuya haber verilir), aksi halde konum kilitli
     if (together.self.current && moving) together.onBreak?.(true)
     if (bike.on && together.self.current) bike.set(false) // oturunca/dans edince bisikletten in
-    const posed = together.self.current
+    const posed = together.self.current ?? petPose
     if (posed) {
       moving = false
       if (posed.kind === 'sit' && posed.x != null && posed.z != null) {

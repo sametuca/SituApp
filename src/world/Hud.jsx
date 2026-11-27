@@ -724,11 +724,11 @@ function Row({ k, children }) {
 }
 
 const GUIDE_TABS = [
-  { id: 'start', label: 'Başlangıç', ico: 'compass' },
-  { id: 'world', label: 'Şehir & Mekanlar', ico: 'map' },
-  { id: 'home', label: 'Evim & Döşeme', ico: 'home' },
-  { id: 'social', label: 'Sosyal & Sohbet', ico: 'friends' },
-  { id: 'progress', label: 'Görev & Altın', ico: 'quests' },
+  { id: 'start', label: 'Başlangıç' },
+  { id: 'world', label: 'Şehir & Mekanlar' },
+  { id: 'home', label: 'Evim & Döşeme' },
+  { id: 'social', label: 'Sosyal & Sohbet' },
+  { id: 'progress', label: 'Görev & Altın' },
 ]
 
 export function HelpModal({ onClose, inCity = false, onOpenWardrobe, onGoHome, onOpenMap }) {
@@ -744,22 +744,17 @@ export function HelpModal({ onClose, inCity = false, onOpenWardrobe, onGoHome, o
       >
         {/* üst başlık */}
         <div className="flex items-center justify-between border-b border-[#efe6ff] px-5 py-4">
-          <div className="flex items-center gap-2.5">
-            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[#fff3e0]">
-              <Ico name="compass" size={24} />
-            </span>
-            <div>
-              <h2 className="text-lg font-black text-[#4a3b5c]">Nasıl Oynanır?</h2>
-              <p className="text-xs font-bold text-[#8a7a9c]">Merak ettiğin konuyu soldaki sekmelerden seç</p>
-            </div>
+          <div>
+            <h2 className="text-lg font-black text-[#4a3b5c]">Nasıl Oynanır?</h2>
+            <p className="text-xs font-bold text-[#8a7a9c]">Merak ettiğin konuyu soldaki sekmelerden seç</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Kapat"
-            className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f0ff] transition hover:bg-[#ffedd6] active:scale-95"
+            className="rounded-full bg-[#f6f0ff] px-3 py-2 text-xs font-extrabold text-[#7c6d91] transition hover:bg-[#ffedd6] active:scale-95"
           >
-            <Ico name="close" size={14} />
+            Kapat
           </button>
         </div>
 
@@ -773,11 +768,10 @@ export function HelpModal({ onClose, inCity = false, onOpenWardrobe, onGoHome, o
                   key={t.id}
                   type="button"
                   onClick={() => setTab(t.id)}
-                  className={`flex shrink-0 items-center gap-2 rounded-2xl px-3 py-2.5 text-left text-xs font-extrabold transition active:scale-95 ${
+                  className={`flex shrink-0 items-center rounded-2xl px-3 py-2.5 text-left text-xs font-extrabold transition active:scale-95 ${
                     active ? 'bg-white text-[#4a3b5c] shadow-soft ring-2 ring-[#fdb252]/70' : 'text-[#7c6d91] hover:bg-white/60'
                   }`}
                 >
-                  <Ico name={t.ico} size={18} />
                   <span className="whitespace-nowrap">{t.label}</span>
                 </button>
               )
@@ -804,7 +798,7 @@ export function HelpModal({ onClose, inCity = false, onOpenWardrobe, onGoHome, o
                   <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <div className="flex items-center justify-between gap-2 rounded-2xl border-2 border-white bg-[#faf6ff] p-3 shadow-soft">
                       <div className="min-w-0">
-                        <p className="flex items-center gap-1.5 text-xs font-black text-[#4a3b5c]"><Ico name="wardrobe" size={16} /> Gardırop & Stil</p>
+                        <p className="text-xs font-black text-[#4a3b5c]">Gardırop & Stil</p>
                         <p className="text-[11px] font-semibold text-[#8a7a9c]">Saç, aksesuar, dost seçimi</p>
                       </div>
                       {onOpenWardrobe && (
@@ -815,7 +809,7 @@ export function HelpModal({ onClose, inCity = false, onOpenWardrobe, onGoHome, o
                     </div>
                     <div className="flex items-center justify-between gap-2 rounded-2xl border-2 border-white bg-[#fff8f0] p-3 shadow-soft">
                       <div className="min-w-0">
-                        <p className="flex items-center gap-1.5 text-xs font-black text-[#4a3b5c]"><Ico name="home" size={16} /> Kendi Evin</p>
+                        <p className="text-xs font-black text-[#4a3b5c]">Kendi Evin</p>
                         <p className="text-[11px] font-semibold text-[#8a7a9c]">Lobi güneybatısı veya /ev</p>
                       </div>
                       {inCity && onGoHome && (
@@ -826,7 +820,7 @@ export function HelpModal({ onClose, inCity = false, onOpenWardrobe, onGoHome, o
                     </div>
                     <div className="flex items-center justify-between gap-2 rounded-2xl border-2 border-white bg-[#f0f9ff] p-3 shadow-soft sm:col-span-2">
                       <div className="min-w-0">
-                        <p className="flex items-center gap-1.5 text-xs font-black text-[#4a3b5c]"><Ico name="map" size={16} /> Şehir Haritası</p>
+                        <p className="text-xs font-black text-[#4a3b5c]">Şehir Haritası</p>
                         <p className="text-[11px] font-semibold text-[#8a7a9c]">Sağ üstteki yuvarlak haritaya basıp tek tıkla ışınlan</p>
                       </div>
                       {inCity && onOpenMap && (

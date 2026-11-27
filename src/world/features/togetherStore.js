@@ -7,8 +7,6 @@ export const together = {
   self: { current: null },
   /** Başkalarının duruşları: id → pose */
   poses: new Map(),
-  /** Gökyüzü tonu (gün batımı anı): t gerçek değer (0..1), target hedef; TogetherScene yumuşakça yaklaştırır */
-  sky: { t: 0, target: 0 },
   /** Canvas'tan kare alır (TogetherScene kaydeder): () => dataURL */
   capture: null,
   /** Oyuncu duruşundayken hareket girdisi verirse LocalPlayer çağırır: kalk / dansı bırak */

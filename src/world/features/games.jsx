@@ -372,6 +372,7 @@ export function useGames({ net, say, closeInteract }) {
   const peerActions = (peer) => [
     {
       key: 'game',
+      category: 'events',
       emoji: '🎮',
       label: 'Oyun oyna',
       onClick: () => {

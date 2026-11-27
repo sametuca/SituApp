@@ -178,34 +178,6 @@ export function LookJoystick({ inputRef }) {
   )
 }
 
-// ---------- yakındaki oyuncu kartı ----------
-export function NearbyCard({ peer, touch, onChat, onInteract, onDismiss }) {
-  return (
-    <Dock><div className="pointer-events-auto relative w-[min(94vw,24rem)] animate-pop" role="status">
-      <div className={`flex items-center gap-3 rounded-3xl p-2.5 pr-3 ${glass}`}>
-        <Portrait peer={peer} size={44} className="h-11 w-11" />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-black text-[#4a3b5c]">{peer.name}</p>
-          <p className="text-xs font-bold text-[#8a7a9c]">yakınında 👋</p>
-        </div>
-        <div className="flex shrink-0 gap-1.5">
-          <button onClick={onInteract} aria-label="Etkileşim menüsü" title="Kalp, çiçek, fısıltı…" className="grid h-10 w-10 place-items-center rounded-xl border-b-4 border-[#e8952c] bg-[#fecb89] text-lg shadow-soft active:translate-y-[2px] active:border-b-2">
-            💗
-          </button>
-          <div className="w-28">
-            <ToyButton className="!rounded-xl !py-2 !text-sm" onClick={onChat}>
-              💬 Sohbet
-            </ToyButton>
-          </div>
-        </div>
-        <button onClick={onDismiss} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full hover:bg-[#ffedd6]/70">
-          <Ico name="close" size={12} />
-        </button>
-      </div>
-    </div></Dock>
-  )
-}
-
 // ---------- kapı ("Eve gir" / "Dışarı çık" / etkileşim istemi — SkillBar'ın hemen üstünde) ----------
 export function DoorPrompt({ emoji, label, action, touch, raised, onGo }) {
   return (
@@ -420,11 +392,24 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch, slots =
   )
 }
 
+const ACTION_CATEGORIES = [
+  { id: 'events', label: 'Buluşma' },
+  { id: 'gifts', label: 'Hediye' },
+  { id: 'safety', label: 'Güvenlik' },
+]
+
 // ---------- etkileşim menüsü (bir oyuncuya kalp, çiçek, fısıltı…) ----------
 export function InteractSheet({ peer, near, canInvite, touch, extras = [], header = null, onClose, onChat, onGesture, onWhisper, onInvite }) {
   const [whisper, setWhisper] = useState(false)
   const [text, setText] = useState('')
+  const [activeCategory, setActiveCategory] = useState('events')
   const input = useRef(null)
+  const friendAction = extras.find((action) => action.key === 'friend')
+  const groupedActions = ACTION_CATEGORIES.map((category) => ({
+    ...category,
+    actions: extras.filter((action) => (action.category ?? 'social') === category.id),
+  })).filter((category) => category.actions.length > 0)
+  const selectedCategory = groupedActions.find((category) => category.id === activeCategory) ?? groupedActions[0]
 
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
@@ -445,7 +430,7 @@ export function InteractSheet({ peer, near, canInvite, touch, extras = [], heade
 
   return (
     <div
-      className={`absolute z-20 flex flex-col gap-3 bg-white/92 p-4 shadow-toy backdrop-blur-md animate-pop ${
+      className={`absolute z-20 flex max-h-[88dvh] flex-col gap-3 overflow-y-auto bg-white/92 p-4 shadow-toy backdrop-blur-md animate-pop ${
         touch ? 'inset-x-0 bottom-0 rounded-t-[2rem] border-t-2 border-white pb-[max(1rem,env(safe-area-inset-bottom))]' : 'bottom-3 left-3 w-[22rem] rounded-[2rem] border-2 border-white'
       }`}
       role="dialog"
@@ -454,7 +439,18 @@ export function InteractSheet({ peer, near, canInvite, touch, extras = [], heade
       <div className="flex items-center gap-3">
         <Portrait peer={peer} size={48} className="h-12 w-12" />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-base font-black text-[#4a3b5c]">{peer.name}</p>
+          <div className="flex min-w-0 items-center gap-2">
+            <p className="truncate text-base font-black text-[#4a3b5c]">{peer.name}</p>
+            {friendAction && (
+              <button
+                type="button"
+                onClick={friendAction.onClick}
+                className="shrink-0 rounded-full bg-[#f3ecff] px-2.5 py-1 text-[10px] font-black text-[#5b3fa8] transition hover:bg-[#e9ddff]"
+              >
+                Arkadaş ekle
+              </button>
+            )}
+          </div>
           <p className={`text-xs font-bold ${near ? 'text-emerald-500' : 'text-[#8a7a9c]'}`}>
             {peer.dnd ? '🌙 rahatsız etme açık · şimdilik ulaşılamaz' : near ? 'yakınında · jestler açık' : 'biraz uzakta · jest için yaklaş'}
           </p>
@@ -482,29 +478,69 @@ export function InteractSheet({ peer, near, canInvite, touch, extras = [], heade
 
       <div className="flex gap-2">
         <button onClick={onChat} className="flex-1 rounded-2xl border-b-4 border-[#e8952c] bg-[#fdb252] py-2 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2">
-          💬 Sohbet
+          Sohbet
         </button>
         <button
           onClick={() => setWhisper((w) => !w)}
           aria-pressed={whisper}
           className={`flex-1 rounded-2xl border-b-4 py-2 text-sm font-extrabold active:translate-y-[2px] active:border-b-2 ${whisper ? 'border-[#8a6bd1] bg-[#a88bff] text-white' : 'border-[#c9b6f5] bg-[#e9ddff] text-[#5b3fa8]'}`}
         >
-          🤫 Fısılda
+          Fısılda
         </button>
         {canInvite && (
           <button onClick={onInvite} className="flex-1 rounded-2xl border-b-4 border-[#5fb0d8] bg-[#7fcdf3] py-2 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2">
-            🏠 Davet
+            Eve davet
           </button>
         )}
       </div>
 
-      {extras.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 border-t border-[#ece3f7] pt-2">
-          {extras.map((x) => (
-            <button key={x.key} onClick={x.onClick} className={`text-xs font-extrabold hover:underline ${x.danger ? 'text-rose-400' : 'text-[#8a7a9c]'}`}>
-              {x.emoji} {x.label}
-            </button>
-          ))}
+      {groupedActions.length > 0 && (
+        <div className="border-t border-[#ece3f7] pt-2">
+          <div className="grid grid-cols-3 gap-1 rounded-2xl border-2 border-[#e6dcf3] bg-[#f7f2ff] p-1" role="tablist" aria-label="Etkileşim kategorileri">
+            {groupedActions.map((category) => (
+              <button
+                key={category.id}
+                type="button"
+                id={`interact-tab-${category.id}`}
+                role="tab"
+                aria-controls={`interact-panel-${category.id}`}
+                aria-selected={selectedCategory?.id === category.id}
+                tabIndex={selectedCategory?.id === category.id ? 0 : -1}
+                onClick={() => setActiveCategory(category.id)}
+                className={`flex min-h-12 items-center justify-center rounded-xl border-b-4 px-2 py-1.5 text-sm font-black transition ${
+                  selectedCategory?.id === category.id ? 'border-[#8a6bd1] bg-white text-[#5b3fa8] shadow-soft' : 'border-transparent bg-transparent text-[#8a7a9c] hover:bg-white/70'
+                }`}
+              >
+                <span>{category.label}</span>
+              </button>
+            ))}
+          </div>
+          {selectedCategory && (
+            <div
+              id={`interact-panel-${selectedCategory.id}`}
+              aria-labelledby={`interact-tab-${selectedCategory.id}`}
+              className="mt-2 rounded-2xl border-2 border-[#e6dcf3] bg-white/80 p-2.5"
+              role="tabpanel"
+            >
+              <p className="mb-2 px-1 text-xs font-black uppercase tracking-wide text-[#8a7a9c]">
+                {selectedCategory.label} seçenekleri
+              </p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {selectedCategory.actions.map((action) => (
+                  <button
+                    key={action.key}
+                    type="button"
+                    onClick={action.onClick}
+                    className={`flex min-h-12 items-center justify-center rounded-xl border border-white px-2.5 py-2 text-center text-[13px] font-extrabold shadow-sm transition active:scale-95 ${
+                      action.danger ? 'bg-rose-50 text-rose-500 hover:bg-rose-100' : 'bg-[#faf7ff] text-[#6b587c] hover:bg-[#f1eaff]'
+                    }`}
+                  >
+                    <span>{action.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

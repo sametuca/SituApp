@@ -1277,17 +1277,17 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
         <Modal onClose={() => setPanel(null)} label="Karakter Statları" theme="bag">
           <div className="mb-3 flex items-center gap-2">
             <div className="grid flex-1 grid-cols-3 gap-1.5 rounded-2xl bg-[#f3ece0] p-1">
-              <button type="button" onClick={() => setPanel('inventory')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">🎒 Çanta</button>
-              <button type="button" className="rounded-xl bg-white py-1.5 text-xs font-black text-[#4a3b5c] shadow-sm">💪 Statlar</button>
-              <button type="button" onClick={() => setPanel('collection')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">🧺 Koleksiyon</button>
+              <button type="button" onClick={() => setPanel('inventory')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">Çanta</button>
+              <button type="button" className="rounded-xl bg-white py-1.5 text-xs font-black text-[#4a3b5c] shadow-sm">Statlar</button>
+              <button type="button" onClick={() => setPanel('collection')} className="rounded-xl py-1.5 text-xs font-black text-[#8a7a68]">Koleksiyon</button>
             </div>
             <button
               type="button"
               onClick={() => setPanel(null)}
               aria-label="Kapat"
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#f3ece0] text-sm font-black text-[#6b5a4e] transition hover:bg-[#eadcc8] active:scale-95"
+              className="h-9 shrink-0 rounded-full bg-[#f3ece0] px-3 text-xs font-black text-[#6b5a4e] transition hover:bg-[#eadcc8] active:scale-95"
             >
-              ✖️
+              Kapat
             </button>
           </div>
           <div className="flex items-center justify-between gap-2">
@@ -1295,7 +1295,7 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
               <h2 className="text-xl font-black text-[#4a3b5c]">Statlar</h2>
               <p className="text-xs font-bold text-[#8a7a9c]">MakFit antrenmanları ve sosyal aktivitelerle gelişir.</p>
             </div>
-            <span className="rounded-full bg-[#fff3c8] px-3 py-1 text-xs font-black text-[#8a5a00]">⚡ {energy}/{eMax}</span>
+            <span className="rounded-full bg-[#fff3c8] px-3 py-1 text-xs font-black text-[#8a5a00]">{energy}/{eMax}</span>
           </div>
 
           {isChamp && (

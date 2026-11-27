@@ -1,5 +1,5 @@
 // Özellik modülleri (istemci). Her modül bir hook'tur: useX(ctx) → { peerActions?(peer), settingsSections?, overlays? }
-//   peerActions(peer): etkileşim menüsüne eklenecek düğmeler  [{ key, emoji, label, onClick, danger? }]
+//   peerActions(peer): etkileşim menüsüne eklenecek düğmeler [{ key, category: social|events|gifts|safety, emoji, label, onClick, danger? }]
 //   peerHeader(peer):  etkileşim menüsünde kişinin altına çizilecek JSX (mini profil vb.)
 //   settingsSections:  Ayarlar paneline eklenecek JSX parçaları
 //   overlays:          ekranın üstüne çizilecek JSX (diyaloglar, bildirimler…)

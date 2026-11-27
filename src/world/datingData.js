@@ -14,6 +14,16 @@ export const ICEBREAKERS = [
   { id: 'style', emoji: '✨', text: 'Tarzın çok iyi olmuş!', bubble: '✨ Tarzın çok iyi olmuş!' },
 ]
 
+export const MEETUP_OPTIONS = [
+  { id: 'coffee', emoji: '☕', label: 'Kahve içmeye', venue: 'kafe', place: 'Starbucket' },
+  { id: 'dessert', emoji: '🍰', label: 'Tatlı yemeye', venue: 'tatli', place: 'Tatlı Kafası' },
+  { id: 'tea', emoji: '🍵', label: 'Çay içmeye', venue: 'cayevi', place: 'Çaykurt' },
+  { id: 'icecream', emoji: '🍦', label: 'Dondurma yemeye', venue: 'dondurma', place: 'Nevarlanda' },
+  { id: 'dance', emoji: '💃', label: 'Dans etmeye', venue: 'kulup', place: 'Klüp' },
+  { id: 'arcade', emoji: '🎮', label: 'Oyun oynamaya', venue: 'oyun', place: 'Playstasyon' },
+]
+export const MEETUP_BY_ID = Object.fromEntries(MEETUP_OPTIONS.map((x) => [x.id, x]))
+
 export const SPEED_QUESTIONS = [
   { q: 'Tatil tercihin hangisi?', a: '🏖️ Deniz & kum', b: '🏔️ Doğa & kamp' },
   { q: 'İlk buluşmada 10 dk geç kalmak?', a: '😄 Olur öyle, sorun yok', b: '⏰ Dakiklik önemli' },

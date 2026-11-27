@@ -16,7 +16,6 @@ const NEAR_DRAW = 42 // m: bu mesafeden uzaktaki oyuncular çizilmez
 const MAX_DRAW_DESKTOP = 25 // masaüstünde aynı anda tam çizilen en yakın oyuncu bütçesi
 const MAX_DRAW_TOUCH = 14 // mobil/dokunmatikte aynı anda tam çizilen en yakın oyuncu bütçesi
 const MAX_SHADOWS = 8 // gölge düşüren en yakın oyuncu sayısı (50 kişilik mekânda GPU'yu korur)
-const MAX_TAGS = 12 // sürekli isim etiketi görünen en yakın oyuncu sayısı (üzerine gelince her zaman görünür)
 const BUBBLE_RANGE_SQ = 8 * 8 // 8 m: konuşma balonu yalnızca yakındakilerde çıkar (uzaktakiler sohbet kutusundan okunur)
 const HALF_RATE_SQ = 10 * 10 // >10 m: animasyon güncellemesi 30 Hz'e düşer
 const SHADOW_RANGE_SQ = 24 * 24
@@ -40,8 +39,8 @@ const BURST_SLOTS = [
   { rx: 34, rot: -10, size: 56, delay: 0.33 },
 ]
 
-/** Karakterin üstünde oyuncu adı (tıklamadan görünür), konuşma balonu, uçan emoji tepkisi ve fısıltı göstergesi. */
-function Tag({ name, bubble: rawBubble, reaction, whisper, showName = true }) {
+/** Karakterin üstünde tıklanınca görünen oyuncu adı, konuşma balonu, emoji tepkisi ve fısıltı göstergesi. */
+function Tag({ name, bubble: rawBubble, reaction, whisper, showName = false }) {
   // bubble: metin ya da { text, big } (çıkartmalar büyük gösterilir)
   const bubble = typeof rawBubble === 'string' ? { text: rawBubble } : rawBubble
   const reacts = Array.isArray(reaction) ? reaction : reaction ? [reaction] : []
@@ -122,15 +121,20 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
   const bubbleRef = useRef(null)
   const [near, setNear] = useState(true) // çizim bütçesi dışındaki oyuncular çizilmez
   const nearRef = useRef(true)
-  const [showName, setShowName] = useState(true) // en yakın 12 oyuncu (veya imleç üstündeyken)
-  const showNameRef = useRef(true)
   const [halfRate, setHalfRate] = useState(false) // >10 m: 30 Hz animasyon
   const halfRateRef = useRef(false)
-  const [hovered, setHovered] = useState(false)
+  const [nameRevealed, setNameRevealed] = useState(false)
+  const nameTimerRef = useRef(null)
   const shadowRef = useRef(null)
   const shadowCheckRef = useRef(0)
   const [afk, setAfk] = useState(false)
   const idleRef = useRef({ since: Date.now(), x: 0, z: 0, afk: false })
+  useEffect(() => () => clearTimeout(nameTimerRef.current), [])
+  const revealName = () => {
+    setNameRevealed(true)
+    clearTimeout(nameTimerRef.current)
+    nameTimerRef.current = setTimeout(() => setNameRevealed(false), 2500)
+  }
   const { reaction, whisper } = useLiveFlags(id, reactions, whispering)
   const pose = useMemo(
     () => ({
@@ -172,12 +176,6 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
       if (nn || shadowChanged) g.traverse((o) => { if (o.isMesh) o.castShadow = sh })
       shadowRef.current = sh
       shadowCheckRef.current = 0
-    }
-
-    const sn = nn && (budget?.ready ? budget.tag.has(id) : true)
-    if (sn !== showNameRef.current) {
-      showNameRef.current = sn
-      setShowName(sn)
     }
 
     const hr = nn && (budget?.ready ? budget.halfRate.has(id) : d2 > HALF_RATE_SQ)
@@ -222,14 +220,13 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
       ref={group}
       onClick={(e) => {
         e.stopPropagation()
+        revealName()
         onPick?.(id)
       }}
       onPointerOver={() => {
-        setHovered(true)
         if (onPick) document.body.style.cursor = 'pointer'
       }}
       onPointerOut={() => {
-        setHovered(false)
         document.body.style.cursor = ''
       }}
     >
@@ -239,13 +236,13 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
           <BikeModel />
         </Suspense>
       )}
-      {near && <Tag name={name} bubble={bubble} reaction={reaction} whisper={whisper} showName={showName || hovered} afk={afk} />}
+      {near && <Tag name={name} bubble={bubble} reaction={reaction} whisper={whisper} showName={nameRevealed} afk={afk} />}
     </group>
   )
 })
 
 export default function RemotePlayers({ roster, remotes, bubbles, reactions, whispering, onPick, touch = false }) {
-  const budgetRef = useRef({ draw: new Set(), shadow: new Set(), tag: new Set(), halfRate: new Set(), bubble: new Set(), ready: false, count: -1 })
+  const budgetRef = useRef({ draw: new Set(), shadow: new Set(), halfRate: new Set(), bubble: new Set(), ready: false, count: -1 })
   const timerRef = useRef(0)
   const drawIdsRef = useRef([])
   const [drawIds, setDrawIds] = useState([])
@@ -259,7 +256,7 @@ export default function RemotePlayers({ roster, remotes, bubbles, reactions, whi
       r.z = MathUtils.lerp(r.z, r.tz, k)
     }
 
-    // Saniyede 4 kez mesafeye göre çizim/gölge/etiket/balon/30Hz bütçesi hesaplanır.
+    // Saniyede 4 kez mesafeye göre çizim/gölge/balon/30Hz bütçesi hesaplanır.
     timerRef.current += dt
     const size = remotes.current.size
     if (budgetRef.current.ready && timerRef.current < 0.25 && size === budgetRef.current.count) return
@@ -274,18 +271,16 @@ export default function RemotePlayers({ roster, remotes, bubbles, reactions, whi
     const maxDraw = touch ? MAX_DRAW_TOUCH : MAX_DRAW_DESKTOP
     const draw = new Set()
     const shadow = new Set()
-    const tag = new Set()
     const halfRate = new Set()
     const bubble = new Set()
     for (let i = 0; i < list.length && i < maxDraw; i++) {
       const [pid, d2] = list[i]
       draw.add(pid)
       if (shadow.size < MAX_SHADOWS && d2 <= SHADOW_RANGE_SQ) shadow.add(pid)
-      if (tag.size < MAX_TAGS) tag.add(pid)
       if (d2 > HALF_RATE_SQ) halfRate.add(pid)
       if (d2 <= BUBBLE_RANGE_SQ) bubble.add(pid)
     }
-    budgetRef.current = { draw, shadow, tag, halfRate, bubble, ready: true, count: size }
+    budgetRef.current = { draw, shadow, halfRate, bubble, ready: true, count: size }
     const ids = list.slice(0, maxDraw).map(([id]) => id).sort()
     const prev = drawIdsRef.current
     if (ids.length !== prev.length || ids.some((id, i) => id !== prev[i])) {
@@ -302,7 +297,7 @@ export default function RemotePlayers({ roster, remotes, bubbles, reactions, whi
   })
 }
 
-/** Yerel oyuncunun isim etiketi ve kendi konuşma balonu (LocalPlayer'ın çocuğu olarak çizilir). */
+/** Yerel oyuncunun konuşma balonu ve tepkileri (LocalPlayer'ın çocuğu olarak çizilir). */
 export function SelfTag({ name, bubbles, selfId, reactions }) {
   const [bubble, setBubble] = useState(null)
   const ref = useRef(null)
@@ -336,7 +331,15 @@ export function SelfTag({ name, bubbles, selfId, reactions }) {
 /** Lobideki Rehber (NPC): yakına gelenlere ipucu balonu gösterir; tıklayınca "Nasıl Oynanır" penceresini açar. */
 export function GuideNpc({ focusRef, tips, onOpen, onNear }) {
   const [bubble, setBubble] = useState(null)
+  const [nameRevealed, setNameRevealed] = useState(false)
+  const nameTimerRef = useRef(null)
   const state = useRef({ near: false, i: 0, t: 0 })
+  useEffect(() => () => clearTimeout(nameTimerRef.current), [])
+  const revealName = () => {
+    setNameRevealed(true)
+    clearTimeout(nameTimerRef.current)
+    nameTimerRef.current = setTimeout(() => setNameRevealed(false), 2500)
+  }
 
   useFrame((_, dt) => {
     const f = focusRef.current
@@ -369,13 +372,14 @@ export function GuideNpc({ focusRef, tips, onOpen, onNear }) {
       rotation={[0, GUIDE.ry, 0]}
       onClick={(e) => {
         e.stopPropagation()
+        revealName()
         onOpen?.()
       }}
       onPointerOver={() => (document.body.style.cursor = 'pointer')}
       onPointerOut={() => (document.body.style.cursor = '')}
     >
       <AvatarRig slug={GUIDE.avatar} anim="idle" />
-      <NpcTag name="Kasaba Rehberi Mira" bubble={bubble} />
+      {(nameRevealed || bubble) && <NpcTag name="Kasaba Rehberi Mira" bubble={bubble} showName={nameRevealed} />}
     </group>
   )
 }

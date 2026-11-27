@@ -13,7 +13,6 @@ import { cosStore } from './cosStore'
 
 const ACTIVE_ON = 34 // m: bu kadar yakındaysa model yüklenir/çizilir
 const ACTIVE_OFF = 40
-const TAG_DIST = 18 // m: etiket (Html) bu kadar yakındaysa
 
 // pastel yardımcı malzeme
 const M = ({ color }) => <meshStandardMaterial color={color} roughness={0.85} />
@@ -209,7 +208,7 @@ function splitNpcName(full) {
   return { role: parts.slice(0, -1).join(' '), person: parts[parts.length - 1] }
 }
 
-export function NpcTag({ name, bubble, nearTalk, isVendor }) {
+export function NpcTag({ name, bubble, nearTalk, isVendor, showName = false }) {
   const { role, person } = splitNpcName(name)
   return (
     <Html position={[0, AVATAR_HEIGHT + 0.5, 0]} center distanceFactor={9 * screenK()} zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}>
@@ -225,15 +224,16 @@ export function NpcTag({ name, bubble, nearTalk, isVendor }) {
             <span aria-hidden className="absolute -bottom-[7px] left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 rounded-br-[3px] border-b-2 border-r-2 border-[#cbb7ef] bg-[#efe6ff]" />
           </div>
         )}
-        {/* Fantastik, ikonsuz ve tüm NPC'lerde tek tip isim kartı */}
-        <div className="inline-flex w-max min-w-max flex-col items-center whitespace-nowrap rounded-2xl border-2 border-[#fff7e6] bg-gradient-to-b from-[#3d2b63]/95 via-[#2e204f]/95 to-[#23173f]/95 px-3.5 py-1.5 text-center shadow-[0_6px_18px_rgba(35,23,63,0.42),0_0_12px_rgba(255,211,94,0.24)] ring-1 ring-[#ffd35e]/55">
-          {role && (
-            <span className="text-[9px] font-black uppercase tracking-[0.14em] text-[#ffd35e]">
-              {role}
-            </span>
-          )}
-          <span className="text-[13px] font-black leading-tight tracking-wide text-white">{person}</span>
-        </div>
+        {showName && (
+          <div className="inline-flex w-max min-w-max flex-col items-center whitespace-nowrap rounded-2xl border-2 border-[#fff7e6] bg-gradient-to-b from-[#3d2b63]/95 via-[#2e204f]/95 to-[#23173f]/95 px-3.5 py-1.5 text-center shadow-[0_6px_18px_rgba(35,23,63,0.42),0_0_12px_rgba(255,211,94,0.24)] ring-1 ring-[#ffd35e]/55">
+            {role && (
+              <span className="text-[9px] font-black uppercase tracking-[0.14em] text-[#ffd35e]">
+                {role}
+              </span>
+            )}
+            <span className="text-[13px] font-black leading-tight tracking-wide text-white">{person}</span>
+          </div>
+        )}
       </div>
     </Html>
   )
@@ -243,15 +243,22 @@ const NpcView = memo(function NpcView({ npc, focusRef, onTalk }) {
   const group = useRef()
   const ringRef = useRef()
   const orbRef = useRef()
-  const st = useRef({ active: false, near: false, nearTalk: false, i: npc.id.length, until: 0, anim: 'idle', tag: false, bubble: null, ry: npc.ry ?? 0 })
+  const st = useRef({ active: false, near: false, nearTalk: false, i: npc.id.length, until: 0, anim: 'idle', bubble: null, ry: npc.ry ?? 0 })
   const [active, setActive] = useState(false)
   const [anim, setAnim] = useState('idle')
-  const [tag, setTag] = useState(false)
   const [nearTalk, setNearTalk] = useState(false)
   const [bubble, setBubble] = useState(null)
   const [ready, setReady] = useState(false)
+  const [nameRevealed, setNameRevealed] = useState(false)
+  const nameTimerRef = useRef(null)
   const pose = useMemo(() => (npc.pose ? { current: npc.pose } : undefined), [npc.pose])
   const Prop = npc.prop && PROPS[npc.prop]
+  useEffect(() => () => clearTimeout(nameTimerRef.current), [])
+  const revealName = () => {
+    setNameRevealed(true)
+    clearTimeout(nameTimerRef.current)
+    nameTimerRef.current = setTimeout(() => setNameRevealed(false), 2500)
+  }
 
   // NPC aksesuarı ve özel kıyafet görünümü (cosStore: oda değişiminde silinirse yeniden yazılır)
   useEffect(() => {
@@ -313,11 +320,6 @@ const NpcView = memo(function NpcView({ npc, focusRef, onTalk }) {
       s.anim = a
       setAnim(a)
     }
-    const showTag = d < TAG_DIST
-    if (showTag !== s.tag) {
-      s.tag = showTag
-      setTag(showTag)
-    }
     const nt = d < TALK_RADIUS + 1.4
     if (nt !== s.nearTalk) {
       s.nearTalk = nt
@@ -332,6 +334,7 @@ const NpcView = memo(function NpcView({ npc, focusRef, onTalk }) {
         position={[npc.x, 0, npc.z]}
         onClick={(e) => {
           e.stopPropagation()
+          revealName()
           onTalk?.(npc)
         }}
         onPointerOver={() => (document.body.style.cursor = 'pointer')}
@@ -367,7 +370,9 @@ const NpcView = memo(function NpcView({ npc, focusRef, onTalk }) {
           <cylinderGeometry args={[0.55, 0.55, 1.8, 8]} />
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
-        {active && tag && ready && <NpcTag name={displayName(npc)} bubble={bubble} nearTalk={nearTalk} isVendor={Boolean(npc.shop?.length)} />}
+        {active && ready && (nameRevealed || bubble || nearTalk) && (
+          <NpcTag name={displayName(npc)} bubble={bubble} nearTalk={nearTalk} isVendor={Boolean(npc.shop?.length)} showName={nameRevealed} />
+        )}
       </group>
       {active && npc.companion && (
         <Suspense fallback={null}>
@@ -381,11 +386,17 @@ const NpcView = memo(function NpcView({ npc, focusRef, onTalk }) {
 /** AFK bot: hareketsiz, gerçek oyuncu etiketiyle (mavi hap + 💤). Yakındaysa model yüklenir. */
 const AfkView = memo(function AfkView({ bot, focusRef }) {
   const [active, setActive] = useState(false)
-  const [showTag, setShowTag] = useState(false)
+  const [nameRevealed, setNameRevealed] = useState(false)
   const [ready, setReady] = useState(false)
   const act = useRef(false)
-  const tagRef = useRef(false)
   const clock = useRef(0)
+  const nameTimerRef = useRef(null)
+  useEffect(() => () => clearTimeout(nameTimerRef.current), [])
+  const revealName = () => {
+    setNameRevealed(true)
+    clearTimeout(nameTimerRef.current)
+    nameTimerRef.current = setTimeout(() => setNameRevealed(false), 2500)
+  }
   useEffect(() => {
     const t = setTimeout(() => setReady(true), 900)
     return () => clearTimeout(t)
@@ -401,11 +412,6 @@ const AfkView = memo(function AfkView({ bot, focusRef }) {
       act.current = on
       setActive(on)
     }
-    const tg = d < TAG_DIST
-    if (tg !== tagRef.current) {
-      tagRef.current = tg
-      setShowTag(tg)
-    }
   })
   if (!active) return null
   return (
@@ -414,6 +420,7 @@ const AfkView = memo(function AfkView({ bot, focusRef }) {
       rotation={[0, bot.ry, 0]}
       onClick={(e) => {
         e.stopPropagation()
+        revealName()
         window.dispatchEvent(new CustomEvent('situapp:bot-click', { detail: bot }))
       }}
       onPointerOver={() => (document.body.style.cursor = 'pointer')}
@@ -426,7 +433,7 @@ const AfkView = memo(function AfkView({ bot, focusRef }) {
         <cylinderGeometry args={[0.55, 0.55, 1.8, 8]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
-      {ready && showTag && (
+      {ready && nameRevealed && (
         <Html position={[0, AVATAR_HEIGHT + 0.45, 0]} center distanceFactor={9 * screenK()} zIndexRange={[7, 0]} style={{ pointerEvents: 'none' }}>
           <div className="whitespace-nowrap rounded-full border-2 border-white bg-gradient-to-r from-[#f3e8ff] via-[#ede9fe] to-[#fce7f3] px-3.5 py-0.5 text-[11px] font-black tracking-wide text-[#5b4678] shadow-[0_4px_14px_rgba(168,139,255,0.45)]">
             {bot.name}
