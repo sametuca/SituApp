@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Modal } from '../Hud'
+import { isTyping } from './fitnessLocal'
 
 // ======================= 1. AĞIRLIK ÇALIŞMA MİNİ OYUNU (+GÜÇ) =======================
 export function WeightWorkoutModal({ ski, energy, energyMaxVal, onDone, onClose }) {

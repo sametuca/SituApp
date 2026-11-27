@@ -128,10 +128,16 @@
 | `AssetStudio.jsx` | 274 | Dahili geliştirici aracı: Meshy ile model üretme/önizleme (koyu tema). |
 | `AuthPage.jsx` | 297 | three.js yalnızca giriş ekranı çizildikten sonra yüklensin |
 | `AvatarSelect.jsx` | 172 | Karakter seçimi + renk özelleştirme ekranı (tek karakter kilidi). |
-| `World.jsx` | 1085 | Dünya sayfası orkestratörü: Canvas, ağ, HUD, özellik modülleri, odalar (şehir/ev/mekân). |
+| `World.jsx` | 770 | Dünya sayfası orkestratörü: Canvas, ağ, HUD, özellik modülleri, odalar (şehir/ev/mekân). |
+| `WorldCanvas.jsx` | 127 | Dünya 3B sahnesi (R3F Canvas): ışık/ortam, şehir/ev/mekân, oyuncular, NPC'ler, özellik katmanları, kamera ve izleyiciler. |
 | `WorldLoading.jsx` | 125 | 3B sahne çökerse boş ekran yerine kurtarma kartı gösterir. |
+| `WorldOverlays.jsx` | 56 | Dünya sayfası tam ekran katmanları: bağlantı/oturum uyarıları ve sahne geçişi karartması (World.jsx'ten ayrıldı). |
 | `loadingMessages.js` | 15 | Yükleme ekranı mesajları ve rastgele seçici. |
+| `useAirportTutorial.js` | 64 | Havalimanı başlangıç eğitimi adımları: yıldız topla → çanta → örnek kapı → gardırop → çıkış (World.jsx'ten ayrıldı). |
+| `useHomeFurniture.js` | 61 | Kendi evimin mobilya düzeni: sunucuyla eşitleme (bağlanınca al, değişince kısa beklemeyle yolla), yerel önbellek ve Döşe modu eylemleri. |
+| `useSkills.js` | 50 | Beceri çubuğu: 4 yuvalı ifade/dans becerileri, bekleme süreleri, tek kişilik dans duruşu ve tepki gönderme (World.jsx'ten ayrıldı). |
 | `worldCommands.js` | 96 | Sohbet komutları (/yardım, /ev, /f, /ışınlan ...): World.jsx'ten ayrıldı; bağımlılıklar `c` ile verilir. |
+| `worldConfig.js` | 28 | Dünya sayfası sabitleri: başlangıç mekânı, avatar listesi, rehber ipuçları, geçiş mesajları ve kayıtlı avatar okuyucu. |
 
 ## src/world/
 
@@ -256,11 +262,12 @@
 | `EventFx.jsx` | 90 | Sezon efekti: oyuncunun çevresinde hafif parçacıklar (tek InstancedMesh, ≤ 36 örnek). |
 | `GiftsUi.jsx` | 104 | Hediye seçici, gelen hediye teklifi kartı, ev dekoru ve hediye yerleştirme sekmeleri. |
 | `RhythmArena.jsx` | 223 | Ritim mini oyunu arenası. |
-| `SurfArena.jsx` | 1047 | 60 FPS perspektif 3B-hissi veren, dinamik okyanus & animasyonlu sörf arenası. |
+| `SurfArena.jsx` | 504 | 60 FPS perspektif 3B-hissi veren, dinamik okyanus & animasyonlu sörf arenası. |
+| `SurfHud.jsx` | 110 | Sörf arenası arayüzü: üst skor çubuğu, canvas (işaretçi girdisi), geri sayım, elenme bandı ve zıpla düğmesi. |
 | `TogetherScene.jsx` | 103 | "Birlikte yapılan şeyler"in 3D parçaları (Canvas içinde): dans efektleri, fotoğraf noktası işareti ve kare alma. |
 | `Wardrobe.jsx` | 435 | Gardırop paneli (aksesuar, evcil hayvan, saç/göz/kıyafet rengi) ve evcil hayvan sahiplenme penceresi. |
 | `WardrobePreview.jsx` | 95 | Gardırop canlı 3B önizlemesi: kamera, sahne, evcil hayvan. |
-| `WorkoutModals.jsx` | 401 | ======================= 1. AĞIRLIK ÇALIŞMA MİNİ OYUNU (+GÜÇ) ======================= |
+| `WorkoutModals.jsx` | 402 | ======================= 1. AĞIRLIK ÇALIŞMA MİNİ OYUNU (+GÜÇ) ======================= |
 | `arcade.jsx` | 183 | Playstasyon makineleri: yakındaki kabine E ile "Oyna" → tam ekran retro oyun (src/arcade/games.js). Oyunlar tamamen istemcide çalışır; |
 | `audio.jsx` | 198 | Ses efektleri (tamamen procedural, Web Audio). Motor: ../audio/engine.js, efektler: sfx.js. (Müzik şimdilik devre dışı.) |
 | `away.jsx` | 177 | Asenkron izler: "sen yokken" özeti, çevrimdışı arkadaşa bırakılan hediye paketleri (notlu) ve arkadaş sinyalleri. |
@@ -304,6 +311,7 @@
 | `stickers.js` | 72 | Pastel çıkartma setleri (4 set × 8). Kimlikler `<set>-<0..7>`; sunucudaki server/features/media.js ile aynı olmalı. |
 | `surf.jsx` | 343 | Sörf Yarışı — Dalgalardan Kaç! (2–10 oyunculu gerçek zamanlı + tek kişilik bot antrenmanı + genel puan tablosu). |
 | `surfData.js` | 58 | Sörf ortak verileri: tahta stilleri, bot adları, tohumlu rastgele üretici. |
+| `surfDraw.js` | 447 | Sörf arenası canvas çizimi: perspektif izdüşüm, gökyüzü/ufuk, sörfçü ve dalga çizim fonksiyonları (oyun mantığından bağımsız). |
 | `together.jsx` | 442 | Birlikte yapılan şeyler: oturma, çift dans ve fotoğraf kabini. |
 | `togetherStore.js` | 40 | "Birlikte yapılan şeyler" için paylaşılan istemci durumu (React dışı, ref gibi okunur). |
 | `venueStore.js` | 7 | Mekân etkinlikleri için paylaşılan istemci durumu (React dışı, her karede okunur). |
