@@ -17,7 +17,7 @@ const fails = new Map()
 
 function authed(req, res) {
   if (!KEY) return res.status(503).json({ ok: false, error: 'Yönetici anahtarı (ADMIN_KEY) ayarlı değil.' }), false
-  const ip = String(req.socket.remoteAddress ?? '')
+  const ip = guard.ipOf(req)
   const f = fails.get(ip) ?? { n: 0, t: 0 }
   if (f.n >= 8 && Date.now() - f.t < 600_000) return res.status(429).json({ ok: false, error: 'Çok fazla hatalı deneme.' }), false
   const got = Buffer.from(String(req.headers['x-admin-key'] ?? ''))

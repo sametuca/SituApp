@@ -213,11 +213,11 @@ function DjCard({ d, selfId, fire, result, muted, setMuted, onJoin, onLeave, onP
                 {err && <p className="text-[0.6875rem] font-bold text-rose-400">{err}</p>}
                 <div className="flex gap-1.5">
                   <button type="submit" className={`${btn} flex-1 border-[#e8952c] bg-[#fdb252] text-white`}>
-                    ▶ Çal
+                    🎵 Çal
                   </button>
                   {track && (
                     <button type="button" onClick={onStop} className={`${btn} border-[#c9b6f5] bg-[#e9ddff] text-[#5b3fa8]`}>
-                      ⏹
+                      🛑
                     </button>
                   )}
                 </div>
@@ -225,7 +225,7 @@ function DjCard({ d, selfId, fire, result, muted, setMuted, onJoin, onLeave, onP
                   <div className="flex flex-wrap gap-1">
                     {history.slice(0, 3).map((h) => (
                       <button key={h} type="button" onClick={() => submit(null, h)} className="max-w-full truncate rounded-full bg-[#f1e8ff] px-2 py-1 text-[0.625rem] font-bold text-[#5b3fa8]">
-                        ↻ {h.replace(/^https?:\/\/(www\.)?/, '').slice(0, 26)}
+                        🎵 {h.replace(/^https?:\/\/(www\.)?/, '').slice(0, 26)}
                       </button>
                     ))}
                   </div>
@@ -265,7 +265,7 @@ function DjCard({ d, selfId, fire, result, muted, setMuted, onJoin, onLeave, onP
 
             {result && !now && (
               <p className="animate-pop rounded-2xl bg-[#fff3c8] px-3 py-2 text-center text-xs font-black text-[#8a5a00]">
-                🎧 Vardiya bitti: {result.tracks} şarkı, 🔥 {result.fire}, +{result.earned} 🪙
+                🎧 Vardiya bitti: {result.tracks} şarkı, 🔥 {result.fire}, +{result.earned} ₺
               </p>
             )}
           </div>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import { Box3, Matrix4, Quaternion, Vector3 } from 'three'
+import { fixPropMaterialSeams } from './avatarTextureFix'
 import { playerPos, useCull } from './cull'
 
 const PROP_CULL_R = 72 // m: süs nesneleri bu mesafenin ötesinde çizilmez
@@ -18,7 +19,10 @@ export default function Prop({ model, x, z, scale = 1, ry = 0 }) {
     const c = fit.getCenter(new Vector3())
     clone.position.set(-c.x, -fit.min.y, -c.z)
     clone.traverse((o) => {
-      if (o.isMesh) o.castShadow = o.receiveShadow = true
+      if (o.isMesh) {
+        o.castShadow = o.receiveShadow = true
+        fixPropMaterialSeams(o.material)
+      }
     })
     return clone
   }, [scene])
@@ -47,7 +51,10 @@ export function InstancedPropGroup({ model, items, cullR = PROP_CULL_R, shadowR 
     const fit = new Matrix4().makeScale(k, k, k).multiply(new Matrix4().makeTranslation(-c.x, -box.min.y, -c.z))
     const list = []
     scene.traverse((o) => {
-      if (o.isMesh) list.push({ geo: o.geometry, mat: o.material, local: fit.clone().multiply(o.matrixWorld) })
+      if (o.isMesh) {
+        fixPropMaterialSeams(o.material)
+        list.push({ geo: o.geometry, mat: o.material, local: fit.clone().multiply(o.matrixWorld) })
+      }
     })
     return list
   }, [scene])

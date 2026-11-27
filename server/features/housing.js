@@ -40,7 +40,7 @@ export default function housing(ctx) {
         const cur = clampLandTier(u.stats.landTier ?? 0)
         if (cur >= MAX_LAND_TIER) return send(me.ws, { t: 'info', text: '🌻 Arazin zaten en büyük kademede.' })
         const next = LAND_TIERS[cur + 1]
-        if (!ctx.spendCoins?.(me, next.price, 'land')) return send(me.ws, { t: 'info', text: `🪙 ${next.name} için ${next.price} altın gerekiyor.` })
+        if (!ctx.spendCoins?.(me, next.price, 'land')) return send(me.ws, { t: 'info', text: `₺ ${next.name} için ${next.price} TL gerekiyor.` })
         u.stats.landTier = cur + 1
         save()
         pushGarden(me.homeKey, getGarden(me.homeKey), me)
@@ -50,11 +50,10 @@ export default function housing(ctx) {
         const idx = Number(msg.idx)
         const crop = CROP_BY_ID[msg.crop]
         if (!Number.isInteger(idx) || idx < 0 || idx >= GARDEN_PLOT_COUNT || !crop) return
-        if (ctx.jobOf?.(me) !== 'gardener') return send(me.ws, { t: 'info', text: '🌱 Tohum ekmek için Bahçıvan mesleğini seç (soldaki 💼 düğmesi).' })
         const plots = getGarden(me.homeKey)
         if (plots[idx]) return
         plots[idx] = { crop: crop.id, plantedAt: Date.now(), wateredAt: null }
-        ctx.jobEvent?.(me, 'plant')
+        if (ctx.jobOf?.(me) === 'gardener') ctx.jobEvent?.(me, 'plant')
         ctx.workTend?.(me)
         save()
         pushGarden(me.homeKey, plots, me)
@@ -102,7 +101,7 @@ export default function housing(ctx) {
         u.stats.gardenBonusDay = day
         save()
         ctx.addCoins?.(me, 25, 'garden_bonus')
-        send(me.ws, { t: 'info', text: '🏡 Günlük ev bakım ödülü: +25 🪙!' })
+        send(me.ws, { t: 'info', text: '🏡 Günlük ev bakım ödülü: +25 ₺!' })
       },
       home_kudos(me, msg) {
         const now = Date.now()
@@ -119,7 +118,7 @@ export default function housing(ctx) {
         const cur = getTier(me.homeKey)
         if (cur >= MAX_TIER) return send(me.ws, { t: 'info', text: '🏰 Evin zaten en büyük kademede.' })
         const next = HOME_TIERS[cur + 1]
-        if (!ctx.spendCoins?.(me, next.price, 'ev')) return send(me.ws, { t: 'info', text: `🪙 ${next.name} için ${next.price} altın gerekiyor.` })
+        if (!ctx.spendCoins?.(me, next.price, 'ev')) return send(me.ws, { t: 'info', text: `₺ ${next.name} için ${next.price} TL gerekiyor.` })
         const tier = setTier(me.homeKey, me.name, cur + 1)
         const msg = { t: 'home_tier', owner: me.homeKey, tier }
         send(me.ws, msg)

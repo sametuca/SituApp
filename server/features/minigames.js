@@ -10,9 +10,7 @@
 //   { t: 'mg_lobby', game, players, min, max, startsAt }
 //   { t: 'mg_start', game, matchId, seed, startAt, players }
 //   { t: 'mg_end', game, winner, standings, top }
-import fs from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { allUsers, save, user } from '../store.js'
 
 const GAMES = ['rhythm', 'tiles', 'barista', 'bike', 'balloon']
 const MIN_P = 2
@@ -20,44 +18,25 @@ const MAX_P = 10
 const COUNTDOWN_MS = 10_000
 const MATCH_TIMEOUT_MS = 95_000
 
-const DATA_DIR = process.env.SITUAPP_DATA_DIR || path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data')
-const FILE = path.join(DATA_DIR, 'minigames-board.json')
-
-const load = () => {
-  try {
-    const raw = JSON.parse(fs.readFileSync(FILE, 'utf8'))
-    return raw && typeof raw === 'object' ? raw : {}
-  } catch {
-    return {}
-  }
-}
-
-const save = (data) => {
-  try {
-    fs.mkdirSync(path.dirname(FILE), { recursive: true })
-    fs.writeFileSync(FILE, JSON.stringify(data, null, 2))
-  } catch {
-    /* disk yazılamazsa oyun durmaz */
-  }
-}
+// Liderlik tabloları kullanıcı verisinde (store.user(key).stats.minigames) tutulur → Supabase write-behind ile kalıcı.
+const mgOf = (key) => (user(key).stats.minigames ??= {})
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, Number.isFinite(Number(v)) ? Math.round(Number(v)) : 0))
 
 export default function minigames(ctx) {
   const { players, send } = ctx
-  const boards = load() // game → { key → { name, avatar, points, wins, games, best } }
-  for (const g of GAMES) if (!boards[g]) boards[g] = {}
 
   const topOf = (game) =>
-    Object.entries(boards[game] ?? {})
-      .map(([key, v]) => ({ key, ...v }))
+    Object.entries(allUsers())
+      .map(([key, u]) => (u.stats?.minigames?.[game] ? { key, ...u.stats.minigames[game] } : null))
+      .filter(Boolean)
       .sort((a, b) => b.points - a.points || b.wins - a.wins || b.best - a.best)
       .slice(0, 15)
 
   const record = (game, p, rank, score, total) => {
     const key = p.key || p.id
-    const b = boards[game]
-    const cur = b[key] ?? { name: p.name, avatar: p.avatar, points: 0, wins: 0, games: 0, best: 0 }
+    const mine = mgOf(key)
+    const cur = (mine[game] ??= { name: '', avatar: '', points: 0, wins: 0, games: 0, best: 0 })
     const pts = rank === 1 ? 100 : rank === 2 ? 60 : rank === 3 ? 35 : 15
     const coins = rank === 1 ? 25 : rank === 2 ? 15 : rank === 3 ? 8 : 4
     cur.name = p.name
@@ -66,7 +45,7 @@ export default function minigames(ctx) {
     cur.games += 1
     if (rank === 1 && total >= 2) cur.wins += 1
     cur.best = Math.max(cur.best, score)
-    b[key] = cur
+    save()
     ctx.addCoins?.(p, coins, 'minigame')
     return { pts, coins }
   }
@@ -105,7 +84,6 @@ export default function minigames(ctx) {
       const rew = record(m.game, r.p, rank, r.score, rows.length)
       return { rank, id: r.p.id, name: r.p.name, score: r.score, ms: r.ms, pts: rew.pts, coins: rew.coins }
     })
-    save(boards)
     const top = topOf(m.game)
     const winner = standings[0] ?? null
     for (const r of m.slots.values()) {

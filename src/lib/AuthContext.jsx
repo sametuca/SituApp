@@ -33,7 +33,7 @@ export function AuthProvider({ children }) {
   const signUp = useCallback(async (data) => {
     const consentRecord = makeConsentRecord(data.consent ?? {})
     const res = await authService.signUp({ ...data, consentRecord })
-    recordConsent(consentRecord, data.email) // sunucuda IP + zaman damgalı kanıt (başarısız olsa da akış sürer)
+    // Kayıt sadece kullanıcı adı ve şifreyle açılır; KVKK onayı girişten sonra ConsentGate'de alınır.
     if (res.user && !res.needsConfirmation) setUser(res.user)
     return res
   }, [])
@@ -54,7 +54,11 @@ export function AuthProvider({ children }) {
 
   const acceptConsent = useCallback(async (record) => {
     const u = await authService.acceptConsent(record)
-    recordConsent(record, u?.email ?? '')
+    try {
+      await recordConsent(record, await authService.getToken())
+    } catch (error) {
+      console.error('Onay kaydı gönderilemedi:', error)
+    }
     setUser(u)
   }, [])
 

@@ -18,7 +18,9 @@ export const FACADES = {
   fastfood: { door: { x: -0.2, w: 1.4, h: 2.2, c: '#d9482b', style: 'double' }, glass: [{ k: 'big', x: 0.22, w: 0.4 }], awning: { c: '#e04a2a', stripe: '#ffd35e' }, extra: [] },
   dondurma: { door: { x: 0.15, w: 1.2, h: 2.2, c: '#5fc0ea' }, glass: [{ k: 'big', x: -0.2, w: 0.4 }], awning: { c: '#ffc2dc', stripe: '#ffffff' }, extra: ['cone'] },
   surf: { door: { x: 0, w: 1.6, h: 2.3, c: '#2aa6b8', style: 'double' }, glass: [], extra: ['boards'] },
-  plajbar: { door: { x: 0, w: 2.2, h: 2.2, c: null, open: true }, glass: [], awning: { c: '#e8c37a', stripe: '#b88a3a' }, extra: ['palmthatch'] },
+  plajbar: { door: { x: 0, w: 2.2, h: 2.2, c: null, open: true }, glass: [], awning: { c: '#ff9f43', stripe: '#fff3c8' }, extra: ['planters'] },
+  fitness: { door: { x: 0, w: 1.5, h: 2.3, c: '#38bdf8', style: 'double' }, glass: [{ k: 'big', x: -0.26, w: 0.28 }, { k: 'big', x: 0.26, w: 0.28 }], awning: { c: '#7fd3b8', stripe: '#ffffff' }, extra: [] },
+  teknel: { door: { x: -0.18, w: 1.3, h: 2.2, c: '#1d74d8', style: 'double' }, glass: [{ k: 'big', x: 0.22, w: 0.42 }], awning: { c: '#1d74d8', stripe: '#e0f2fe' }, extra: ['neonsign'] },
   evim: { door: { x: 0, w: 1.2, h: 2.2, c: '#e8952c', arch: true }, glass: [{ k: 'tall', x: -0.3 }, { k: 'tall', x: 0.3 }], extra: ['flowers'] },
 }
 /** Binanın cephe tasarımı: mekân kimliği ya da 'evim'. */

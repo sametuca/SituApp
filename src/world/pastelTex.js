@@ -16,10 +16,10 @@ function makePair(key, draw) {
   const map = new CanvasTexture(cv)
   map.wrapS = map.wrapT = RepeatWrapping
   map.colorSpace = SRGBColorSpace
-  map.anisotropy = 4
+  map.anisotropy = 8
   const bump = new CanvasTexture(bcv)
   bump.wrapS = bump.wrapT = RepeatWrapping
-  bump.anisotropy = 4
+  bump.anisotropy = 8
   entry = { map, bump }
   cache.set(key, entry)
   return entry
@@ -370,6 +370,73 @@ export function getPuffyPaverPair() {
       g.arc(x, y, 1 + r() * 1.5, 0, Math.PI * 2)
       g.fill()
     }
+  })
+}
+
+/** Canlı, yumuşak ressam-stili pastel çim + ince ot tutamları ve kabartma haritası. */
+export function getPuffyGrassPair() {
+  return makePair('puffy_grass', (g, bg, N) => {
+    g.fillStyle = '#9fe0a6'
+    g.fillRect(0, 0, N, N)
+    bg.fillStyle = '#7c7c7c'
+    bg.fillRect(0, 0, N, N)
+
+    const r = rng(7741)
+    // Yumuşak güneşli/gölgeli çayır lekeleri (dikişsiz sarmalı)
+    for (let i = 0; i < 54; i++) {
+      const x = r() * N
+      const y = r() * N
+      const rad = 36 + r() * 76
+      const warm = r() > 0.45
+      for (const ox of [-N, 0, N]) {
+        if (x + ox + rad < 0 || x + ox - rad > N) continue
+        for (const oy of [-N, 0, N]) {
+          if (y + oy + rad < 0 || y + oy - rad > N) continue
+          const gr = g.createRadialGradient(x + ox, y + oy, 4, x + ox, y + oy, rad)
+          gr.addColorStop(0, warm ? 'rgba(196, 244, 174, 0.44)' : 'rgba(116, 198, 138, 0.34)')
+          gr.addColorStop(1, 'rgba(159, 224, 166, 0)')
+          g.fillStyle = gr
+          g.beginPath()
+          g.arc(x + ox, y + oy, rad, 0, Math.PI * 2)
+          g.fill()
+        }
+      }
+    }
+
+    // Stilize yumuşak çim yaprakları (renk + kabartma)
+    g.lineCap = 'round'
+    bg.lineCap = 'round'
+    for (let i = 0; i < 620; i++) {
+      const x = r() * N
+      const y = r() * N
+      const len = 7 + r() * 11
+      const tilt = (r() - 0.5) * 7
+      const light = r() > 0.42
+      g.strokeStyle = light ? 'rgba(218, 250, 194, 0.55)' : 'rgba(98, 178, 120, 0.38)'
+      g.lineWidth = 1.6 + r() * 1.4
+      g.beginPath()
+      g.moveTo(x, y)
+      g.quadraticCurveTo(x + tilt * 0.5, y - len * 0.5, x + tilt, y - len)
+      g.stroke()
+
+      bg.strokeStyle = light ? 'rgba(235, 235, 235, 0.42)' : 'rgba(65, 65, 65, 0.35)'
+      bg.lineWidth = 2.0
+      bg.beginPath()
+      bg.moveTo(x, y)
+      bg.lineTo(x + tilt, y - len)
+      bg.stroke()
+    }
+
+    // Minik pastel yonca / çiçek benekleri
+    const blooms = ['#fff8d6', '#ffffff', '#ffe0ec', '#dff4ff']
+    for (let i = 0; i < 55; i++) {
+      g.fillStyle = blooms[i % blooms.length]
+      g.globalAlpha = 0.72
+      g.beginPath()
+      g.arc(r() * N, r() * N, 1.5 + r() * 1.6, 0, Math.PI * 2)
+      g.fill()
+    }
+    g.globalAlpha = 1
   })
 }
 

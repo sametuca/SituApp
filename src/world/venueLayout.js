@@ -33,6 +33,8 @@ const TYPE_THEME = {
   shop: { floor: ['#fdf0cf', '#f8e2a8'] },
   guide: { floor: ['#e7f1ff', '#d6e6fb'] },
   airport: { floor: ['#eef2f8', '#dfe6f1'] },
+  gym: { floor: ['#e5f5ef', '#d4ece4'] },
+  teknel: { floor: ['#e8f3ff', '#d6e9ff'] },
 }
 
 /** Mekânın renk teması (bina renklerinden türer). */
@@ -149,8 +151,8 @@ function build(v) {
     plant(-hw + 0.7, 4.1)
     plant(hw - 0.7, 4.1)
   }
-  const sign = () => add({ t: 'board', x: 0, y: 3.05, z: -hd + 0.04, ry: 0, w: 3.4, h: 0.6, lines: [`${v.emoji} ${v.name}`], bg: th.accent, fg: '#ffffff', big: true })
-  const windows = (zs = [-0.6, 2.4]) => zs.forEach((z) => { add({ t: 'window', wall: 'w', z }); add({ t: 'window', wall: 'e', z }) })
+  const sign = () => add({ t: 'board', x: 0, y: 3.25, z: -hd + 0.04, ry: 0, w: 3.4, h: 0.56, lines: [`${v.emoji} ${v.name}`], bg: th.accent, fg: '#ffffff', big: true })
+  const windows = (z = 1.2, wall = 'w') => add({ t: 'window', wall, z })
   const chairAt = (name, x, z, ry, kind, group, c) => {
     add({ t: 'chair', x, z, ry, c: c ?? th.accent })
     block(x, z, 0.24, 0.24, ry)
@@ -179,7 +181,6 @@ function build(v) {
     seat(name, 'stool', 'chair', x, z, ry, undefined, group)
   }
   const shelfRow = (mode, xs, extra = {}) => xs.forEach((x) => add({ t: 'shelf', x, z: -hd + 0.26, ry: 0, w: 1.6, rows: 3, mode, c: th.dark ? th.trim : '#fffaf2', ...extra }))
-  const frame = (x, y, z, ry, w, h, c) => add({ t: 'frame', x, y, z, ry, w, h, c })
   const menu = (lines, x, y = 2.1) => add({ t: 'board', x, y, z: -hd + 0.04, ry: 0, w: 1.7, h: 1.15, lines, bg: '#fffaf2', fg: '#4a3b5c', frame: th.accent })
   const nx = clamp(npc.x, -2.4, 2.4)
   const sideMenus = (a, b) => {
@@ -269,7 +270,6 @@ function build(v) {
     case 'books': {
       sign()
       counter(npc.x, 3.2)
-      add({ t: 'frame', x: -hw + 0.04, y: 2.2, z: -2.6, ry: Math.PI / 2, w: 1.0, h: 0.8, c: th.accent })
       // kuzey ve doğu duvarında kitap rafları (NPC solda)
       shelfRow('books', [-0.4, 1.2, 2.8, 4.4])
       for (const z of [-2.8, -1.0, 0.8]) add({ t: 'shelf', x: hw - 0.26, z, ry: -Math.PI / 2, w: 1.6, rows: 3, mode: 'books', c: '#fffaf2' })
@@ -283,7 +283,7 @@ function build(v) {
       ;[[-3.9, 1.0], [-3.9, 3.2]].forEach(([x, z], i) => tableSet(i, x, z))
       add({ t: 'glb', m: 'plant', x: -hw + 0.7, z: 4.1, s: 1.4 }, { x: -hw + 0.7, z: 4.1, hw: 0.3, hd: 0.3, ry: 0 })
       add({ t: 'glb', m: 'plant', x: hw - 0.7, z: -4.3, s: 1.4 }, { x: hw - 0.7, z: -4.3, hw: 0.3, hd: 0.3, ry: 0 })
-      windows([-0.2])
+      windows(-0.2)
       break
     }
     // ================= bar =================
@@ -373,7 +373,7 @@ function build(v) {
       add({ t: 'mirror', x: hw - 0.05, z: -0.6, w: 1.3, h: 1.8, ry: -Math.PI / 2 })
       plant(-hw + 0.7, 4.1)
       plant((hw - 0.7), -4.2)
-      windows([2.4])
+      windows(-1.6)
       break
     }
     // ================= stüdyo =================
@@ -390,9 +390,6 @@ function build(v) {
       add({ t: 'ball', x: bx + 2.0, y: 0.8, z: -3.6, r: 0.3, c: th.accent })
       L.photo = { x: bx, z: -1.0, radius: 2.2 }
       add({ t: 'rug', x: bx, z: -1.4, w: 3.4, d: 3.6, c: mix(th.accent, '#ffffff', 0.7), round: true })
-      ;[-5.0, -3.9, -2.8].forEach((x, i) => frame(x, 2.3 - (i % 2) * 0.35, -hd + 0.03, 0, 0.8, 1.0, [th.accent, '#7fcdf3', '#ffd35e'][i]))
-      frame(-hw + 0.03, 2.1, 1.4, Math.PI / 2, 1.0, 1.3, '#b79cff')
-      frame(-hw + 0.03, 2.0, 3.0, Math.PI / 2, 0.8, 1.0, '#8fdcb4')
       plant(-hw + 0.7, 4.1)
       plant((hw - 0.7), 4.1)
       break
@@ -400,8 +397,8 @@ function build(v) {
     // ================= sörf dükkanı =================
     case 'shop': {
       sign()
-      counter(npc.x + 2.4, 3.4)
-      add({ t: 'register', x: npc.x + 2.4, z: counterZ, y: 1.0 })
+      counter(npc.x, 3.4)
+      add({ t: 'register', x: npc.x + 1.0, z: counterZ, y: 1.0 })
       const bcols = [['#fec172', '#fff8f0'], ['#7fcdf3', '#ffffff'], ['#ffd35e', '#fff7dc'], ['#8fdcb4', '#ffffff'], ['#b79cff', '#fff8f0'], ['#ffb48c', '#ffffff']]
       ;[4.5, 3.4, 2.3, 1.2].forEach((x, i) => add({ t: 'surf', x, z: -hd + 0.5, ry: 0, c: bcols[i][0], c2: bcols[i][1], len: 2.0 }))
       ;[-0.5, 0.3].forEach((z, i) => add({ t: 'surf', x: hw - 0.45, z: z + 0.5, ry: -Math.PI / 2, c: bcols[4 + i][0], c2: bcols[4 + i][1], len: 2.0 }))
@@ -411,7 +408,7 @@ function build(v) {
       add({ t: 'glb', m: 'palm', x: -5.2, z: -4.1, s: 3.0 }, { x: -5.2, z: -4.1, hw: 0.4, hd: 0.4, ry: 0 })
       add({ t: 'glb', m: 'palm', x: hw - 0.7, z: 4.0, s: 3.0 }, { x: 5.3, z: 4.0, hw: 0.4, hd: 0.4, ry: 0 })
       add({ t: 'rug', x: 0, z: 0.8, w: 3.2, d: 2.2, c: '#9fd8f5', round: true })
-      windows([2.6])
+      windows(2.6)
       break
     }
     // ================= rehber =================
@@ -427,7 +424,7 @@ function build(v) {
       add({ t: 'globe', x: 4.6, z: -0.6 }, { x: 4.6, z: -0.6, hw: 0.45, hd: 0.45, ry: 0 })
       plant(-hw + 0.7, -4.2)
       plant((hw - 0.7), -4.2)
-      windows([0.4])
+      windows(-1.6)
       break
     }
     // ================= havalimanı çıkış salonu (başlangıç odası) =================
@@ -460,7 +457,55 @@ function build(v) {
       plant(hw - 0.7, -4.4)
       plant(hw - 0.7, 4.2)
       add({ t: 'rug', x: hw - 2.6, z: 0.4, w: 2.2, d: 4.2, c: mix(th.accent, '#ffffff', 0.62) })
-      windows([-0.6, 2.4])
+      windows(2.2)
+      break
+    }
+    // ================= fitness kulübü (MakFit) =================
+    case 'gym': {
+      sign()
+      // Boks ringi (sol/orta ana alan)
+      add({ t: 'ring', x: -3.2, z: -0.6, w: 4.4, d: 4.4 }, { x: -3.2, z: -0.6, hw: 2.25, hd: 2.25, ry: 0 })
+      // Kum torbası (ringin sağ arkası)
+      add({ t: 'punchbag', x: 1.9, z: -3.6 }, { x: 1.9, z: -3.6, hw: 0.45, hd: 0.45, ry: 0 })
+      // Ağırlık çalışma istasyonu: bench press + dambıl rafı (sağ kuzey)
+      add({ t: 'benchpress', x: 4.5, z: -2.4, ry: -Math.PI / 2 }, { x: 4.5, z: -2.4, hw: 1.0, hd: 0.75, ry: 0 })
+      add({ t: 'dumbbells', x: 6.7, z: -2.4, ry: -Math.PI / 2 }, { x: 6.7, z: -2.4, hw: 0.45, hd: 1.15, ry: 0 })
+      // Koşu bantları (sağ güney)
+      add({ t: 'treadmill', x: 4.4, z: 1.5, ry: Math.PI }, { x: 4.4, z: 1.5, hw: 0.55, hd: 0.95, ry: 0 })
+      add({ t: 'treadmill', x: 6.1, z: 1.5, ry: Math.PI }, { x: 6.1, z: 1.5, hw: 0.55, hd: 0.95, ry: 0 })
+      // Duvar panoları
+      add({ t: 'board', x: -3.2, y: 2.15, z: -hd + 0.04, ry: 0, w: 2.5, h: 1.15, lines: ['🥊 BOKS RİNGİ', '← Jab · → Kroşe', '↑ Aparkat · ↓ Blok', 'Haftalık Şampiyon: 🏆'], bg: '#fffaf2', fg: '#4a3b5c', frame: '#ff8a7a' })
+      add({ t: 'board', x: 4.5, y: 2.15, z: -hd + 0.04, ry: 0, w: 2.3, h: 1.1, lines: ['💪 ANTRENMAN', 'Ağırlık → +Güç', 'Koşu → +Kondisyon', 'Enerji her gün yenilenir'], bg: '#fffaf2', fg: '#4a3b5c', frame: '#7fcdf3' })
+      add({ t: 'rug', x: 5.2, z: -0.4, w: 3.8, d: 5.4, c: '#c8eadf', round: false })
+      sofaAt('sofaA', -5.4, 3.2, 0, 2.0, '#7fcdf3')
+      plant(-hw + 0.7, -4.2)
+      plant(-hw + 0.7, 4.1)
+      plant(hw - 0.7, 4.1)
+      windows(1.0)
+      L.gym = {
+        ring: { x: -3.2, z: -0.6 },
+        weights: { x: 4.5, z: -2.4 },
+        cardio: { x: 5.2, z: 1.5 },
+      }
+      break
+    }
+    // ================= Teknel (mavi logolu tekel & şarküteri) =================
+    case 'teknel': {
+      add({ t: 'board', x: 0, y: 3.05, z: -hd + 0.04, ry: 0, w: 3.6, h: 0.65, lines: ['🍾 TEKNEL · ŞARKÜTERİ'], bg: '#1d74d8', fg: '#ffffff', big: true })
+      counter(0, 4.6, { c: '#d6e9ff', top: '#1d74d8' })
+      add({ t: 'register', x: 1.3, z: counterZ, y: 1.0 })
+      add({ t: 'display', x: -1.3, z: counterZ, y: 1.0, w: 1.6, mode: 'cakes' })
+      // soğuk içecek dolapları ve şarküteri rafları
+      add({ t: 'bottles', x: -3.6, z: -hd + 0.28, w: 2.6 })
+      add({ t: 'bottles', x: 3.6, z: -hd + 0.28, w: 2.6 })
+      add({ t: 'neon', x: -4.8, y: 2.45, z: -hd + 0.05, w: 1.6, c: '#38bdf8' })
+      add({ t: 'neon', x: 4.8, y: 2.45, z: -hd + 0.05, w: 1.6, c: '#38bdf8' })
+      add({ t: 'board', x: -4.2, y: 2.0, z: -hd + 0.04, ry: 0, w: 1.8, h: 1.15, lines: ['❄️ SOĞUK DOLAP', '🍺 Bira · 🍷 Şarap', '🥃 Rakı · 🥤 Gazoz', '🧀 Peynir Tabağı'], bg: '#eef7ff', fg: '#1e3a5f', frame: '#1d74d8' })
+      // 2 küçük samimi şarküteri masası
+      ;[[-3.6, 1.4], [3.6, 1.4]].forEach(([x, z], i) => tableSet(i, x, z))
+      add({ t: 'rug', x: 0, z: 1.4, w: 2.4, d: 2.6, c: '#cfe6ff', round: false })
+      windows()
+      corners()
       break
     }
     default:
@@ -472,14 +517,84 @@ function build(v) {
   const hit = (x, z, rw, rd) => L.colliders.some((c) => Math.abs(c.x - x) < c.hw + rw + 0.1 && Math.abs(c.z - z) < c.hd + rd + 0.1)
   const inNpc = (x, z) => x > L.npcRect.x0 - 0.6 && x < L.npcRect.x1 + 0.6 && z > L.npcRect.z0 - 0.6 && z < L.npcRect.z1 + 0.6
   const CAFE_LIKE = ['cafe', 'tea', 'bakery', 'dessert', 'books', 'fastfood', 'icecream']
+  const winAt = (sx, z) => L.items.some((it) => it.t === 'window' && it.wall === (sx < 0 ? 'w' : 'e') && Math.abs(it.z - z) < 1.35)
   let fi = 0
   for (const sx of [-1, 1]) {
     for (const z of [-0.6, 2.4]) {
+      if (winAt(sx, z)) continue
       const x = sx * (hw - 1.7)
       if (CAFE_LIKE.includes(v.type)) {
         if (!hit(x, z, 1.5, 0.7) && !inNpc(x, z)) tableSet(`fx${fi++}`, x, z, 'x')
-      } else if (v.type !== 'airport') {
+      } else if (v.type !== 'airport' && v.type !== 'gym') {
         if (!hit(sx * (hw - 1.0), z, 0.5, 1.1) && !inNpc(x, z)) sofaAt(`fs${fi++}`, sx * (hw - 1.0), z, sx < 0 ? Math.PI / 2 : -Math.PI / 2, 2.0, th.accent)
+      }
+    }
+  }
+  // --- her mekân türü için 2 tematik Meshy GLB dekor öğesi (duvar + köşe yerleşimi) ---
+  const V = (n) => `/models/venues/${n}.glb`
+  const F = (n) => `/models/furniture/${n}.glb`
+  const VENUE_ACCENTS = {
+    cafe: [{ model: V('cafe-neon-cup'), h: 1.15, wall: true, y: 1.7 }, { model: V('cafe-wall-menu'), h: 1.25, wall: true, y: 1.65 }, { model: V('cafe-pastry-cart'), h: 1.25, w: 1.0, d: 0.75 }],
+    tea: [{ model: V('tea-wall-carpet'), h: 1.55, wall: true, y: 1.45 }, { model: V('tea-copper-tray-wall'), h: 1.15, wall: true, y: 1.65 }, { model: V('tea-backgammon-table'), h: 1.0, w: 1.05, d: 0.9 }],
+    bakery: [{ model: V('bakery-oven-hood'), h: 1.3, wall: true, y: 1.85 }, { model: V('bakery-bread-rack'), h: 1.75, w: 1.1, d: 0.65 }, { model: V('bakery-flour-barrel'), h: 1.05, w: 0.85, d: 0.85 }],
+    dessert: [{ model: V('dessert-donut-wall'), h: 1.45, wall: true, y: 1.4 }, { model: V('dessert-macaron-tower'), h: 1.3, w: 0.8, d: 0.8 }],
+    icecream: [{ model: V('icecream-cone-lamp'), h: 1.65, w: 0.75, d: 0.75 }, { model: V('icecream-menu-board'), h: 1.35, w: 0.9, d: 0.65 }],
+    fastfood: [{ model: V('fastfood-burger-statue'), h: 1.55, w: 0.95, d: 0.95 }, { model: V('fastfood-soda-fountain'), h: 1.45, w: 1.0, d: 0.75 }],
+    books: [{ model: V('books-reading-ladder'), h: 1.95, w: 0.9, d: 0.7 }, { model: V('books-globe-lamp'), h: 1.25, w: 0.8, d: 0.8 }],
+    club: [{ model: V('club-neon-wings'), h: 1.75, wall: true, y: 1.35 }, { model: V('club-speaker-tower'), h: 1.9, w: 0.95, d: 0.85 }, { model: V('club-velvet-rope'), h: 1.15, w: 1.2, d: 0.6 }],
+    bar: [{ model: V('bar-guitar-wall'), h: 1.35, wall: true, y: 1.55 }, { model: V('bar-neon-cocktail'), h: 1.15, wall: true, y: 1.7 }, { model: V('bar-dartboard'), h: 1.15, wall: true, y: 1.55 }],
+    arcade: [{ model: V('arcade-prize-shelf'), h: 1.75, w: 1.15, d: 0.7 }, { model: V('arcade-neon-joystick'), h: 1.15, wall: true, y: 1.7 }],
+    salon: [{ model: V('salon-dryer-chair'), h: 1.55, w: 0.95, d: 0.95 }, { model: V('salon-perfume-shelf'), h: 1.15, wall: true, y: 1.6 }, { model: V('salon-wall-dryer'), h: 1.25, wall: true, y: 1.55 }],
+    studio: [{ model: V('studio-ring-light'), h: 1.85, w: 0.8, d: 0.8 }, { model: V('studio-polaroid-wall'), h: 1.35, wall: true, y: 1.55 }],
+    shop: [{ model: V('surf-tiki-mask'), h: 1.35, wall: true, y: 1.6 }, { model: V('surf-wetsuit-rack'), h: 1.65, w: 1.1, d: 0.7 }],
+    guide: [{ model: V('guide-postcard-rack'), h: 1.65, w: 0.85, d: 0.85 }, { model: V('guide-compass-plaque'), h: 1.2, wall: true, y: 1.65 }],
+    airport: [{ model: V('airport-departure-clock'), h: 1.15, wall: true, y: 1.8 }, { model: V('airport-flight-board'), h: 1.35, wall: true, y: 1.7 }, { model: V('airport-dutyfree-shelf'), h: 1.65, w: 1.15, d: 0.7 }],
+    gym: [{ model: V('gym-trophy-case'), h: 1.8, w: 1.15, d: 0.7 }, { model: V('gym-wall-mirror-banner'), h: 1.3, wall: true, y: 1.75 }],
+    teknel: [{ model: V('teknel-cheese-case'), h: 1.35, w: 1.25, d: 0.8 }, { model: F('plant-stand'), h: 1.55, w: 0.8, d: 0.8 }],
+  }
+  const accents = VENUE_ACCENTS[v.type] ?? VENUE_ACCENTS.cafe
+  const floorSpots = [
+    [-hw + 1.05, -hd + 0.95, 0.35],
+    [hw - 1.05, -hd + 0.95, -0.35],
+    [-hw + 1.05, hd - 1.1, Math.PI / 2],
+    [hw - 1.05, hd - 1.1, -Math.PI / 2],
+    [-hw + 1.05, 0.9, Math.PI / 2],
+    [hw - 1.05, 0.9, -Math.PI / 2],
+  ]
+  const wallSpots = [
+    [-hw + 0.24, -2.0, Math.PI / 2],
+    [hw - 0.24, -2.0, -Math.PI / 2],
+    [-hw + 0.24, -0.2, Math.PI / 2],
+    [hw - 0.24, -0.2, -Math.PI / 2],
+    [-hw + 0.24, 2.2, Math.PI / 2],
+    [hw - 0.24, 2.2, -Math.PI / 2],
+    [-hw + 0.24, 3.0, Math.PI / 2],
+    [hw - 0.24, 3.0, -Math.PI / 2],
+  ]
+  const wallFree = (wx, wz) => {
+    const side = wx < 0 ? 'w' : 'e'
+    return !L.items.some((it) => {
+      if (it.t === 'window' && it.wall === side && Math.abs(it.z - wz) < 1.65) return true
+      if (it.t === 'demodoor' && side === 'w' && Math.abs(it.z - wz) < 1.75) return true
+      if (it.t === 'neon' && it.x !== undefined && Math.sign(it.x) === Math.sign(wx) && Math.abs(it.x) > hw - 1 && Math.abs(it.z - wz) < (it.w ?? 2) / 2 + 0.8) return true
+      if (['mirror', 'shelf', 'surf', 'decor'].includes(it.t) && it.x !== undefined && Math.abs(it.x - wx) < 1.2 && Math.abs(it.z - wz) < 1.55) return true
+      return false
+    })
+  }
+  for (const ac of accents) {
+    if (ac.wall) {
+      const spot = wallSpots.find(([wx, wz]) => wallFree(wx, wz))
+      if (spot) {
+        const [wx, wz, wry] = spot
+        add({ t: 'decor', model: ac.model, x: wx, y: ac.y ?? 1.6, z: wz, ry: wry, h: ac.h })
+      }
+      continue
+    }
+    for (const [sx, sz, sry] of floorSpots) {
+      if (Math.hypot(sx, sz - hd) < 2.2) continue // çıkış kapısı önünü kapatma
+      if (!hit(sx, sz, ac.w / 2, ac.d / 2) && !inNpc(sx, sz)) {
+        add({ t: 'decor', model: ac.model, x: sx, z: sz, ry: sry, h: ac.h, w: ac.w, d: ac.d }, true)
+        break
       }
     }
   }

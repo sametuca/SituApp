@@ -1,12 +1,14 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
-import { MathUtils, Vector3 } from 'three'
+import { MathUtils, Spherical, Vector3 } from 'three'
 import AvatarRig from './AvatarRig'
 import { groundY, resolveCollisions } from './layout'
 import { together } from './features/togetherStore'
 import { work } from './features/jobStore'
 import { playerPos } from './cull'
 import { BIKE_POSE, BIKE_SPEED, bike, speedBoost, useRiding } from './bikeStore'
+import { fitnessStore } from './fitnessStore'
+import { petting } from './pettingStore'
 import BikeModel from './Bike'
 import SpeedFx from './SpeedFx'
 
@@ -28,17 +30,18 @@ const isTyping = (e) => e.target instanceof HTMLElement && (e.target.tagName ===
  * focusRef.current = { x, z, ry, anim, teleport } paylaşılan durumdur (HUD, güneş ışığı, minimap okur).
  * focusRef.current.teleport = [x, z, ry?] atanırsa bir sonraki karede oyuncu oraya ışınlanır.
  */
-export default function LocalPlayer({ slug, start, focusRef, controlsRef, joystickRef, onMove, collide = resolveCollisions, camOffset = [4.2, 8], locked = false, children }) {
+export default function LocalPlayer({ slug, start, focusRef, controlsRef, joystickRef, lookJoystickRef, moveTargetRef, onMove, collide = resolveCollisions, camOffset = [4.2, 8], locked = false, children }) {
   const camera = useThree((s) => s.camera)
   const group = useRef()
   const keys = useRef({})
   const [anim, setAnim] = useState('idle')
   const animRef = useRef('idle')
-  const v = useMemo(() => ({ fwd: new Vector3(), right: new Vector3(), dir: new Vector3(), up: new Vector3(0, 1, 0) }), [])
+  const v = useMemo(() => ({ fwd: new Vector3(), right: new Vector3(), dir: new Vector3(), up: new Vector3(0, 1, 0), offset: new Vector3(), sph: new Spherical() }), [])
   const placed = useRef(false)
   const riding = useRiding()
   const movingRef = useRef(false)
   const velRef = useRef({ x: 0, z: 0 })
+  const stuckRef = useRef(0)
   const bikePoseRef = useRef({ ...BIKE_POSE, moving: false })
   // duruş: oturma/dans (together) ya da bisiklet; AvatarRig her karede .current okur (sıfır bellek tahsisi)
   const pose = useMemo(
@@ -48,7 +51,12 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
           bikePoseRef.current.moving = movingRef.current
           return bikePoseRef.current
         }
-        return together.self.current ?? work.self.current
+        const currentPose = together.self.current ?? work.self.current
+        if (currentPose) return currentPose
+        const petPose = petting.self
+        if (petPose && petPose.until > performance.now() / 1000) return petPose
+        if (petPose) petting.self = null
+        return null
       },
     }),
     [],
@@ -101,6 +109,8 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
     if (f.teleport) {
       const [tx, tz, tr] = f.teleport
       f.teleport = null
+      if (moveTargetRef) moveTargetRef.current = null
+      stuckRef.current = 0
       velRef.current.x = 0
       velRef.current.z = 0
       placeAt(tx, tz)
@@ -120,12 +130,43 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
       analog = Math.max(0.5, Math.min(1, mag))
       running = mag > 0.85
     }
-    let moving = !locked && Boolean(fwdIn || rightIn)
+    const manualInput = Boolean(fwdIn || rightIn)
+    if (manualInput && moveTargetRef?.current) {
+      moveTargetRef.current = null
+      stuckRef.current = 0
+    }
+
+    // MMORPG tıklayıp gitme hedefi: manuel tuş/joystick yoksa hedefe doğru akıcı yürü/koş
+    let clickDir = null
+    const mt = !locked && !manualInput ? moveTargetRef?.current : null
+    if (mt) {
+      const dx = mt.x - g.position.x
+      const dz = mt.z - g.position.z
+      const dist = Math.hypot(dx, dz)
+      if (dist < 0.35) {
+        moveTargetRef.current = null
+        stuckRef.current = 0
+      } else {
+        clickDir = { x: dx / dist, z: dz / dist }
+        if (dist > 4.5) running = true
+      }
+    }
+    let moving = !locked && (manualInput || Boolean(clickDir))
+
+    let petPose = petting.self
+    if (petPose && petPose.until <= performance.now() / 1000) {
+      petting.self = null
+      petPose = null
+    }
+    if (petPose) {
+      if (moveTargetRef) moveTargetRef.current = null
+      moving = false
+    }
 
     // oturuyor / dans ediyor: hareket girdisi duruşu bitirir (sunucuya haber verilir), aksi halde konum kilitli
     if (together.self.current && moving) together.onBreak?.(true)
     if (bike.on && together.self.current) bike.set(false) // oturunca/dans edince bisikletten in
-    const posed = together.self.current
+    const posed = together.self.current ?? petPose
     if (posed) {
       moving = false
       if (posed.kind === 'sit' && posed.x != null && posed.z != null) {
@@ -148,14 +189,19 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
     let targetVz = 0
     if (moving) {
       const { fwd, right, dir, up } = v
-      camera.getWorldDirection(fwd)
-      fwd.y = 0
-      fwd.normalize()
-      right.crossVectors(fwd, up)
-      dir.copy(fwd).multiplyScalar(fwdIn).addScaledVector(right, rightIn).normalize()
+      if (clickDir) {
+        dir.set(clickDir.x, 0, clickDir.z)
+      } else {
+        camera.getWorldDirection(fwd)
+        fwd.y = 0
+        fwd.normalize()
+        right.crossVectors(fwd, up)
+        dir.copy(fwd).multiplyScalar(fwdIn).addScaledVector(right, rightIn).normalize()
+      }
 
       const boost = Date.now() < speedBoost.until ? 1.55 : 1
-      const baseSpeed = bike.on ? (running ? 7.2 : BIKE_SPEED) : running ? RUN_SPEED : WALK_SPEED
+      const staBonus = 1 + ((fitnessStore.get().attr?.sta ?? 0) / 100) * 0.12
+      const baseSpeed = bike.on ? (running ? 7.2 : BIKE_SPEED) : running ? RUN_SPEED * staBonus : WALK_SPEED
       const speed = baseSpeed * boost * (bike.on ? Math.max(0.65, analog) : analog)
       targetVx = dir.x * speed
       targetVz = dir.z * speed
@@ -187,6 +233,18 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
         camera.position.x += dx
         camera.position.z += dz
         controlsRef.current?.target.set(nx, 0.8, nz)
+        // Engel/duvar yüzünden takıldıysa tıklama hedefini iptal et
+        if (clickDir && moveTargetRef?.current) {
+          if (Math.hypot(dx, dz) < 0.012) {
+            stuckRef.current += stepDt
+            if (stuckRef.current > 0.45) {
+              moveTargetRef.current = null
+              stuckRef.current = 0
+            }
+          } else {
+            stuckRef.current = 0
+          }
+        }
       }
     }
 
@@ -199,6 +257,19 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
     const targetY = groundY(g.position.x, g.position.z)
     g.position.y = MathUtils.lerp(g.position.y, targetY, Math.min(1, dt * 16))
     controlsRef.current?.target.set(g.position.x, g.position.y + 0.8, g.position.z)
+
+    // Mobil görünüm joystick'i: kamerayı hedef çevresinde yumuşakça döndürür
+    const lj = lookJoystickRef?.current
+    if (!locked && lj && controlsRef.current && Math.hypot(lj.x, lj.y) > 0.08) {
+      const target = controlsRef.current.target
+      v.offset.copy(camera.position).sub(target)
+      v.sph.setFromVector3(v.offset)
+      v.sph.theta -= lj.x * stepDt * 2.35
+      v.sph.phi = MathUtils.clamp(v.sph.phi - lj.y * stepDt * 1.45, 0.35, Math.PI / 2.15)
+      v.offset.setFromSpherical(v.sph)
+      camera.position.copy(target).add(v.offset)
+      controlsRef.current.update()
+    }
     f.x = g.position.x
     f.z = g.position.z
     playerPos.x = f.x
@@ -219,5 +290,64 @@ export default function LocalPlayer({ slug, start, focusRef, controlsRef, joysti
       )}
       {children}
     </group>
+  )
+}
+
+/** MMORPG tıklayıp gitme zemini + hedef halka göstergesi (kamera sürüklemesini ve NPC/oyuncu tıklamalarını bozmaz). */
+export function ClickToMoveGround({ moveTargetRef, disabled = false }) {
+  const downRef = useRef(null)
+  const ringRef = useRef()
+  const pulseRef = useRef()
+
+  useFrame(({ clock }) => {
+    const mt = moveTargetRef?.current
+    const r = ringRef.current
+    const p = pulseRef.current
+    if (!r || !p) return
+    if (!mt || disabled) {
+      r.visible = false
+      p.visible = false
+      return
+    }
+    const y = groundY(mt.x, mt.z) + 0.09
+    r.visible = true
+    p.visible = true
+    r.position.set(mt.x, y, mt.z)
+    p.position.set(mt.x, y + 0.01, mt.z)
+    const t = clock.getElapsedTime()
+    const s = 1 + Math.sin(t * 6) * 0.08
+    r.scale.set(s, s, 1)
+    const k = (t * 1.4) % 1
+    p.scale.set(0.6 + k * 1.15, 0.6 + k * 1.15, 1)
+    p.material.opacity = (1 - k) * 0.75
+  })
+
+  return (
+    <>
+      <mesh
+        position={[0, 0.01, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        onPointerDown={(e) => {
+          downRef.current = { x: e.clientX, y: e.clientY }
+        }}
+        onClick={(e) => {
+          if (disabled || !moveTargetRef) return
+          const d = downRef.current
+          if (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) > 8) return // kamera sürüklemesi
+          moveTargetRef.current = { x: e.point.x, z: e.point.z }
+        }}
+      >
+        <planeGeometry args={[280, 280]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+      <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]} visible={false} renderOrder={6}>
+        <ringGeometry args={[0.3, 0.5, 32]} />
+        <meshBasicMaterial color="#ff8533" transparent opacity={0.95} depthWrite={false} toneMapped={false} />
+      </mesh>
+      <mesh ref={pulseRef} rotation={[-Math.PI / 2, 0, 0]} visible={false} renderOrder={6}>
+        <ringGeometry args={[0.38, 0.49, 32]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.85} depthWrite={false} toneMapped={false} />
+      </mesh>
+    </>
   )
 }

@@ -46,7 +46,7 @@ export default function pets(ctx) {
         const now = Date.now()
         if (now - (me.lastPetRenew ?? 0) < 1500) return
         me.lastPetRenew = now
-        if (!ctx.spendCoins?.(me, PET_RENEW_PRICE, 'pet')) return send(me.ws, { t: 'info', text: `🪙 Evcil hayvan bakımı için ${PET_RENEW_PRICE} altın gerekiyor.` })
+        if (!ctx.spendCoins?.(me, PET_RENEW_PRICE, 'pet')) return send(me.ws, { t: 'info', text: `₺ Evcil hayvan bakımı için ${PET_RENEW_PRICE} TL gerekiyor.` })
         const u = user(me.key)
         u.stats.petOffered = 1
         u.stats.petUntil = Math.max(now, u.stats.petUntil ?? 0) + PET_WEEK_MS

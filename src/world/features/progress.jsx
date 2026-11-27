@@ -44,11 +44,10 @@ function Celebration({ toast }) {
             style={{ background: p.color, '--dx': `${p.dx}px`, '--dy': `${p.dy}px`, '--rot': `${p.rot}deg`, animation: `confetti-burst 1.4s ${p.delay}s ease-out forwards`, opacity: 0 }}
           />
         ))}
-        <div className="flex w-[min(86vw,19rem)] flex-col items-center gap-1 rounded-[2rem] border-2 border-white bg-white/95 px-6 py-5 text-center shadow-toy">
-          <span className="text-5xl [animation:star-bounce_0.9s_ease-out]">{quest ? '⭐' : toast.emoji}</span>
+        <div className="flex w-[min(86vw,19rem)] flex-col items-center gap-1.5 rounded-[2rem] border-2 border-white bg-white/95 px-6 py-5 text-center shadow-toy">
           <p className="text-xs font-extrabold uppercase tracking-wide text-[#fdb252]">{quest ? 'Görev tamamlandı!' : 'Yeni rozet!'}</p>
-          <p className="text-lg font-black text-[#4a3b5c]">{quest ? `${toast.emoji} ${toast.title}` : toast.name}</p>
-          <p className="text-sm font-bold text-[#8a7a9c]">{quest ? `+${toast.stars} ⭐ kazandın` : toast.desc}</p>
+          <p className="text-lg font-black text-[#4a3b5c]">{quest ? toast.title : toast.name}</p>
+          <p className="text-sm font-bold text-[#8a7a9c]">{quest ? `+${toast.stars} Yıldız kazandın` : toast.desc}</p>
         </div>
       </div>
     </div>
@@ -64,12 +63,12 @@ function QuestPanel({ prog, onClose }) {
     <Modal onClose={onClose} label="Görevler ve rozetler">
       <div className="flex items-center gap-2">
         <h2 className="min-w-0 flex-1 text-2xl font-black text-[#4a3b5c]">{tab === 'quests' ? 'Günlük görevler' : 'Rozetlerim'}</h2>
-        <span className="rounded-full bg-[#ffe48f] px-3 py-1 text-sm font-black text-[#7a5b00]">⭐ {prog?.stars ?? 0}</span>
+        <span className="rounded-full bg-[#ffe48f] px-3 py-1 text-sm font-black text-[#7a5b00]">{prog?.stars ?? 0} yıldız</span>
       </div>
       <div className="mt-3 flex gap-2" role="tablist">
         {[
-          ['quests', '🎯 Görevler'],
-          ['badges', `🏅 Rozetler ${earned}/${badges.length || 12}`],
+          ['quests', 'Görevler'],
+          ['badges', `Rozetler ${earned}/${badges.length || 12}`],
         ].map(([id, label]) => (
           <button
             key={id}
@@ -87,14 +86,13 @@ function QuestPanel({ prog, onClose }) {
         <p className="mt-6 text-center text-sm font-semibold text-[#8a7a9c]">Yükleniyor… (çevrimdışıysan görevler görünmez)</p>
       ) : tab === 'quests' ? (
         <>
-          {prog.streak > 0 && <p className="mt-3 text-sm font-extrabold text-[#e8952c]">🔥 {prog.streak} günlük seri</p>}
+          {prog.streak > 0 && <p className="mt-3 text-sm font-extrabold text-[#e8952c]">{prog.streak} günlük seri</p>}
           <ul className="mt-3 flex flex-col gap-2.5">
             {prog.quests.map((q) => (
               <li key={q.id} className={`rounded-2xl border-2 px-3 py-2.5 ${q.done ? 'border-[#b9ebcf] bg-[#effcf4]' : 'border-white bg-[#fbf7ff]'} shadow-soft`}>
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl">{q.done ? '✅' : q.emoji}</span>
                   <p className={`min-w-0 flex-1 text-sm font-extrabold ${q.done ? 'text-[#2f7a55]' : 'text-[#4a3b5c]'}`}>{q.title}</p>
-                  <span className="shrink-0 rounded-full bg-[#fff3c4] px-2 py-0.5 text-xs font-black text-[#7a5b00]">+{q.stars} ⭐</span>
+                  <span className="shrink-0 rounded-full bg-[#fff3c4] px-2 py-0.5 text-xs font-black text-[#7a5b00]">+{q.stars} yıldız</span>
                 </div>
                 <div className="mt-2 flex items-center gap-2">
                   <Bar value={q.progress} max={q.goal} tone={q.done ? '#7ed6a4' : '#fdb252'} />
@@ -115,7 +113,6 @@ function QuestPanel({ prog, onClose }) {
               title={b.desc}
               className={`flex flex-col items-center gap-1 rounded-2xl border-2 px-1.5 py-2.5 text-center ${b.earned ? 'border-[#ffe48f] bg-[#fffbea] shadow-soft' : 'border-white bg-[#f3eef9] opacity-55 grayscale'}`}
             >
-              <span className="text-3xl">{b.emoji}</span>
               <span className="text-[0.6875rem] font-black leading-tight text-[#4a3b5c]">{b.name}</span>
               <span className="text-[0.625rem] font-semibold leading-tight text-[#8a7a9c]">{b.desc}</span>
               {!b.earned && b.goal > 1 && (
@@ -170,7 +167,7 @@ function SuggestCard({ s, onHi, onClose }) {
         </button>
       </div>
       <button onClick={onClose} aria-label="Öneriyi kapat" className="grid h-9 w-9 shrink-0 place-items-center self-start rounded-full text-sm font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
-        ✕
+        ✖️
       </button>
     </div>
   )
@@ -207,7 +204,6 @@ export function useProgress({ net, say, focusRef, home, venue, panel, setPanel, 
       on('progress', (m) => setProg(m.p)),
       on('quest_done', (m) => {
         setToasts((t) => [...t, { key: Math.random(), kind: 'quest', ...m.quest }])
-        say(`⭐ Görev tamamlandı: ${m.quest.title} (+${m.quest.stars} ⭐)`)
       }),
       on('badge', (m) => {
         // aynı rozet bu tarayıcıda bir kez gösterilir (sunucu verisi sıfırlansa/yeniden bağlansa tekrar tekrar çıkmasın)
@@ -220,11 +216,9 @@ export function useProgress({ net, say, focusRef, home, venue, panel, setPanel, 
           /* depolama yoksa yine göster */
         }
         setToasts((t) => [...t, { key: Math.random(), kind: 'badge', ...m.badge }])
-        say(`🏅 Yeni rozet: ${m.badge.name}`)
       }),
       on('event', (m) => {
         setEvent(m.event ?? null)
-        say(m.event ? `${m.event.emoji} ${m.event.name} başladı! ${m.event.desc}` : 'Etkinlik sona erdi. Bir sonrakini kaçırma!')
       }),
       on('suggest', (m) => {
         setSuggest(m.s ?? null)
@@ -232,7 +226,7 @@ export function useProgress({ net, say, focusRef, home, venue, panel, setPanel, 
       }),
     ]
     return () => offs.forEach((off) => off())
-  }, [on, say])
+  }, [on])
 
   // günün önerisi: bağlanınca biraz bekle, kimse yoksa ara sıra yeniden sor
   useEffect(() => {
@@ -260,15 +254,26 @@ export function useProgress({ net, say, focusRef, home, venue, panel, setPanel, 
   }, [panel, send])
 
   const remaining = prog ? prog.quests.filter((q) => !q.done).length : 0
-  const extraButtons = [
-    { key: 'quests', icon: 'quests', label: 'Görevler ve rozetler', onClick: () => setPanel('quests'), badge: remaining || undefined },
-    ...(event ? [{ key: 'event', emoji: event.emoji, label: event.name, onClick: () => setPanel('event') }] : []),
-  ]
+  const menuNodes = (
+    <>
+      <button onClick={() => setPanel('quests')} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#fff8f0]">
+        <span className="text-lg">⭐</span>
+        <span className="flex-1">Görevler ve Rozetler</span>
+        {remaining > 0 && <span className="rounded-full bg-[#fdb252] px-2 py-0.5 text-[11px] font-black text-white">{remaining}</span>}
+      </button>
+      {event && (
+        <button onClick={() => setPanel('event')} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-extrabold text-[#4a3b5c] transition hover:bg-[#fff8f0]">
+          <span className="text-lg">{event.emoji}</span>
+          <span className="flex-1">{event.name}</span>
+        </button>
+      )}
+    </>
+  )
 
   const settingsSections = [
     <section key="fx" className="flex items-start gap-3">
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-black text-[#4a3b5c]">✨ Etkinlik efektleri</p>
+        <p className="text-sm font-black text-[#4a3b5c]">Etkinlik efektleri</p>
         <p className="text-xs font-semibold text-[#8a7a9c]">Sezon etkinliklerinde havada uçuşan kalp, kar ve konfeti. Telefonun yavaşlarsa kapat.</p>
       </div>
       <button
@@ -307,5 +312,5 @@ export function useProgress({ net, say, focusRef, home, venue, panel, setPanel, 
   )
 
   const worldEffects = event && fxOn && !home && !venue ? <EventFx fx={event.fx} focusRef={focusRef} /> : null
-  return { extraButtons, settingsSections, overlays, worldEffects }
+  return { menuNodes, menuBadge: remaining, settingsSections, overlays, worldEffects }
 }

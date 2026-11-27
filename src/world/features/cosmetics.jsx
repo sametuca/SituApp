@@ -10,10 +10,14 @@ import { HOME_ROOM } from '../layout'
 import AvatarRig from '../AvatarRig'
 import { PetLayer, PetModel } from '../Pet'
 import { cosStore } from '../cosStore'
+import { levelOf } from '../collectibles'
 import {
   EYE_COLORS,
+  EYE_LEVELS,
   HAIR_COLORS,
+  HAIR_LEVELS,
   OUTFIT_COLORS,
+  OUTFIT_LEVELS,
   OUTFIT_PRESETS,
   emptyLook,
   sameLook,
@@ -198,8 +202,8 @@ function PetAdopt({ onPick, onLater }) {
   )
 }
 
-function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
-  const initialLook = useMemo(() => sanitizeLook(cos?.look ?? readSavedLook()), [cos?.look])
+function Wardrobe({ slug, cos, petUntil, coins, playerLv = 1, xp = 0, onLocked, onRenew, onSave, onClose }) {
+  const initialLook = useMemo(() => sanitizeLook(cos?.look ?? readSavedLook(), playerLv), [cos?.look, playerLv])
   const [acc, setAcc] = useState(cos?.acc ?? null)
   const [acc2, setAcc2] = useState(cos?.acc2 ?? null)
   const [pet, setPet] = useState(cos?.pet ?? null)
@@ -238,7 +242,7 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
   }
 
   const applyPreset = (p) => {
-    setLook(sanitizeLook(p.look))
+    setLook(sanitizeLook(p.look, playerLv))
     if (p.acc) {
       setColor1(p.acc.color)
       setAcc(p.acc)
@@ -251,12 +255,16 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
   }
 
   const randomize = () => {
-    const r = (arr) => Math.floor(Math.random() * arr.length)
-    const c1 = PASTELS[r(PASTELS)].id
-    const c2 = PASTELS[r(PASTELS)].id
-    const a1 = ACCESSORIES[r(ACCESSORIES)].id
-    const a2 = Math.random() > 0.25 ? STYLE_ACCESSORIES[r(STYLE_ACCESSORIES)].id : null
-    setLook({ h: r(HAIR_COLORS), e: r(EYE_COLORS), o: r(OUTFIT_COLORS) })
+    const pick = (arr) => arr[Math.floor(Math.random() * arr.length)]
+    const openColors = PASTELS.filter((c) => (c.lv ?? 1) <= playerLv)
+    const openAcc = ACCESSORIES.filter((a) => (a.lv ?? 1) <= playerLv)
+    const openAcc2 = STYLE_ACCESSORIES.filter((a) => (a.lv ?? 1) <= playerLv)
+    const openIdx = (levels) => levels.map((lv, i) => (lv <= playerLv ? i : -1)).filter((i) => i >= 0)
+    const c1 = pick(openColors).id
+    const c2 = pick(openColors).id
+    const a1 = pick(openAcc).id
+    const a2 = openAcc2.length && Math.random() > 0.25 ? pick(openAcc2).id : null
+    setLook({ h: pick(openIdx(HAIR_LEVELS)), e: pick(openIdx(EYE_LEVELS)), o: pick(openIdx(OUTFIT_LEVELS)) })
     setColor1(c1)
     setColor2(c2)
     setAcc({ id: a1, color: c1 })
@@ -298,11 +306,14 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
     <Modal onClose={onClose} label="Gardırop" wide>
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h2 className="text-2xl font-black text-[#4a3b5c]">Stüdyo & Gardırop 👗</h2>
-          <p className="text-xs font-bold text-[#8a7a9c]">Sürükleyip 360° çevir, kombinini oluştur</p>
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-black text-[#4a3b5c]">Stüdyo & Gardırop</h2>
+            <span className="rounded-full bg-[#efe6ff] px-2.5 py-0.5 text-xs font-black text-[#6b4fc0]">Sv. {playerLv} · ⭐ {xp}</span>
+          </div>
+          <p className="text-xs font-bold text-[#8a7a9c]">Yıldız toplayıp seviye atlayarak yeni stiller ve aksesuarlar aç</p>
         </div>
         <button onClick={onClose} aria-label="Gardırobu kapat" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f0ff] text-sm font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
-          ✕
+          ✖️
         </button>
       </div>
 
@@ -334,9 +345,9 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
             type="button"
             onClick={resetAll}
             title="Görünümü sıfırla"
-            className="grid h-7 w-7 place-items-center rounded-full border border-white bg-white/85 text-xs font-black text-[#8a7a9c] shadow-sm backdrop-blur-sm transition hover:bg-white active:scale-95"
+            className="grid h-7 w-7 place-items-center rounded-full border border-white bg-white/85 text-sm shadow-sm backdrop-blur-sm transition hover:bg-white active:scale-95"
           >
-            ↺
+            🎨
           </button>
         </div>
         {/* sol alt: duruş seçici */}
@@ -386,7 +397,22 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
               <p className="mb-1.5 text-[0.6875rem] font-black uppercase tracking-wide text-[#8a7a9c]">💖 Favori Kombinlerim (Kaydet & Tek Tıkla Giy)</p>
               <div className="grid grid-cols-3 gap-2">
                 {[0, 1, 2].map((i) => {
+                  const slotLv = i + 1
+                  const slotLocked = slotLv > playerLv
                   const f = favs[i]
+                  if (slotLocked) {
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => onLocked?.(slotLv)}
+                        className="flex flex-col items-center justify-center gap-0.5 rounded-2xl border-2 border-dashed border-[#e5dcfa] bg-[#faf6ff]/60 px-2 py-2.5 text-center opacity-60 transition"
+                      >
+                        <span className="text-base">🔒</span>
+                        <span className="text-[0.6875rem] font-extrabold text-[#8a7a9c]">Slot {i + 1} · Sv. {slotLv}</span>
+                      </button>
+                    )
+                  }
                   return f ? (
                     <div key={i} className="relative">
                       <button
@@ -402,9 +428,9 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
                         type="button"
                         onClick={(e) => clearFav(i, e)}
                         aria-label={`${f.name} sil`}
-                        className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-white/90 text-[0.625rem] font-black text-[#8a7a9c] hover:text-rose-500"
+                        className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-white/90 text-[0.625rem] hover:scale-110"
                       >
-                        ✕
+                        ✖️
                       </button>
                     </div>
                   ) : (
@@ -414,7 +440,7 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
                       onClick={() => saveFav(i)}
                       className="flex flex-col items-center justify-center gap-0.5 rounded-2xl border-2 border-dashed border-[#d6c7ff] bg-[#faf6ff] px-2 py-2.5 text-center transition hover:border-[#a88bff] active:scale-95"
                     >
-                      <span className="text-base font-black text-[#a88bff]">＋</span>
+                      <span className="text-base">➕</span>
                       <span className="text-[0.6875rem] font-extrabold text-[#6b4fc0]">Slot {i + 1}’e Kaydet</span>
                     </button>
                   )
@@ -426,17 +452,22 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
               <p className="mb-1.5 text-[0.6875rem] font-black uppercase tracking-wide text-[#8a7a9c]">✨ Hazır Stil Paketleri</p>
               <div className="grid grid-cols-2 gap-2">
                 {OUTFIT_PRESETS.map((p) => {
-                  const active = sameLook(look, p.look) && acc?.id === p.acc?.id && acc2?.id === p.acc2?.id
+                  const reqLv = p.lv ?? 1
+                  const locked = reqLv > playerLv
+                  const active = !locked && sameLook(look, p.look) && acc?.id === p.acc?.id && acc2?.id === p.acc2?.id
                   return (
                     <button
                       key={p.id}
                       type="button"
-                      onClick={() => applyPreset(p)}
-                      className={`flex items-center gap-2.5 rounded-2xl border-2 px-2.5 py-2 text-left transition active:scale-95 ${active ? 'border-[#a88bff] bg-[#efe6ff] shadow-soft' : 'border-white bg-[#faf6ff] hover:bg-[#f3ebff]'}`}
+                      onClick={() => (locked ? onLocked?.(reqLv) : applyPreset(p))}
+                      className={`flex items-center gap-2.5 rounded-2xl border-2 px-2.5 py-2 text-left transition ${locked ? 'cursor-not-allowed border-white bg-[#faf6ff]/70 opacity-60' : active ? 'border-[#a88bff] bg-[#efe6ff] shadow-soft active:scale-95' : 'border-white bg-[#faf6ff] hover:bg-[#f3ebff] active:scale-95'}`}
                     >
-                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-2xl shadow-sm">{p.emoji}</span>
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-2xl shadow-sm">{locked ? '🔒' : p.emoji}</span>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-black text-[#4a3b5c]">{p.name}</p>
+                        <div className="flex items-center justify-between gap-1">
+                          <p className="truncate text-xs font-black text-[#4a3b5c]">{p.name}</p>
+                          {locked && <span className="shrink-0 rounded-full bg-[#efe6ff] px-1.5 py-0.5 text-[0.5625rem] font-black text-[#6b4fc0]">Sv. {reqLv}</span>}
+                        </div>
                         <p className="truncate text-[0.625rem] font-semibold text-[#8a7a9c]">{p.desc}</p>
                       </div>
                     </button>
@@ -449,7 +480,7 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
 
         {tab === 'look' && (
           <div className="rounded-2xl border-2 border-white bg-[#faf6ff] p-3">
-            <LookPicker value={look} onChange={setLook} compact />
+            <LookPicker value={look} onChange={setLook} compact playerLv={playerLv} onLocked={onLocked} />
           </div>
         )}
 
@@ -459,9 +490,20 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
               <p className="mb-1.5 text-[0.6875rem] font-black uppercase tracking-wide text-[#8a7a9c]">👑 Baş & Saç</p>
               <div className="grid grid-cols-4 gap-1.5">
                 <ItemButton active={!acc} emoji="🚫" label="Yok" onClick={() => pickAcc(null)} />
-                {ACCESSORIES.map((a) => (
-                  <ItemButton key={a.id} active={acc?.id === a.id} emoji={a.emoji} label={a.name} onClick={() => pickAcc(a.id)} />
-                ))}
+                {ACCESSORIES.map((a) => {
+                  const reqLv = a.lv ?? 1
+                  const locked = reqLv > playerLv
+                  return (
+                    <ItemButton
+                      key={a.id}
+                      active={!locked && acc?.id === a.id}
+                      emoji={a.emoji}
+                      label={a.name}
+                      lockedLv={locked ? reqLv : 0}
+                      onClick={() => (locked ? onLocked?.(reqLv) : pickAcc(a.id))}
+                    />
+                  )
+                })}
               </div>
             </div>
 
@@ -469,9 +511,20 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
               <p className="mb-1.5 text-[0.6875rem] font-black uppercase tracking-wide text-[#8a7a9c]">✨ Yüz, Kanat & Çanta (Ekstra)</p>
               <div className="grid grid-cols-4 gap-1.5">
                 <ItemButton active={!acc2} emoji="🚫" label="Yok" onClick={() => pickAcc2(null)} />
-                {STYLE_ACCESSORIES.map((a) => (
-                  <ItemButton key={a.id} active={acc2?.id === a.id} emoji={a.emoji} label={a.name} onClick={() => pickAcc2(a.id)} />
-                ))}
+                {STYLE_ACCESSORIES.map((a) => {
+                  const reqLv = a.lv ?? 1
+                  const locked = reqLv > playerLv
+                  return (
+                    <ItemButton
+                      key={a.id}
+                      active={!locked && acc2?.id === a.id}
+                      emoji={a.emoji}
+                      label={a.name}
+                      lockedLv={locked ? reqLv : 0}
+                      onClick={() => (locked ? onLocked?.(reqLv) : pickAcc2(a.id))}
+                    />
+                  )
+                })}
               </div>
             </div>
 
@@ -495,18 +548,24 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
                 </div>
               </div>
               <div className="flex flex-wrap justify-center gap-2" role="group" aria-label="Aksesuar rengi">
-                {PASTELS.map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    title={c.name}
-                    aria-label={c.name}
-                    aria-pressed={activeColor === c.id}
-                    onClick={() => pickColor(c.id)}
-                    style={{ background: c.hex }}
-                    className={`h-8 w-8 rounded-full border-[3px] shadow-soft transition active:scale-90 ${activeColor === c.id ? 'scale-110 border-[#4a3b5c]' : 'border-white'}`}
-                  />
-                ))}
+                {PASTELS.map((c) => {
+                  const reqLv = c.lv ?? 1
+                  const locked = reqLv > playerLv
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      title={locked ? `${c.name} (Seviye ${reqLv})` : c.name}
+                      aria-label={`${c.name}${locked ? ` (Seviye ${reqLv})` : ''}`}
+                      aria-pressed={!locked && activeColor === c.id}
+                      onClick={() => (locked ? onLocked?.(reqLv) : pickColor(c.id))}
+                      style={{ background: c.hex }}
+                      className={`relative h-8 w-8 rounded-full border-[3px] shadow-soft transition ${locked ? 'cursor-not-allowed border-white opacity-45' : 'active:scale-90'} ${!locked && activeColor === c.id ? 'scale-110 border-[#4a3b5c]' : 'border-white'}`}
+                    >
+                      {locked && <span className="absolute inset-0 grid place-items-center text-[0.625rem] drop-shadow">🔒</span>}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           </div>
@@ -519,7 +578,7 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
                 {petLeft > 0 ? `🐾 Bakım süresi: ${petLeft >= 48 ? `${Math.ceil(petLeft / 24)} gün` : `${petLeft} saat`}` : '🐾 Evcil hayvan süresi bitti'}
               </p>
               <button onClick={onRenew} disabled={coins < PET_RENEW_PRICE} className="rounded-full bg-[#ffe48f] px-3 py-1 text-[0.6875rem] font-black text-[#8a5a00] shadow transition active:scale-95 disabled:opacity-50">
-                +1 hafta · {PET_RENEW_PRICE} 🪙
+                +1 hafta · {PET_RENEW_PRICE} ₺
               </button>
             </div>
             <div className="mt-2.5 grid grid-cols-4 gap-2">
@@ -537,20 +596,22 @@ function Wardrobe({ slug, cos, petUntil, coins, onRenew, onSave, onClose }) {
           Vazgeç
         </button>
         <ToyButton className="!py-3 !text-base" onClick={() => onSave({ acc, acc2, pet, look })}>
-          ✓ Görünümü Kaydet
+          ✔️ Görünümü Kaydet
         </ToyButton>
       </div>
     </Modal>
   )
 }
 
-function ItemButton({ active, emoji, label, onClick }) {
+function ItemButton({ active, emoji, label, lockedLv = 0, onClick }) {
+  const locked = lockedLv > 0
   return (
     <button
       onClick={onClick}
       aria-pressed={active}
-      className={`flex min-h-[4.1rem] flex-col items-center justify-center gap-0.5 rounded-2xl border-2 px-1 py-1.5 text-center transition active:scale-95 ${active ? 'border-[#a88bff] bg-[#efe6ff] shadow-sm' : 'border-white bg-[#f6f0ff] hover:bg-[#efe6ff]'}`}
+      className={`relative flex min-h-[4.1rem] flex-col items-center justify-center gap-0.5 rounded-2xl border-2 px-1 py-1.5 text-center transition ${locked ? 'cursor-not-allowed border-white bg-[#f6f0ff]/65 opacity-60' : active ? 'border-[#a88bff] bg-[#efe6ff] shadow-sm active:scale-95' : 'border-white bg-[#f6f0ff] hover:bg-[#efe6ff] active:scale-95'}`}
     >
+      {locked && <span className="absolute right-1 top-1 rounded-full bg-white/90 px-1 text-[0.5rem] font-black text-[#6b4fc0]">🔒 {lockedLv}</span>}
       <span className="text-2xl" aria-hidden>
         {emoji}
       </span>
@@ -585,7 +646,7 @@ function GiftPicker({ peer, onPick, onClose }) {
 function OfferCard({ offer, onAccept, onDecline }) {
   const g = GIFT_BY_ID[offer.kind]
   return (
-    <TopDock><div className={`relative w-[min(92vw,22rem)] animate-pop rounded-3xl bg-white/80 p-3 backdrop-blur-md ${chip}`} role="alert">
+    <TopDock><div className={`pointer-events-auto relative w-[min(92vw,22rem)] animate-pop rounded-3xl bg-white/80 p-3 backdrop-blur-md ${chip}`} role="alert">
       <div className="flex items-center gap-3">
         <span className="text-3xl" aria-hidden>
           {g?.emoji ?? '🎁'}
@@ -698,6 +759,7 @@ export function useCosmetics({ net, say, touch, home, homeItems, venue, focusRef
   const [petOffer, setPetOffer] = useState(false) // ilk girişte 1 haftalık ücretsiz evcil hayvan seçimi
   const [petOfferReady, setPetOfferReady] = useState(false)
   const [coins, setCoins] = useState(0)
+  const [xp, setXp] = useState(0)
   const [gifts, setGifts] = useState([])
   const [decors, setDecors] = useState({}) // ev anahtarı → dekor
   const [offers, setOffers] = useState([])
@@ -747,7 +809,12 @@ export function useCosmetics({ net, say, touch, home, homeItems, venue, focusRef
         setPetUntil(m.petUntil ?? 0)
         setPetOffer(Boolean(m.petOffer) && !petOfferDone(net.homeKey))
         setCoins(m.coins ?? 0)
+        if (m.collect?.s?.stars != null) setXp(m.collect.s.stars)
         if (m.home) setDecors((d) => ({ ...d, [m.home]: m.decor ?? null }))
+      }),
+      on('collect_xp', (m) => setXp(m.xp ?? 0)),
+      on('collect_state', (m) => {
+        if (m.s?.stars != null) setXp(m.s.stars)
       }),
       on('pet_until', (m) => (setPetUntil(m.until ?? 0), setPetOffer(false), petOfferMark(net.homeKey))),
       on('coins', (m) => setCoins(m.n)),
@@ -840,6 +907,7 @@ export function useCosmetics({ net, say, touch, home, homeItems, venue, focusRef
   const peerActions = (peer) => [
     {
       key: 'gift',
+      category: 'gifts',
       emoji: '🎁',
       label: 'Hediye gönder',
       onClick: () => {
@@ -862,8 +930,8 @@ export function useCosmetics({ net, say, touch, home, homeItems, venue, focusRef
   const settingsSections = [
     <section key="wardrobe" className="flex items-center gap-3">
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-black text-[#4a3b5c]">👗 Gardırop</p>
-        <p className="text-xs font-semibold text-[#8a7a9c]">Kombinler, saç/kıyafet rengi, aksesuar ve evcil hayvan. {gifts.length > 0 && `🎁 ${gifts.length} hediyen var (evinde Döşe → Hediyeler).`}</p>
+        <p className="text-sm font-black text-[#4a3b5c]">Gardırop</p>
+        <p className="text-xs font-semibold text-[#8a7a9c]">Kombinler, saç/kıyafet rengi, aksesuar ve evcil hayvan. {gifts.length > 0 && `${gifts.length} hediyen var (evinde Döşe → Hediyeler).`}</p>
       </div>
       <button onClick={() => setPanel('wardrobe')} className="shrink-0 rounded-2xl bg-[#a88bff] px-4 py-2.5 text-sm font-extrabold text-white shadow-soft active:scale-95">
         Aç
@@ -895,6 +963,9 @@ export function useCosmetics({ net, say, touch, home, homeItems, venue, focusRef
           cos={self}
           petUntil={petUntil}
           coins={coins}
+          playerLv={levelOf(xp).level}
+          xp={xp}
+          onLocked={(reqLv) => say(`🔒 Bu stil Seviye ${reqLv} ile açılır! Yıldız toplayarak seviye atla ⭐`)}
           onRenew={() => send({ t: 'pet_renew' })}
           onClose={() => setPanel(null)}
           onSave={(sel) => {

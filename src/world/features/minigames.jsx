@@ -225,7 +225,7 @@ export function useMinigames({ net, panel, setPanel, touch, say, name }) {
               <p className="text-xs font-bold text-[#8a7a9c]">{meta.desc}</p>
             </div>
             <button type="button" onClick={closeAll} aria-label="Kapat" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f0ff] text-sm font-black text-[#8a7a9c]">
-              ✕
+              ✖️
             </button>
           </div>
 
@@ -273,7 +273,7 @@ export function useMinigames({ net, panel, setPanel, touch, say, name }) {
                   {(result.standings ?? []).map((s) => (
                     <div key={s.id} className="flex items-center justify-between rounded-2xl bg-[#f6f0ff]/75 px-3 py-2 text-xs font-extrabold text-[#4a3b5c]">
                       <span>{s.rank === 1 ? '🥇' : s.rank === 2 ? '🥈' : s.rank === 3 ? '🥉' : `#${s.rank}`} {s.name}</span>
-                      <span className="text-[#5b3fa8]">{s.score} skor · +{s.pts} puan{s.coins ? ` · +${s.coins} 🪙` : ''}</span>
+                      <span className="text-[#5b3fa8]">{s.score} skor · +{s.pts} puan{s.coins ? ` · +${s.coins} ₺` : ''}</span>
                     </div>
                   ))}
                 </div>

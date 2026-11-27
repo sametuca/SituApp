@@ -106,7 +106,7 @@ function ArcadeScreen({ game, onClose }) {
         <div className="flex items-center gap-2 px-1 pb-2">
           <div className="min-w-0 flex-1 rounded-xl bg-[#2a1b57] px-3 py-1.5 text-center text-sm font-black tracking-widest text-[#ffd35e]">{game.title}</div>
           <button type="button" onClick={onClose} aria-label="Kapat" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/90 text-sm font-black text-[#5a3fb0]">
-            ✕
+            ✖️
           </button>
         </div>
         <div className="relative overflow-hidden rounded-2xl border-4 border-[#2a1b57] bg-black">
@@ -122,11 +122,11 @@ function ArcadeScreen({ game, onClose }) {
         <div className="mt-2 flex items-center justify-between gap-3 sm:hidden">
           <div className="grid grid-cols-3 grid-rows-2 gap-1.5">
             <span />
-            {btn('up', '▲', 'h-11 w-11')}
+            {btn('up', '👆', 'h-11 w-11')}
             <span />
-            {btn('left', '◀', 'h-11 w-11')}
-            {btn('down', '▼', 'h-11 w-11')}
-            {btn('right', '▶', 'h-11 w-11')}
+            {btn('left', '👈', 'h-11 w-11')}
+            {btn('down', '👇', 'h-11 w-11')}
+            {btn('right', '👉', 'h-11 w-11')}
           </div>
           {btn('action', 'A', 'h-16 w-16 rounded-full !text-2xl')}
         </div>

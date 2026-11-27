@@ -14,13 +14,14 @@ import { GAP, ISLAND, PIER } from '../layout'
 
 const FISH_SPOTS = [
   { id: 'pier', label: 'Sahil İskelesi · Balık Tut', x: PIER.x, z: PIER.z0 + 1.8, wx: PIER.x, wz: PIER.z1, r: 6.5 },
-  { id: 'pond', label: 'Park Göleti · Balık Tut', x: -30 - GAP, z: 23.0 + GAP, wx: -30 - GAP, wz: 28.2 + GAP, r: 5.5 },
+  { id: 'pond', label: 'Park Göleti · Balık Tut', x: -30 - GAP, z: 30 + GAP, wx: -30 - GAP, wz: 30 + GAP, r: 11.5 },
+  { id: 'pond2', label: 'Çardak Göleti · Balık Tut', x: -42.5, z: -12.5, wx: -42.5, wz: -12.5, r: 8.5 },
 ]
-const SHORE_SPOT = { id: 'shore', label: 'Deniz Kenarı · Balık Tut', wx: PIER.x, wz: PIER.z1 }
+const SHORE_SPOT = { id: 'shore', label: 'Su Kenarı · Balık Tut', wx: PIER.x, wz: PIER.z1 }
 function fishSpotAt(x, z) {
   const fixed = FISH_SPOTS.find((s) => Math.hypot(x - s.x, z - s.z) < s.r)
   if (fixed) return fixed
-  if (z >= ISLAND.z1 - 1.5 && Math.abs(x) <= 34) return SHORE_SPOT
+  if (x <= ISLAND.x0 + 4.5 || x >= ISLAND.x1 - 4.5 || z <= ISLAND.z0 + 4.5 || z >= ISLAND.z1 - 4.5) return SHORE_SPOT
   return null
 }
 const MAILBOX = { x: 6.6, z: -6.2, r: 3.0 }
@@ -300,7 +301,7 @@ function FishingCard({ spot, onCatch, onClose, onPhase, result, touch }) {
           <Ico name="fish" size={18} /> Balıkçılık
         </span>
         <button type="button" onClick={onClose} aria-label="Kapat" className="grid h-7 w-7 place-items-center rounded-full bg-[#f6f0ff] text-xs font-black text-[#8a7a9c]">
-          ✕
+          ✖️
         </button>
       </div>
 
@@ -356,7 +357,7 @@ function FishingCard({ spot, onCatch, onClose, onPhase, result, touch }) {
                 <p className="text-lg font-black text-[#4a3b5c]">{result.name}!</p>
               </div>
               <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-[#fff3c4] px-3 py-0.5 text-xs font-black text-[#8a5a00]">
-                <Ico name="coins" size={14} /> +{result.coins} altın
+                <Ico name="coins" size={14} /> +{result.coins} TL
               </p>
             </>
           ) : (
@@ -421,7 +422,7 @@ export function useJobs({ net, focusRef, home, venue, atDoor, touch, say, panel 
         const v = VENUE_BY_ID[m.target]
         setPostTarget(null)
         window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'quest' }))
-        say(`Posta teslim edildi (${v?.name ?? m.target}): +${m.coins ?? 12} altın!`)
+        say(`Posta teslim edildi (${v?.name ?? m.target}): +${m.coins ?? 12} TL!`)
       }),
     ]
     return () => offs.forEach((off) => off())
@@ -554,7 +555,7 @@ export function useJobs({ net, focusRef, home, venue, atDoor, touch, say, panel 
       const v = VENUE_BY_ID[postTarget]
       setPostTarget(null)
       window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'quest' }))
-      say(`Posta teslim edildi (${v?.name ?? postTarget}): +12 altın!`)
+      say(`Posta teslim edildi (${v?.name ?? postTarget}): +12 TL!`)
     }
   }, [postTarget, send, say])
 

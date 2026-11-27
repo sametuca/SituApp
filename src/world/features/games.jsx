@@ -139,7 +139,7 @@ function Xox({ g, act }) {
       </div>
       {done && (
         <button onClick={() => act({ a: 'again' })} disabled={again[g.you]} className={btnPink}>
-          {again[g.you] ? 'Karşı taraf bekleniyor…' : again[1 - g.you] ? `${other.name} tekrar istiyor 🔁` : 'Tekrar oyna 🔁'}
+          {again[g.you] ? 'Karşı taraf bekleniyor…' : again[1 - g.you] ? `${other.name} tekrar istiyor 🎲` : 'Tekrar oyna 🎲'}
         </button>
       )}
     </div>
@@ -372,6 +372,7 @@ export function useGames({ net, say, closeInteract }) {
   const peerActions = (peer) => [
     {
       key: 'game',
+      category: 'events',
       emoji: '🎮',
       label: 'Oyun oyna',
       onClick: () => {

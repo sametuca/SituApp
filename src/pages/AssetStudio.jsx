@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import ModelViewer from '../components/3d/ModelViewer'
 import { generateModel } from '../lib/meshy'
 import { listCharacters, saveCharacter, deleteCharacter } from '../lib/characters'
+import { getStudioKey, setStudioKey, studioHeaders } from '../lib/studioKey'
 
 const artStyles = [
   { id: 'realistic', label: 'Gerçekçi' },
   { id: 'sculpture', label: 'Heykelsi' },
 ]
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001'
+const API_BASE = import.meta.env.VITE_API_BASE || ''
 
 const WORLD_LOCATIONS = [
   { id: 'cafe', label: '☕ Kafe' },
@@ -36,6 +37,12 @@ export default function AssetStudio() {
   const [characters, setCharacters] = useState([])
   const [worldLocation, setWorldLocation] = useState('cafe')
   const [added, setAdded] = useState(null)
+  const [studioKey, setStudioKeyState] = useState(getStudioKey())
+
+  const saveStudioKey = (v) => {
+    setStudioKeyState(v)
+    setStudioKey(v.trim())
+  }
 
   useEffect(() => {
     listCharacters().then(setCharacters).catch(() => {})
@@ -85,7 +92,7 @@ export default function AssetStudio() {
     try {
       const res = await fetch(`${API_BASE}/api/assets/import`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: studioHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           name: name || prompt.slice(0, 24),
           location: worldLocation,
@@ -125,7 +132,17 @@ export default function AssetStudio() {
         <div className="grid md:grid-cols-2 gap-6">
           {/* form */}
           <div className="bg-white/5 rounded-2xl p-5 border border-white/10 flex flex-col gap-3">
-            <label className="text-white/60 text-xs uppercase tracking-wide">Karakter Adı</label>
+            <label className="text-white/60 text-xs uppercase tracking-wide">Studio Anahtarı</label>
+            <input
+              type="password"
+              value={studioKey}
+              onChange={(e) => saveStudioKey(e.target.value)}
+              placeholder="server/.env → STUDIO_KEY"
+              className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder:text-white/20 outline-none focus:border-purple-400"
+            />
+            <p className="text-white/30 text-xs -mt-1">Bu anahtar yalnızca tarayıcında saklanır; dahili asset uçlarına gönderilir.</p>
+
+            <label className="text-white/60 text-xs uppercase tracking-wide mt-2">Karakter Adı</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}

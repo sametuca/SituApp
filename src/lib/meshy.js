@@ -1,4 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001'
+import { studioHeaders } from './studioKey'
+
+const API_BASE = import.meta.env.VITE_API_BASE || ''
 
 async function handle(res) {
   const data = await res.json()
@@ -9,7 +11,7 @@ async function handle(res) {
 export async function createPreviewTask({ prompt, artStyle = 'realistic', negativePrompt }) {
   const res = await fetch(`${API_BASE}/api/meshy/text-to-3d`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: studioHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ prompt, artStyle, negativePrompt }),
   })
   return handle(res)
@@ -18,12 +20,13 @@ export async function createPreviewTask({ prompt, artStyle = 'realistic', negati
 export async function refineTask(taskId) {
   const res = await fetch(`${API_BASE}/api/meshy/text-to-3d/${taskId}/refine`, {
     method: 'POST',
+    headers: studioHeaders(),
   })
   return handle(res)
 }
 
 export async function getTaskStatus(taskId) {
-  const res = await fetch(`${API_BASE}/api/meshy/text-to-3d/${taskId}`)
+  const res = await fetch(`${API_BASE}/api/meshy/text-to-3d/${taskId}`, { headers: studioHeaders() })
   return handle(res)
 }
 

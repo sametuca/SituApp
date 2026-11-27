@@ -31,7 +31,7 @@ function Typed({ text }) {
 
 function NpcSheet({ npc, text, onOption, onBuy, onClose, touch }) {
   return (
-    <div className={`pointer-events-auto absolute inset-0 z-30 m-auto h-fit w-[min(100vw,max(30rem,38vw))] animate-pop rounded-[2rem] p-4 pb-5 text-[clamp(1rem,0.3vw+0.75rem,1.3rem)] ${glass}`} role="dialog" aria-label={npc.name}>
+    <div className={`pointer-events-auto absolute inset-0 z-30 m-auto h-fit max-h-[84svh] w-[min(94vw,max(28rem,34vw))] overflow-y-auto animate-pop rounded-[2rem] p-4 pb-5 text-[clamp(0.95rem,0.25vw+0.75rem,1.15rem)] ${glass}`} role="dialog" aria-label={npc.name}>
       <div className="flex items-start gap-3">
         <img src={`/avatars/${npc.avatar}.png`} alt="" width="64" height="64" className="h-[4em] w-[4em] shrink-0 rounded-2xl border-2 border-white bg-[#fff8f0] object-cover object-top shadow" />
         <div className="min-w-0 flex-1">
@@ -40,37 +40,39 @@ function NpcSheet({ npc, text, onOption, onBuy, onClose, touch }) {
             <Typed key={text} text={text} />
           </div>
         </div>
-        <button onClick={onClose} aria-label="Kapat" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/80 text-lg font-black text-[#8a7a9c] shadow">
-          ✕
+        <button onClick={onClose} aria-label="Kapat" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/80 text-sm font-black text-[#8a7a9c] shadow">
+          ✖️
         </button>
       </div>
       {npc.shop?.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-col gap-1.5">
           {npc.shop.map((item) => (
             <button
               key={item.id}
               type="button"
               onClick={() => onBuy?.(npc, item)}
-              className="flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-2xl border-b-4 border-[#e8952c] bg-[#fdb252] px-3 py-2 text-[0.88em] font-extrabold text-white shadow-soft active:translate-y-[3px] active:border-b-[1px]"
+              className="flex h-10 w-full items-center justify-between gap-2 rounded-2xl border-b-[3px] border-[#e8952c] bg-[#fdb252] px-4 text-[0.88em] font-extrabold text-white shadow-soft active:translate-y-[2px] active:border-b-[1px]"
             >
-              <span>{item.emoji}</span>
-              <span>{item.label}</span>
-              <span className="rounded-full bg-white/25 px-2 py-0.5 text-[0.82em] font-black">{item.price} 🪙</span>
+              <span className="flex items-center gap-2 truncate">
+                <span>{item.emoji}</span>
+                <span className="truncate">{item.label}</span>
+              </span>
+              <span className="shrink-0 rounded-full bg-white/25 px-2.5 py-0.5 text-[0.82em] font-black">{item.price} ₺</span>
             </button>
           ))}
         </div>
       )}
-      <div className={`mt-2.5 flex flex-wrap gap-2 ${touch ? 'pb-2' : ''}`}>
+      <div className={`mt-2 flex flex-col gap-1.5 ${touch ? 'pb-2' : ''}`}>
         {npc.options.map((o) => (
           <button
             key={o.label}
             onClick={() => onOption(o)}
-            className="min-h-11 flex-1 rounded-2xl border-b-4 border-[#e4b780] bg-[#ffeed9] px-3 py-2 text-[0.9em] font-extrabold text-[#8b5f2b] active:translate-y-[3px] active:border-b-[1px]"
+            className="flex h-10 w-full items-center justify-center rounded-2xl border-b-[3px] border-[#e4b780] bg-[#ffeed9] px-4 text-[0.88em] font-extrabold text-[#8b5f2b] active:translate-y-[2px] active:border-b-[1px]"
           >
             {o.label.replace(/^[\p{Extended_Pictographic}\uFE0F\u200d\s]+/u, '')}
           </button>
         ))}
-        <button onClick={onClose} className="min-h-11 rounded-2xl border-b-4 border-[#c9bde6] bg-[#ece4ff] px-3 py-2 text-[0.9em] font-extrabold text-[#6b4fc0] active:translate-y-[3px] active:border-b-[1px]">
+        <button onClick={onClose} className="flex h-10 w-full items-center justify-center rounded-2xl border-b-[3px] border-[#c9bde6] bg-[#ece4ff] px-4 text-[0.88em] font-extrabold text-[#6b4fc0] active:translate-y-[2px] active:border-b-[1px]">
           Hoşça kal
         </button>
       </div>
@@ -110,7 +112,7 @@ function AfkPlayerModal({ bot, onClose, say }) {
           <p className="flex items-center gap-1 text-xs font-bold text-[#8a7a9c]"><Ico name="afk" size={14} /> Şu an klavyeden uzakta (AFK)</p>
         </div>
         <button onClick={onClose} aria-label="Kapat" className="grid h-9 w-9 place-items-center rounded-full bg-[#f6f0ff] text-sm font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
-          ✕
+          ✖️
         </button>
       </div>
 
@@ -303,7 +305,13 @@ export function useNpcs(ctx) {
         const item = npc?.shop?.find((s) => s.id === m.itemId)
         if (!item) return
         if (!m.ok) {
-          setTalk((t) => (t ? { ...t, text: `🪙 Yeterli altının yok! Bunun için ${m.price ?? item.price} altın gerekiyor.` } : t))
+          setTalk((t) => (t ? { ...t, text: `₺ Yeterli bakiyen yok! Bunun için ${m.price ?? item.price} TL gerekiyor.` } : t))
+          return
+        }
+        if (item.toInv) {
+          setTalk(null)
+          window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'collect' }))
+          say(`🎒 ${item.emoji} ${item.label} envanterine eklendi!`)
           return
         }
         enjoyItem(item)
@@ -314,11 +322,23 @@ export function useNpcs(ctx) {
   const onBuy = useCallback(
     (npc, item) => {
       if (!net.send({ t: 'npc_buy', npcId: npc.id, itemId: item.id })) {
-        // çevrimdışı modda doğrudan keyif animasyonunu oynat
+        // çevrimdışı modda doğrudan envantere ekle veya keyif animasyonunu oynat
+        if (item.toInv) {
+          setTalk(null)
+          window.dispatchEvent(new CustomEvent('situapp:inv-add', { detail: { id: item.id, label: item.label, emoji: item.emoji, alcohol: Boolean(item.alcohol) } }))
+          say(`🎒 ${item.emoji} ${item.label} envanterine eklendi!`)
+        } else {
+          if (item.toInv) {
+          setTalk(null)
+          window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'collect' }))
+          say(`🎒 ${item.emoji} ${item.label} envanterine eklendi!`)
+          return
+        }
         enjoyItem(item)
+        }
       }
     },
-    [net, enjoyItem],
+    [net, enjoyItem, say],
   )
 
   const onOption = (o) => {
@@ -336,6 +356,22 @@ export function useNpcs(ctx) {
       const game = o.action.slice('open_mg:'.length)
       setTalk(null)
       window.dispatchEvent(new CustomEvent('situapp:open-mg', { detail: { game } }))
+      return
+    }
+    if (o.action === 'open_speed_date') {
+      setTalk(null)
+      window.dispatchEvent(new CustomEvent('situapp:open-speed-date'))
+      return
+    }
+    if (o.action === 'open_boxing' || o.action === 'open_boxing_board') {
+      setTalk(null)
+      window.dispatchEvent(new CustomEvent('situapp:open-boxing', { detail: { mode: o.action === 'open_boxing_board' ? 'board' : 'lobby' } }))
+      return
+    }
+    if (typeof o.action === 'string' && o.action.startsWith('open_workout:')) {
+      const kind = o.action.slice('open_workout:'.length)
+      setTalk(null)
+      window.dispatchEvent(new CustomEvent('situapp:open-workout', { detail: { kind } }))
       return
     }
     setTalk((t) => (t ? { ...t, text: pick(o.reply) } : t))

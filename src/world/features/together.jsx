@@ -1,11 +1,11 @@
-// Birlikte yapılan şeyler: oturma, çift dans, fotoğraf kabini ve gün batımı anı.
-// Sunucu tarafı (oturma/dans): server/features/together.js. Fotoğraf ve gün batımı yalnızca istemcidedir.
+// Birlikte yapılan şeyler: oturma, çift dans ve fotoğraf kabini.
+// Sunucu tarafı (oturma/dans): server/features/together.js. Fotoğraf yalnızca istemcidedir.
 // 3D parçalar: TogetherScene.jsx (World.jsx Canvas'ında), duruş çizimi: avatarPose.js + AvatarRig.
 import { Dock } from '../../components/Dock'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ToyButton } from '../../components/ui'
 import { DoorPrompt } from '../Social'
-import { PHOTO_SPOT, SEATS, SEAT_LABEL, resolveCollisions, zoneAt } from '../layout'
+import { PHOTO_SPOT, SEATS, SEAT_LABEL, resolveCollisions } from '../layout'
 import { AlbumModal, Countdown, PhotoPreview, composePhoto, loadAlbum, removeFromAlbum, saveToAlbum } from './photo'
 import { venueLayout, venueSeats } from '../venueLayout'
 import { together } from './togetherStore'
@@ -14,10 +14,6 @@ import Portrait from '../Portrait'
 const glass = 'border-2 border-white bg-white/85 shadow-soft backdrop-blur-md'
 const SIT_PROMPT = 1.7 // m: bu kadar yakında boş koltuk varsa "Otur" çıkar
 const NEAR_ANY = 4.5 // m: yakında biri varsa istemler yukarı kayar (yakın oyuncu kartıyla çakışmasın)
-const SUNSET_DIST = 2 // m: yan yana sayılma mesafesi
-const SUNSET_HOLD_MS = 4000 // yan yana durma süresi
-const SUNSET_MS = 20000
-const SUNSET_COOLDOWN_MS = 30000
 const nowS = () => performance.now() / 1000
 
 const isTyping = (e) => e.target instanceof HTMLElement && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)
@@ -51,55 +47,6 @@ function DanceOfferCard({ offer, onAnswer }) {
         </button>
       </div>
     </div>
-  )
-}
-
-function SunsetCard({ moment }) {
-  const ref = useRef(null)
-  useEffect(() => {
-    let raf
-    const loop = () => {
-      const k = Math.max(0, Math.min(1, (moment.until - Date.now()) / SUNSET_MS))
-      if (ref.current) ref.current.style.transform = `scaleX(${k})`
-      raf = requestAnimationFrame(loop)
-    }
-    loop()
-    return () => cancelAnimationFrame(raf)
-  }, [moment.until])
-  return (
-    <div className="pointer-events-auto w-[min(94vw,21rem)] animate-pop overflow-hidden rounded-3xl border-2 border-white bg-gradient-to-r from-[#ffd1b8]/95 via-[#fed195]/95 to-[#f3c9ff]/95 p-3 shadow-soft" role="status">
-      <p className="text-sm font-black text-[#604727]">🌅 Gün batımı anı</p>
-      <p className="text-xs font-bold text-[#4f6766]">{moment.name} ile yan yanasınız. Tadını çıkarın 💗</p>
-      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/60">
-        <div ref={ref} className="h-full origin-left rounded-full bg-[#fdb252]" />
-      </div>
-    </div>
-  )
-}
-
-/** Ekran kenarlarında turuncu-pembe ışık: gökyüzü rengine eşlik eder (opaklık together.sky.t'yi izler). */
-function SunsetVeil() {
-  const ref = useRef(null)
-  useEffect(() => {
-    let raf
-    const loop = () => {
-      const t = together.sky.t
-      if (ref.current) {
-        ref.current.style.opacity = String(t * t * (3 - 2 * t))
-        ref.current.style.display = t > 0.001 ? 'block' : 'none'
-      }
-      raf = requestAnimationFrame(loop)
-    }
-    loop()
-    return () => cancelAnimationFrame(raf)
-  }, [])
-  return (
-    <div
-      ref={ref}
-      aria-hidden
-      className="pointer-events-none absolute inset-0 z-[5] hidden"
-      style={{ background: 'radial-gradient(ellipse at 50% 120%, rgba(255,150,110,0.55) 0%, rgba(255,140,170,0.28) 45%, rgba(255,170,200,0) 80%), linear-gradient(to top, rgba(255,160,130,0.18), rgba(255,200,220,0.05))' }}
-    />
   )
 }
 
@@ -137,7 +84,6 @@ export function useTogether(ctx) {
   const [fullSeat, setFullSeat] = useState(null) // yakındaki koltuk/masa tamamen doluysa: kind
   const [photoNear, setPhotoNear] = useState(false)
   const [nearAny, setNearAny] = useState(false)
-  const [moment, setMoment] = useState(null) // gün batımı anı { id, name, until }
   const [shoot, setShoot] = useState(null) // { n } geri sayım
   const [photo, setPhoto] = useState(null) // önizleme { full, thumb }
   const [flash, setFlash] = useState(false)
@@ -282,26 +228,10 @@ export function useTogether(ctx) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shoot])
 
-  // ---- 4 Hz izleyici: koltuk istemi, fotoğraf noktası, gün batımı anı ----
-  const momentRef = useRef(null)
-  const hold = useRef({ id: null, since: 0, cooldown: 0 })
-  const rosterRef = useRef(roster)
+  // ---- 4 Hz izleyici: koltuk istemi ve fotoğraf noktası ----
   useEffect(() => {
-    rosterRef.current = roster
-  }, [roster])
-  useEffect(() => {
-    momentRef.current = moment
-  }, [moment])
-  useEffect(() => {
-    const endMoment = (now) => {
-      momentRef.current = null
-      setMoment(null)
-      together.sky.target = 0
-      hold.current = { id: null, since: 0, cooldown: now + SUNSET_COOLDOWN_MS }
-    }
     const tick = () => {
       const f = focusRef.current
-      const now = Date.now()
       const posed = Boolean(together.self.current)
 
       // koltuk (boş yer varsa seatOpt, hepsi doluysa fullSeat uyarısı)
@@ -338,42 +268,17 @@ export function useTogether(ctx) {
       const spot = venue ? venueLayout(venue)?.photo : home ? null : PHOTO_SPOT // şehirde dış nokta, Fotoğraf Stüdyosu'nda iç nokta
       setPhotoNear(Boolean(spot) && Math.hypot(f.x - spot.x, f.z - spot.z) < spot.radius)
 
-      // yakında biri var mı + gün batımı adayı
+      // Yakında oyuncu varsa etkileşim istemlerini biraz yukarı al.
       let any = false
-      let cand = null
-      let candD = SUNSET_DIST
-      const onBeach = !home && !venue && zoneAt(f.x, f.z).id === 'beach'
       for (const r of net.remotes.current.values()) {
         const d = Math.hypot(r.x - f.x, r.z - f.z)
         if (d < NEAR_ANY) any = true
-        if (onBeach && d < candD && r.anim === 'idle' && !rosterRef.current.find((p) => p.id === r.id)?.dnd) {
-          cand = r
-          candD = d
-        }
       }
       setNearAny(any)
-
-      const m = momentRef.current
-      if (m) {
-        const partner = net.remotes.current.get(m.id)
-        const ok = onBeach && partner && Math.hypot(partner.x - f.x, partner.z - f.z) < SUNSET_DIST * 2 && now < m.until
-        if (!ok) endMoment(now)
-      } else if (now > hold.current.cooldown) {
-        if (cand && f.anim === 'idle') {
-          if (hold.current.id !== cand.id) hold.current = { ...hold.current, id: cand.id, since: now }
-          else if (now - hold.current.since >= SUNSET_HOLD_MS) {
-            const mm = { id: cand.id, name: cand.name, until: now + SUNSET_MS }
-            momentRef.current = mm
-            setMoment(mm)
-            together.sky.target = 1
-          }
-        } else hold.current = { ...hold.current, id: null }
-      }
     }
     const id = setInterval(tick, 250)
     return () => {
       clearInterval(id)
-      together.sky.target = 0
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [home, venue, focusRef])
@@ -425,6 +330,7 @@ export function useTogether(ctx) {
   const peerActions = (peer) => [
     {
       key: 'dance',
+      category: 'events',
       emoji: '💃',
       label: 'Dansa davet',
       onClick: () => {
@@ -437,7 +343,7 @@ export function useTogether(ctx) {
   const settingsSections = [
     <section key="photos" className="flex items-start gap-3">
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-black text-[#4a3b5c]">📸 Fotoğraf albümü</p>
+        <p className="text-sm font-black text-[#4a3b5c]">Fotoğraf albümü</p>
         <p className="text-xs font-semibold text-[#8a7a9c]">Lobideki Fotoğraf Stüdyosu’nda çektiğin son 12 kare bu tarayıcıda saklanır ({album.length}/12).</p>
       </div>
       <button onClick={() => setPanel('photos')} className="shrink-0 rounded-xl bg-[#e9ddff] px-3 py-2 text-xs font-extrabold text-[#5b3fa8] active:scale-95">
@@ -456,7 +362,6 @@ export function useTogether(ctx) {
 
   const overlays = (
     <>
-      <SunsetVeil />
       <div className="pointer-events-none absolute inset-x-0 top-16 z-20 flex flex-col items-center gap-2 px-3">
         {offer && <DanceOfferCard offer={offer} onAnswer={answer} />}
         {selfPose?.kind === 'dance' && (
@@ -487,7 +392,6 @@ export function useTogether(ctx) {
             </button>
           </Chip>
         )}
-        {moment && <SunsetCard moment={moment} />}
       </div>
 
       {!busy && selfPose?.kind === 'sit' && (

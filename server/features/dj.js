@@ -17,10 +17,10 @@
 // Altın: ctx.addCoins (features/economy.js): 30 sn'de bir dinleyiciye göre (≤ 4), 🔥 başına 1, vardiya tamamlanınca +5.
 import { parseTrack } from '../../src/world/djLinks.js'
 import { venueLayout } from '../../src/world/venueLayout.js'
-import { venueRoom } from '../../src/world/venues.js'
+import { venueIdOf } from '../../src/world/venues.js'
 
 const VENUE = 'kulup'
-const ROOM = venueRoom(VENUE)
+const isClub = (p) => Boolean(p && venueIdOf(p.room) === VENUE)
 const SHIFT_MS = 10 * 60 * 1000
 const QUEUE_MAX = 4
 const GAP_MS = 2000
@@ -43,7 +43,7 @@ export default function dj(ctx) {
   let now = null // { id, start, track, trackAt, tracks, fire, sentFire, earned, lastPlay, timer, tick, fireTimer }
   let gapTimer = null
 
-  const inRoom = () => [...players.values()].filter((p) => p.room === ROOM)
+  const inRoom = () => [...players.values()].filter((p) => isClub(p))
 
   const stateFor = (viewer) => {
     const ok = (p) => p && !mod().blockedPair(viewer, p)
@@ -89,7 +89,7 @@ export default function dj(ctx) {
     while (queue.length) {
       const id = queue.shift()
       const p = players.get(id)
-      if (!p || p.room !== ROOM) continue
+      if (!isClub(p)) continue
       if (p.pose) {
         p.lastPoseEnd = 0
         ctx.features.find((f) => f.handlers?.pose_end)?.handlers.pose_end(p)
@@ -115,7 +115,7 @@ export default function dj(ctx) {
       now = cur
       ctx.grace?.(p, 4000)
       send(p.ws, { t: 'dj_turn', x: spot.x, z: spot.z, ry: spot.ry, dur: SHIFT_MS })
-      broadcast({ t: 'react', id, e: '🎉' }, undefined, ROOM, p)
+      broadcast({ t: 'react', id, e: '🎉' }, undefined, p.room, p)
       ctx.emitEvent?.(p, 'dj_shift', 1)
       pushState()
       return
@@ -132,14 +132,14 @@ export default function dj(ctx) {
 
   const handlers = {
     dj_get(me) {
-      if (me.room !== ROOM) return
+      if (!isClub(me)) return
       const t = Date.now()
       if (t - (me.lastDjGet ?? 0) < 500) return
       me.lastDjGet = t
       pushState(me)
     },
     dj_join(me) {
-      if (me.room !== ROOM) return
+      if (!isClub(me)) return
       const t = Date.now()
       if (t - (me.lastDjJoin ?? 0) < 1000) return
       me.lastDjJoin = t
@@ -151,11 +151,11 @@ export default function dj(ctx) {
       else pushState()
     },
     dj_leave(me) {
-      if (me.room !== ROOM) return
+      if (!isClub(me)) return
       drop(me)
     },
     dj_play(me, msg) {
-      if (me.room !== ROOM || now?.id !== me.id) return
+      if (!isClub(me) || now?.id !== me.id) return
       const t = Date.now()
       if (t - now.lastPlay < PLAY_GAP_MS) return send(me.ws, { t: 'info', text: '🎧 Biraz yavaş, her şarkı arasında birkaç saniye bekle.' })
       if (now.tracks >= TRACKS_MAX) return send(me.ws, { t: 'info', text: '🎧 Bu vardiyadaki şarkı sınırına ulaştın.' })
@@ -170,12 +170,12 @@ export default function dj(ctx) {
       pushState()
     },
     dj_stop(me) {
-      if (me.room !== ROOM || now?.id !== me.id || !now.track) return
+      if (!isClub(me) || now?.id !== me.id || !now.track) return
       now.track = null
       pushState()
     },
     dj_fire(me) {
-      if (me.room !== ROOM || !now || now.id === me.id || !now.track) return
+      if (!isClub(me) || !now || now.id === me.id || !now.track) return
       const dj = players.get(now.id)
       if (!dj || mod().blockedPair(me, dj)) return // engel: sessizce yok say
       const t = Date.now()
@@ -185,7 +185,7 @@ export default function dj(ctx) {
       now.fire += 1
       now.earned += 1
       ctx.addCoins?.(dj, 1, 'dj')
-      broadcast({ t: 'react', id: me.id, e: '🔥' }, undefined, ROOM, me)
+      broadcast({ t: 'react', id: me.id, e: '🔥' }, undefined, me.room, me)
       ctx.emitEvent?.(me, 'dj_fire', 1, dj)
       if (!now.fireTimer) {
         const cur = now

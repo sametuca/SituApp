@@ -1,5 +1,5 @@
 {
-  "name": "situapp",
+  "name": "rastla",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -20,7 +20,9 @@
     "@phosphor-icons/react": "^2.1.10",
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.2",
+    "@react-three/postprocessing": "^3.2.2",
     "@supabase/supabase-js": "^2.119.2",
+    "compression": "^1.8.2",
     "cors": "^2.8.6",
     "dotenv": "^18.0.10",
     "express": "^5.3.0",

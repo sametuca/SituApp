@@ -48,13 +48,14 @@ export function CollectBurst({ ev, onDone }) {
         </div>
       </div>
       <div className="absolute left-1/2 top-[64px] flex -translate-x-1/2 flex-col items-center gap-2" style={{ animation: 'cel-float 1.7s ease-out both' }}>
-        <span className="whitespace-nowrap rounded-full border-2 border-white bg-gradient-to-b from-[#fff3c8] to-[#ffd35e] px-4 py-1 text-lg font-black text-[#8a5a00] shadow-lg">
-          +{ev.gain} ⭐ {chest ? 'Hazine!' : k.name}
+        <span className="inline-flex w-max min-w-max items-center gap-1.5 whitespace-nowrap rounded-full border-2 border-white bg-gradient-to-b from-[#fff3c8] to-[#ffd35e] px-5 py-1.5 text-lg font-black text-[#8a5a00] shadow-lg">
+          <span>+{ev.gain}</span>
+          <Em e="⭐" size={20} />
+          <span>{chest ? 'Hazine!' : k.name}</span>
         </span>
         <div className="w-44 overflow-hidden rounded-full border-2 border-white bg-white/70 p-[3px] shadow">
           <div className="h-2.5 rounded-full bg-gradient-to-r from-[#ffd35e] to-[#ff9f43]" style={{ '--from': `${fromPct}%`, '--to': `${toPct}%`, animation: 'cel-bar 0.9s 0.2s ease-out both' }} />
         </div>
-        <span className="rounded-full bg-[#4a3b5c]/80 px-2.5 py-0.5 text-[0.6875rem] font-extrabold text-white">Seviye {lv.level} · {lv.into}/{lv.span} ⭐</span>
       </div>
     </div>
   )
@@ -76,11 +77,17 @@ export function LevelUp({ level, onDone }) {
             <span className="text-6xl font-black text-white drop-shadow-[0_3px_0_rgba(138,90,0,.45)]">{level}</span>
           </div>
           <div className="relative -mt-3 rounded-full border-4 border-white bg-[#4a3b5c] px-6 py-1.5 text-xl font-black tracking-wide text-[#ffe48f] shadow-lg">SEVİYE ATLADIN!</div>
-          <p className="mt-2 rounded-full bg-white/85 px-4 py-1 text-sm font-extrabold text-[#4a3b5c] shadow">Toplamaya devam et, yeni seviyeler seni bekliyor ⭐</p>
+          <p className="mt-2 rounded-full bg-white/85 px-4 py-1 text-sm font-extrabold text-[#4a3b5c] shadow">Yeni seviye açıldı, keşfetmeye devam et</p>
         </div>
       </div>
-      <div className="absolute left-1/2 top-[36%]">
+      <div className="pointer-events-none absolute left-1/2 top-[36%]">
         <Sparks big />
+      </div>
+      <div className="pointer-events-none absolute left-[28%] top-[32%]">
+        <Sparks />
+      </div>
+      <div className="pointer-events-none absolute left-[72%] top-[32%]">
+        <Sparks />
       </div>
     </div>
   )

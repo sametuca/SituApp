@@ -12,52 +12,32 @@
 //     { t: 'surf_start', matchId, seed, startAt, players }
 //     { t: 'surf_state', players }        diğer sörfçülerin anlık konum + hayatta kalma durumu
 //     { t: 'surf_end', winner, standings, top }
-import fs from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { allUsers, save, user } from '../store.js'
 
 const MIN_PLAYERS = 2
 const MAX_PLAYERS = 10
 const COUNTDOWN_MS = 10_000
 const TICK_MS = 80
-const MAX_MATCH_MS = 120_000
+const MAX_MATCH_MS = 180_000
 
-const DATA_DIR = process.env.SITUAPP_DATA_DIR || path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data')
-const BOARD_FILE = path.join(DATA_DIR, 'surf-board.json')
-
-const loadBoard = () => {
-  try {
-    const raw = JSON.parse(fs.readFileSync(BOARD_FILE, 'utf8'))
-    return raw && typeof raw === 'object' ? raw : {}
-  } catch {
-    return {}
-  }
-}
-
-const saveBoard = (board) => {
-  try {
-    fs.mkdirSync(path.dirname(BOARD_FILE), { recursive: true })
-    fs.writeFileSync(BOARD_FILE, JSON.stringify(board, null, 2))
-  } catch {
-    /* disk yazılamazsa oyun durmaz */
-  }
-}
+// Puan tablosu kullanıcı verisinde (store.user(key).stats.surf) tutulur → Supabase write-behind ile kalıcı.
+const surfOf = (key) => (user(key).stats.surf ??= { name: '', avatar: '', points: 0, wins: 0, games: 0, bestMs: 0 })
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, Number.isFinite(Number(v)) ? Number(v) : 0))
 
 export default function surf(ctx) {
   const { players, send } = ctx
-  const board = loadBoard() // key → { name, avatar, points, wins, games, bestMs }
 
   const topList = () =>
-    Object.entries(board)
-      .map(([key, v]) => ({ key, ...v }))
-      .sort((a, b) => b.points - a.points || b.wins - a.wins || b.bestMs - a.bestMs)
+    Object.entries(allUsers())
+      .map(([key, u]) => (u.stats?.surf ? { key, ...u.stats.surf } : null))
+      .filter(Boolean)
+      .sort((a, b) => b.points - a.points || b.wins - a.wins || a.bestMs - b.bestMs)
       .slice(0, 15)
 
   const recordResult = (p, rank, survivedMs, totalPlayers) => {
     const key = p.key || p.id
-    const cur = board[key] ?? { name: p.name, avatar: p.avatar, points: 0, wins: 0, games: 0, bestMs: 0 }
+    const cur = surfOf(key)
     const pts = rank === 1 ? 100 : rank === 2 ? 60 : rank === 3 ? 35 : 15
     const coins = rank === 1 ? 30 : rank === 2 ? 18 : rank === 3 ? 10 : 5
     cur.name = p.name
@@ -66,7 +46,7 @@ export default function surf(ctx) {
     cur.games += 1
     if (rank === 1 && totalPlayers >= 2) cur.wins += 1
     cur.bestMs = Math.max(cur.bestMs, Math.round(survivedMs))
-    board[key] = cur
+    save()
     ctx.addCoins?.(p, coins, 'surf')
     return { pts, coins }
   }
@@ -178,7 +158,6 @@ export default function surf(ctx) {
         coins: rew.coins,
       }
     })
-    saveBoard(board)
     const winner = standings[0] ?? null
     const top = topList()
     for (const s of m.slots.values()) {
@@ -227,7 +206,7 @@ export default function surf(ctx) {
         send(me.ws, {
           t: 'surf_board',
           top: topList(),
-          mine: board[key] ?? null,
+          mine: user(key).stats.surf ?? null,
           lobbyCount: lobby.length,
         })
       },

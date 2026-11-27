@@ -17,8 +17,9 @@ export function Dock({ children }) {
 }
 
 // ---- Üst orta HUD yığını: bölge başlığı, etkinlik/davet bannerları, bekleme kartları, ipuçları vb. yukarıdan aşağı SIRALI akar ----
+// Yığın tıklamaları geçirir; etkileşimli kartların kendi köküne pointer-events-auto ekle.
 export function TopDockSlot() {
-  return <div id="hud-top" className="pointer-events-none absolute inset-x-0 top-[4.6rem] z-20 flex flex-col items-center gap-2 px-3" />
+  return <div id="hud-top" className="pointer-events-none absolute inset-x-0 top-[4.6rem] z-30 flex flex-col items-center gap-2 px-3" />
 }
 
 export function TopDock({ children }) {

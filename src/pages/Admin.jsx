@@ -46,7 +46,7 @@ export default function Admin() {
             setKey(v)
           }}
         >
-          <h1 className="text-xl font-black text-ink">SituApp · Yönetici</h1>
+          <h1 className="text-xl font-black text-ink">Rastla · Yönetici</h1>
           <input name="k" type="password" autoFocus placeholder="Yönetici anahtarı" className="mt-3 w-full rounded-2xl border-2 border-[#ffd9a8] px-3 py-2 font-semibold outline-none" />
           {err && <p className="mt-2 text-sm font-bold text-rose-500">{err}</p>}
           <button className="mt-3 w-full rounded-2xl bg-[#fdb252] py-2 font-black text-white">Giriş</button>

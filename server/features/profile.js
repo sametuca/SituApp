@@ -1,6 +1,5 @@
-// Profil, ilgi etiketleri ve buz kırıcı kartlar.
-// Mesajlar: profile_save {profile} · profile {id} → profile {id, profile} · icebreaker {to} → icebreaker {id,name,qid,q,a,b}
-//           icebreaker_answer {to, qid, pick:'a'|'b'} → gönderene icebreaker_answer {id,name,a,b,choice}
+// Profil ve ilgi etiketleri.
+// Mesajlar: profile_save {profile} · profile {id} → profile {id, profile}
 // Profil fotoğrafı (yalnızca Supabase modu, hesaplı oyuncu): istemci Storage'a `<uid>/<ad>.jpg` yükler, sonra
 //   profile_photo {path|null} (dakikada 3) → profile_photo {ok, url|null} ; photo_privacy {who:'all'|'friends'} → photo_privacy {who}
 //   Sunucu her izleyici için ayrı url hesaplar ve { t:'photo', key, url|null } yollar (welcome.photos: toplu). photo_hidden (moderasyon) → hiçbir yerde gösterilmez.
@@ -36,45 +35,6 @@ export const TAGS = [
 ].map(([id, emoji, label]) => ({ id, emoji, label }))
 const TAG_IDS = new Set(TAGS.map((t) => t.id))
 
-const QUESTIONS = [
-  ['Plajda gün batımı mı?', 'Kulüpte gece mi?'],
-  ['Sabah kahvesi mi?', 'Akşam çayı mı?'],
-  ['Dağ evi mi?', 'Deniz kenarı mı?'],
-  ['Film gecesi mi?', 'Dans gecesi mi?'],
-  ['Sürpriz hediye mi?', 'El yazısı mektup mu?'],
-  ['Pizza mı?', 'Tatlı mı?'],
-  ['Yağmurda yürüyüş mü?', 'Yağmurda kitap mı?'],
-  ['Kedi mi?', 'Köpek mi?'],
-  ['Gün doğumu mu?', 'Gün batımı mı?'],
-  ['Piknik mi?', 'Şık bir akşam yemeği mi?'],
-  ['Karaoke mi?', 'Sessiz bir sohbet mi?'],
-  ['Uzun bir sarılma mı?', 'Sıkı bir el tutuşma mı?'],
-  ['Yaz mı?', 'Kış mı?'],
-  ['Sabah kuşu mu?', 'Gece kuşu mu?'],
-  ['Spontane kaçamak mı?', 'Planlı tatil mi?'],
-  ['Çiçek mi?', 'Çikolata mı?'],
-  ['Bisiklet turu mu?', 'Sahilde yürüyüş mü?'],
-  ['Dondurma mı?', 'Sıcak çikolata mı?'],
-  ['Eski şarkılar mı?', 'Yeni çıkanlar mı?'],
-  ['Kitap mı?', 'Dizi mi?'],
-  ['Kahkaha mı?', 'Gülümseme mi?'],
-  ['Yıldızları izlemek mi?', 'Dalgaları dinlemek mi?'],
-  ['Birlikte yemek yapmak mı?', 'Birlikte dışarıda yemek mi?'],
-  ['Tatlı bir mesaj mı?', 'Sesli bir not mu?'],
-  ['Ilık bir yaz yağmuru mu?', 'Karlı bir sabah mı?'],
-  ['Çay bahçesi mi?', 'Kafe köşesi mi?'],
-  ['Fotoğraf çekmek mi?', 'Fotoğrafta olmak mı?'],
-  ['Oyun oynamak mı?', 'Yürüyüşe çıkmak mı?'],
-  ['Hayvanat bahçesi mi?', 'Lunapark mı?'],
-  ['İlk buluşmada kahve mi?', 'İlk buluşmada yürüyüş mü?'],
-  ['Romantik komedi mi?', 'Macera filmi mi?'],
-  ['Balonlu bir sürpriz mi?', 'Pastalı bir sürpriz mi?'],
-  ['Tatlı bir takma ad mı?', 'Kendi adınla çağrılmak mı?'],
-  ['Birlikte dans mı?', 'Birlikte şarkı söylemek mi?'],
-]
-
-const ICE_COOLDOWN_MS = 10_000
-const ICE_TTL_MS = 5 * 60_000
 const EMPTY = { bio: '', age: null, birthDate: '', city: '', instagram: '', x: '', socialPrivacy: 'all', instagramLocked: false, xLocked: false, tags: [] }
 const HANDLE_RE = /^[a-zA-Z0-9._]{1,30}$/
 const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/
@@ -123,10 +83,6 @@ export default function profile(ctx) {
       tags: (p.tags ?? []).filter((t) => TAG_IDS.has(t)),
     }
   }
-
-  // "gönderen>alıcı" → { qid, ts }: yanıt bekleyen buz kırıcılar
-  const pending = new Map()
-  const pkey = (from, to) => `${from}>${to}`
 
   // ---- profil fotoğrafı ----
   const PHOTO_PATH_RE = (uid) => new RegExp(`^${uid}/[A-Za-z0-9._-]{1,80}$`)
@@ -187,9 +143,6 @@ export default function profile(ctx) {
       }
       return { profile: pub(stored(me.key), me.key, me.key), profileTags: TAGS, photos, photoPrivacy: user(me.key).photoPrivacy ?? 'all', photoEnabled: Boolean(me.uid) }
     },
-    onLeave(me) {
-      for (const k of [...pending.keys()]) if (k.startsWith(`${me.id}>`) || k.endsWith(`>${me.id}`)) pending.delete(k)
-    },
     handlers: {
       profile_photo(me, msg) {
         if (!me.uid) return info(me, '📷 Fotoğraf için hesap gerekli.')
@@ -233,14 +186,14 @@ export default function profile(ctx) {
           age = ageFromBirthDate(birthRaw)
           if (age === null || age < 18 || age > 99) {
             send(me.ws, { t: 'profile_error', field: 'birthDate' })
-            return info(me, '🔞 SituApp yalnızca 18 yaş ve üzeri içindir. Geçerli bir doğum tarihi seç.')
+            return info(me, '🔞 Rastla yalnızca 18 yaş ve üzeri içindir. Geçerli bir doğum tarihi seç.')
           }
           birthDate = birthRaw
         } else if (raw.age !== null && raw.age !== undefined && raw.age !== '') {
           age = Number(raw.age)
           if (!Number.isInteger(age) || age < 18 || age > 99) {
             send(me.ws, { t: 'profile_error', field: 'age' })
-            return info(me, '🔞 SituApp yalnızca 18 yaş ve üzeri içindir. Yaşın 18–99 arasında olmalı.')
+            return info(me, '🔞 Rastla yalnızca 18 yaş ve üzeri içindir. Yaşın 18–99 arasında olmalı.')
           }
         }
         me.lastProfileSave = now
@@ -268,31 +221,6 @@ export default function profile(ctx) {
         send(me.ws, { t: 'profile', id, profile: pub(stored(target.key), me.key, target.key) ?? EMPTY, photo: photoUrlFor(me.key, target.key) })
       },
 
-      icebreaker(me, msg) {
-        const now = Date.now()
-        if (now - (me.lastIce ?? 0) < ICE_COOLDOWN_MS) return info(me, '🧊 Biraz bekle, yeni bir buz kırıcı için birkaç saniye gerek.')
-        const target = typeof msg.to === 'string' ? players.get(msg.to) : null
-        if (!target || target.id === me.id || target.room !== me.room) return info(me, 'Bu kişi artık burada değil.')
-        const why = mod().reach(me, target, 'icebreaker')
-        if (why) return why.text && info(me, why.text)
-        me.lastIce = now
-        const qid = Math.floor(Math.random() * QUESTIONS.length)
-        const [a, b] = QUESTIONS[qid]
-        pending.set(pkey(me.id, target.id), { qid, ts: now })
-        send(target.ws, { t: 'icebreaker', id: me.id, name: me.name, qid, q: 'Hangisi?', a, b })
-        info(me, `🧊 ${target.name} kişisine buz kırıcı gönderildi.`)
-      },
-
-      icebreaker_answer(me, msg) {
-        const sender = typeof msg.to === 'string' ? players.get(msg.to) : null
-        const k = sender ? pkey(sender.id, me.id) : ''
-        const pend = pending.get(k)
-        if (!sender || !pend || pend.qid !== msg.qid || Date.now() - pend.ts > ICE_TTL_MS || (msg.pick !== 'a' && msg.pick !== 'b')) return
-        pending.delete(k)
-        if (sender.room !== me.room || mod().reach(me, sender, 'icebreaker')) return
-        const [a, b] = QUESTIONS[pend.qid]
-        send(sender.ws, { t: 'icebreaker_answer', id: me.id, name: me.name, a, b, choice: msg.pick === 'a' ? a : b })
-      },
     },
   }
 }

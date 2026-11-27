@@ -72,7 +72,7 @@ export default function AvatarSelect() {
         <header className="flex flex-col items-center text-center lg:col-span-2">
           <img
             src="/logo.png"
-            alt="SituApp"
+            alt="Rastla"
             draggable={false}
             className="h-14 w-auto select-none drop-shadow-[0_6px_14px_rgba(74,59,92,0.16)] sm:h-16"
           />
@@ -135,8 +135,8 @@ export default function AvatarSelect() {
                   />
                   <span className="mt-1 block text-center text-sm font-extrabold text-ink">{a.name}</span>
                   {active && (
-                    <span className={`absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full text-xs font-black text-white ${TONES[toneOf(a)].badge}`}>
-                      ✓
+                    <span className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-white text-xs shadow-sm">
+                      ✔️
                     </span>
                   )}
                 </button>

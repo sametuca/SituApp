@@ -1,5 +1,5 @@
 // Özellik modülleri (istemci). Her modül bir hook'tur: useX(ctx) → { peerActions?(peer), settingsSections?, overlays? }
-//   peerActions(peer): etkileşim menüsüne eklenecek düğmeler  [{ key, emoji, label, onClick, danger? }]
+//   peerActions(peer): etkileşim menüsüne eklenecek düğmeler [{ key, category: social|events|gifts|safety, emoji, label, onClick, danger? }]
 //   peerHeader(peer):  etkileşim menüsünde kişinin altına çizilecek JSX (mini profil vb.)
 //   settingsSections:  Ayarlar paneline eklenecek JSX parçaları
 //   overlays:          ekranın üstüne çizilecek JSX (diyaloglar, bildirimler…)
@@ -33,18 +33,20 @@ import { useBike } from './bike'
 import { useFeedback } from './feedback'
 import { useBeach } from './beach'
 import { useEdge } from './edge'
-import { usePvp } from './pvp'
 import { useHomeCare } from './homeCare'
 import { useCityLife } from './cityLife'
 import { useJobs } from './jobs'
 import { useArcade } from './arcade'
 import { useSurf } from './surf'
 import { useMinigames } from './minigames'
+import { useFitness } from './fitness'
+import { useInventory } from './inventory'
+import { useDating } from './dating'
 
 function SettingsPanel({ sections, onClose }) {
   return (
     <Modal onClose={onClose} label="Ayarlar">
-      <h2 className="text-2xl font-black text-[#4a3b5c]">Ayarlar ⚙️</h2>
+      <h2 className="text-2xl font-black text-[#4a3b5c]">Ayarlar</h2>
       <div className="mt-4 flex flex-col gap-5">{sections}</div>
       <button onClick={onClose} className="mt-5 w-full rounded-2xl border-b-4 border-[#e8952c] bg-[#fdb252] py-3 text-base font-extrabold text-white active:translate-y-[3px] active:border-b-[1px]">
         Tamam
@@ -54,7 +56,7 @@ function SettingsPanel({ sections, onClose }) {
 }
 
 export function useFeatures(ctx) {
-  const parts = [useModeration(ctx), useGames(ctx), useFriends(ctx), useProfile(ctx), useProgress(ctx), useMedia(ctx), useTogether(ctx), useCosmetics(ctx), useNpcs(ctx), useAudio(ctx), useSky(ctx), useVenues(ctx), useCollect(ctx), useEconomy(ctx), useDj(ctx), useHousing(ctx), useBike(ctx), useFeedback(ctx), useBeach(ctx), useEdge(ctx), usePvp(ctx), useHomeCare(ctx), useCityLife(ctx), useJobs(ctx), useSurf(ctx), useMinigames(ctx), useArcade(ctx), useDuo(ctx)]
+  const parts = [useModeration(ctx), useGames(ctx), useFriends(ctx), useProfile(ctx), useProgress(ctx), useMedia(ctx), useTogether(ctx), useCosmetics(ctx), useNpcs(ctx), useAudio(ctx), useSky(ctx), useVenues(ctx), useCollect(ctx), useEconomy(ctx), useDj(ctx), useHousing(ctx), useBike(ctx), useFeedback(ctx), useBeach(ctx), useEdge(ctx), useHomeCare(ctx), useCityLife(ctx), useJobs(ctx), useSurf(ctx), useMinigames(ctx), useArcade(ctx), useFitness(ctx), useInventory(ctx), useDating(ctx), useDuo(ctx)]
 
   const peerActions = (peer) => parts.flatMap((p) => p.peerActions?.(peer) ?? [])
   const peerHeader = (peer) => parts.map((p, i) => (p.peerHeader ? <div key={i}>{p.peerHeader(peer)}</div> : null))

@@ -240,6 +240,15 @@ export default function progress(ctx) {
       changed = true
       if (target) send(target.ws, { t: 'badge', badge: { id: b.id, emoji: b.emoji, name: b.name, desc: b.desc } })
     }
+    // Pasif stat artışı & Uyum XP: sohbet/jest/fotoğraf → Karizma + Bond, oyunlar → Beceri
+    if (type === 'chat' || type === 'whisper') {
+      ctx.bumpStat?.(me, 'cha', 0.15)
+      if (peer && type === 'whisper') ctx.addBond?.(me, peer, 5, false)
+    } else if (type === 'gesture' || type === 'photo' || type === 'match') {
+      ctx.bumpStat?.(me, 'cha', 0.35)
+      if (peer) ctx.addBond?.(me, peer, type === 'match' ? 30 : 8, type === 'match')
+    } else if (type === 'game_played') ctx.bumpStat?.(me, 'ski', 0.5)
+
     save()
     if (changed) pushState(me.key)
   }

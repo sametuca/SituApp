@@ -22,7 +22,7 @@ const C = CONTROLLER
 export const DOCS = {
   kvkk: {
     title: 'KVKK Aydınlatma Metni',
-    intro: `Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu'nun (“KVKK”) 10. maddesi ve Aydınlatma Yükümlülüğünün Yerine Getirilmesinde Uyulacak Usul ve Esaslar Hakkında Tebliğ uyarınca, SituApp'i kullanırken kişisel verilerinin nasıl işlendiğini açıklamak için hazırlanmıştır.`,
+    intro: `Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu'nun (“KVKK”) 10. maddesi ve Aydınlatma Yükümlülüğünün Yerine Getirilmesinde Uyulacak Usul ve Esaslar Hakkında Tebliğ uyarınca, Rastla'yı kullanırken kişisel verilerinin nasıl işlendiğini açıklamak için hazırlanmıştır.`,
     sections: [
       {
         h: '1. Veri sorumlusu',
@@ -33,7 +33,7 @@ export const DOCS = {
         p: [
           'Kimlik ve iletişim: kullanıcı adın ve e-posta adresin.',
           'Hesap ve güvenlik: şifren (yalnızca geri döndürülemez özet olarak), oturum bilgileri, IP adresin, tarayıcı/cihaz bilgisi, giriş ve işlem kayıtları (log).',
-          'Oyun içi veriler: seçtiğin karakter ve görünüm, oyun içindeki konumun (harita koordinatı; cihazının gerçek coğrafi konumu DEĞİLDİR), ilerleme, görev, rozet, altın ve envanter bilgilerin, arkadaş/engelleme listelerin.',
+          'Oyun içi veriler: seçtiğin karakter ve görünüm, oyun içindeki konumun (harita koordinatı; cihazının gerçek coğrafi konumu DEĞİLDİR), ilerleme, görev, rozet, TL ve envanter bilgilerin, arkadaş/engelleme listelerin.',
           'İçerik: oyunda yazdığın sohbet ve özel mesajlar, sesli mesajlar, jest/emoji tepkilerin, geri bildirimlerin ve şikâyetlerin.',
           'Görsel: yüklemeyi seçersen profil fotoğrafın (isteğe bağlıdır).',
         ],
@@ -86,11 +86,11 @@ export const DOCS = {
 
   terms: {
     title: 'Kullanım Şartları',
-    intro: 'SituApp hesabı oluşturarak ve oyunu kullanarak aşağıdaki şartları kabul etmiş olursun.',
+    intro: 'Rastla hesabı oluşturarak ve oyunu kullanarak aşağıdaki şartları kabul etmiş olursun.',
     sections: [
       {
         h: '1. Yaş sınırı',
-        p: ['SituApp 18 yaş ve üzeri kullanıcılar içindir. Kayıt olarak 18 yaşını doldurduğunu beyan edersin. 18 yaşından küçük olduğu anlaşılan hesaplar kapatılabilir.'],
+        p: ['Rastla 18 yaş ve üzeri kullanıcılar içindir. Kayıt olarak 18 yaşını doldurduğunu beyan edersin. 18 yaşından küçük olduğu anlaşılan hesaplar kapatılabilir.'],
       },
       {
         h: '2. Hesap',
@@ -106,8 +106,8 @@ export const DOCS = {
         ],
       },
       {
-        h: '4. Sanal ürünler ve altın',
-        p: ['Oyundaki altın, eşya ve ilerleme yalnızca oyun içinde geçerlidir; gerçek para değeri yoktur, nakde çevrilemez, satılamaz ve devredilemez. Hileli kazanımlar silinebilir.'],
+        h: '4. Sanal ürünler ve TL',
+        p: ['Oyundaki TL, eşya ve ilerleme yalnızca oyun içinde geçerlidir; gerçek para değeri yoktur, nakde çevrilemez, satılamaz ve devredilemez. Hileli kazanımlar silinebilir.'],
       },
       {
         h: '5. Moderasyon',

@@ -5,6 +5,7 @@
 // - Yoksa (demo): server/data/social.json dosyası; anahtar oyuncu adından türer.
 import fs from 'node:fs'
 import path from 'node:path'
+import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import * as supa from './supa.js'
 
@@ -80,7 +81,7 @@ export function addReport(r) {
       .catch((e) => console.error('Şikâyet yazılamadı:', e.message))
     return
   }
-  db.reports.push(r)
+  db.reports.push({ ...r, id: r.id ?? crypto.randomUUID() })
   if (db.reports.length > 500) db.reports.splice(0, db.reports.length - 500)
   save()
 }
@@ -107,7 +108,7 @@ export async function allReports() {
     const rows = await supa.select('reports', 'select=*&order=created_at.desc&limit=300').catch(() => supa.select('reports', 'select=*'))
     return rows.slice(0, 300).map((r) => ({ id: String(r.id), reason: r.reason, resolved: Boolean(r.data?.resolved), ...r.data, reporter: r.reporter, target: r.target }))
   }
-  return db.reports.map((r, i) => ({ id: String(i), resolved: Boolean(r.resolved), ...r })).reverse()
+  return db.reports.map((r, i) => ({ ...r, id: String(r.id ?? i), resolved: Boolean(r.resolved) })).reverse()
 }
 export async function resolveReport(id) {
   if (supa.enabled) {
@@ -115,7 +116,7 @@ export async function resolveReport(id) {
     if (!rows[0]) return
     return supa.patch('reports', `id=eq.${encodeURIComponent(id)}`, { data: { ...rows[0].data, resolved: true } })
   }
-  const r = db.reports[Number(id)]
+  const r = db.reports.find((report, i) => String(report.id ?? i) === String(id))
   if (r) {
     r.resolved = true
     save()

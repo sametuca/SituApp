@@ -1,15 +1,15 @@
-import { Component, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DockSlot, TopDockSlot } from '../components/Dock'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { Canvas, useFrame } from '@react-three/fiber'
-import { OrbitControls, useProgress } from '@react-three/drei'
-import { PCFShadowMap } from 'three'
+import { Canvas } from '@react-three/fiber'
+import { Environment, Lightformer, OrbitControls } from '@react-three/drei'
+import { NeutralToneMapping, PCFSoftShadowMap } from 'three'
 import { useAuth } from '../lib/AuthContext'
 import City from '../world/City'
 import HomeRoom from '../world/HomeRoom'
 import Venue from '../world/Venue'
 import { VENUE_BY_ID, VENUE_ROOM } from '../world/venues'
-import { ENTERABLE, venueDoor } from '../world/venueDoors'
+import { venueDoor } from '../world/venueDoors'
 import { resolveVenueRoom, venueLayout, venueTheme } from '../world/venueLayout'
 import { together } from '../world/features/togetherStore'
 import { EditToggle, FurnitureLayer, FurnitureSheet } from '../world/HomeEditor'
@@ -17,28 +17,33 @@ import { FURNITURE_BY_ID } from '../world/furniture'
 import { useFeatures } from '../world/features'
 import { preloadCritical, preloadLater } from '../world/preload'
 import TogetherScene from '../world/features/TogetherScene'
-import Sky, { skyBase } from '../world/Sky'
+import Sky from '../world/Sky'
 import { AirportTutorialHud, AirportTutorialScene } from '../world/AirportTutorial'
 import { IntroCutsceneCamera, IntroCutsceneOverlay } from '../world/IntroCutscene'
 import { GIFT_BY_ID } from '../world/cosmeticsData'
 import { findFreeSpot, furnitureColliders, isValid, loadHome, newUid, saveHome } from '../world/homeLayout'
-import LocalPlayer from '../world/LocalPlayer'
+import LocalPlayer, { ClickToMoveGround } from '../world/LocalPlayer'
 import RemotePlayers, { GuideNpc, SelfTag } from '../world/RemotePlayers'
+import { NearbyPicker, VenueChannelPill } from '../world/CrowdHud'
+import WhisperInbox from '../world/WhisperInbox'
 import { useMultiplayer } from '../world/net'
-import { ChatPanel, HelpModal, Minimap, StartGuide, TopBar } from '../world/Hud'
-import { ChatFab, ChatSheet, DoorPrompt, GestureChip, IncomingChip, InteractSheet, InviteChip, Joystick, MatchOverlay, NearbyCard, SkillBar } from '../world/Social'
-import { GESTURE_BY_KIND, REACTIONS, SKILL_COOLDOWN_MS, WHISPER_RANGE, loadSlots, saveSlots, skillFor } from '../world/interact'
+import { HelpModal, StartGuide, TopBar } from '../world/Hud'
+import { ChatPanel } from '../world/HudChat'
+import { Minimap } from '../world/HudMap'
+import { ChatFab, ChatSheet, DoorPrompt, GestureChip, IncomingChip, InteractSheet, InviteChip, Joystick, LookJoystick, MatchOverlay, SkillBar } from '../world/Social'
+import { GESTURE_BY_KIND, GESTURE_RANGE, REACTIONS, SKILL_COOLDOWN_MS, loadSlots, saveSlots, skillFor } from '../world/interact'
 import SkillEditor from '../components/SkillEditor'
 import { useIsTouch } from '../world/useIsTouch'
 import { HOME_TIERS, applyHomeTier } from '../world/homeTiers'
 import { bike } from '../world/bikeStore'
 import { BEACH_START, HOME_DOOR, HOME_ROOM, HOME_ZONE, SPAWN, TELEPORTS, ZONES, resolveCollisions, resolveRoom, zoneAt } from '../world/layout'
+import { getGraphicsProfile } from '../world/performanceProfile'
+import GraphicsEffects from '../world/GraphicsEffects'
+import { DoorWatcher, LoadingOverlay, SceneReady, VenueDoorWatcher, WorldErrorBoundary, ZoneWatcher } from './WorldLoading'
+import { randomLoadingMessage } from './loadingMessages'
 
 const NO_ITEMS = []
 const START_VENUE = 'havalimani'
-const NEAR_ENTER = 4.5 // m: bu mesafeye girince "sohbet et" kartı çıkar
-const NEAR_LEAVE = 6.5 // m: bu mesafeyi aşınca kart kaybolur (titremesin diye ikisi farklı)
-
 const AVATARS = ['zeynep', 'deniz', 'elif', 'kaan', 'mira', 'ege']
 const GUIDE_TIPS = [
   'Selam! Ben Rehber. Nasıl oynanır penceresi için bana tıkla ya da E / H tuşuna bas.',
@@ -48,7 +53,14 @@ const GUIDE_TIPS = [
   'Enter’a basıp yazarsan mesajın başının üstünde balon olur.',
   'Alttaki 1–4 tuşlarıyla selam, dans, kalp ve kutlama tepkilerini kullanabilirsin.',
 ]
-
+const TRAVEL_LOADING_MESSAGES = [
+  'Hop, yeni bir köşeye geçiyoruz…',
+  'Yeni mekân, yeni hikâyeler…',
+  'Manzara değişiyor, keyif aynı!',
+  'Bir kapıdan kocaman bir maceraya…',
+  'Yeni yer hazırlanıyor, az kaldı…',
+  'Yol kısacık, merak uzun…',
+]
 function readAvatar() {
   try {
     return JSON.parse(localStorage.getItem('situapp_avatar'))
@@ -59,139 +71,6 @@ function readAvatar() {
 
 // "Işınlan" gibi komutlardaki Türkçe karakterleri sadeleştir
 const normalize = (s) => s.toLowerCase().replaceAll('ı', 'i').replaceAll('ş', 's').replaceAll('ğ', 'g').replaceAll('ü', 'u').replaceAll('ö', 'o').replaceAll('ç', 'c')
-
-/** 3B sahne çökerse boş ekran yerine kurtarma kartı gösterir. */
-class WorldErrorBoundary extends Component {
-  state = { error: null }
-  static getDerivedStateFromError(error) {
-    return { error }
-  }
-  render() {
-    if (!this.state.error) return this.props.children
-    return (
-      <div className="fixed inset-0 z-50 grid place-items-center bg-gradient-to-br from-[#fff2e3] via-[#f1e6ff] to-[#dff3ff] p-5">
-        <div className="w-full max-w-sm rounded-[2rem] border-2 border-white bg-white/95 p-6 text-center shadow-toy">
-          <div className="text-5xl">🛠️</div>
-          <h2 className="mt-2 text-xl font-black text-[#4a3b5c]">Sahne yüklenirken bir sorun oluştu</h2>
-          <p className="mt-1 text-sm font-semibold text-[#8a7a9c]">Sayfayı yenileyerek kaldığın yerden devam edebilirsin.</p>
-          <button type="button" onClick={() => location.reload()} className="mt-4 rounded-2xl border-b-4 border-[#e8952c] bg-[#fdb252] px-5 py-2.5 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2">
-            Sayfayı yenile
-          </button>
-        </div>
-      </div>
-    )
-  }
-}
-
-/** Ana sahne (şehir/oda + oyuncu) çizime hazır olunca onReady çağrılır; yalnızca ilk yüklemede kullanılır. */
-function SceneReady({ onReady }) {
-  useEffect(() => {
-    onReady()
-  }, [onReady])
-  return null
-}
-
-function LoadingOverlay({ ready }) {
-  const { progress } = useProgress()
-  const [hidden, setHidden] = useState(false)
-  useEffect(() => {
-    // sahne hazır olunca (ya da 60 sn sonra, takılma olursa) kapat
-    const t = setTimeout(() => setHidden(true), ready ? 250 : 60000)
-    return () => clearTimeout(t)
-  }, [ready])
-  if (hidden) return null
-  return (
-    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#fff2e3] via-[#f1e6ff] to-[#dff3ff]">
-      <img
-        src="/logo.png"
-        alt="SituApp"
-        draggable={false}
-        className="h-20 w-auto select-none drop-shadow-[0_8px_18px_rgba(74,59,92,0.18)] sm:h-24"
-      />
-      <div className="h-10 w-10 animate-spin rounded-full border-4 border-candy-pink/50 border-t-candy-pink-deep" />
-      <p className="text-sm font-extrabold text-ink-soft">Şehir yükleniyor… %{Math.round(progress)}</p>
-    </div>
-  )
-}
-
-/** Oyuncunun hangi mahallede olduğunu izler; değişince bildirir. */
-function ZoneWatcher({ focusRef, onChange, fixed }) {
-  const last = useRef(null)
-  useFrame(() => {
-    const z = fixed ?? zoneAt(focusRef.current.x, focusRef.current.z)
-    if (z.id !== last.current) {
-      last.current = z.id
-      onChange(z)
-    }
-  })
-  return null
-}
-
-/** Kapıya yaklaşınca (şehirde ev kapısı, evde çıkış) haber verir. */
-function DoorWatcher({ focusRef, door, onChange }) {
-  const last = useRef(false)
-  useFrame(() => {
-    const f = focusRef.current
-    const near = Math.hypot(f.x - door.x, f.z - door.z) < door.radius
-    if (near !== last.current) {
-      last.current = near
-      onChange(near)
-    }
-  })
-  return null
-}
-
-/** Şehirde bir mekânın kapısına yaklaşınca (kapı önü) o mekânın kimliğini bildirir; uzaklaşınca null. */
-function VenueDoorWatcher({ focusRef, onChange }) {
-  const last = useRef(null)
-  useFrame(() => {
-    const f = focusRef.current
-    let best = null
-    let bestD = Infinity
-    for (const v of ENTERABLE) {
-      const d = venueDoor(v.id)
-      const dist = Math.hypot(f.x - d.x, f.z - d.z)
-      if (dist < d.radius && dist < bestD) {
-        best = v.id
-        bestD = dist
-      }
-    }
-    if (best !== last.current) {
-      last.current = best
-      onChange(best)
-    }
-  })
-  return null
-}
-
-/** Yakındaki en yakın oyuncuyu izler (4 kez/sn); değişince bildirir. */
-function ProximityWatcher({ focusRef, remotes, onChange }) {
-  const last = useRef(null)
-  const clock = useRef(0)
-  useFrame((_, dt) => {
-    clock.current += dt
-    if (clock.current < 0.25) return
-    clock.current = 0
-    const f = focusRef.current
-    const dist = (r) => Math.hypot(r.x - f.x, r.z - f.z)
-    const kept = last.current && remotes.current.get(last.current)
-    if (kept && dist(kept) < NEAR_LEAVE) return
-    let best = null
-    let bestD = NEAR_ENTER
-    for (const r of remotes.current.values()) {
-      const d = dist(r)
-      if (d < bestD) {
-        bestD = d
-        best = r.id
-      }
-    }
-    if (best !== last.current) {
-      last.current = best
-      onChange(best)
-    }
-  })
-  return null
-}
 
 export default function World() {
   const avatar = readAvatar()
@@ -208,12 +87,14 @@ function WorldScene({ avatar }) {
   const focusRef = useRef({ x: SPAWN.x, z: SPAWN.z, ry: Math.PI, anim: 'idle', teleport: null })
   const controlsRef = useRef(null)
   const joystickRef = useRef({ x: 0, y: 0 })
+  const lookJoystickRef = useRef({ x: 0, y: 0 })
+  const moveTargetRef = useRef(null)
   const touch = useIsTouch()
-  const [nearId, setNearId] = useState(null)
-  const [dismissedId, setDismissedId] = useState(null)
+  const graphics = useMemo(() => getGraphicsProfile(), [])
   const [chatTarget, setChatTarget] = useState(null) // null = kapalı, 'public' = herkese açık, aksi halde oyuncu id'si
   const chatTargetRef = useRef(null)
   const [incoming, setIncoming] = useState(null)
+  const [inboxOpen, setInboxOpen] = useState(false)
   // Herkes kendi evinin garajında başlar (ev = şehirden bağımsız oda). Kademe sunucudan gelene dek önbellekten.
   const tierKey = `situapp_home_tier_${user?.id ?? 'guest'}`
   const [cachedTier] = useState(() => {
@@ -242,10 +123,15 @@ function WorldScene({ avatar }) {
   const [nearVenue, setNearVenue] = useState(null) // şehirde kapısına yaklaştığımız mekân
   const venueRef = useRef(startAirport ? START_VENUE : null)
   const [fade, setFade] = useState(false)
+  const [transitionLine, setTransitionLine] = useState(() => randomLoadingMessage(TRAVEL_LOADING_MESSAGES))
+  const beginTransition = useCallback(() => {
+    setTransitionLine(randomLoadingMessage(TRAVEL_LOADING_MESSAGES))
+    setFade(true)
+  }, [])
   const [sceneReady, setSceneReady] = useState(false) // ilk yükleme bitti mi (yükleme ekranı için)
   const onSceneReady = useCallback(() => setSceneReady(true), [])
-  // Havalimanı başlangıç eğitim holü: yıldız topla → örnek kapı dene → gardırop → çıkış
-  const [tutStep, setTutStep] = useState('collect') // collect | door | wardrobe | exit | done
+  // Havalimanı başlangıç eğitim holü: yıldız topla → çanta (envanter) → örnek kapı → gardırop → çıkış
+  const [tutStep, setTutStep] = useState('collect') // collect | inventory | door | wardrobe | exit | done
   const [tutNear, setTutNear] = useState(null)
   const [tutCelebrate, setTutCelebrate] = useState(null)
   const [introActive, setIntroActive] = useState(false)
@@ -260,6 +146,7 @@ function WorldScene({ avatar }) {
     }
   }, [])
   const tutOpenedWardrobe = useRef(false)
+  const tutOpenedInv = useRef(false)
   const tutCelebTimer = useRef(null)
   const flashTutCelebrate = useCallback((msg) => {
     setTutCelebrate(msg)
@@ -294,19 +181,28 @@ function WorldScene({ avatar }) {
   const nearGuideRef = useRef(false)
   const tipsKey = `situapp_tips_seen_${user?.id ?? 'guest'}`
   const [showTips, setShowTips] = useState(() => !localStorage.getItem(tipsKey))
-  const [feed, setFeed] = useState(() => [
-    { kind: 'system', ts: 0, text: `Hoş geldin ${name}! 🌳` },
-  ])
+  const [feed, setFeed] = useState([])
+  const [whisperInbox, setWhisperInbox] = useState([])
+  const [whisperUnread, setWhisperUnread] = useState(0)
 
   const addFeed = useCallback((m) => {
+    if (m.whisper) {
+      const uid = `${m.ts}-${m.id}-${Math.random().toString(36).slice(2, 6)}`
+      setWhisperInbox((prev) =>
+        [{ uid, fromId: m.id, fromName: m.name, toId: m.to, toName: m.toName, text: m.text, ts: m.ts, self: Boolean(m.self) }, ...prev].slice(0, 30),
+      )
+      if (!m.self) setWhisperUnread((n) => n + 1)
+      return
+    }
     setFeed((f) => [...f, { kind: 'chat', ...m }].slice(-100))
     // başkasından özel mesaj geldi ve o sohbet açık değilse bildirim göster
-    if ((m.dm || m.whisper) && !m.self && chatTargetRef.current !== m.id) setIncoming({ id: m.id, name: m.name, text: m.text, whisper: Boolean(m.whisper) })
+    if (m.dm && !m.self && chatTargetRef.current !== m.id) setIncoming({ id: m.id, name: m.name, text: m.text, whisper: false })
   }, [])
   const say = useCallback((text) => setFeed((f) => [...f, { kind: 'system', ts: Date.now(), text }].slice(-100)), [])
   // Şehir ↔ ev geçişi: ekran kısa süre kararır, sonra oyuncu yeni yere ışınlanır.
   const swapScene = useCallback((target) => {
-    setFade(true)
+    moveTargetRef.current = null
+    beginTransition()
     setEditing(false)
     setSelected(null)
     setTimeout(() => {
@@ -316,7 +212,7 @@ function WorldScene({ avatar }) {
       if (target === 'city') {
         setHome(null)
         // Konut Mahallesi kapısından girildiyse o kapının önüne, aksi halde lobideki Evim kapısına dön
-        focusRef.current.teleport = [HOME_DOOR.x, HOME_DOOR.z, Math.PI / 2] // evden çıkınca lobideki Evim kapısına dön
+        focusRef.current.teleport = [HOME_DOOR.x, HOME_DOOR.z, 0] // evden çıkınca sahile dönük Evim kapısına dön
       } else {
         setHome(target)
         if (target?.isOwn) setEditing(true)
@@ -324,12 +220,13 @@ function WorldScene({ avatar }) {
       }
       setTimeout(() => setFade(false), 120)
     }, 220)
-  }, [])
+  }, [beginTransition])
 
   // Şehir ↔ mekân geçişi (ev geçişinin paralelidir). Girerken kamera güneye sıfırlanır (oyuncak evi kesiti).
-  const swapVenue = useCallback((target) => {
+  const swapVenue = useCallback((target, serverSpawn = null) => {
+    moveTargetRef.current = null
     const from = venueRef.current
-    setFade(true)
+    beginTransition()
     setEditing(false)
     setSelected(null)
     setTimeout(() => {
@@ -352,7 +249,11 @@ function WorldScene({ avatar }) {
         venueRef.current = target
         setHome(null)
         setVenue(target)
-        const [sx, sz] = VENUE_ROOM.spawn
+        const spawn =
+          Array.isArray(serverSpawn) && serverSpawn.length === 2 && serverSpawn.every(Number.isFinite)
+            ? serverSpawn
+            : VENUE_ROOM.spawn
+        const [sx, sz] = spawn
         focusRef.current.teleport = [sx, sz, Math.PI]
         setTimeout(() => {
           const c = controlsRef.current
@@ -364,17 +265,33 @@ function WorldScene({ avatar }) {
       }
       setTimeout(() => setFade(false), 160)
     }, 220)
-  }, [seenKey])
+  }, [beginTransition, seenKey])
 
   // Başkasının evine girerken sahne, sunucu izin verince ('room' mesajı) değişir; reddedilirse olduğun yerde kalırsın.
+  // Mekân girişinde/salon değişiminde sunucunun verdiği dağılımlı kapı konumu uygulanır (üst üste binmeyi önler).
   const visitPending = useRef(false)
   const onRoom = useCallback(
     (m) => {
+      if (m.venue && Array.isArray(m.spawn) && m.spawn.length === 2) {
+        if (venueRef.current !== m.venue) {
+          swapVenue(m.venue, m.spawn)
+        } else {
+          const [sx, sz] = m.spawn
+          focusRef.current.teleport = [sx, sz, Math.PI]
+          setTimeout(() => {
+            const c = controlsRef.current
+            if (!c) return
+            c.object.position.set(sx, 6.4, sz + 9.4)
+            c.target.set(sx, 0.8, sz)
+            c.update()
+          }, 60)
+        }
+      }
       if (!visitPending.current || !m.owner) return
       visitPending.current = false
       swapScene({ owner: m.owner, ownerName: m.ownerName })
     },
-    [swapScene],
+    [swapScene, swapVenue],
   )
   const onDenied = useCallback(
     (text) => {
@@ -407,6 +324,8 @@ function WorldScene({ avatar }) {
     return () => window.removeEventListener('situapp:tp', on)
   }, [net])
 
+  // Sohbeti sade tutmak için otomatik katılma bildirimleri sohbet akışına basılmaz.
+
   const goTo = useCallback(
     (target) => {
       swapScene(target)
@@ -428,10 +347,19 @@ function WorldScene({ avatar }) {
   const enterVenue = useCallback(
     (id) => {
       if (!VENUE_BY_ID[id]) return
-      swapVenue(id)
       net.enterRoom({ venue: id })
     },
-    [net, swapVenue],
+    [net],
+  )
+  const switchVenueChannel = useCallback(
+    (ch) => {
+      if (!venue || ch === net.venueChannel) return
+      beginTransition()
+      setInteractId(null)
+      net.enterRoom({ venue, ch })
+      setTimeout(() => setFade(false), 260)
+    },
+    [beginTransition, venue, net],
   )
   const leaveVenue = useCallback(() => {
     swapVenue('city')
@@ -530,7 +458,6 @@ function WorldScene({ avatar }) {
   }, [])
   const closeChat = useCallback(() => openChat(null), [openChat])
   const peerOf = (id) => net.roster.find((p) => p.id === id)
-  const nearPeer = nearId && nearId !== dismissedId && chatTarget !== nearId ? peerOf(nearId) : null
   const sheetPeer = chatTarget && chatTarget !== 'public' ? peerOf(chatTarget) : null
 
   // ---- etkileşim: jest, fısıltı, tepki ----
@@ -577,7 +504,7 @@ function WorldScene({ avatar }) {
   const venueTh = useMemo(() => (venue ? venueTheme(venue) : null), [venue])
   const venueDim = venueTh?.dim ?? 0
   const sceneBase = useMemo(
-    () => (venueTh ? { bg: venueTh.bg, fog: [venueTh.bg, 30, 60] } : home ? { bg: '#faeee2', fog: ['#faeee2', 30, 60] } : { bg: '#dcf0ff', fog: ['#dcf0ff', 45, 122] }),
+    () => (venueTh ? { bg: venueTh.bg, fog: [venueTh.bg, 36, 76] } : home ? { bg: '#faeee2', fog: ['#faeee2', 36, 76] } : { bg: '#bce4ff', fog: ['#bce4ff', 78, 210] }),
     [venueTh, home],
   )
   const venueCollide = useMemo(() => (venue ? (x, z) => resolveVenueRoom(x, z, venueLayout(venue).colliders) : null), [venue])
@@ -650,20 +577,32 @@ function WorldScene({ avatar }) {
     if (tutStep !== 'collect') return
     setTutNear(null)
     window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'collect' }))
-    flashTutCelebrate('⭐ Süper! Eşyaları hep E ile toplarsın (1/4)')
-    setTutStep('door')
+    window.dispatchEvent(new CustomEvent('situapp:inv-add', { detail: { id: 'welcome_soda', label: 'Hoş Geldin Limonata', emoji: '🍋', alcohol: false, style: 'eat' } }))
+    flashTutCelebrate('⭐ Süper! Hediyen 🎒 çantana eklendi (1/5)')
+    setTutStep('inventory')
   }, [tutStep, flashTutCelebrate])
+  useEffect(() => {
+    if (!inTutorial || tutStep !== 'inventory') return
+    if (panel === 'inventory') {
+      tutOpenedInv.current = true
+    } else if (panel === null && tutOpenedInv.current) {
+      tutOpenedInv.current = false
+      window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'quest' }))
+      flashTutCelebrate('🎒 Harika! Şimdi okları takip edip kapıyı dene (2/5)')
+      setTutStep('door')
+    }
+  }, [inTutorial, tutStep, panel, flashTutCelebrate])
   const onTutDoor = useCallback(() => {
     if (tutStep !== 'door' || fade) return
     setTutNear(null)
-    setFade(true)
+    beginTransition()
     window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'quest' }))
     setTimeout(() => {
       setFade(false)
       setTutStep('wardrobe')
-      flashTutCelebrate('🚪 Harika! Soldaki 👗 Gardırop açıldı! (2/4)')
+      flashTutCelebrate('🚪 Süper! Soldaki 👗 Gardırop açıldı (3/5)')
     }, 420)
-  }, [tutStep, fade, flashTutCelebrate])
+  }, [beginTransition, tutStep, fade, flashTutCelebrate])
   useEffect(() => {
     if (!inTutorial || tutStep !== 'wardrobe') return
     if (panel === 'wardrobe') {
@@ -671,7 +610,7 @@ function WorldScene({ avatar }) {
     } else if (panel === null && tutOpenedWardrobe.current) {
       tutOpenedWardrobe.current = false
       window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'quest' }))
-      flashTutCelebrate('👗 Çok şık! Şimdi çıkış kapısından şehre çık (3/4)')
+      flashTutCelebrate('👗 Çok şık! Şimdi okları takip edip şehre çık (4/5)')
       setTutStep('exit')
     }
   }, [inTutorial, tutStep, panel, flashTutCelebrate])
@@ -769,8 +708,7 @@ function WorldScene({ avatar }) {
       const msg = rest.join(' ').trim()
       if (!who || !msg) return say('Örnek: /f Elif Bugün çok güzelsin 🤫')
       const peer = net.roster.find((p) => normalize(p.name) === normalize(who)) ?? net.roster.find((p) => normalize(p.name).startsWith(normalize(who)))
-      if (!peer) return say(`“${who}” burada yok. Fısıldamak için aynı yerde ve yakın olmalısınız.`)
-      if (distTo(peer.id) > WHISPER_RANGE) return say(`🤫 ${peer.name} çok uzakta. Fısıldamak için biraz yaklaş.`)
+      if (!peer) return say(`“${who}” burada yok. Fısıldamak için aynı yerde olmalısınız.`)
       if (!net.sendWhisper(msg, peer.id)) say('Şu an çevrimdışısın.')
       return
     }
@@ -835,9 +773,9 @@ function WorldScene({ avatar }) {
     <div className="fixed inset-0 touch-none select-none overflow-hidden bg-[#cfeaff]">
       <WorldErrorBoundary>
       <Canvas
-        shadows={PCFShadowMap}
-        dpr={[1, 1.15]}
-        gl={{ powerPreference: 'high-performance' }}
+        shadows={graphics.shadows ? PCFSoftShadowMap : false}
+        dpr={graphics.lowPower ? graphics.dpr : (touch ? [1, 1.25] : graphics.dpr)}
+        gl={{ powerPreference: graphics.lowPower ? 'default' : 'high-performance', antialias: graphics.antialias, toneMapping: NeutralToneMapping, toneMappingExposure: 1.02 }}
         camera={{ fov: 55, near: 0.3, far: 300, position: [start.x, 6.4, start.z + 9.4] }}
         onCreated={({ gl }) => {
           gl.domElement.addEventListener('webglcontextlost', (e) => {
@@ -848,9 +786,18 @@ function WorldScene({ avatar }) {
       >
         <color attach="background" args={[sceneBase.bg]} />
         <fog attach="fog" args={sceneBase.fog} />
+        {/* Tek karede üretilen hafif PBR ışık haritası (IBL): tüm kil/plastik/cam/su yüzeylerine modern yansıma ve derinlik katar */}
+        {!graphics.lowPower && (
+          <Environment resolution={128} frames={1} environmentIntensity={home || venue ? 0.36 : 0.42}>
+            <Lightformer form="ring" intensity={1.8} color="#fff6e0" position={[10, 14, 8]} scale={14} target={[0, 0, 0]} />
+            <Lightformer form="rect" intensity={1.4} color="#bfe8ff" position={[0, 12, 0]} rotation={[Math.PI / 2, 0, 0]} scale={[26, 26, 1]} />
+            <Lightformer form="rect" intensity={0.9} color="#ffe0c2" position={[-12, 4, -8]} scale={[14, 8, 1]} target={[0, 0, 0]} />
+            <Lightformer form="rect" intensity={0.75} color="#ffe8d6" position={[0, -6, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[24, 24, 1]} />
+          </Environment>
+        )}
         <Sky home={Boolean(home)} interior={venueTh ? { bg: venueTh.bg, fog: sceneBase.fog, dim: venueDim } : null} focusRef={focusRef} />
 
-        <TogetherScene focusRef={focusRef} home={Boolean(home || venue)} base={skyBase} />
+        <TogetherScene home={Boolean(home || venue)} />
         <Suspense fallback={null}>
           {venue ? (
             <Venue id={venue} />
@@ -872,12 +819,15 @@ function WorldScene({ avatar }) {
           ) : (
             <City focusRef={focusRef} />
           )}
+          <ClickToMoveGround moveTargetRef={moveTargetRef} disabled={introActive} />
           <LocalPlayer
             slug={slug}
             start={start}
             focusRef={focusRef}
             controlsRef={controlsRef}
             joystickRef={joystickRef}
+            lookJoystickRef={lookJoystickRef}
+            moveTargetRef={moveTargetRef}
             onMove={net.sendMove}
             camOffset={[6.4, 9.4]}
             locked={introActive}
@@ -889,7 +839,7 @@ function WorldScene({ avatar }) {
         </Suspense>
         {/* Geri kalan her katman kendi yükleme bölgesinde: model gelmeyi beklerken şehir/oyuncu çizilmeye devam eder */}
         <Suspense fallback={null}>
-          <RemotePlayers roster={net.roster} remotes={net.remotes} bubbles={net.bubbles} reactions={net.reactions} whispering={net.whispering} onPick={(id) => { setChatTarget(null); chatTargetRef.current = null; setInteractId(id) }} />
+          <RemotePlayers roster={net.roster} remotes={net.remotes} bubbles={net.bubbles} reactions={net.reactions} whispering={net.whispering} touch={touch} onPick={(id) => { setChatTarget(null); chatTargetRef.current = null; setInteractId(id) }} />
         </Suspense>
         {!home && !venue && (
           <Suspense fallback={null}>
@@ -904,14 +854,6 @@ function WorldScene({ avatar }) {
         <ZoneWatcher key={home ? 'home' : venue ? `v-${venue}` : 'city'} focusRef={focusRef} onChange={setZone} fixed={home ? HOME_ZONE : venueZone} />
         <DoorWatcher key={`door-${home ? `home${roomTier}` : venue ? 'venue' : 'city'}`} focusRef={focusRef} door={home ? HOME_ROOM.exit : venue ? VENUE_ROOM.exit : HOME_DOOR} onChange={setNearDoor} />
         {!home && !venue && <VenueDoorWatcher focusRef={focusRef} onChange={setNearVenue} />}
-        <ProximityWatcher
-          focusRef={focusRef}
-          remotes={net.remotes}
-          onChange={(id) => {
-            setNearId(id)
-            if (!id) setDismissedId(null) // uzaklaşınca bir sonraki yaklaşmada kart yine çıksın
-          }}
-        />
         <OrbitControls
           ref={controlsRef}
           makeDefault
@@ -926,6 +868,7 @@ function WorldScene({ avatar }) {
           minPolarAngle={0.35}
           maxPolarAngle={Math.PI / 2.15}
         />
+        <GraphicsEffects ao={graphics.ao} bloom={graphics.bloom} />
       </Canvas>
       </WorldErrorBoundary>
 
@@ -969,44 +912,131 @@ function WorldScene({ avatar }) {
           onSettings={() => setPanel('settings')}
           extraButtons={
             inTutorial
-              ? tutStep === 'wardrobe' || tutStep === 'exit'
-                ? feat.extraButtons.filter((b) => b.key === 'wardrobe').map((b) => ({ ...b, highlight: tutStep === 'wardrobe' }))
-                : []
-              : feat.extraButtons
+              ? tutStep === 'inventory'
+                ? feat.extraButtons.filter((b) => b.key === 'inventory').map((b) => ({ ...b, highlight: true, hint: 'Buraya tıkla 🎒' }))
+                : tutStep === 'wardrobe'
+                  ? feat.extraButtons.filter((b) => b.key === 'wardrobe').map((b) => ({ ...b, highlight: true, hint: 'Buraya tıkla 👗' }))
+                  : []
+              : [
+                  ...feat.extraButtons,
+                  {
+                    key: 'inbox',
+                    icon: 'feedback',
+                    label: 'Fısıltı Sohbetleri',
+                    badge: whisperUnread > 0 ? whisperUnread : 0,
+                    highlight: whisperUnread > 0,
+                    onClick: () => setInboxOpen((o) => !o),
+                  },
+                ]
           }
-          extraNodes={feat.extraNodes}
+          extraNodes={inTutorial ? null : feat.extraNodes}
           menuNodes={feat.menuNodes}
-          menuBadge={feat.menuBadge}
-          onExit={() => navigate('/avatar')}
+          menuBadge={inTutorial ? 0 : feat.menuBadge}
+          onExit={async () => {
+            await signOut()
+            navigate('/', { replace: true })
+          }}
           onHelp={() => setHelp(true)}
+        />
+      )}
+      {!introActive && !inTutorial && venue && net.status === 'online' && (
+        <VenueChannelPill
+          venueName={VENUE_BY_ID[venue]?.name ?? 'Mekân'}
+          channel={net.venueChannel}
+          channels={net.venueChannels}
+          inRoomCount={net.roster.length + 1}
+          onSwitch={switchVenueChannel}
+          onRefresh={() => net.send({ t: 'venue_channels', id: venue })}
+        />
+      )}
+      {!introActive && !inTutorial && !editing && !chatTarget && !interactPeer && (
+        <WhisperInbox
+          open={inboxOpen}
+          onClose={() => setInboxOpen(false)}
+          items={whisperInbox}
+          touch={touch}
+          onReadAll={() => setWhisperUnread(0)}
+          onClear={() => {
+            setWhisperInbox([])
+            setWhisperUnread(0)
+          }}
+          onReply={(toId, txt) => {
+            if (!peerOf(toId)) {
+              say('Bu oyuncu artık burada değil.')
+              return false
+            }
+            if (!net.sendWhisper(txt, toId)) {
+              say('Şu an çevrimdışısın.')
+              return false
+            }
+            return true
+          }}
+          onInspect={(id) => {
+            if (peerOf(id)) {
+              setChatTarget(null)
+              chatTargetRef.current = null
+              setInteractId(id)
+            } else say('Bu oyuncu artık burada değil.')
+          }}
+        />
+      )}
+      {!introActive && !inTutorial && !editing && !chatTarget && !interactPeer && (
+        <NearbyPicker
+          remotes={net.remotes}
+          roster={net.roster}
+          focusRef={focusRef}
+          touch={touch}
+          onPick={(id) => {
+            setChatTarget(null)
+            chatTargetRef.current = null
+            setInteractId(id)
+          }}
         />
       )}
       {!introActive && !home && !venue && <Minimap focusRef={focusRef} remotes={net.remotes} compact={touch} />}
       {!introActive && (touch ? (
         <>
           <Joystick inputRef={joystickRef} />
-          {!chatTarget && !editing && <ChatFab onClick={() => openChat('public')} />}
+          <LookJoystick inputRef={lookJoystickRef} />
+          {!inTutorial && !chatTarget && !editing && <ChatFab onClick={() => openChat('public')} />}
         </>
       ) : (
         <>
-          {chatTarget !== 'public' && !sheetPeer && !editing && <ChatPanel feed={feed} onSend={onSend} status={net.status} />}
+          {!inTutorial && chatTarget !== 'public' && !sheetPeer && !editing && (
+            <ChatPanel
+              feed={feed}
+              onSend={onSend}
+              status={net.status}
+              onAddFriend={(p) => {
+                if (!net.send({ t: 'friend_request', id: p.id })) say('Arkadaş eklemek için çevrimiçi olmalısın.')
+              }}
+              onOpenDm={(id) => {
+                if (peerOf(id)) openChat(id)
+                else say('Bu oyuncu şu an burada değil.')
+              }}
+              onInspect={(id) => {
+                if (peerOf(id)) {
+                  setChatTarget(null)
+                  chatTargetRef.current = null
+                  setInteractId(id)
+                } else say('Bu oyuncu şu an burada değil.')
+              }}
+            />
+          )}
         </>
       ))}
       <DockSlot />
       {skillEdit && <SkillEditor slots={slots} onChange={changeSlots} onClose={() => setSkillEdit(false)} />}
       <TopDockSlot />
-      {!introActive && !editing && !chatTarget && !interactPeer && (
+      {!introActive && !inTutorial && !editing && !chatTarget && !interactPeer && (
         <>
           <SkillBar xp={feat.xp} cooldowns={skillCd} slots={skillList} onEdit={() => setSkillEdit(true)} onSkill={triggerSkill} onOpenExp={() => setPanel('collection')} touch={touch} />
         </>
       )}
-      {nearPeer && !chatTarget && !interactPeer && (
-        <NearbyCard peer={nearPeer} touch={touch} onChat={() => openChat(nearPeer.id)} onInteract={() => setInteractId(nearPeer.id)} onDismiss={() => setDismissedId(nearPeer.id)} />
-      )}
       {interactPeer && !chatTarget && (
         <InteractSheet
           peer={interactPeer}
-          near={distTo(interactPeer.id) <= WHISPER_RANGE - 0.2}
+          near={distTo(interactPeer.id) <= GESTURE_RANGE - 0.2}
           canInvite={!home}
           touch={touch}
           extras={feat.peerActions(interactPeer)}
@@ -1052,13 +1082,13 @@ function WorldScene({ avatar }) {
         />
       )}
       {nearDoor && !(inTutorial && tutStep !== 'exit') && !chatTarget && !fade && (
-        <DoorPrompt emoji={home || venue ? '🚪' : '🏠'} label={home || venue ? 'Dışarı çık' : 'Evine gir'} action={home || venue ? 'Çık' : 'Gir'} touch={touch} raised={Boolean(nearPeer || editing)} onGo={doorGo} />
+        <DoorPrompt emoji={home || venue ? '🚪' : '🏠'} label={home || venue ? 'Dışarı çık' : 'Evine gir'} action={home || venue ? 'Çık' : 'Gir'} touch={touch} raised={Boolean(editing)} onGo={doorGo} />
       )}
       {!home && !venue && !nearDoor && nearVenue && !chatTarget && !fade && !editing && (
-        <DoorPrompt emoji={VENUE_BY_ID[nearVenue].emoji} label={VENUE_BY_ID[nearVenue].name} action="Gir" touch={touch} raised={Boolean(nearPeer)} onGo={() => enterVenue(nearVenue)} />
+        <DoorPrompt label={VENUE_BY_ID[nearVenue].name} action="Gir" touch={touch} onGo={() => enterVenue(nearVenue)} />
       )}
       {!home && !venue && !nearDoor && !nearVenue && nearGuide && !help && !chatTarget && !fade && !editing && (
-        <DoorPrompt label="Rehber · Nasıl Oynanır" action="Aç" touch={touch} raised={Boolean(nearPeer)} onGo={() => setHelp(true)} />
+        <DoorPrompt label="Rehber · Nasıl Oynanır" action="Aç" touch={touch} onGo={() => setHelp(true)} />
       )}
       {invite && !chatTarget && !editing && <InviteChip from={invite} onGo={() => visit(invite.owner)} onClose={() => setInvite(null)} />}
       {incoming && !chatTarget && !interactPeer && !gestureIn && peerOf(incoming.id) && (
@@ -1098,6 +1128,7 @@ function WorldScene({ avatar }) {
           celebrate={tutCelebrate}
           onCollect={onTutCollect}
           onDoor={onTutDoor}
+          onOpenInventory={() => setPanel('inventory')}
           onOpenWardrobe={() => setPanel('wardrobe')}
           onSkip={() => setTutStep('done')}
         />
@@ -1111,7 +1142,7 @@ function WorldScene({ avatar }) {
           onOpenMap={() => { setHelp(false); window.dispatchEvent(new CustomEvent('situapp:open-map')) }}
         />
       )}
-      {showTips && !help && !introActive && (
+      {showTips && !inTutorial && !help && !introActive && (
         <StartGuide
           touch={touch}
           ready={sceneReady}
@@ -1125,8 +1156,13 @@ function WorldScene({ avatar }) {
       <IntroCutsceneOverlay active={introActive} onSkip={finishIntro} />
       <div
         aria-hidden
-        className={`pointer-events-none absolute inset-0 z-30 bg-gradient-to-br from-[#fff2e3] via-[#f1e6ff] to-[#dff3ff] transition-opacity duration-200 ${fade ? 'opacity-100' : 'opacity-0'}`}
-      />
+        className={`pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-gradient-to-br from-[#fff2e3] via-[#f1e6ff] to-[#dff3ff] transition-opacity duration-200 ${fade ? 'opacity-100' : 'opacity-0'}`}
+      >
+        <div className="flex flex-col items-center gap-3 rounded-[1.75rem] border-2 border-white bg-white/85 px-7 py-5 shadow-[0_14px_36px_rgba(104,79,145,0.16)] backdrop-blur-md">
+          <div className="h-9 w-9 animate-spin rounded-full border-[3.5px] border-[#efe6ff] border-r-[#ff9ec7] border-t-[#a88bff]" />
+          <p className="text-sm font-black tracking-wide text-[#5b4678]">{transitionLine}</p>
+        </div>
+      </div>
       <LoadingOverlay ready={sceneReady} />
     </div>
   )

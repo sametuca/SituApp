@@ -10,11 +10,12 @@ const NAMES = {
   hips: 'Hips', spine: 'Spine01', head: 'Head',
   lUp: 'LeftUpLeg', lLeg: 'LeftLeg', rUp: 'RightUpLeg', rLeg: 'RightLeg',
   lArm: 'LeftArm', rArm: 'RightArm', lForeArm: 'LeftForeArm', rForeArm: 'RightForeArm',
+  lHand: 'LeftHand', rHand: 'RightHand',
 }
 
 // Oturan avatar ayakta olduğu yüksekliğin bu kadar altına iner (m); negatif değer koltuk/sele üstüne çıkarır.
-const TOWEL_DROP = 0.38
-export const SIT_DROP = { bench: -0.08, chair: -0.05, stool: 0.14, lounger: 0.06, floor: 0.42, bike: -0.27 }
+const TOWEL_DROP = 0.36
+export const SIT_DROP = { bench: -0.08, chair: -0.05, stool: 0.14, lounger: 0.04, floor: 0.42, bike: -0.22 }
 
 const q1 = new Quaternion()
 const q2 = new Quaternion()
@@ -59,8 +60,23 @@ export function applyUprightIdle(rig) {
     b.position.copy(p)
   }
   model.updateWorldMatrix(true, true)
-  turn(rig, bones.lArm, AZ, -1.25)
-  turn(rig, bones.rArm, AZ, 1.25)
+  // Gerçekçi, rahat ayakta duruş: kollar gövdenin yanında (içe girmeyen doğal mesafe)
+  turn(rig, bones.lArm, AZ, -1.32)
+  turn(rig, bones.rArm, AZ, 1.32)
+  turn(rig, bones.lArm, AY, -0.18)
+  turn(rig, bones.rArm, AY, 0.18)
+  turn(rig, bones.lArm, AX, -0.04)
+  turn(rig, bones.rArm, AX, -0.04)
+  turn(rig, bones.lForeArm, AX, -0.14)
+  turn(rig, bones.rForeArm, AX, -0.14)
+  turn(rig, bones.lForeArm, AZ, 0.08)
+  turn(rig, bones.rForeArm, AZ, -0.08)
+  turn(rig, bones.lHand, AY, -0.16)
+  turn(rig, bones.rHand, AY, 0.16)
+  turn(rig, bones.lHand, AZ, 0.04)
+  turn(rig, bones.rHand, AZ, -0.04)
+  turn(rig, bones.lHand, AX, -0.05)
+  turn(rig, bones.rHand, AX, -0.05)
 }
 
 /** Olta tutuşu: kol açısı (AX, negatif = öne/yukarı) ve gövde eğimi. phase: cast | wait | bite | reel; t: fazın başından beri sn; now: saat sn. */
@@ -116,18 +132,34 @@ export function applyPose(rig, pose, dt) {
     // kanepe (seat kimliği 'sofa…', stil bench): oturak/ön panel yüzünden ayaklar kaybolmasın diye biraz yukarı ve ileri
     const onSofa = rig.style === 'bench' && /(^|\/)sofa/i.test(String(rig.seat ?? ''))
     if (onSofa) model.position.y += 0.07 * b
-    model.position.z = rig.style === 'bike' ? -0.28 * b : onSofa ? 0.1 * b : 0
+    model.position.z = rig.style === 'bike' ? -0.28 * b : rig.style === 'lounger' && !onTowel ? 0.16 * b : onSofa ? 0.1 * b : 0
     if (rig.style === 'lounger') {
-      // şezlong / havlu: keyifle arkaya uzan, baş hafif yukarıda, kollar yanlarda rahat
-      // havlu yere düz serilir (neredeyse yatay); şezlongun arkalığı eğimlidir (≈55°): daha dik yaslan ki gövde arkalığa gömülmesin
-      turn(rig, bones.hips, AX, (onTowel ? -1.25 : -0.98) * b)
-      turn(rig, bones.head, AX, (onTowel ? 0.48 : 0.3) * b)
-      turn(rig, bones.lArm, AX, -0.28 * b)
-      turn(rig, bones.rArm, AX, -0.28 * b)
-      turn(rig, bones.lArm, AZ, 0.22 * b)
-      turn(rig, bones.rArm, AZ, -0.22 * b)
+      // şezlong / havlu: keyifle arkaya uzan, baş hafif yukarıda, kollar yanlarda rahat, ayaklar üstte görünür
+      turn(rig, bones.hips, AX, (onTowel ? -1.25 : -0.82) * b)
+      if (onTowel) {
+        turn(rig, bones.lUp, AX, -0.26 * b)
+        turn(rig, bones.rUp, AX, -0.26 * b)
+        turn(rig, bones.lLeg, AX, 0.14 * b)
+        turn(rig, bones.rLeg, AX, 0.14 * b)
+        turn(rig, bones.head, AX, 0.48 * b)
+        turn(rig, bones.lArm, AX, 0.15 * b)
+        turn(rig, bones.rArm, AX, 0.15 * b)
+        turn(rig, bones.lArm, AZ, 0.36 * b)
+        turn(rig, bones.rArm, AZ, -0.36 * b)
+      } else {
+        turn(rig, bones.lUp, AX, -0.45 * b)
+        turn(rig, bones.rUp, AX, -0.45 * b)
+        turn(rig, bones.lLeg, AX, 0.24 * b)
+        turn(rig, bones.rLeg, AX, 0.24 * b)
+        turn(rig, bones.head, AX, 0.26 * b)
+        turn(rig, bones.lArm, AX, -0.28 * b)
+        turn(rig, bones.rArm, AX, -0.28 * b)
+        turn(rig, bones.lArm, AZ, 0.22 * b)
+        turn(rig, bones.rArm, AZ, -0.22 * b)
+      }
     } else if (rig.style === 'bike') {
-      // bisiklet: sele üstüne otur, hareket halindeyken pedal çevir, eller gidon elciklerinde
+      // bisiklet: sele üstüne otur, gövde hafif öne eğilir, kollar doğal açıyla öne uzanıp gidonu kavrar
+      model.position.z = -0.23 * b
       if (rig.moving) rig.pedal += Math.min(dt, 0.1) * 10
       const pL = rig.pedal
       const pR = rig.pedal + Math.PI
@@ -137,13 +169,17 @@ export function applyPose(rig, pose, dt) {
       turn(rig, bones.rUp, AX, (-0.95 + Math.sin(pR) * 0.38) * b)
       turn(rig, bones.lLeg, AX, (1.15 - Math.cos(pL) * 0.34) * b)
       turn(rig, bones.rLeg, AX, (1.15 - Math.cos(pR) * 0.34) * b)
-      turn(rig, bones.spine, AX, 0.24 * b)
-      turn(rig, bones.lArm, AX, -1.58 * b)
-      turn(rig, bones.rArm, AX, -1.58 * b)
-      turn(rig, bones.lArm, AZ, 0.18 * b)
-      turn(rig, bones.rArm, AZ, -0.18 * b)
-      turn(rig, bones.lArm, AY, -0.14 * b)
-      turn(rig, bones.rArm, AY, 0.14 * b)
+      turn(rig, bones.spine, AX, 0.45 * b)
+      turn(rig, bones.lArm, AX, -1.55 * b)
+      turn(rig, bones.rArm, AX, -1.55 * b)
+      turn(rig, bones.lArm, AY, 0.18 * b)
+      turn(rig, bones.rArm, AY, -0.18 * b)
+      turn(rig, bones.lArm, AZ, -0.04 * b)
+      turn(rig, bones.rArm, AZ, 0.04 * b)
+      turn(rig, bones.lForeArm, AX, -0.18 * b)
+      turn(rig, bones.rForeArm, AX, -0.18 * b)
+      turn(rig, bones.lHand, AX, 0.1 * b)
+      turn(rig, bones.rHand, AX, 0.1 * b)
     } else {
       turn(rig, bones.lUp, AX, -1.45 * b)
       turn(rig, bones.rUp, AX, -1.45 * b)
@@ -180,20 +216,122 @@ export function applyPose(rig, pose, dt) {
       turn(rig, bones.lArm, AX, (-1.35 + dig) * b)
       turn(rig, bones.rArm, AX, (-1.35 - dig) * b)
       model.position.y = -0.06 * ease(k) * b
+    } else if (rig.style === 'bench') {
+      // spor salonu ağırlık çalışma: ritmik halter kaldırma hareketi
+      const lift = 0.5 + 0.5 * Math.sin(now * 5.2)
+      turn(rig, bones.lArm, AX, (-1.65 - lift * 0.95) * b)
+      turn(rig, bones.rArm, AX, (-1.65 - lift * 0.95) * b)
+      turn(rig, bones.lForeArm, AX, (-0.75 + lift * 0.55) * b)
+      turn(rig, bones.rForeArm, AX, (-0.75 + lift * 0.55) * b)
+      turn(rig, bones.spine, AX, (-0.08 * lift) * b)
+      model.position.y = 0.04 * lift * b
+    } else if (rig.style === 'cardio') {
+      // spor salonu koşu bandı: ritmik koşu adımları ve kol salınımı
+      const stride = now * 11
+      model.position.y = (0.14 + Math.abs(Math.sin(stride)) * 0.06) * b
+      turn(rig, bones.spine, AX, 0.16 * b)
+      turn(rig, bones.lUp, AX, Math.sin(stride) * 0.65 * b)
+      turn(rig, bones.rUp, AX, -Math.sin(stride) * 0.65 * b)
+      turn(rig, bones.lLeg, AX, Math.max(0, -Math.cos(stride)) * 0.85 * b)
+      turn(rig, bones.rLeg, AX, Math.max(0, Math.cos(stride)) * 0.85 * b)
+      turn(rig, bones.lArm, AX, (-0.6 - Math.sin(stride) * 0.55) * b)
+      turn(rig, bones.rArm, AX, (-0.6 + Math.sin(stride) * 0.55) * b)
+      turn(rig, bones.lForeArm, AX, -0.7 * b)
+      turn(rig, bones.rForeArm, AX, -0.7 * b)
     }
+  } else if (rig.kind === 'pet') {
+    const t = performance.now() / 1000 - rig.t0
+    const stroke = Math.sin(t * 7)
+    turn(rig, bones.hips, AX, 0.1 * b)
+    turn(rig, bones.spine, AX, 0.5 * b)
+    turn(rig, bones.head, AX, -0.24 * b)
+    turn(rig, bones.rArm, AX, (-1.25 + stroke * 0.12) * b)
+    turn(rig, bones.rArm, AZ, -0.16 * b)
+    turn(rig, bones.rForeArm, AX, (-0.55 + stroke * 0.1) * b)
+    turn(rig, bones.lArm, AX, -0.2 * b)
   } else if (rig.kind === 'dance') {
     model.position.z = 0
     const t = performance.now() / 1000 - rig.t0
     const beat = t * Math.PI * 2 * 1.8 // ~108 BPM
-    model.position.y = Math.abs(Math.sin(beat)) * 0.16 * b // zıplama
-    turn(rig, bones.hips, AZ, Math.sin(beat / 2) * 0.22 * b) // sağa sola salınım
-    turn(rig, bones.spine, AZ, -Math.sin(beat / 2) * 0.12 * b)
-    turn(rig, bones.head, AZ, Math.sin(beat / 2) * 0.14 * b)
-    turn(rig, bones.lArm, AZ, (0.9 + Math.sin(beat) * 0.35) * b)
-    turn(rig, bones.rArm, AZ, -(0.9 + Math.cos(beat) * 0.35) * b)
-    // 6 sn'lik döngüde önce davet eden, sonra eşi bir tur döner
-    const k = MathUtils.clamp(((t % 6) - (rig.lead ? 1.5 : 4.5)) / 1.1, 0, 1)
-    model.rotation.y = ease(k) * Math.PI * 2 * b
+    if (rig.style === 'dj') {
+      // DJ kabini performansı: sahne üstünde (+0.34m), sol el pikapta scratch, sağ el havada ritim tutar, baş sallar
+      const bounce = Math.abs(Math.sin(beat))
+      model.position.y = (0.34 + bounce * 0.04) * b
+      model.rotation.y = Math.sin(beat * 0.25) * 0.14 * b
+      turn(rig, bones.spine, AX, (0.14 + bounce * 0.06) * b)
+      turn(rig, bones.spine, AY, Math.sin(beat * 0.5) * 0.16 * b)
+      turn(rig, bones.head, AX, (0.08 + Math.sin(beat * 2) * 0.14) * b)
+      turn(rig, bones.head, AZ, Math.sin(beat * 0.5) * 0.1 * b)
+      // sol el pikap üstünde scratch hareketi
+      turn(rig, bones.lArm, AX, (-1.15 + Math.sin(beat * 2) * 0.12) * b)
+      turn(rig, bones.lArm, AY, (0.18 + Math.sin(beat * 3) * 0.16) * b)
+      turn(rig, bones.lForeArm, AX, -0.55 * b)
+      // sağ el havada kalabalığı coşturur
+      turn(rig, bones.rArm, AX, (-2.35 + Math.sin(beat) * 0.32) * b)
+      turn(rig, bones.rArm, AZ, -0.25 * b)
+      turn(rig, bones.rForeArm, AX, (-0.35 + Math.sin(beat) * 0.2) * b)
+    } else if (rig.style === 'handsup') {
+      // Festival dansı: iki kol havada sağa-sola dalgalanır, kalça ve diz yaylanır
+      const sway = Math.sin(beat * 0.5)
+      const hop = Math.abs(Math.sin(beat))
+      model.position.y = hop * 0.1 * b
+      turn(rig, bones.hips, AZ, sway * 0.16 * b)
+      turn(rig, bones.hips, AY, sway * 0.22 * b)
+      turn(rig, bones.spine, AZ, -sway * 0.14 * b)
+      turn(rig, bones.head, AZ, sway * 0.16 * b)
+      turn(rig, bones.head, AX, -0.08 * b)
+      // kollar başın iki yanında geniş V şeklinde yumuşakça dalgalanır (yüze girmez)
+      turn(rig, bones.lArm, AX, (-1.78 + Math.sin(beat) * 0.16) * b)
+      turn(rig, bones.rArm, AX, (-1.78 - Math.sin(beat) * 0.16) * b)
+      turn(rig, bones.lArm, AZ, (-0.48 + sway * 0.22) * b)
+      turn(rig, bones.rArm, AZ, (0.48 + sway * 0.22) * b)
+      turn(rig, bones.lForeArm, AX, -0.22 * b)
+      turn(rig, bones.rForeArm, AX, -0.22 * b)
+      // hafif diz yaylanması
+      const knee = (1 - hop) * 0.22
+      turn(rig, bones.lUp, AX, -knee * b)
+      turn(rig, bones.rUp, AX, -knee * b)
+      turn(rig, bones.lLeg, AX, knee * 1.4 * b)
+      turn(rig, bones.rLeg, AX, knee * 1.4 * b)
+      model.rotation.y = Math.sin(beat * 0.25) * 0.28 * b
+    } else if (rig.style === 'groove') {
+      // Ritmik groove / adım dansı: dirsekler bükülü omuz-gövde salınımı + dönüşümlü adım
+      const step = Math.sin(beat * 0.5)
+      const bounce = Math.abs(Math.sin(beat))
+      model.position.y = bounce * 0.08 * b
+      turn(rig, bones.hips, AY, step * 0.32 * b)
+      turn(rig, bones.spine, AY, -step * 0.2 * b)
+      turn(rig, bones.spine, AX, (0.06 + bounce * 0.06) * b)
+      turn(rig, bones.head, AX, Math.sin(beat * 2) * 0.12 * b)
+      turn(rig, bones.head, AY, -step * 0.12 * b)
+      // dirsekler bükülü dönüşümlü kol pompası
+      turn(rig, bones.lArm, AX, (-0.95 + step * 0.55) * b)
+      turn(rig, bones.rArm, AX, (-0.95 - step * 0.55) * b)
+      turn(rig, bones.lArm, AZ, 0.18 * b)
+      turn(rig, bones.rArm, AZ, -0.18 * b)
+      turn(rig, bones.lForeArm, AX, (-0.85 - step * 0.25) * b)
+      turn(rig, bones.rForeArm, AX, (-0.85 + step * 0.25) * b)
+      // dönüşümlü bacak adımı
+      turn(rig, bones.lUp, AX, Math.min(0, -step * 0.38) * b)
+      turn(rig, bones.rUp, AX, Math.min(0, step * 0.38) * b)
+      turn(rig, bones.lLeg, AX, Math.max(0, step * 0.45) * b)
+      turn(rig, bones.rLeg, AX, Math.max(0, -step * 0.45) * b)
+      model.rotation.y = Math.sin(beat * 0.25) * 0.2 * b
+    } else {
+      model.position.y = Math.abs(Math.sin(beat)) * 0.14 * b // zıplama
+      turn(rig, bones.hips, AZ, Math.sin(beat / 2) * 0.2 * b) // sağa sola salınım
+      turn(rig, bones.spine, AZ, -Math.sin(beat / 2) * 0.12 * b)
+      turn(rig, bones.head, AZ, Math.sin(beat / 2) * 0.14 * b)
+      turn(rig, bones.lArm, AX, (-1.45 + Math.sin(beat) * 0.35) * b)
+      turn(rig, bones.rArm, AX, (-1.45 + Math.cos(beat) * 0.35) * b)
+      turn(rig, bones.lArm, AZ, 0.35 * b)
+      turn(rig, bones.rArm, AZ, -0.35 * b)
+      turn(rig, bones.lForeArm, AX, -0.55 * b)
+      turn(rig, bones.rForeArm, AX, -0.55 * b)
+      // 6 sn'lik döngüde önce davet eden, sonra eşi bir tur döner
+      const k = MathUtils.clamp(((t % 6) - (rig.lead ? 1.5 : 4.5)) / 1.1, 0, 1)
+      model.rotation.y = ease(k) * Math.PI * 2 * b
+    }
   } else if (rig.kind === 'eat') {
     model.position.z = 0
     const t = performance.now() / 1000 - rig.t0

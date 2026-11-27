@@ -1,18 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { screenK } from './screenK'
 import { useFrame, useLoader } from '@react-three/fiber'
-import { CanvasTexture, Color, DataTexture, MeshStandardMaterial, Object3D, ExtrudeGeometry, Shape, LinearFilter, RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
+import { CanvasTexture, Color, DoubleSide, Object3D, ExtrudeGeometry, ShaderMaterial, Shape, RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
 import { Html, RoundedBox } from '@react-three/drei'
-import { BEACH, BLANKETS, BUILDINGS, GAP, GAZEBO, ISLAND, PIER, PLAY_BOUNDS, PLAZA_R, PROPS, RIM, RING, ROAD_END, ROAD_HALF, ROAD_START, SPEED_RING_POS, TOWELS } from './layout'
+import { BEACH, BUILDINGS, GAP, GAZEBO, ISLAND, PIER, PLAY_BOUNDS, PLAZA_R, PROPS, RIM, RING, ROAD_END, ROAD_HALF, ROAD_START, SPEED_RING_POS, TOWELS } from './layout'
 import { CULL_R, playerPos, useCull } from './cull'
 import Facade from './Facade'
 import { facadeOf } from './facadeData'
 import Prop, { InstancedPropGroup } from './Prop'
 import Plants from './Plants'
+import TownDetails from './TownDetails'
+import BeachParty from './BeachParty'
+import TurkishFlags from './TurkishFlags'
+import { RoadCurbs, RoadDetails, RoadMarkings } from './RoadInfrastructure'
 import { Em } from '../components/emoji'
 import { SKY_MATS, skyLive } from './Sky'
 import { worldClock } from './worldClock'
-import { getPuffyPaverPair, getPuffySandPair, getPuffyShinglePair, getWallPair } from './pastelTex'
+import { Flat, Ring, TexRing } from './CityGround'
+import { q, sharedTexture, stdMat } from './CityGroundUtils'
+import { getPuffyShinglePair, getWallPair } from './pastelTex'
 
 const FACING = { s: 0, n: Math.PI, e: Math.PI / 2, w: -Math.PI / 2 }
 
@@ -20,259 +26,6 @@ const FACING = { s: 0, n: Math.PI, e: Math.PI / 2, w: -Math.PI / 2 }
 const Y = { floor: 0.02, sidewalk: 0.04, road: 0.06, plaza: 0.08, mark: 0.1 }
 
 // Doku önbelleği: aynı (doku, tekrar, kaydırma) için tek Texture nesnesi (her bina/parça için ayrı klon GPU'ya ayrı yüklenir; 70 bina × 4 yüz = yüzlerce yükleme).
-const texCache = new Map()
-function sharedTexture(base, key, setup) {
-  const k = `${base.uuid}|${key}`
-  let t = texCache.get(k)
-  if (!t) {
-    t = base.clone()
-    t.wrapS = t.wrapT = RepeatWrapping
-    t.colorSpace = SRGBColorSpace
-    t.anisotropy = 4
-    setup(t)
-    t.needsUpdate = true
-    texCache.set(k, t)
-  }
-  return t
-}
-const matCache = new Map()
-function stdMat(color, roughness = 0.6) {
-  const k = `${color}|${roughness}`
-  let m = matCache.get(k)
-  if (!m) {
-    m = new MeshStandardMaterial({ color, roughness })
-    matCache.set(k, m)
-  }
-  return m
-}
-const q = (v, s = 0.25) => Math.max(s, Math.round(v / s) * s) // tekrar sayısını yuvarla (önbellek isabeti)
-
-// Yer dokuları (Meshy ile üretilen üstten bakış desenler, scripts/make-tileable.py ile döşenebilir yapıldı): public/textures/<ad>.webp
-export const GROUND_TEX = { grass: 4.5, asphalt: 4.8, cobble: 3.2, sand: 4 } // doku adı → bir kiremitin kapladığı metre
-export const GROUND_URLS = Object.keys(GROUND_TEX).map((n) => `/textures/${n}.webp`)
-
-// Zenginleştirilmiş asfalt dokusu + kabartma haritası (düz leylak şerit yerine tanecikli, güneşle tepki veren pastel asfalt)
-let asphaltPair = null
-function getAsphaltPair() {
-  if (asphaltPair) return asphaltPair
-  const N = 512
-  const cv = document.createElement('canvas')
-  cv.width = cv.height = N
-  const g = cv.getContext('2d')
-  const bcv = document.createElement('canvas')
-  bcv.width = bcv.height = N
-  const bg = bcv.getContext('2d')
-
-  // temel ton: sıcak pastel arduvaz-leylak (binalar ve kaldırımlarla uyumlu, belirgin kontrast)
-  g.fillStyle = '#8b8399'
-  g.fillRect(0, 0, N, N)
-  bg.fillStyle = '#808080'
-  bg.fillRect(0, 0, N, N)
-
-  let seed = 4219
-  const rand = () => {
-    seed = (seed * 1664525 + 1013904223) >>> 0
-    return seed / 4294967296
-  }
-  const wrapDot = (ctx, x, y, r, fill) => {
-    ctx.fillStyle = fill
-    for (const ox of [-N, 0, N]) {
-      if (x + ox + r < 0 || x + ox - r > N) continue
-      for (const oy of [-N, 0, N]) {
-        if (y + oy + r < 0 || y + oy - r > N) continue
-        ctx.beginPath()
-        ctx.arc(x + ox, y + oy, r, 0, Math.PI * 2)
-        ctx.fill()
-      }
-    }
-  }
-
-  // yumuşak organik asfalt ton geçişleri
-  for (let i = 0; i < 42; i++) {
-    const x = rand() * N
-    const y = rand() * N
-    const r = 28 + rand() * 58
-    const dark = rand() > 0.45
-    wrapDot(g, x, y, r, dark ? 'rgba(92,84,110,0.12)' : 'rgba(182,175,198,0.10)')
-  }
-
-  // ince agrega / çakıl tanecikleri (hem renk hem kabartma haritası)
-  for (let i = 0; i < 4800; i++) {
-    const x = rand() * N
-    const y = rand() * N
-    const sz = 1 + rand() * 2.2
-    const v = rand()
-    if (v < 0.48) {
-      g.fillStyle = 'rgba(72,66,86,0.34)'
-      bg.fillStyle = 'rgba(60,60,60,0.45)'
-    } else if (v < 0.86) {
-      g.fillStyle = 'rgba(218,212,230,0.30)'
-      bg.fillStyle = 'rgba(205,205,205,0.42)'
-    } else {
-      g.fillStyle = 'rgba(246,238,228,0.38)'
-      bg.fillStyle = 'rgba(240,240,240,0.5)'
-    }
-    g.fillRect(x, y, sz, sz)
-    bg.fillRect(x, y, sz, sz)
-  }
-
-  // çok ince kılcal yüzey dokusu çizgileri
-  g.strokeStyle = 'rgba(72,66,88,0.14)'
-  g.lineWidth = 1.2
-  for (let i = 0; i < 6; i++) {
-    let x = rand() * N
-    let y = rand() * N
-    g.beginPath()
-    g.moveTo(x, y)
-    for (let s = 0; s < 5; s++) {
-      x += (rand() - 0.5) * 44
-      y += (rand() - 0.5) * 44
-      g.lineTo(x, y)
-    }
-    g.stroke()
-  }
-
-  const map = new CanvasTexture(cv)
-  map.wrapS = map.wrapT = RepeatWrapping
-  map.colorSpace = SRGBColorSpace
-  map.anisotropy = 4
-  const bump = new CanvasTexture(bcv)
-  bump.wrapS = bump.wrapT = RepeatWrapping
-  bump.anisotropy = 4
-  asphaltPair = { map, bump }
-  return asphaltPair
-}
-
-let manholeTex = null
-function getManholeTex() {
-  if (manholeTex) return manholeTex
-  const cv = document.createElement('canvas')
-  cv.width = cv.height = 128
-  const g = cv.getContext('2d')
-  g.fillStyle = '#6c657c'
-  g.fillRect(0, 0, 128, 128)
-  g.strokeStyle = '#534c63'
-  g.lineWidth = 5
-  g.beginPath()
-  g.arc(64, 64, 56, 0, Math.PI * 2)
-  g.stroke()
-  g.lineWidth = 2.5
-  g.strokeStyle = '#8d869e'
-  g.beginPath()
-  g.arc(64, 64, 42, 0, Math.PI * 2)
-  g.stroke()
-  g.beginPath()
-  g.arc(64, 64, 20, 0, Math.PI * 2)
-  g.stroke()
-  for (let i = 0; i < 8; i++) {
-    const a = (i / 8) * Math.PI * 2
-    g.beginPath()
-    g.moveTo(64 + Math.cos(a) * 20, 64 + Math.sin(a) * 20)
-    g.lineTo(64 + Math.cos(a) * 52, 64 + Math.sin(a) * 52)
-    g.stroke()
-  }
-  const t = new CanvasTexture(cv)
-  t.colorSpace = SRGBColorSpace
-  manholeTex = t
-  return t
-}
-
-// Yumuşak kenar: alt zeminle karışsın diye alfa haritası (kenara `feather` m kala saydamlaşır). Keskin geçişler "2006 oyunu" gibi duruyordu.
-const featherCache = new Map()
-function featherTexture(w, d, f, round) {
-  const key = `${round ? `r${round}` : `${w}x${d}`}|${f}`
-  let t = featherCache.get(key)
-  if (t) return t
-  const N = 96
-  const data = new Uint8Array(N * N * 4)
-  for (let j = 0; j < N; j++) {
-    for (let i = 0; i < N; i++) {
-      const u = (i + 0.5) / N
-      const v = (j + 0.5) / N
-      let edge
-      if (round) edge = (1 - Math.hypot(u - 0.5, v - 0.5) * 2) * round // dairesel: merkezden uzaklık
-      else edge = Math.min(u * w, (1 - u) * w, v * d, (1 - v) * d)
-      const x = Math.max(0, Math.min(1, edge / f))
-      const a = Math.round(255 * x * x * (3 - 2 * x))
-      const k = (j * N + i) * 4
-      data[k] = data[k + 1] = data[k + 2] = a
-      data[k + 3] = 255
-    }
-  }
-  t = new DataTexture(data, N, N)
-  t.minFilter = t.magFilter = LinearFilter
-  t.needsUpdate = true
-  featherCache.set(key, t)
-  return t
-}
-
-/** tex: GROUND_TEX adı. Doku dünya ölçüsünde döşenir (kiremit boyu metre), renk tonu `color` ile çarpılır (pastel ton). feather: kenar yumuşatma (m). */
-function Flat({ x = 0, z = 0, w, d, y, color = '#ffffff', round, tex, feather = 0 }) {
-  const loaded = useLoader(TextureLoader, `/textures/${tex ?? 'grass'}.webp`)
-  const isAsphalt = tex === 'asphalt'
-  const isSand = tex === 'sand'
-  const isCobble = tex === 'cobble'
-  const pair = isAsphalt ? getAsphaltPair() : isSand ? getPuffySandPair() : isCobble ? getPuffyPaverPair() : null
-  const base = pair ? pair.map : loaded
-  const { map, bumpMap } = useMemo(() => {
-    if (!tex) return { map: null, bumpMap: null }
-    const m = GROUND_TEX[tex]
-    const rx = Math.round(((round ? round * 2 : w) / m) * 20) / 20
-    const ry = Math.round(((round ? round * 2 : d) / m) * 20) / 20
-    const ox = Math.round((((x / m) % 1) + 1) * 20) / 20 % 1
-    const oy = Math.round((((-z / m) % 1) + 1) * 20) / 20 % 1
-    const key = `f${rx}|${ry}|${ox}|${oy}`
-    const setup = (t) => {
-      t.repeat.set(rx, ry)
-      t.offset.set(ox, oy) // komşu parçalarda desen aynı hizadan devam etsin
-    }
-    return {
-      map: sharedTexture(base, key, setup),
-      bumpMap: pair ? sharedTexture(pair.bump, `b${key}`, setup) : null,
-    }
-  }, [base, pair, tex, w, d, round, x, z])
-  const alpha = useMemo(() => (feather > 0 ? featherTexture(round ? round * 2 : w, round ? round * 2 : d, feather, round ? round * 2 : 0) : null), [feather, w, d, round])
-  return (
-    <mesh position={[x, y, z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow renderOrder={alpha ? 1 : 0}>
-      {round ? <circleGeometry args={[round, 64]} /> : <planeGeometry args={[w, d]} />}
-      <meshStandardMaterial color={color} map={map} bumpMap={bumpMap} bumpScale={isAsphalt ? 0.032 : isSand ? 0.025 : isCobble ? 0.02 : 0} alphaMap={alpha} transparent={Boolean(alpha)} depthWrite={!alpha} roughness={isAsphalt ? 0.84 : isSand ? 0.78 : isCobble ? 0.85 : 0.92} />
-    </mesh>
-  )
-}
-
-/** Dokulu halka (dönel kavşak asfaltı / kaldırımı): ringGeometry UV'si tüm halkaya tek kez sarılır → tekrar sayısı çapa göre. */
-function TexRing({ r0, r1, y, tex, color = '#ffffff' }) {
-  const loaded = useLoader(TextureLoader, `/textures/${tex}.webp`)
-  const isAsphalt = tex === 'asphalt'
-  const isCobble = tex === 'cobble'
-  const pair = isAsphalt ? getAsphaltPair() : isCobble ? getPuffyPaverPair() : null
-  const base = pair ? pair.map : loaded
-  const { map, bumpMap } = useMemo(() => {
-    const m = GROUND_TEX[tex]
-    const rep = Math.round(((r1 * 2) / m) * 10) / 10
-    const setup = (t) => t.repeat.set(rep, rep)
-    return {
-      map: sharedTexture(base, `ring${rep}`, setup),
-      bumpMap: pair ? sharedTexture(pair.bump, `bring${rep}`, setup) : null,
-    }
-  }, [base, pair, tex, r1])
-  return (
-    <mesh position={[0, y, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-      <ringGeometry args={[r0, r1, 96]} />
-      <meshStandardMaterial color={color} map={map} bumpMap={bumpMap} bumpScale={isAsphalt ? 0.032 : isCobble ? 0.02 : 0} roughness={isAsphalt ? 0.84 : isCobble ? 0.85 : 0.95} />
-    </mesh>
-  )
-}
-
-function Ring({ r0, r1, y, color }) {
-  return (
-    <mesh position={[0, y, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      <ringGeometry args={[r0, r1, 64]} />
-      <meshStandardMaterial color={color} roughness={0.9} />
-    </mesh>
-  )
-}
-
 const LABEL_RANGE = 34 // m: bundan uzaktaki bina pinleri gizlenir
 const LABEL_NAME_RANGE = 15 // m: bundan yakında pinin adı da açılır
 
@@ -307,7 +60,7 @@ function Label({ text, y, x, z, zOff = 0, focusRef, accent = '#fdbb63' }) {
     <Html position={[0, y, zOff]} center distanceFactor={18 * screenK()} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
       <div className="venue-pin flex flex-col items-center" style={{ '--pin': accent }}>
         {mode === 2 && (
-          <div className="mb-1 whitespace-nowrap rounded-full bg-[#3d2f4f]/85 px-3 py-[3px] text-[13px] font-extrabold tracking-wide text-white shadow-lg backdrop-blur-sm">
+          <div className="mb-1 whitespace-nowrap rounded-full bg-[#3d2f4f]/92 px-3 py-[3px] text-[13px] font-extrabold tracking-wide text-white shadow-lg">
             {name}
           </div>
         )}
@@ -340,7 +93,7 @@ const STYLES = [
 const lighten = (hex, t) => `#${new Color(hex).lerp(new Color('#ffffff'), t).getHexString()}`
 
 /** Balonsu pasterize cephe/duvar paneli: renk + yumuşak kabartma haritasıyla pofuduk kil görünümü. */
-function Panel({ tex, w, h, color, position, rotation, repeat }) {
+function Panel({ tex, w, h, color, position, rotation, repeat, emissive, emissiveIntensity = 0 }) {
   const pair = useMemo(() => getWallPair(tex), [tex])
   const { map, bumpMap } = useMemo(() => {
     const m = WALL_TEX[tex] ?? 2.4
@@ -355,7 +108,7 @@ function Panel({ tex, w, h, color, position, rotation, repeat }) {
   return (
     <mesh position={position} rotation={rotation} receiveShadow>
       <planeGeometry args={[w, h]} />
-      <meshStandardMaterial color={color} map={map} bumpMap={bumpMap} bumpScale={0.042} roughness={0.56} />
+      <meshStandardMaterial color={color} map={map} bumpMap={bumpMap} bumpScale={0.042} roughness={emissive ? 0.42 : 0.56} emissive={emissive ?? '#000000'} emissiveIntensity={emissiveIntensity} />
     </mesh>
   )
 }
@@ -380,7 +133,7 @@ function GableRoof({ w, d, h, mat }) {
   )
 }
 
-function Roof({ w, d, h, color, type }) {
+function Roof({ w, d, h, color, type, emissive, emissiveIntensity = 0 }) {
   const tint = lighten(color, 0.35)
   const shingle = useMemo(() => getPuffyShinglePair(), [])
   const { map, bumpMap } = useMemo(() => {
@@ -390,7 +143,7 @@ function Roof({ w, d, h, color, type }) {
       bumpMap: sharedTexture(shingle.bump, 'broof_puffy', setup),
     }
   }, [shingle])
-  const mat = <meshStandardMaterial color={color} map={map} bumpMap={bumpMap} bumpScale={0.055} roughness={0.48} />
+  const mat = <meshStandardMaterial color={color} map={map} bumpMap={bumpMap} bumpScale={0.055} roughness={emissive ? 0.36 : 0.48} emissive={emissive ?? '#000000'} emissiveIntensity={emissiveIntensity} />
   if (type === 'gable') {
     return <GableRoof w={w} d={d} h={h} mat={mat} />
   }
@@ -478,6 +231,56 @@ function Window({ kind, x, y, z, w, accent, shutters, flowerbox }) {
   )
 }
 
+// Kullanılmayan binalar için esprili Kentsel Dönüşüm afiş dokuları (önbellekli)
+const KENTSEL_LINES = [
+  ['🚧 KENTSEL DÖNÜŞÜM', 'YAKINDA REZİDANS (BELKİ)'],
+  ['📋 MÜTEAHHİT ARANIYOR', '%50 KAT KARŞILIĞI'],
+  ['🧱 RİSKLİ YAPI', 'YIKIM BEKLİYOR · GİRİLMEZ'],
+  ['🏗️ PROJE ALANI', '2029 TESLİM (İNŞALLAH)'],
+]
+const kentselTexCache = new Map()
+function getKentselTex(idx) {
+  const k = idx % KENTSEL_LINES.length
+  if (kentselTexCache.has(k)) return kentselTexCache.get(k)
+  const cv = document.createElement('canvas')
+  cv.width = 512
+  cv.height = 192
+  const g = cv.getContext('2d')
+  g.fillStyle = '#ffd35e'
+  g.fillRect(0, 0, 512, 192)
+  // Üst ve alt siyah-sarı şantiye şeridi
+  g.fillStyle = '#2d243b'
+  for (let x = -40; x < 560; x += 48) {
+    g.beginPath()
+    g.moveTo(x, 0)
+    g.lineTo(x + 24, 0)
+    g.lineTo(x + 12, 22)
+    g.lineTo(x - 12, 22)
+    g.closePath()
+    g.fill()
+    g.beginPath()
+    g.moveTo(x, 170)
+    g.lineTo(x + 24, 170)
+    g.lineTo(x + 12, 192)
+    g.lineTo(x - 12, 192)
+    g.closePath()
+    g.fill()
+  }
+  g.fillStyle = '#fffdf6'
+  g.fillRect(14, 28, 484, 136)
+  g.fillStyle = '#2d243b'
+  g.font = '900 32px system-ui, sans-serif'
+  g.textAlign = 'center'
+  g.fillText(KENTSEL_LINES[k][0], 256, 86)
+  g.fillStyle = '#d9482b'
+  g.font = '900 23px system-ui, sans-serif'
+  g.fillText(KENTSEL_LINES[k][1], 256, 132)
+  const tex = new CanvasTexture(cv)
+  tex.colorSpace = SRGBColorSpace
+  kentselTexCache.set(k, tex)
+  return tex
+}
+
 function Building({ b, i, focusRef }) {
   const { w, d, h, color, roof, facing, label, shop, neon } = b
   const grp = useRef()
@@ -491,18 +294,32 @@ function Building({ b, i, focusRef }) {
   const fac = facadeOf(b)
   const doorShift = ((i * 7) % 3 - 1) * 0.12 * w // sıradan binalarda kapı biraz kayık (hepsi aynı görünmesin)
   const ww = Math.min(1.5, w / count - 0.8)
+  const isHome = Boolean(b.homeDoor)
   return (
     <group ref={grp} position={[b.x, 0, b.z]} rotation={[0, FACING[facing], 0]}>
-      <Flat x={0} z={d / 2 + 1.6} w={w + 1.4} d={3.4} y={0.038} tex="cobble" color="#f6efe6" />
+      <Flat x={0} z={d / 2 + 1.6} w={w + 1.4} d={3.4} y={0.038} tex="cobble" color={isHome ? '#fffbf0' : '#f6efe6'} />
+      {isHome && (
+        <>
+          <mesh position={[0, 0.055, d / 2 + 1.35]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[0.72, 1.05, 36]} />
+            <meshStandardMaterial color="#ffd35e" emissive="#ffd35e" emissiveIntensity={0.85} transparent opacity={0.88} />
+          </mesh>
+          <pointLight position={[0, 3.1, d / 2 + 1.5]} color="#ffe9ad" intensity={3.8} distance={10} decay={2} />
+        </>
+      )}
       <RoundedBox args={[w, h, d]} radius={0.35} smoothness={2} position={[0, h / 2, 0]} castShadow receiveShadow>
-        <primitive object={stdMat(color, 0.55)} attach="material" />
+        {isHome ? (
+          <meshStandardMaterial color="#fff8e0" emissive="#ffeaad" emissiveIntensity={0.28} roughness={0.38} />
+        ) : (
+          <primitive object={stdMat(color, 0.55)} attach="material" />
+        )}
       </RoundedBox>
       {/* Meshy cephe dokusu: dört yüzeyde ince paneller (köşeler yuvarlak ve düz renkli kalır) */}
-      <Panel tex={st.wall} w={w - 0.5} h={h - 0.4} color={wallColor} position={[0, h / 2, d / 2 + 0.012]} />
-      <Panel tex={st.wall} w={w - 0.5} h={h - 0.4} color={wallColor} position={[0, h / 2, -d / 2 - 0.012]} rotation={[0, Math.PI, 0]} />
-      <Panel tex={st.wall} w={d - 0.5} h={h - 0.4} color={wallColor} position={[w / 2 + 0.012, h / 2, 0]} rotation={[0, Math.PI / 2, 0]} />
-      <Panel tex={st.wall} w={d - 0.5} h={h - 0.4} color={wallColor} position={[-w / 2 - 0.012, h / 2, 0]} rotation={[0, -Math.PI / 2, 0]} />
-      <Roof w={w} d={d} h={h} color={roof} type={roofType} />
+      <Panel tex={st.wall} w={w - 0.5} h={h - 0.4} color={isHome ? '#fffdf5' : wallColor} emissive={isHome ? '#ffe9a8' : undefined} emissiveIntensity={isHome ? 0.25 : 0} position={[0, h / 2, d / 2 + 0.012]} />
+      <Panel tex={st.wall} w={w - 0.5} h={h - 0.4} color={isHome ? '#fffdf5' : wallColor} emissive={isHome ? '#ffe9a8' : undefined} emissiveIntensity={isHome ? 0.25 : 0} position={[0, h / 2, -d / 2 - 0.012]} rotation={[0, Math.PI, 0]} />
+      <Panel tex={st.wall} w={d - 0.5} h={h - 0.4} color={isHome ? '#fffdf5' : wallColor} emissive={isHome ? '#ffe9a8' : undefined} emissiveIntensity={isHome ? 0.25 : 0} position={[w / 2 + 0.012, h / 2, 0]} rotation={[0, Math.PI / 2, 0]} />
+      <Panel tex={st.wall} w={d - 0.5} h={h - 0.4} color={isHome ? '#fffdf5' : wallColor} emissive={isHome ? '#ffe9a8' : undefined} emissiveIntensity={isHome ? 0.25 : 0} position={[-w / 2 - 0.012, h / 2, 0]} rotation={[0, -Math.PI / 2, 0]} />
+      <Roof w={w} d={d} h={h} color={isHome ? '#ffd866' : roof} type={roofType} emissive={isHome ? '#ffcf54' : undefined} emissiveIntensity={isHome ? 0.24 : 0} />
       {st.chimney && roofType !== 'flat' && (
         <RoundedBox args={[0.8, 1.8, 0.8]} radius={0.1} smoothness={2} position={[w * 0.28, h + 2.2, -d * 0.15]} castShadow>
           <meshStandardMaterial color={lighten(roof, 0.1)} roughness={0.6} />
@@ -535,6 +352,13 @@ function Building({ b, i, focusRef }) {
             Array.from({ length: count }, (_, ci) => (
               <Window key={`${y}-${ci}`} kind={st.win} x={(ci - (count - 1) / 2) * (w / count)} y={y} z={d / 2 + 0.06} w={st.win === 'wide' ? Math.min(2.0, w / count - 0.6) : ww} accent={roof} shutters={st.shutters && ri === 0} flowerbox={st.flowerbox && ri === 0} />
             )),
+          )}
+          {/* Kullanılmayan binalarda esprili Kentsel Dönüşüm afişi */}
+          {!b.venue && !b.homeDoor && !b.label && (
+            <mesh position={[0, Math.min(h - 1.0, 2.75), d / 2 + 0.16]}>
+              <planeGeometry args={[Math.min(3.4, w - 0.9), 1.25]} />
+              <meshStandardMaterial map={getKentselTex(i)} roughness={0.65} />
+            </mesh>
           )}
         </>
       )}
@@ -620,6 +444,48 @@ function Gazebo() {
             <mesh position={[0, 3.35, 0]}>
               <sphereGeometry args={[0.24, 12, 10]} />
               <primitive object={stdMat('#ffe3c6', 0.42)} attach="material" />
+            </mesh>
+          </group>
+        )
+      })}
+      {/* İçeride yuvarlak pastel masa, saksı çiçekler ve sarkan sıcak fener */}
+      <mesh position={[0, 0.56, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.14, 0.22, 0.58, 12]} />
+        <primitive object={stdMat('#f4d8bc', 0.55)} attach="material" />
+      </mesh>
+      <mesh position={[0, 0.88, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.78, 0.72, 0.12, 24]} />
+        <primitive object={stdMat('#fffaf2', 0.45)} attach="material" />
+      </mesh>
+      <mesh position={[0, 0.99, 0]}>
+        <cylinderGeometry args={[0.16, 0.12, 0.14, 10]} />
+        <primitive object={stdMat('#ff9ec7', 0.5)} attach="material" />
+      </mesh>
+      <mesh position={[0, 1.12, 0]}>
+        <dodecahedronGeometry args={[0.16, 0]} />
+        <primitive object={stdMat('#8fdcb4', 0.55)} attach="material" />
+      </mesh>
+      {/* Tavan feneri */}
+      <mesh position={[0, 3.12, 0]}>
+        <cylinderGeometry args={[0.025, 0.025, 0.65, 8]} />
+        <primitive object={stdMat('#8a7a9c', 0.5)} attach="material" />
+      </mesh>
+      <mesh position={[0, 2.74, 0]}>
+        <sphereGeometry args={[0.2, 14, 12]} />
+        <meshStandardMaterial color="#fff3c4" emissive="#ffc86b" emissiveIntensity={1.4} roughness={0.25} />
+      </mesh>
+      {/* Sütun aralarında yarım korkuluk ve pastel çiçeklikler (doğu girişi açık) */}
+      {posts.slice(1).map((a, i) => {
+        const mx = Math.cos(a - Math.PI / 6) * 2.7
+        const mz = Math.sin(a - Math.PI / 6) * 2.7
+        return (
+          <group key={i} position={[mx, 0.42, mz]} rotation={[0, -(a - Math.PI / 6) + Math.PI / 2, 0]}>
+            <RoundedBox args={[2.1, 0.16, 0.22]} radius={0.06} smoothness={2} castShadow>
+              <meshStandardMaterial color="#ffe3c6" roughness={0.55} />
+            </RoundedBox>
+            <mesh position={[0, 0.14, 0]}>
+              <sphereGeometry args={[0.16, 10, 8]} />
+              <meshStandardMaterial color={i % 2 ? '#ff9ec7' : '#ffd35e'} roughness={0.5} />
             </mesh>
           </group>
         )
@@ -752,15 +618,17 @@ function Sun({ focusRef }) {
       shadow-camera-top={20}
       shadow-camera-bottom={-20}
       shadow-camera-near={1}
-      shadow-camera-far={55}
-      shadow-bias={-0.0004}
+      shadow-camera-far={56}
+      shadow-bias={-0.0005}
+      shadow-normalBias={0.032}
+      shadow-radius={2}
     />
   )
 }
 
 // ---------- deniz: adanın dört yanı (Meshy dokulu, animasyonlu) ----------
 const WATER_COLOR = new Color('#feda9d')
-const WATER_NIGHT = new Color('#3f5a9c')
+const WATER_NIGHT = new Color('#294582')
 
 // ---------- dünya sınırı: şamandıra halatı (oyuncu bunun ötesine geçemez; tatlı bir "buraya kadar" çizgisi) ----------
 const BUOY_OFF = 3.2 // oynanabilir sınırın ötesinde (m)
@@ -830,7 +698,7 @@ function Sea() {
       const t = src.clone()
       t.wrapS = t.wrapT = RepeatWrapping
       t.colorSpace = SRGBColorSpace
-      t.anisotropy = 4
+      t.anisotropy = 8
       t.repeat.set(size / m, size / m)
       t.needsUpdate = true
       return t
@@ -853,6 +721,7 @@ function Sea() {
   }, [])
   const mat = useRef()
   const mat2 = useRef()
+  const moonPath = useRef()
   const plane = useRef()
   useFrame(({ clock }, dt) => {
     const t = clock.elapsedTime
@@ -863,8 +732,16 @@ function Sea() {
     ring.offset.x += dt * 0.02
     if (plane.current) plane.current.position.y = -0.05 + Math.sin(t * 0.7) * 0.025 // yavaş kabarma
     const night = Number.isFinite(worldClock.night) ? worldClock.night : 0
-    if (mat.current) mat.current.color.copy(WATER_COLOR).lerp(WATER_NIGHT, night * 0.85)
+    if (mat.current) mat.current.color.copy(WATER_COLOR).lerp(WATER_NIGHT, night * 0.88)
     if (mat2.current) mat2.current.opacity = 0.16 + Math.sin(t * 0.9) * 0.05
+    if (moonPath.current) {
+      const mVis = night > 0.1
+      moonPath.current.visible = mVis
+      if (mVis) {
+        moonPath.current.material.opacity = (night - 0.1) * 0.24 * (0.85 + Math.sin(t * 2.1) * 0.15)
+        moonPath.current.scale.x = 1 + Math.sin(t * 1.4) * 0.08
+      }
+    }
   })
   // kıyıya vuran dalgalar: her kenarda 3 bant, aynı döngüde faz farklı; açıktan kıyıya yürür, kıyıda sönüp kaybolur
   const WAVES = 3
@@ -899,11 +776,16 @@ function Sea() {
     <group>
       <mesh ref={plane} position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[2200, 2200]} />
-        <meshStandardMaterial ref={mat} map={deep} roughness={0.22} metalness={0.05} emissive="#3aa9c9" emissiveIntensity={0.06} />
+        <meshStandardMaterial ref={mat} map={deep} roughness={0.14} metalness={0.22} envMapIntensity={1.45} emissive="#3aa9c9" emissiveIntensity={0.07} />
       </mesh>
       <mesh position={[0, -0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[2200, 2200]} />
         <meshBasicMaterial ref={mat2} map={swell} transparent opacity={0.18} depthWrite={false} />
+      </mesh>
+      {/* Yaz akşamı denizde ay ışığı yakamozu */}
+      <mesh ref={moonPath} position={[14, -0.015, ISLAND.z1 + 58]} rotation={[-Math.PI / 2, 0, -0.22]} visible={false}>
+        <planeGeometry args={[18, 95]} />
+        <meshBasicMaterial map={fade} color="#ffe7a8" transparent opacity={0} depthWrite={false} />
       </mesh>
       {sides.flatMap((sd, si) =>
         Array.from({ length: WAVES }, (_, k) => {
@@ -919,10 +801,6 @@ function Sea() {
     </group>
   )
 }
-
-const DASHES = Array.from({ length: 51 }, (_, i) => -100 + i * 4).filter((t) => Math.abs(t) > RING.r1 + 1.5 && t <= ROAD_END.east)
-const RING_DASHES = Array.from({ length: 52 }, (_, i) => (i / 52) * Math.PI * 2 + 0.06).filter((a) => [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2].every((c) => Math.abs(Math.atan2(Math.sin(a - c), Math.cos(a - c))) > 0.3))
-const PARK_X = -12 // batıya doğru asfalt biter; parkta patika başlar
 
 /** Gölet: Meshy su dokusu + kum kıyısı + nilüfer yaprakları. */
 function Pond({ x, z, r }) {
@@ -973,10 +851,10 @@ function Pond({ x, z, r }) {
   )
 }
 
-/** Güney plajından denize uzanan pastel ahşap iskele. */
+/** Güney plajının deniz kenarından denize uzanan pastel ahşap iskele. */
 function BeachPier() {
   return (
-    <group position={[0, 0, 54.2]}>
+    <group position={[PIER.x, 0, (PIER.z0 + PIER.z1) / 2]}>
       <RoundedBox args={[3.2, 0.18, 9.6]} radius={0.05} position={[0, 0.28, 0]} castShadow receiveShadow>
         <meshStandardMaterial color="#f2cfa2" roughness={0.75} />
       </RoundedBox>
@@ -1059,7 +937,7 @@ function FountainFx() {
     }
   })
   return (
-    <group position={[0, 0, 0]} scale={1.8}>
+    <group position={[0, 0, 0]} scale={1.15}>
       <mesh ref={top} position={[0, 2.05, 0]}>
         <sphereGeometry args={[0.28, 10, 8]} />
         <meshStandardMaterial color="#d8f6ff" emissive="#9be4ff" emissiveIntensity={0.45} roughness={0.1} transparent opacity={0.85} />
@@ -1099,194 +977,190 @@ function SkyBalloon() {
   )
 }
 
-/** Şehir yollarında içinden geçince hız artışı veren parlayan halkalar. */
+/** Şehir yollarında içinden geçince hız artışı veren fantastik enerji geçitleri (enerji girdabı, dönen rün halkaları, 3B şimşek tacı ve ışıklı zemin okları). */
 function SpeedRings() {
-  const refs = useRef([])
+  const outerRefs = useRef([])
+  const innerRefs = useRef([])
+  const runeRefs = useRef([])
+  const crestRefs = useRef([])
+
+  // 3B şimşek rozeti geometrisi
+  const boltGeo = useMemo(() => {
+    const sh = new Shape()
+    sh.moveTo(0.04, 0.36)
+    sh.lineTo(-0.22, 0.02)
+    sh.lineTo(-0.02, 0.02)
+    sh.lineTo(-0.12, -0.36)
+    sh.lineTo(0.24, 0.04)
+    sh.lineTo(0.04, 0.04)
+    sh.closePath()
+    const g = new ExtrudeGeometry(sh, { depth: 0.09, bevelEnabled: true, bevelThickness: 0.025, bevelSize: 0.02, bevelSegments: 2 })
+    g.center()
+    return g
+  }, [])
+
+  // Kapı içi dönen enerji girdabı shader'ı
+  const portalMat = useMemo(
+    () =>
+      new ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        side: DoubleSide,
+        uniforms: { uTime: { value: 0 } },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv * 2.0 - 1.0;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform float uTime;
+          varying vec2 vUv;
+          void main() {
+            float r = length(vUv);
+            if (r > 1.0) discard;
+            float a = atan(vUv.y, vUv.x);
+            float swirl = sin(a * 4.0 - r * 10.0 + uTime * 5.0) * 0.5 + 0.5;
+            float rings = sin(r * 16.0 - uTime * 6.5) * 0.5 + 0.5;
+            float edge = smoothstep(1.0, 0.65, r) * smoothstep(0.08, 0.42, r);
+            float core = (1.0 - smoothstep(0.0, 0.35, r)) * 0.45;
+            vec3 c1 = vec3(0.45, 0.94, 1.0);
+            vec3 c2 = vec3(0.72, 0.58, 1.0);
+            vec3 c3 = vec3(1.0, 0.84, 0.42);
+            vec3 col = mix(c2, c1, swirl * 0.75 + rings * 0.25);
+            col = mix(col, c3, pow(rings * swirl, 2.0) * 0.55);
+            float alpha = clamp((edge * (0.28 + swirl * 0.28 + rings * 0.16) + core), 0.0, 0.72);
+            gl_FragColor = vec4(col, alpha);
+          }
+        `,
+      }),
+    [],
+  )
+
+  // Asfalt üstü akan hız okları şeridi
+  const padMat = useMemo(
+    () =>
+      new ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        uniforms: { uTime: { value: 0 } },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform float uTime;
+          varying vec2 vUv;
+          void main() {
+            float x = abs(vUv.x - 0.5) * 2.0;
+            float chev = fract(vUv.y * 3.0 - uTime * 2.2 - x * 0.65);
+            float band = smoothstep(0.05, 0.18, chev) * (1.0 - smoothstep(0.28, 0.45, chev));
+            float mask = smoothstep(1.0, 0.15, x) * sin(vUv.y * 3.14159);
+            vec3 col = mix(vec3(0.32, 0.92, 0.98), vec3(1.0, 0.84, 0.38), band);
+            gl_FragColor = vec4(col, band * mask * 0.85);
+          }
+        `,
+      }),
+    [],
+  )
+
+  useEffect(() => () => {
+    boltGeo.dispose()
+    portalMat.dispose()
+    padMat.dispose()
+  }, [boltGeo, portalMat, padMat])
+
+  const orbAngles = useMemo(() => Array.from({ length: 8 }, (_, k) => (k / 8) * Math.PI * 2), [])
+
   useFrame(({ clock }) => {
     const t = clock.elapsedTime
-    refs.current.forEach((m, i) => {
+    portalMat.uniforms.uTime.value = t
+    padMat.uniforms.uTime.value = t
+    outerRefs.current.forEach((g, i) => {
+      if (!g) return
+      g.position.y = 1.98 + Math.sin(t * 2.5 + i * 1.1) * 0.12
+    })
+    innerRefs.current.forEach((m, i) => {
       if (!m) return
-      m.position.y = 1.05 + Math.sin(t * 2.5 + i) * 0.1
+      m.rotation.z = t * (i % 2 === 0 ? 1.9 : -1.9)
+      m.rotation.x = Math.sin(t * 1.5 + i) * 0.16
+    })
+    runeRefs.current.forEach((m, i) => {
+      if (!m) return
+      m.rotation.z = -t * 1.1
+      m.rotation.y = Math.cos(t * 1.3 + i) * 0.18
+    })
+    crestRefs.current.forEach((m, i) => {
+      if (!m) return
+      m.rotation.y = t * 2.1 + i
+      m.position.y = 1.84 + Math.sin(t * 3.4 + i) * 0.08
     })
   })
+
   return (
     <group>
       {SPEED_RING_POS.map(([x, z, ry], i) => (
-        <mesh key={i} ref={(el) => (refs.current[i] = el)} position={[x, 1.05, z]} rotation={[0, ry, 0]}>
-          <torusGeometry args={[1.05, 0.09, 10, 24]} />
-          <meshStandardMaterial color="#ffe066" emissive="#ffb703" emissiveIntensity={0.85} roughness={0.25} />
-        </mesh>
+        <group key={i} position={[x, 0, z]} rotation={[0, ry, 0]}>
+          {/* Asfalt üstü ışıklı geçit tabanı + akan oklar */}
+          <mesh position={[0, 0.105, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={2}>
+            <planeGeometry args={[2.7, 2.2]} />
+            <primitive object={padMat} attach="material" />
+          </mesh>
+
+          {/* Ana yüzen fantastik geçit */}
+          <group ref={(el) => (outerRefs.current[i] = el)} position={[0, 1.98, 0]}>
+            {/* Enerji girdabı yüzeyi */}
+            <mesh renderOrder={3}>
+              <circleGeometry args={[1.3, 36]} />
+              <primitive object={portalMat} attach="material" />
+            </mesh>
+
+            {/* Altın çerçeve halkası + 8 adet parlayan taş */}
+            <mesh>
+              <torusGeometry args={[1.44, 0.11, 14, 36]} />
+              <meshStandardMaterial color="#ffd35e" emissive="#ff9f1c" emissiveIntensity={0.85} roughness={0.22} metalness={0.2} />
+            </mesh>
+            {orbAngles.map((ang, oi) => (
+              <mesh key={oi} position={[Math.cos(ang) * 1.44, Math.sin(ang) * 1.44, 0]} rotation={[0, 0, ang]}>
+                <octahedronGeometry args={[0.11, 0]} />
+                <meshStandardMaterial
+                  color={oi % 2 === 0 ? '#7ef9ff' : '#ff9ec7'}
+                  emissive={oi % 2 === 0 ? '#38bdf8' : '#ff70a6'}
+                  emissiveIntensity={1.4}
+                  roughness={0.18}
+                />
+              </mesh>
+            ))}
+
+            {/* Çift eksenli dönen rün/enerji halkaları */}
+            <mesh ref={(el) => (innerRefs.current[i] = el)}>
+              <torusGeometry args={[1.18, 0.055, 10, 32]} />
+              <meshStandardMaterial color="#7ef9ff" emissive="#38bdf8" emissiveIntensity={1.2} roughness={0.18} />
+            </mesh>
+            <mesh ref={(el) => (runeRefs.current[i] = el)}>
+              <torusGeometry args={[1.32, 0.032, 8, 6]} />
+              <meshStandardMaterial color="#c9a8ff" emissive="#a88bff" emissiveIntensity={1.1} roughness={0.22} />
+            </mesh>
+
+            {/* Tepe noktası: dönen 3B altın şimşek arması */}
+            <mesh ref={(el) => (crestRefs.current[i] = el)} geometry={boltGeo} position={[0, 1.84, 0]} castShadow>
+              <meshStandardMaterial color="#ffe48f" emissive="#ffae2b" emissiveIntensity={1.15} roughness={0.22} metalness={0.18} />
+            </mesh>
+          </group>
+        </group>
       ))}
     </group>
-  )
-}
-
-/** Tüm yol çizgileri (sıcak sarı orta kesikler, kenar şeritleri, dönel kavşak kesikleri ve yaya geçitleri) tek InstancedMesh'te. */
-function RoadMarkings() {
-  const ref = useRef()
-  const items = useMemo(() => {
-    const list = []
-    const d = new Object3D()
-    const push = (x, z, w, len, ry = 0, color = '#fffaf2') => {
-      d.position.set(x, Y.mark, z)
-      d.rotation.set(-Math.PI / 2, 0, ry)
-      d.scale.set(w, len, 1)
-      d.updateMatrix()
-      list.push({ mat: d.matrix.clone(), color })
-    }
-    const YELLOW = '#ffe89e'
-    const EDGE = '#f2edf9'
-    const WHITE = '#fffdf8'
-    for (const a of RING_DASHES) {
-      const r = (RING.r0 + RING.r1) / 2
-      push(Math.cos(a) * r, Math.sin(a) * r, 0.24, 1.45, -a - Math.PI / 2, YELLOW)
-    }
-    for (const t of DASHES) {
-      if (t <= ROAD_END.south && t >= ROAD_END.north) push(0, t, 0.24, 1.85, 0, YELLOW)
-      if (t > PARK_X && t <= ROAD_END.east) push(t, 0, 1.85, 0.24, 0, YELLOW)
-    }
-    // yol kenar çizgileri (kaldırım bordürünün 0,42 m içi)
-    const edgeOff = ROAD_HALF - 0.42
-    const RE = RING.r1 + 0.2 // halkanın dış kenarı
-    const nLen = -RE - ROAD_END.north
-    const sLen = ROAD_END.south - RE
-    const eLen = ROAD_END.east - RE
-    for (const s of [-1, 1]) {
-      push(s * edgeOff, (-RE + ROAD_END.north) / 2, 0.13, nLen, 0, EDGE)
-      push(s * edgeOff, (RE + ROAD_END.south) / 2, 0.13, sLen, 0, EDGE)
-      push((RE + ROAD_END.east) / 2, s * edgeOff, eLen, 0.13, 0, EDGE)
-    }
-    // yaya geçitleri
-    for (const ox of [-1.8, -0.9, 0, 0.9, 1.8]) {
-      push(ox, -(RING.r1 + 2), 0.44, 2.25, 0, WHITE)
-      push(ox, RING.r1 + 2, 0.44, 2.25, 0, WHITE)
-      push(ox, ROAD_END.south - 1.6, 0.44, 2.25, 0, WHITE)
-      push(RING.r1 + 2, ox, 2.25, 0.44, 0, WHITE)
-    }
-    return list
-  }, [])
-  useEffect(() => {
-    const im = ref.current
-    if (!im) return
-    const c = new Color()
-    for (let i = 0; i < items.length; i++) {
-      im.setMatrixAt(i, items[i].mat)
-      im.setColorAt(i, c.set(items[i].color))
-    }
-    im.instanceMatrix.needsUpdate = true
-    if (im.instanceColor) im.instanceColor.needsUpdate = true
-  }, [items])
-  return (
-    <instancedMesh ref={ref} args={[undefined, undefined, items.length]} receiveShadow frustumCulled={false}>
-      <planeGeometry args={[1, 1]} />
-      <meshStandardMaterial roughness={0.85} />
-    </instancedMesh>
-  )
-}
-
-/** Kaldırım bordür taşları: asfalt ile kaldırım arasında yükseltilmiş 3B krem taş kenarlıklar (tek InstancedMesh). */
-function RoadCurbs() {
-  const ref = useRef()
-  const blocks = useMemo(() => {
-    const list = []
-    const d = new Object3D()
-    const push = (x, z, len, ry, idx) => {
-      d.position.set(x, 0.068, z)
-      d.rotation.set(0, ry, 0)
-      d.scale.set(0.24, 0.135, len)
-      d.updateMatrix()
-      list.push({ mat: d.matrix.clone(), alt: idx % 2 === 0 })
-    }
-    const cx = ROAD_HALF + 0.12
-    const step = 2.05
-    let k = 0
-    const CS = RING.r1 + 0.4 // kaldırım bordürü halkanın dış kenarından başlar
-    for (let z = -CS; z >= ROAD_END.north + 0.5; z -= step) {
-      push(-cx, z - step / 2, step - 0.08, 0, k++)
-      push(cx, z - step / 2, step - 0.08, 0, k++)
-    }
-    for (let z = CS; z <= ROAD_END.south - 0.5; z += step) {
-      push(-cx, z + step / 2, step - 0.08, 0, k++)
-      push(cx, z + step / 2, step - 0.08, 0, k++)
-    }
-    for (let x = CS; x <= ROAD_END.east - 0.5; x += step) {
-      push(x + step / 2, -cx, step - 0.08, Math.PI / 2, k++)
-      push(x + step / 2, cx, step - 0.08, Math.PI / 2, k++)
-    }
-    // dönel kavşak iç ve dış bordürü
-    const inN = Math.round((2 * Math.PI * RING.r0) / 1.8)
-    for (let i = 0; i < inN; i++) {
-      const a = (i / inN) * Math.PI * 2
-      push(Math.cos(a) * (RING.r0 - 0.1), Math.sin(a) * (RING.r0 - 0.1), (2 * Math.PI * RING.r0) / inN - 0.08, -a, k++)
-    }
-    const outN = Math.round((2 * Math.PI * RING.r1) / 2)
-    for (let i = 0; i < outN; i++) {
-      const a = (i / outN) * Math.PI * 2
-      const blocked = [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2].some((c) => Math.abs(Math.atan2(Math.sin(a - c), Math.cos(a - c))) < 0.31)
-      if (blocked) continue
-      push(Math.cos(a) * (RING.r1 + 0.1), Math.sin(a) * (RING.r1 + 0.1), (2 * Math.PI * RING.r1) / outN - 0.08, -a, k++)
-    }
-    return list
-  }, [])
-  useEffect(() => {
-    const im = ref.current
-    if (!im) return
-    const c1 = new Color('#f6eee4')
-    const c2 = new Color('#e8ddd0')
-    for (let i = 0; i < blocks.length; i++) {
-      im.setMatrixAt(i, blocks[i].mat)
-      im.setColorAt(i, blocks[i].alt ? c1 : c2)
-    }
-    im.instanceMatrix.needsUpdate = true
-    if (im.instanceColor) im.instanceColor.needsUpdate = true
-  }, [blocks])
-  return (
-    <instancedMesh ref={ref} args={[undefined, undefined, blocks.length]} receiveShadow frustumCulled={false}>
-      <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial roughness={0.78} />
-    </instancedMesh>
-  )
-}
-
-/** Yol detayları: pastel döküm rögar kapakları (tek InstancedMesh). */
-function RoadDetails() {
-  const ref = useRef()
-  const tex = useMemo(() => getManholeTex(), [])
-  const pts = useMemo(() => {
-    const list = []
-    for (let z = -22 - GAP; z >= -86 - GAP; z -= 18) list.push([Math.round(z) % 36 === 0 ? 2.1 : -2.1, z])
-    list.push([2.0, 21.5 + GAP])
-    for (let x = 22 + GAP; x <= 86 + GAP; x += 18) list.push([x, Math.round(x) % 36 === 0 ? 2.1 : -2.1])
-    return list
-  }, [])
-  useEffect(() => {
-    const im = ref.current
-    if (!im) return
-    const d = new Object3D()
-    pts.forEach(([x, z], i) => {
-      d.position.set(x, Y.road + 0.012, z)
-      d.rotation.set(0, i * 0.7, 0)
-      d.scale.set(1, 1, 1)
-      d.updateMatrix()
-      im.setMatrixAt(i, d.matrix)
-    })
-    im.instanceMatrix.needsUpdate = true
-  }, [pts])
-  return (
-    <instancedMesh ref={ref} args={[undefined, undefined, pts.length]} receiveShadow frustumCulled={false}>
-      <cylinderGeometry args={[0.42, 0.44, 0.016, 16]} />
-      <meshStandardMaterial map={tex} roughness={0.55} metalness={0.22} />
-    </instancedMesh>
   )
 }
 
 // PROPS ve BLANKETS'i model adına göre grupla (≥ 2 örnek → InstancedPropGroup, tekil → Prop)
 const { INSTANCED_PROPS, SINGLE_PROPS } = (() => {
   const byModel = new Map()
-  const all = [
-    ...PROPS,
-    ...BLANKETS.map((b) => ({ model: '/models/venues/picnic-blanket.glb', x: b.x, z: b.z, scale: 2.0, ry: b.ry })),
-  ]
+  const all = PROPS
   for (const p of all) {
     let arr = byModel.get(p.model)
     if (!arr) {
@@ -1323,6 +1197,9 @@ export default function City({ focusRef }) {
       <SkyBalloon />
       <SpeedRings />
       <BeachPier />
+      <BeachParty />
+      <TurkishFlags />
+      <TownDetails focusRef={focusRef} />
 
       {/* zemin ve mahalle zeminleri */}
       <Sea />
@@ -1339,10 +1216,7 @@ export default function City({ focusRef }) {
       <Flat x={BEACH.x} z={BEACH.z} round={BEACH.r + 4} y={Y.floor} tex="sand" feather={6} /> {/* yuvarlak plaj: yumuşak kenarlı */}
       <Flat x={BEACH.x} z={BEACH.z} round={BEACH.r - 2} y={Y.floor + 0.004} tex="sand" color="#fff6dc" feather={5} />
       
-      <mesh position={[-33 - GAP, 0.04, -6]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[3.6, 40]} />
-        <meshStandardMaterial color="#a9ddf5" roughness={0.15} />
-      </mesh>
+      <Pond x={-42.5} z={-12.5} r={4.2} />
 
       {/* kaldırım + yollar */}
       <Flat x={0} z={nsN.cz} w={swW} d={nsN.len} y={Y.sidewalk} tex="cobble" color="#fdf6ff" />

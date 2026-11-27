@@ -13,10 +13,10 @@
 //   { t: 'kar_end', name, song, claps }                              tur bitti (sonuç kartı)
 // Olaylar (ctx.emitEvent): karaoke (şarkıcıya, sıra geldiğinde), applause (alkışlayana; karşı = şarkıcı)
 import { KARAOKE_QUEUE_MAX, KARAOKE_SONG_BY_ID, KARAOKE_STAGE_MS, KARAOKE_VENUE } from '../../src/world/karaokeSongs.js'
-import { venueRoom } from '../../src/world/venues.js'
+import { venueIdOf } from '../../src/world/venues.js'
 import { venueLayout } from '../../src/world/venueLayout.js'
 
-const ROOM = venueRoom(KARAOKE_VENUE)
+const isKarVenue = (p) => Boolean(p && venueIdOf(p.room) === KARAOKE_VENUE)
 const GAP_MS = 2500 // iki tur arası
 const CLAP_COOLDOWN_MS = 350
 const CLAP_MAX = 400 // tur başına üst sınır
@@ -34,7 +34,7 @@ export default function venues(ctx) {
   let gapTimer = null
   let clapTimer = null
 
-  const inRoom = () => [...players.values()].filter((p) => p.room === ROOM)
+  const inRoom = () => [...players.values()].filter((p) => isKarVenue(p))
 
   const stateFor = (viewer) => {
     const ok = (p) => p && !mod().blockedPair(viewer, p)
@@ -71,7 +71,7 @@ export default function venues(ctx) {
       const p = players.get(id)
       const song = songOf.get(id)
       songOf.delete(id)
-      if (!p || p.room !== ROOM) continue
+      if (!isKarVenue(p)) continue
       // oturuyorsa kaldır (together modülü koltuğu bırakır)
       if (p.pose) {
         p.lastPoseEnd = 0
@@ -86,7 +86,7 @@ export default function venues(ctx) {
       now = { id, song, start: Date.now(), claps: 0, sent: 0, timer: setTimeout(() => finish('time'), KARAOKE_STAGE_MS) }
       ctx.grace?.(p, 4000)
       send(p.ws, { t: 'kar_turn', x: spot.x, z: spot.z, ry: spot.ry, song, dur: KARAOKE_STAGE_MS })
-      broadcast({ t: 'react', id, e: '🎤' }, undefined, ROOM, p)
+      broadcast({ t: 'react', id, e: '🎤' }, undefined, p.room, p)
       ctx.emitEvent?.(p, 'karaoke', 1)
       pushState()
       return
@@ -104,14 +104,14 @@ export default function venues(ctx) {
 
   const handlers = {
     kar_get(me) {
-      if (me.room !== ROOM) return
+      if (!isKarVenue(me)) return
       const t = Date.now()
       if (t - (me.lastKarGet ?? 0) < 500) return
       me.lastKarGet = t
       pushState(me)
     },
     kar_join(me, msg) {
-      if (me.room !== ROOM) return
+      if (!isKarVenue(me)) return
       const t = Date.now()
       if (t - (me.lastKarJoin ?? 0) < 1000) return
       me.lastKarJoin = t
@@ -126,11 +126,11 @@ export default function venues(ctx) {
       else pushState()
     },
     kar_leave(me) {
-      if (me.room !== ROOM) return
+      if (!isKarVenue(me)) return
       drop(me)
     },
     kar_clap(me) {
-      if (me.room !== ROOM || !now || now.id === me.id) return
+      if (!isKarVenue(me) || !now || now.id === me.id) return
       const t = Date.now()
       if (t - (me.lastClap ?? 0) < CLAP_COOLDOWN_MS) return
       const singer = players.get(now.id)
@@ -138,7 +138,7 @@ export default function venues(ctx) {
       me.lastClap = t
       if (now.claps >= CLAP_MAX) return
       now.claps += 1
-      broadcast({ t: 'react', id: me.id, e: '👏' }, undefined, ROOM, me)
+      broadcast({ t: 'react', id: me.id, e: '👏' }, undefined, me.room, me)
       ctx.emitEvent?.(me, 'applause', 1, singer)
       if (!clapTimer) {
         clapTimer = setTimeout(() => {

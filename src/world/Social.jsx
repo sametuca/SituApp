@@ -1,17 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
-import { HugeiconsIcon } from '@hugeicons/react'
-import { PencilEdit02Icon } from '@hugeicons/core-free-icons'
+import { Em } from '../components/emoji'
 import { SlotIcon } from '../components/SkillIcon'
 import { TopDock } from '../components/Dock'
 import { Dock } from '../components/Dock'
 import { Ico } from '../components/Icon'
 import { ToyButton } from '../components/ui'
 import { MicButton, StickerBubble, StickerPanel, VoiceBubble } from './features/media'
-import { CHAT_EMOJIS, GESTURES, GESTURE_BY_KIND, QUICK_REPLIES, REACTIONS, SKILL_COOLDOWN_MS, SKILLS, WHISPER_RANGE } from './interact'
+import { CHAT_EMOJIS, GESTURES, GESTURE_BY_KIND, QUICK_REPLIES, REACTIONS, SKILL_COOLDOWN_MS, SKILLS } from './interact'
 import { levelOf } from './collectibles'
 import Portrait from './Portrait'
 
-const glass = 'border-2 border-white bg-white/80 shadow-soft backdrop-blur-md'
+const glass = 'border-2 border-white bg-white/92 shadow-soft'
 
 
 // ---------- sanal joystick (dokunmatik cihazlar) ----------
@@ -63,6 +62,7 @@ export function Joystick({ inputRef }) {
       style={{ width: BASE, height: BASE, left: 'max(0.85rem, env(safe-area-inset-left))', bottom: 'max(1rem, env(safe-area-inset-bottom))' }}
       onPointerDown={(e) => {
         if (pointer.current !== null) return
+        e.preventDefault()
         pointer.current = e.pointerId
         setDragging(true)
         try {
@@ -75,6 +75,7 @@ export function Joystick({ inputRef }) {
       onPointerMove={(e) => pointer.current === e.pointerId && apply(e)}
       onPointerUp={release}
       onPointerCancel={release}
+      onLostPointerCapture={release}
     >
       <div
         className={`absolute rounded-full border-2 border-white shadow-md ${running ? 'bg-[#5fc0ea]' : 'bg-[#fdb252]'}`}
@@ -94,31 +95,86 @@ export function Joystick({ inputRef }) {
   )
 }
 
-// ---------- yakındaki oyuncu kartı ----------
-export function NearbyCard({ peer, touch, onChat, onInteract, onDismiss }) {
+const LOOK_BASE = 92
+const LOOK_KNOB = 40
+const LOOK_MAX = (LOOK_BASE - LOOK_KNOB) / 2 + 5
+
+/**
+ * Hareket joystick'inin hemen yanında kamera/görünüm joystick'i (dokunmatik cihazlar).
+ * inputRef.current = { x, y } (-1..1; x = yatay dönüş, y = dikey açı).
+ */
+export function LookJoystick({ inputRef }) {
+  const base = useRef(null)
+  const pointer = useRef(null)
+  const [knob, setKnob] = useState({ x: 0, y: 0 })
+  const [dragging, setDragging] = useState(false)
+
+  const apply = (e) => {
+    const r = base.current.getBoundingClientRect()
+    let dx = e.clientX - (r.left + r.width / 2)
+    let dy = e.clientY - (r.top + r.height / 2)
+    const d = Math.hypot(dx, dy)
+    if (d > LOOK_MAX) {
+      dx = (dx / d) * LOOK_MAX
+      dy = (dy / d) * LOOK_MAX
+    }
+    setKnob({ x: dx, y: dy })
+    inputRef.current.x = dx / LOOK_MAX
+    inputRef.current.y = dy / LOOK_MAX
+  }
+  const release = (e) => {
+    if (pointer.current !== e.pointerId) return
+    pointer.current = null
+    inputRef.current.x = 0
+    inputRef.current.y = 0
+    setKnob({ x: 0, y: 0 })
+    setDragging(false)
+  }
+
   return (
-    <Dock><div className="pointer-events-auto relative w-[min(94vw,24rem)] animate-pop" role="status">
-      <div className={`flex items-center gap-3 rounded-3xl p-2.5 pr-3 ${glass}`}>
-        <Portrait peer={peer} size={44} className="h-11 w-11" />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-black text-[#4a3b5c]">{peer.name}</p>
-          <p className="text-xs font-bold text-[#8a7a9c]">yakınında 👋</p>
-        </div>
-        <div className="flex shrink-0 gap-1.5">
-          <button onClick={onInteract} aria-label="Etkileşim menüsü" title="Kalp, çiçek, fısıltı…" className="grid h-10 w-10 place-items-center rounded-xl border-b-4 border-[#e8952c] bg-[#fecb89] text-lg shadow-soft active:translate-y-[2px] active:border-b-2">
-            💗
-          </button>
-          <div className="w-28">
-            <ToyButton className="!rounded-xl !py-2 !text-sm" onClick={onChat}>
-              💬 Sohbet
-            </ToyButton>
-          </div>
-        </div>
-        <button onClick={onDismiss} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
-          ✕
-        </button>
-      </div>
-    </div></Dock>
+    <div
+      ref={base}
+      role="application"
+      aria-label="Görünüm joystick'i"
+      className={`absolute z-10 touch-none select-none rounded-full ${glass} ${dragging ? 'ring-4 ring-[#d6c7ff]' : ''}`}
+      style={{
+        width: LOOK_BASE,
+        height: LOOK_BASE,
+        left: 'calc(max(0.85rem, env(safe-area-inset-left)) + 126px)',
+        bottom: 'max(1.75rem, env(safe-area-inset-bottom))',
+      }}
+      onPointerDown={(e) => {
+        if (pointer.current !== null) return
+        e.preventDefault()
+        pointer.current = e.pointerId
+        setDragging(true)
+        try {
+          e.currentTarget.setPointerCapture(e.pointerId)
+        } catch {
+          /* ignore */
+        }
+        apply(e)
+      }}
+      onPointerMove={(e) => pointer.current === e.pointerId && apply(e)}
+      onPointerUp={release}
+      onPointerCancel={release}
+      onLostPointerCapture={release}
+    >
+      <div
+        className="absolute rounded-full border-2 border-white bg-[#a88bff] shadow-md"
+        style={{
+          width: LOOK_KNOB,
+          height: LOOK_KNOB,
+          left: (LOOK_BASE - LOOK_KNOB) / 2,
+          top: (LOOK_BASE - LOOK_KNOB) / 2,
+          transform: `translate(${knob.x}px, ${knob.y}px)`,
+          transition: dragging ? 'none' : 'transform 120ms ease-out',
+        }}
+      />
+      <span aria-hidden className="pointer-events-none absolute inset-0 grid place-items-center text-lg font-black text-white/90">
+        ⟳
+      </span>
+    </div>
   )
 }
 
@@ -256,7 +312,7 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch, slots =
             title="İfadeleri düzenle"
             className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[#efe7ff] text-[#6b4fc0] transition hover:bg-[#e3d6ff] active:scale-90"
           >
-            <HugeiconsIcon icon={PencilEdit02Icon} size={16} strokeWidth={2} />
+            <Em e="✏️" size={16} />
           </button>}
         </div>
       </div>
@@ -329,18 +385,31 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch, slots =
             title="İfadeleri düzenle"
             className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[#efe7ff] text-[#6b4fc0] transition hover:bg-[#e3d6ff] active:scale-90"
           >
-            <HugeiconsIcon icon={PencilEdit02Icon} size={16} strokeWidth={2} />
+            <Em e="✏️" size={16} />
           </button>}
       </div>
     </div>
   )
 }
 
+const ACTION_CATEGORIES = [
+  { id: 'events', label: 'Buluşma' },
+  { id: 'gifts', label: 'Hediye' },
+  { id: 'safety', label: 'Güvenlik' },
+]
+
 // ---------- etkileşim menüsü (bir oyuncuya kalp, çiçek, fısıltı…) ----------
 export function InteractSheet({ peer, near, canInvite, touch, extras = [], header = null, onClose, onChat, onGesture, onWhisper, onInvite }) {
   const [whisper, setWhisper] = useState(false)
   const [text, setText] = useState('')
+  const [activeCategory, setActiveCategory] = useState('events')
   const input = useRef(null)
+  const friendAction = extras.find((action) => action.key === 'friend')
+  const groupedActions = ACTION_CATEGORIES.map((category) => ({
+    ...category,
+    actions: extras.filter((action) => (action.category ?? 'social') === category.id),
+  })).filter((category) => category.actions.length > 0)
+  const selectedCategory = groupedActions.find((category) => category.id === activeCategory) ?? groupedActions[0]
 
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
@@ -361,7 +430,7 @@ export function InteractSheet({ peer, near, canInvite, touch, extras = [], heade
 
   return (
     <div
-      className={`absolute z-20 flex flex-col gap-3 bg-white/92 p-4 shadow-toy backdrop-blur-md animate-pop ${
+      className={`absolute z-20 flex max-h-[88dvh] flex-col gap-3 overflow-y-auto bg-white/92 p-4 shadow-toy backdrop-blur-md animate-pop ${
         touch ? 'inset-x-0 bottom-0 rounded-t-[2rem] border-t-2 border-white pb-[max(1rem,env(safe-area-inset-bottom))]' : 'bottom-3 left-3 w-[22rem] rounded-[2rem] border-2 border-white'
       }`}
       role="dialog"
@@ -370,13 +439,24 @@ export function InteractSheet({ peer, near, canInvite, touch, extras = [], heade
       <div className="flex items-center gap-3">
         <Portrait peer={peer} size={48} className="h-12 w-12" />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-base font-black text-[#4a3b5c]">{peer.name}</p>
+          <div className="flex min-w-0 items-center gap-2">
+            <p className="truncate text-base font-black text-[#4a3b5c]">{peer.name}</p>
+            {friendAction && (
+              <button
+                type="button"
+                onClick={friendAction.onClick}
+                className="shrink-0 rounded-full bg-[#f3ecff] px-2.5 py-1 text-[10px] font-black text-[#5b3fa8] transition hover:bg-[#e9ddff]"
+              >
+                Arkadaş ekle
+              </button>
+            )}
+          </div>
           <p className={`text-xs font-bold ${near ? 'text-emerald-500' : 'text-[#8a7a9c]'}`}>
             {peer.dnd ? '🌙 rahatsız etme açık · şimdilik ulaşılamaz' : near ? 'yakınında · jestler açık' : 'biraz uzakta · jest için yaklaş'}
           </p>
         </div>
-        <button onClick={onClose} aria-label="Kapat" className="grid h-9 w-9 place-items-center rounded-full text-sm font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
-          ✕
+        <button onClick={onClose} aria-label="Kapat" className="grid h-9 w-9 place-items-center rounded-full hover:bg-[#ffedd6]/70">
+          <Ico name="close" size={14} />
         </button>
       </div>
 
@@ -398,36 +478,76 @@ export function InteractSheet({ peer, near, canInvite, touch, extras = [], heade
 
       <div className="flex gap-2">
         <button onClick={onChat} className="flex-1 rounded-2xl border-b-4 border-[#e8952c] bg-[#fdb252] py-2 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2">
-          💬 Sohbet
+          Sohbet
         </button>
         <button
           onClick={() => setWhisper((w) => !w)}
           aria-pressed={whisper}
           className={`flex-1 rounded-2xl border-b-4 py-2 text-sm font-extrabold active:translate-y-[2px] active:border-b-2 ${whisper ? 'border-[#8a6bd1] bg-[#a88bff] text-white' : 'border-[#c9b6f5] bg-[#e9ddff] text-[#5b3fa8]'}`}
         >
-          🤫 Fısılda
+          Fısılda
         </button>
         {canInvite && (
           <button onClick={onInvite} className="flex-1 rounded-2xl border-b-4 border-[#5fb0d8] bg-[#7fcdf3] py-2 text-sm font-extrabold text-white active:translate-y-[2px] active:border-b-2">
-            🏠 Davet
+            Eve davet
           </button>
         )}
       </div>
 
-      {extras.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 border-t border-[#ece3f7] pt-2">
-          {extras.map((x) => (
-            <button key={x.key} onClick={x.onClick} className={`text-xs font-extrabold hover:underline ${x.danger ? 'text-rose-400' : 'text-[#8a7a9c]'}`}>
-              {x.emoji} {x.label}
-            </button>
-          ))}
+      {groupedActions.length > 0 && (
+        <div className="border-t border-[#ece3f7] pt-2">
+          <div className="grid grid-cols-3 gap-1 rounded-2xl border-2 border-[#e6dcf3] bg-[#f7f2ff] p-1" role="tablist" aria-label="Etkileşim kategorileri">
+            {groupedActions.map((category) => (
+              <button
+                key={category.id}
+                type="button"
+                id={`interact-tab-${category.id}`}
+                role="tab"
+                aria-controls={`interact-panel-${category.id}`}
+                aria-selected={selectedCategory?.id === category.id}
+                tabIndex={selectedCategory?.id === category.id ? 0 : -1}
+                onClick={() => setActiveCategory(category.id)}
+                className={`flex min-h-12 items-center justify-center rounded-xl border-b-4 px-2 py-1.5 text-sm font-black transition ${
+                  selectedCategory?.id === category.id ? 'border-[#8a6bd1] bg-white text-[#5b3fa8] shadow-soft' : 'border-transparent bg-transparent text-[#8a7a9c] hover:bg-white/70'
+                }`}
+              >
+                <span>{category.label}</span>
+              </button>
+            ))}
+          </div>
+          {selectedCategory && (
+            <div
+              id={`interact-panel-${selectedCategory.id}`}
+              aria-labelledby={`interact-tab-${selectedCategory.id}`}
+              className="mt-2 rounded-2xl border-2 border-[#e6dcf3] bg-white/80 p-2.5"
+              role="tabpanel"
+            >
+              <p className="mb-2 px-1 text-xs font-black uppercase tracking-wide text-[#8a7a9c]">
+                {selectedCategory.label} seçenekleri
+              </p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {selectedCategory.actions.map((action) => (
+                  <button
+                    key={action.key}
+                    type="button"
+                    onClick={action.onClick}
+                    className={`flex min-h-12 items-center justify-center rounded-xl border border-white px-2.5 py-2 text-center text-[13px] font-extrabold shadow-sm transition active:scale-95 ${
+                      action.danger ? 'bg-rose-50 text-rose-500 hover:bg-rose-100' : 'bg-[#faf7ff] text-[#6b587c] hover:bg-[#f1eaff]'
+                    }`}
+                  >
+                    <span>{action.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {whisper && (
         <form onSubmit={sendWhisper} className="flex flex-col gap-1.5">
           <p className="text-xs font-bold text-[#6b4fc0]">
-            {near ? `Yalnızca ${peer.name} duyar. Etraftakiler “fısıldıyor 🤫” görür, ne dediğini görmez.` : `${peer.name} fısıldamak için çok uzakta (en fazla ${WHISPER_RANGE} m).`}
+            Yalnızca {peer.name} duyar. Etraftakiler “fısıldıyor 🤫” görür, ne dediğini görmez.
           </p>
           <div className="flex gap-2">
             <input
@@ -441,7 +561,7 @@ export function InteractSheet({ peer, near, canInvite, touch, extras = [], heade
               placeholder="Kulağına bir şey söyle…"
               className="min-w-0 flex-1 rounded-2xl border-2 border-[#d6c7ff] bg-[#faf6ff] px-4 py-2.5 text-base font-semibold italic text-[#4a3b5c] outline-none placeholder:text-[#8a7a9c]/60 focus:ring-4 focus:ring-[#d6c7ff]/60"
             />
-            <button type="submit" disabled={!near} aria-label="Fısılda" className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border-b-4 border-[#8a6bd1] bg-[#a88bff] text-lg text-white active:translate-y-0.5 active:border-b-2 disabled:opacity-50">
+            <button type="submit" aria-label="Fısılda" className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border-b-4 border-[#8a6bd1] bg-[#a88bff] text-lg text-white active:translate-y-0.5 active:border-b-2">
               🤫
             </button>
           </div>
@@ -459,7 +579,7 @@ export function GestureChip({ from, onBack, onChat, onClose }) {
     return () => clearTimeout(t)
   }, [from, onClose])
   return (
-    <TopDock><div className={`relative w-[min(92vw,22rem)] animate-pop rounded-3xl p-2.5 pl-4 ${glass}`} role="status">
+    <TopDock><div className={`pointer-events-auto relative w-[min(92vw,22rem)] animate-pop rounded-3xl p-2.5 pl-4 ${glass}`} role="status">
       <div className="flex items-center gap-3">
         <span className="text-3xl" aria-hidden>
           {from.emoji}
@@ -467,8 +587,8 @@ export function GestureChip({ from, onBack, onChat, onClose }) {
         <p className="min-w-0 flex-1 text-sm font-black text-[#4a3b5c]">
           <span className="text-[#fdb252]">{from.name}</span> {g?.text ?? 'sana bir jest yaptı'}
         </p>
-        <button onClick={onClose} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
-          ✕
+        <button onClick={onClose} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full hover:bg-[#ffedd6]/70">
+          <Ico name="close" size={12} />
         </button>
       </div>
       <div className="mt-2 flex gap-2">
@@ -539,7 +659,7 @@ export function InviteChip({ from, onGo, onClose }) {
     return () => clearTimeout(t)
   }, [from, onClose])
   return (
-    <TopDock><div className={`relative flex w-[min(92vw,22rem)] animate-pop items-center gap-3 rounded-3xl p-2.5 pl-4 ${glass}`} role="status">
+    <TopDock><div className={`pointer-events-auto relative flex w-[min(92vw,22rem)] animate-pop items-center gap-3 rounded-3xl p-2.5 pl-4 ${glass}`} role="status">
       <span className="text-2xl" aria-hidden>
         🏠
       </span>
@@ -551,8 +671,8 @@ export function InviteChip({ from, onGo, onClose }) {
           Git
         </ToyButton>
       </div>
-      <button onClick={onClose} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
-        ✕
+      <button onClick={onClose} aria-label="Kapat" className="grid h-7 w-7 shrink-0 place-items-center rounded-full hover:bg-[#ffedd6]/70">
+        <Ico name="close" size={12} />
       </button>
     </div></TopDock>
   )
@@ -567,7 +687,7 @@ export function IncomingChip({ from, onOpen, onClose }) {
   return (
     <TopDock><button
       onClick={onOpen}
-      className={`relative w-[min(92vw,20rem)] animate-pop rounded-3xl px-4 py-2.5 text-left ${glass}`}
+      className={`pointer-events-auto relative w-[min(92vw,20rem)] animate-pop rounded-3xl px-4 py-2.5 text-left ${glass}`}
     >
       <p className="text-xs font-extrabold text-[#fdb252]">{from.whisper ? `🤫 ${from.name} sana fısıldadı` : `💌 ${from.name} sana yazdı`}</p>
       <p className="truncate text-sm font-semibold text-[#4a3b5c]">{from.text}</p>
@@ -624,8 +744,8 @@ export function ChatSheet({ peer, feed, onSend, onClose, touch, typing, onTyping
           <p className="truncate text-base font-black text-[#4a3b5c]">{peer ? peer.name : 'Herkese açık sohbet'}</p>
           <p className="text-xs font-bold text-[#8a7a9c]">{peer ? 'Özel sohbet · sadece ikiniz görürsünüz' : 'Yakındaki herkes duyar'}</p>
         </div>
-        <button onClick={onClose} aria-label="Sohbeti kapat" className="grid h-9 w-9 place-items-center rounded-full text-sm font-black text-[#8a7a9c] hover:bg-[#ffedd6]/70">
-          ✕
+        <button onClick={onClose} aria-label="Sohbeti kapat" className="grid h-9 w-9 place-items-center rounded-full hover:bg-[#ffedd6]/70">
+          <Ico name="close" size={14} />
         </button>
       </div>
 
@@ -659,7 +779,7 @@ export function ChatSheet({ peer, feed, onSend, onClose, touch, typing, onTyping
                     : 'self-start bg-[#f1e6ff] text-[#4a3b5c]'
             }`}
           >
-            {m.kind === 'system' ? `🧭 ${m.text}` : m.whisper ? `🤫 ${m.text}` : !peer && !m.self ? <><b>{m.name}: </b>{m.text}</> : peer && m.self && m.dm ? <>{m.text}<span className={`ml-1.5 text-[11px] font-black ${m.ts <= readUpTo ? 'text-[#3b8fd6]' : 'text-[#2f4a5c]/50'}`} title={m.ts <= readUpTo ? 'Okundu' : 'Gönderildi'}>{m.ts <= readUpTo ? '✓✓' : '✓'}</span></> : m.text}
+            {m.kind === 'system' ? m.text : m.whisper ? m.text : !peer && !m.self ? <><b>{m.name}: </b>{m.text}</> : peer && m.self && m.dm ? <>{m.text}<span className={`ml-1.5 text-[11px] font-black ${m.ts <= readUpTo ? 'text-[#3b8fd6]' : 'text-[#2f4a5c]/50'}`} title={m.ts <= readUpTo ? 'Okundu' : 'Gönderildi'}>{m.ts <= readUpTo ? '✓✓' : '✓'}</span></> : m.text}
           </p>
           ),
         )}

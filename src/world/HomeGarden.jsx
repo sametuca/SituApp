@@ -7,6 +7,7 @@ import { CanvasTexture, Object3D, RepeatWrapping, SRGBColorSpace } from 'three'
 import { HOME_ROOM, SURFACES } from './layout'
 import Prop from './Prop'
 import { CROP_BY_ID, LAND_TIERS, MAX_LAND_TIER, clampLandTier, cropProgress, gardenPlots } from './homeGarden'
+import { screenK } from './screenK'
 
 /** Yumuşak pastel çimen dokusu: yaprak tonları, minik yonca ve kır çiçekleri (tek sefer üretilir). */
 let lawnTexCache = null
@@ -438,10 +439,10 @@ export default function HomeGarden({ plots = [], landTier = 0, isOwnHome = false
           <RoundedBox args={[0.9, 0.48, 0.08]} radius={0.04} position={[0, 0.88, 0]} castShadow>
             <meshStandardMaterial color="#fff3c4" roughness={0.5} />
           </RoundedBox>
-          <Html position={[0, 1.38, 0]} center distanceFactor={12} zIndexRange={[6, 0]} style={{ pointerEvents: 'none' }}>
-            <div className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border-2 border-white bg-[#e4f9e8] px-2.5 py-0.5 text-[11px] font-black text-[#256b3d] shadow-md">
-              <span>{nextLand.emoji} Arazi Büyüt</span>
-              <span className="rounded-full bg-[#fff3c4] px-1.5 py-[1px] text-[#8a5a00]">🪙 {nextLand.price}</span>
+          <Html position={[0, 1.48, 0]} center distanceFactor={13 * screenK()} zIndexRange={[6, 0]} style={{ pointerEvents: 'none' }}>
+            <div className="inline-flex w-max min-w-max items-center gap-2 whitespace-nowrap rounded-full border-2 border-white bg-[#e4f9e8]/95 px-3 py-1 text-[12px] leading-none font-black text-[#256b3d] shadow-md">
+              <span className="shrink-0">{nextLand.emoji} Arazi Büyüt</span>
+              <span className="shrink-0 rounded-full bg-[#fff3c4] px-2 py-0.5 text-[11px] font-black text-[#8a5a00]">₺ {nextLand.price}</span>
             </div>
           </Html>
         </group>
@@ -479,8 +480,8 @@ export default function HomeGarden({ plots = [], landTier = 0, isOwnHome = false
               setHoverIdx((h) => (h === i ? null : h))
             }}
           >
-            {/* yuvarlatılmış sedir ahşap çerçeve + köşe direkleri */}
-            <RoundedBox args={[1.58, 0.18, 1.58]} radius={0.06} smoothness={2} position={[0, 0.09, 0]} castShadow receiveShadow>
+            {/* yuvarlatılmış sedir ahşap çerçeve + köşe direkleri (toprakla çakışmayacak şekilde ayrı yükseklikte) */}
+            <RoundedBox args={[1.58, 0.15, 1.58]} radius={0.05} smoothness={2} position={[0, 0.075, 0]} receiveShadow>
               <meshStandardMaterial color={hovered ? '#e8b67d' : '#d8a26e'} roughness={0.72} />
             </RoundedBox>
             {[-0.72, 0.72].map((cx) =>
@@ -491,13 +492,13 @@ export default function HomeGarden({ plots = [], landTier = 0, isOwnHome = false
                 </mesh>
               )),
             )}
-            {/* toprak tabanı + 4 adet 3B toprak karığı */}
-            <mesh position={[0, 0.155, 0]} receiveShadow>
+            {/* toprak tabanı (y=0.145..0.195: ahşap çerçeve üstü y=0.15'in belirgin üzerinde, z-fighting olmaz) + 4 adet 3B toprak karığı */}
+            <mesh position={[0, 0.17, 0]} receiveShadow>
               <boxGeometry args={[1.34, 0.05, 1.34]} />
               <meshStandardMaterial color={soilColor} roughness={slot?.wateredAt ? 0.65 : 0.95} />
             </mesh>
             {[-0.42, -0.14, 0.14, 0.42].map((rz) => (
-              <RoundedBox key={rz} args={[1.22, 0.07, 0.18]} radius={0.03} smoothness={2} position={[0, 0.185, rz]} receiveShadow>
+              <RoundedBox key={rz} args={[1.22, 0.06, 0.18]} radius={0.025} smoothness={2} position={[0, 0.21, rz]}>
                 <meshStandardMaterial color={soilColor} roughness={slot?.wateredAt ? 0.6 : 0.92} />
               </RoundedBox>
             ))}

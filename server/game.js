@@ -12,7 +12,7 @@
 //     { t: 'exterior_set', ext }                    evin dış görünümü (features/neighborhood.js); sunucu → { t:'plot', p } (welcome: plots, myExt)
 //     { t: 'invite', to? | name? }                bir oyuncuyu evine davet et (id ya da ad)
 //     { t: 'react', e }                            kafanın üstünde emoji tepkisi (odadaki herkes görür)
-//     { t: 'whisper', to, text }                   fısıltı: yalnızca yakındaki (≤ 7 m) hedefe gider, çevre "fısıldıyor" görür
+//     { t: 'whisper', to, text }                   fısıltı: aynı odadaki hedefe gider; yakındaki çevre "fısıldıyor" görür
 //     { t: 'gesture', to, kind }                   birine jest: heart | flower | wink | wave | kiss | dance (≤ 8 m)
 //     { t: 'typing', to }                          özel sohbette "yazıyor…" göstergesi
 //     { t: 'block', id } / { t: 'unblock', key }   engelle / engeli kaldır
@@ -25,6 +25,7 @@
 //     { t: 'dnd', on }                             rahatsız etme modu
 //     { t: 'sit', seat, slot } / { t: 'pose_end' } / { t: 'poses' }      oturma (features/together.js; ayrıntı orada)
 //     { t: 'dance_invite', to } / { t: 'dance_reply', id, accept }       çift dans
+//     { t: 'meetup_invite', to, activity } / { t: 'meetup_reply', id, accept }   buluşma daveti ve yanıtı (features/dating.js)
 //     { t: 'look_set', look: {h,e,o} }             saç/göz/kıyafet rengi (palet indeksi, -1 = orijinal; features/cosmetics). join'e `look` ile ilk karakter oluşur
 //     { t: 'cos_set', acc?, pet? }                 aksesuar {id,color}|null / evcil hayvan id|null seç (features/cosmetics)
 //     { t: 'decor_set', decor } / { t: 'decor_get', owner }   ev dekoru (yalnızca sahibi yazar; bulunduğun evi okursun)
@@ -43,14 +44,13 @@
 //     { t: 'gesture', id, name, avatar, kind, emoji }  biri sana jest yaptı;  { t: 'match', id, name, avatar }: karşılıklı kalp!
 //     { t: 'typing', id }                              karşıdaki yazıyor
 //     { t: 'pose', id, pose } / { t: 'poses', list } / { t: 'dance_offer' | 'dance_cancel' | 'sit_pair' }   bkz. features/together.js
+//     { t: 'meetup_invite', id, activity, fromId, fromName } / { t: 'meetup_started', activity, venue, place }   buluşma daveti/başlangıcı (features/dating.js)
 //     { t: 'blocks', list: [{key,name}] }              engel listen;  { t: 'dnd', id, on }: birinin rahatsız etme durumu
 // Özellik modülleri (engel, profil, arkadaş, oyun…) server/features/ altındadır; bkz. features/index.js.
 //     { t: 'cos', id, cos } (+ join/room oyuncularında `cos`)    birinin aksesuarı/evcil hayvanı;  welcome: cos, gifts, decor
 //     { t: 'decor', owner, decor }  { t: 'gifts', list }  { t: 'gift_offer', offer, from, fromName, kind }
 //     profil (features/profile.js): { t:'profile_save', profile:{bio,age,city,tags} } → { t:'profile_saved', profile } ;
 //       { t:'profile', id } → { t:'profile', id, profile|null } ; welcome'a profile + profileTags (katalog) eklenir
-//     buz kırıcı: { t:'icebreaker', to } → alıcıya { t:'icebreaker', id, name, qid, q, a, b } ;
-//       { t:'icebreaker_answer', to, qid, pick:'a'|'b' } → gönderene { t:'icebreaker_answer', id, name, a, b, choice }
 //     { t: 'info', text } / { t: 'denied', reason }    kullanıcıya gösterilecek kısa mesaj
 //     { t: 'join', p } / { t: 'leave', id }
 //     { t: 'state', p: [[id, x, z, ry, animIdx], ...] }   ~10 Hz, yalnızca değişenler
@@ -79,7 +79,7 @@ import * as supa from './supa.js'
 import { user as storeUser, save as saveStore } from './store.js'
 import { sanitizeLook } from '../src/world/lookData.js'
 import { loadProfile, saveAvatar, setName, uidByName } from './auth.js'
-import { VENUE_BY_ID, isVenueRoom, venueIdOf, venueRoom } from '../src/world/venues.js'
+import { VENUE_BY_ID, VENUE_HARD_CAP, VENUE_ROOM, VENUE_SOFT_CAP, isVenueRoom, venueChannelOf, venueIdOf, venueRoom } from '../src/world/venues.js'
 
 const WORLD_HALF = 125 // dünya sınırı (±m); istemci layout.js WORLD_HALF ile aynı
 const MAX_PLAYERS = 600
@@ -87,6 +87,8 @@ const TICK_MS = 100
 const MAX_SPEED = 13 // m/sn (bisiklet 8,4; ağ gecikmesi payı dahil)
 const AOI_R = 55 // m: konum yayını ilgi alanı (500+ oyuncu için)
 const NEAR_R = 24 // m: bu mesafedekiler her tick güncellenir
+const MAX_STATE_PER_PEER = 120
+const MAX_STATE_BUFFERED = 512 * 1024
 const CHAT_RANGE = 70 // m: şehirde herkese açık sohbet/emoji yalnızca bu mesafedekilere gider
 const MAX_PAYLOAD = 144 * 1024 // yalnızca sesli mesaj (≤ 96 KB ses → ~128 KB base64) için; diğer mesajlar aşağıda 8 KB ile sınırlı
 const MAX_TEXT_PAYLOAD = 8192 // ev kaydı (40 eşya) 2 KB'ı aşabilir
@@ -97,7 +99,6 @@ const CHAT_MAX = 140
 // ---- etkileşim ----
 const REACTIONS = new Set(['❤️', '😘', '😍', '🥰', '😂', '😳', '🔥', '👋', '😉', '🥺', '💃', '🎉'])
 const GESTURES = { heart: '💗', flower: '🌸', wink: '😉', wave: '👋', kiss: '😘', dance: '💃' }
-const WHISPER_RANGE = 7 // m: fısıldamak için bu kadar yakın olmalısın
 const WITNESS_RANGE = 12 // m: bu mesafedekiler "fısıldıyor 🤫" görür (metni görmez)
 const GESTURE_RANGE = 8
 const MATCH_WINDOW_MS = 10 * 60 * 1000 // karşılıklı kalp için süre
@@ -149,6 +150,14 @@ export function attachGameServer(httpServer) {
       p.ws.send(data)
     }
   }
+  let onlineTimer = null
+  const broadcastOnline = () => {
+    if (onlineTimer) return
+    onlineTimer = setTimeout(() => {
+      onlineTimer = null
+      broadcast({ t: 'online', n: players.size })
+    }, 250)
+  }
   const dist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z)
   const inRoom = (room, exceptId) => [...players.values()].filter((p) => p.room === room && p.id !== exceptId)
 
@@ -183,18 +192,91 @@ export function attachGameServer(httpServer) {
   }
   const ownerNameOf = (key) => getHome(key)?.owner ?? [...players.values()].find((o) => o.homeKey === key)?.name ?? key
 
+  // Mekân salon (kanal) yönetimi: tek mekân 24 kişiyi geçince otomatik Salon 2/3 açılır; arkadaşlar ve eşleşmeler mümkünse aynı salonda kalır.
+  const venueChannelsOf = (vid) => {
+    const counts = new Map([[1, 0]])
+    let maxCh = 1
+    for (const o of players.values()) {
+      if (venueIdOf(o.room) !== vid) continue
+      const ch = venueChannelOf(o.room)
+      counts.set(ch, (counts.get(ch) ?? 0) + 1)
+      if (ch > maxCh) maxCh = ch
+    }
+    if ((counts.get(maxCh) ?? 0) >= VENUE_SOFT_CAP && maxCh < 20) counts.set(maxCh + 1, 0)
+    return [...counts.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([ch, count]) => ({ ch, count, cap: VENUE_SOFT_CAP }))
+  }
+  const broadcastVenueChannels = (vid, exceptId) => {
+    if (!vid) return
+    const payload = JSON.stringify({ t: 'venue_channels', venue: vid, channels: venueChannelsOf(vid) })
+    for (const o of players.values()) {
+      if (o.id === exceptId || venueIdOf(o.room) !== vid || o.ws.readyState !== 1) continue
+      o.ws.send(payload)
+    }
+  }
+  const pickVenueChannel = (p, vid, wantedCh) => {
+    const counts = new Map()
+    for (const o of players.values()) {
+      if (o.id === p.id || venueIdOf(o.room) !== vid) continue
+      const ch = venueChannelOf(o.room)
+      counts.set(ch, (counts.get(ch) ?? 0) + 1)
+    }
+    const req = Number.isInteger(wantedCh) && wantedCh >= 1 && wantedCh <= 20 ? wantedCh : null
+    if (req && (counts.get(req) ?? 0) < VENUE_HARD_CAP) return req
+    // Arkadaşlar ve eşleşmeler aynı salondaysa (aşırı dolu değilse) oraya yönlendir
+    const u = storeUser(p.key)
+    const socialKeys = new Set([...Object.keys(u?.friends ?? {}), ...Object.keys(u?.dating?.bonds ?? {})])
+    if (socialKeys.size) {
+      let bestCh = null
+      let bestCount = -1
+      for (const o of players.values()) {
+        if (o.id === p.id || venueIdOf(o.room) !== vid || !socialKeys.has(o.key)) continue
+        const ch = venueChannelOf(o.room)
+        const c = counts.get(ch) ?? 0
+        if (c < VENUE_HARD_CAP - 4 && c > bestCount) {
+          bestCh = ch
+          bestCount = c
+        }
+      }
+      if (bestCh) return bestCh
+    }
+    // En düşük numaralı uygun salon (soft cap altı)
+    for (let ch = 1; ch <= 20; ch++) {
+      if ((counts.get(ch) ?? 0) < VENUE_SOFT_CAP) return ch
+    }
+    return 1
+  }
+
   const changeRoom = (p, room) => {
     if (p.room === room) return
+    const prevVid = venueIdOf(p.room)
+    const nextVid = venueIdOf(room)
     p.graceUntil = Date.now() + 3500 // oda değişiminde konum atlayışı serbest
     emit('onRoomChange', p) // özellik modülleri (oturma/dans) eski odadaki durumunu temizler
     broadcast({ t: 'leave', id: p.id }, p.id, p.room)
     p.room = room
     p.dirty = false
+    let spawn = null
+    if (nextVid) {
+      // Giriş kapısında oyuncuların üst üste binmesini önleyen hafif dağılım
+      const jx = +(VENUE_ROOM.spawn[0] + (Math.random() - 0.5) * 2.6).toFixed(2)
+      const jz = +(VENUE_ROOM.spawn[1] + (Math.random() - 0.5) * 1.1).toFixed(2)
+      p.x = jx
+      p.z = jz
+      p.ry = Math.PI
+      p.vpos = { x: jx, z: jz, t: Date.now() }
+      spawn = [jx, jz]
+    }
     const key = room.startsWith('home:') ? room.slice(5) : null
+    const channels = nextVid ? venueChannelsOf(nextVid) : null
     send(p.ws, {
       t: 'room',
       room,
-      venue: venueIdOf(room),
+      venue: nextVid,
+      channel: nextVid ? venueChannelOf(room) : null,
+      channels,
+      spawn,
       owner: key,
       tier: key ? getTier(key) : null,
       ownerName: key ? ownerNameOf(key) : null,
@@ -202,6 +284,47 @@ export function attachGameServer(httpServer) {
       players: inRoom(room, p.id).map(publicInfo),
     })
     broadcast({ t: 'join', p: publicInfo(p) }, p.id, room)
+    if (prevVid && prevVid !== nextVid) broadcastVenueChannels(prevVid, p.id)
+    if (nextVid) broadcastVenueChannels(nextVid, p.id)
+  }
+
+  ctx.moveGroupToVenue = (group, vid) => {
+    if (!Array.isArray(group) || group.length !== 2 || !Object.hasOwn(VENUE_BY_ID, vid)) return false
+    if (group.some((p) => !p || typeof p.id !== 'string')) return false
+    if (new Set(group.map((p) => p?.id)).size !== group.length) return false
+    if (group.some((p) => players.get(p.id) !== p || p.ws.readyState !== 1)) return false
+    if (new Set(group.map((p) => p.room)).size !== 1) return false
+    if (group.every((p) => venueIdOf(p.room) === vid)) return true
+
+    const memberIds = new Set(group.map((p) => p.id))
+    const counts = new Map()
+    for (const p of players.values()) {
+      if (memberIds.has(p.id) || venueIdOf(p.room) !== vid) continue
+      const ch = venueChannelOf(p.room)
+      counts.set(ch, (counts.get(ch) ?? 0) + 1)
+    }
+
+    let channel = null
+    for (let ch = 1; ch <= 20; ch++) {
+      if ((counts.get(ch) ?? 0) + group.length <= VENUE_SOFT_CAP) {
+        channel = ch
+        break
+      }
+    }
+    if (channel === null) {
+      for (let ch = 1; ch <= 20; ch++) {
+        if ((counts.get(ch) ?? 0) + group.length <= VENUE_HARD_CAP) {
+          channel = ch
+          break
+        }
+      }
+    }
+    if (channel === null) return false
+
+    const room = venueRoom(vid, channel)
+    if (group.some((p) => !canEnter(p, room))) return false
+    for (const p of group) changeRoom(p, room)
+    return true
   }
 
   // Supabase modu: token doğrula, kullanıcı adı/avatarı profiles'tan al (istemcinin gönderdiği ad yok sayılır).
@@ -229,12 +352,14 @@ export function attachGameServer(httpServer) {
       ws: msg.__ws,
       name: ident ? ident.username : guestName,
       avatar: ident ? ident.avatar : AVATARS.has(msg.avatar) ? msg.avatar : 'zeynep',
-      // lobi meydanında, çeşmenin güneyinde rastgele bir yere doğ
+      // tüm oyuncular sahilde (plaj meydanında, SPAWN { x: 0, z: 63 }) doğar
       x: (Math.random() - 0.5) * 6,
-      z: 6 + Math.random() * 3,
+      z: 63 + Math.random() * 2,
       ry: Math.PI,
       anim: 'idle',
       dirty: false,
+      stateCursor: 0,
+      needsSync: false,
       lastChat: 0,
       room: 'city',
       uid: ident?.uid ?? null,
@@ -276,12 +401,12 @@ export function attachGameServer(httpServer) {
       online: players.size,
     })
     broadcast({ t: 'join', p: publicInfo(me) }, me.id, 'city')
-    broadcast({ t: 'online', n: players.size })
+    broadcastOnline()
     return me
   }
 
   guardLib.assertSealed() // koruma yoksa oyun sunucusu açılmaz
-  const CORE = new Set(['join', 'move', 'room', 'home_save', 'home_open', 'invite', 'react', 'whisper', 'gesture', 'typing', 'chat', 'tp'])
+  const CORE = new Set(['join', 'move', 'room', 'venue_channels', 'home_save', 'home_open', 'invite', 'react', 'whisper', 'gesture', 'typing', 'chat', 'tp'])
   wss.on('connection', (ws, req) => {
     let me = null
     let joining = false
@@ -404,15 +529,30 @@ export function attachGameServer(httpServer) {
           return
         } else me.budget -= jump
         me.vpos = { x: mx, z: mz, t: nowMs }
-        me.x = mx
-        me.z = mz
-        me.ry = num(msg.ry, 10)
-        me.anim = ANIMS.includes(msg.anim) ? msg.anim : 'idle'
-        if (me.anim === 'ride' && isVenueRoom(me.room)) me.anim = 'idle' // mekân içinde bisiklete binilmez
-        me.dirty = true
+        const nry = num(msg.ry, 10)
+        let nanim = ANIMS.includes(msg.anim) ? msg.anim : 'idle'
+        if (nanim === 'ride' && isVenueRoom(me.room)) nanim = 'idle' // mekân içinde bisiklete binilmez
+        // Yalnızca gerçek delta varsa dirty işaretle (duran/oturan oyuncularda gereksiz paket gönderme)
+        if (Math.abs(mx - me.x) >= 0.015 || Math.abs(mz - me.z) >= 0.015 || Math.abs(nry - me.ry) >= 0.03 || nanim !== me.anim) {
+          me.x = mx
+          me.z = mz
+          me.ry = nry
+          me.anim = nanim
+          me.dirty = true
+        }
         emit('onMove', me)
+      } else if (msg.t === 'venue_channels') {
+        const vid = typeof msg.id === 'string' && Object.hasOwn(VENUE_BY_ID, msg.id) ? msg.id : venueIdOf(me.room)
+        if (vid) send(ws, { t: 'venue_channels', venue: vid, channels: venueChannelsOf(vid) })
       } else if (msg.t === 'room') {
-        const room = msg.to === 'venue' ? (typeof msg.id === 'string' ? venueRoom(msg.id) : 'city') : msg.to === 'home' ? `home:${typeof msg.owner === 'string' ? homeKey(msg.owner) : me.homeKey}` : 'city'
+        let room = 'city'
+        if (msg.to === 'venue' && typeof msg.id === 'string') {
+          if (!Object.hasOwn(VENUE_BY_ID, msg.id)) return send(ws, { t: 'denied', reason: 'Bu mekân bulunamadı.' })
+          const ch = pickVenueChannel(me, msg.id, Number.isInteger(msg.ch) ? msg.ch : null)
+          room = venueRoom(msg.id, ch)
+        } else if (msg.to === 'home') {
+          room = `home:${typeof msg.owner === 'string' ? homeKey(msg.owner) : me.homeKey}`
+        }
         if (!canEnter(me, room)) return send(ws, { t: 'denied', reason: isVenueRoom(room) ? 'Bu mekân bulunamadı.' : 'Bu eve girmek için davet gerekiyor ya da ev kapalı.' })
         changeRoom(me, room)
         if (isVenueRoom(room)) {
@@ -460,8 +600,8 @@ export function attachGameServer(httpServer) {
         if (!text || now - (me.lastWhisper ?? 0) < CHAT_COOLDOWN_MS) return
         const target = typeof msg.to === 'string' ? players.get(msg.to) : null
         if (!target || target.id === me.id || target.room !== me.room) return send(ws, { t: 'info', text: 'Bu kişi artık burada değil.' })
-        if (dist(me, target) > WHISPER_RANGE) return send(ws, { t: 'info', text: `🤫 ${target.name} çok uzakta. Fısıldamak için biraz yaklaş.` })
         if (refuse(me, target, 'whisper')) return
+        if (ctx.canWhisper && !ctx.canWhisper(me, target)) return send(ws, { t: 'info', text: `🛡️ ${target.name} yalnızca arkadaşlar ve eşleşmelerden fısıltı kabul ediyor.` })
         me.lastWhisper = now
         mod.remember(me, 'fısıltı', raw)
         const w = { t: 'whisper', id: me.id, name: me.name, to: target.id, toName: target.name, text, ts: now }
@@ -528,18 +668,21 @@ export function attachGameServer(httpServer) {
 
     ws.on('close', () => {
       if (!me) return
+      const leftVid = venueIdOf(me.room)
       players.delete(me.id)
       emit('onLeave', me)
       for (const set of invites.values()) set.delete(me.id)
       for (const o of players.values()) o.hearts?.delete(me.id)
       broadcast({ t: 'leave', id: me.id }, undefined, me.room)
-      broadcast({ t: 'online', n: players.size })
+      if (leftVid) broadcastVenueChannels(leftVid)
+      broadcastOnline()
     })
     ws.on('error', () => ws.terminate())
   })
 
-  // Değişen konumlar toplu yayınılır. 500+ oyuncu için ilgi alanı (AOI): herkes yalnızca yakınındakileri alır
-  // (≤ NEAR_R her tick, NEAR_R-AOI_R arası her 4. tick), ayrıca her 2 sn'de bir yakındaki herkesin tam anlık görüntüsü gelir.
+  // Değişen konumlar 100 ms toplu delta olarak yayınlanır. 500+ oyuncu için ilgi alanı (AOI):
+  // yalnızca hareket edenler/değişenler gider (≤ NEAR_R her tick, NEAR_R-AOI_R arası her 4. tick),
+  // durağan/oturan oyuncular için her 5 sn'de bir hafif eşitleme yapılır.
   let tickNo = 0
   const profile = process.env.SITUAPP_PROFILE === '1'
   let tickMs = 0
@@ -547,7 +690,7 @@ export function attachGameServer(httpServer) {
   const tick = setInterval(() => {
     const t0 = profile ? performance.now() : 0
     tickNo++
-    const full = tickNo % 20 === 0
+    const full = tickNo % 50 === 0
     const far = tickNo % 4 === 0
     const byRoom = new Map()
     for (const p of players.values()) {
@@ -559,7 +702,7 @@ export function attachGameServer(httpServer) {
       let c = r.cells.get(key)
       if (!c) r.cells.set(key, (c = []))
       c.push(p)
-      if (p.moved) r.any = true
+      if (p.moved || p.needsSync) r.any = true
     }
     for (const r of byRoom.values()) {
       if (!r.any && !full) continue
@@ -571,22 +714,34 @@ export function attachGameServer(httpServer) {
           if (c) around.push(...c)
         }
         for (const p of list) {
+          if (p.ws.readyState !== 1) continue
+          if (p.ws.bufferedAmount > MAX_STATE_BUFFERED) {
+            p.needsSync = true
+            continue
+          }
+          const forceSync = full || p.needsSync
           const out = []
-          for (const q of around) {
-            if (q === p || (!q.moved && !full)) continue
+          let cursor = around.length ? (p.stateCursor ?? 0) % around.length : 0
+          let scanned = 0
+          while (scanned < around.length && out.length < MAX_STATE_PER_PEER) {
+            const q = around[cursor]
+            cursor = (cursor + 1) % around.length
+            scanned++
+            if (q === p || (!q.moved && !forceSync)) continue
             const dx = q.x - p.x
             const dz = q.z - p.z
             const d2 = dx * dx + dz * dz
-            if (d2 > AOI_R * AOI_R || (d2 > NEAR_R * NEAR_R && !far && !full)) continue
+            if (d2 > AOI_R * AOI_R || (d2 > NEAR_R * NEAR_R && !far && !forceSync)) continue
             if (q.entryTick !== tickNo) {
               // her oyuncunun satırı tick başına bir kez metne çevrilir, alıcılar arasında paylaşılır
               q.entryTick = tickNo
               q.entry = `["${q.id}",${Math.round(q.x * 100) / 100},${Math.round(q.z * 100) / 100},${Math.round(q.ry * 100) / 100},${ANIMS.indexOf(q.anim)}]`
             }
             out.push(q.entry)
-            if (out.length >= 120) break
           }
-          if (out.length && p.ws.readyState === 1) p.ws.send(`{"t":"state","p":[${out.join(',')}]}`)
+          p.stateCursor = cursor
+          if (p.needsSync && scanned >= around.length) p.needsSync = false
+          if (out.length) p.ws.send(`{"t":"state","p":[${out.join(',')}]}`)
         }
       }
     }

@@ -37,6 +37,7 @@ export default function npcs(ctx) {
         if (item.price > 0 && !ctx.spendCoins?.(me, item.price, 'npc_buy')) {
           return send(me.ws, { t: 'npc_buy_res', ok: false, reason: 'coins', npcId: npc.id, itemId: item.id, price: item.price })
         }
+        if (item.toInv) ctx.addInventoryItem?.(me, { id: item.id, label: item.label, emoji: item.emoji, alcohol: Boolean(item.alcohol) })
         ctx.emitEvent?.(me, 'npc_talk', 1, npc.id)
         send(me.ws, { t: 'npc_buy_res', ok: true, npcId: npc.id, itemId: item.id })
       },

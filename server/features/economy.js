@@ -6,11 +6,12 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { save, user } from '../store.js'
 import { istanbul } from './progress.js'
+import { coinBonusPct } from '../../src/world/boxing.js'
 
 // Altın hilesine karşı: (1) yalnızca sunucu verir; (2) neden başına ve toplam GÜNLÜK kazanç sınırı; (3) her işlem coins.log defterine yazılır;
-// (4) aynı IP'deki hesaplar birbirine PvP/voleybol ödülü kazandıramaz, aynı çift günde ≤ 3 ödül alır.
+// (4) aynı IP'deki hesaplar birbirine voleybol ödülü kazandıramaz, aynı çift günde ≤ 3 ödül alır.
 const LOG = path.join(process.env.SITUAPP_DATA_DIR || path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data'), 'coins.log')
-const DAILY_CAP = { dj: 400, meetup: 60, voley: 90, kale: 50, pvp: 150, hosgeldin: 100, fish: 260, post: 260, surf: 300, minigame: 350, job_crop: 260, job_fish: 260, job_post: 280, job_quest: 160, duo: 100 }
+const DAILY_CAP = { dj: 400, meetup: 60, voley: 90, kale: 50, hosgeldin: 100, fish: 260, post: 260, surf: 300, minigame: 350, boxing: 280, workout: 120, job_crop: 260, job_fish: 260, job_post: 280, job_quest: 160, duo: 100 }
 const DAILY_TOTAL = 1000
 
 const MAX_COINS = 1_000_000
@@ -38,10 +39,15 @@ export default function economy(ctx) {
     return Math.max(0, Math.min((DAILY_CAP[why] ?? 120) - (e.by[why] ?? 0), DAILY_TOTAL - e.total))
   }
   ctx.addCoins = (who, amount, why = '') => {
-    const d = Math.trunc(amount)
+    let d = Math.trunc(amount)
     if (!who?.key || !Number.isFinite(d) || d === 0) return coinsOf(who?.key)
     const u = user(who.key)
     if (d > 0) {
+      // Karizma statı pozitif altın kazançlarına bonus ekler (hoşgeldin hariç)
+      if (why && why !== 'hosgeldin') {
+        const pct = coinBonusPct(ctx.attrOf?.(who.key)?.cha ?? 0)
+        if (pct > 0) d = Math.max(d, Math.round(d * (1 + pct / 100)))
+      }
       // günlük kazanç sınırları (harcama etkilenmez)
       const day = istanbul().day
       const e = (u.stats.earned = u.stats.earned?.day === day ? u.stats.earned : { day, total: 0, by: {} })
@@ -50,7 +56,7 @@ export default function economy(ctx) {
         const p0 = who.ws ? who : [...players.values()].find((o) => o.key === who.key)
         if (p0 && !p0.capTold) {
           p0.capTold = true
-          send(p0.ws, { t: 'info', text: '🪙 Bugünkü altın kazanç sınırına ulaştın, yarın devam!' })
+          send(p0.ws, { t: 'info', text: '₺ Bugünkü TL kazanç sınırına ulaştın, yarın devam!' })
         }
         ledger(who, 0, `${why}:SINIR`, coinsOf(who.key))
         return coinsOf(who.key)

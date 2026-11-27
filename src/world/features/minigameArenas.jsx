@@ -203,7 +203,7 @@ export function RhythmArena({ seed, touch, onFinish, onExit }) {
           <span className="rounded-full bg-[#fff3c8] px-3 py-1 text-xs font-black text-[#8a5a00]">🔥 {hud.combo}x</span>
           <span className="rounded-full bg-[#dff3ff] px-3 py-1 text-xs font-black text-[#12688a]">⏱ {hud.left} sn</span>
         </div>
-        <button type="button" onClick={onExit} className="rounded-full bg-[#ffe8e8] px-3 py-1 text-xs font-black text-[#b54141]">Çık ✕</button>
+        <button type="button" onClick={onExit} className="rounded-full bg-[#ffe8e8] px-3 py-1 text-xs font-black text-[#b54141]">Çık ✖️</button>
       </div>
       <div className="relative flex-1 overflow-hidden">
         <canvas ref={cvRef} className="block h-full w-full" />
@@ -437,7 +437,7 @@ export function ColorTilesArena({ seed, touch, onFinish, onExit }) {
           </span>
           <span className="hidden rounded-full bg-[#dff3ff] px-3 py-1 text-xs font-black text-[#12688a] sm:inline-block">👥 {hud.alive}/5</span>
         </div>
-        <button type="button" onClick={onExit} className="rounded-full bg-[#ffe8e8] px-3 py-1 text-xs font-black text-[#b54141]">Çık ✕</button>
+        <button type="button" onClick={onExit} className="rounded-full bg-[#ffe8e8] px-3 py-1 text-xs font-black text-[#b54141]">Çık ✖️</button>
       </div>
       <div className="relative flex-1 overflow-hidden">
         <canvas
@@ -530,7 +530,7 @@ export function BaristaArena({ seed, onFinish, onExit }) {
             <span className="rounded-full bg-[#fff3c8] px-3 py-1 text-xs font-black text-[#8a5a00]">☕ {score} puan</span>
             <span className="rounded-full bg-[#dff3ff] px-3 py-1 text-xs font-black text-[#12688a]">⏱ {left} sn</span>
           </div>
-          <button type="button" onClick={onExit} className="rounded-full bg-[#ffe8e8] px-3 py-1 text-xs font-black text-[#b54141]">Çık ✕</button>
+          <button type="button" onClick={onExit} className="rounded-full bg-[#ffe8e8] px-3 py-1 text-xs font-black text-[#b54141]">Çık ✖️</button>
         </div>
 
         <p className="mt-3 text-xs font-extrabold text-[#8a7a9c]">{msg}</p>
@@ -749,7 +749,7 @@ export function BikeSprintArena({ seed, touch, onFinish, onExit }) {
           <span className="rounded-full bg-[#fff3c8] px-3 py-1 text-xs font-black text-[#8a5a00]">🚲 {hud.score} puan</span>
           {hud.turbo && <span className="rounded-full bg-[#ffe066] px-3 py-1 text-xs font-black text-[#7a5200]">⚡ TURBO!</span>}
         </div>
-        <button type="button" onClick={onExit} className="rounded-full bg-[#ffe8e8] px-3 py-1 text-xs font-black text-[#b54141]">Çık ✕</button>
+        <button type="button" onClick={onExit} className="rounded-full bg-[#ffe8e8] px-3 py-1 text-xs font-black text-[#b54141]">Çık ✖️</button>
       </div>
       <div className="relative flex-1 overflow-hidden">
         <canvas
@@ -924,7 +924,7 @@ export function BalloonPopArena({ seed, onFinish, onExit }) {
           <span className="rounded-full bg-[#f3e8ff] px-3 py-1 text-xs font-black text-[#5b3fa8]">🔥 {hud.combo}x</span>
           <span className="rounded-full bg-[#dff3ff] px-3 py-1 text-xs font-black text-[#12688a]">⏱ {hud.left} sn</span>
         </div>
-        <button type="button" onClick={onExit} className="rounded-full bg-[#ffe8e8] px-3 py-1 text-xs font-black text-[#b54141]">Çık ✕</button>
+        <button type="button" onClick={onExit} className="rounded-full bg-[#ffe8e8] px-3 py-1 text-xs font-black text-[#b54141]">Çık ✖️</button>
       </div>
       <div className="relative flex-1 overflow-hidden">
         <canvas

@@ -14,7 +14,12 @@ export default defineConfig({
         codeSplitting: {
           groups: [
             { name: 'three-vendor', test: /node_modules[\\/]three/ },
-            { name: 'r3f-vendor', test: /node_modules[\\/]@react-three/ },
+            { name: 'postprocessing-vendor', test: /node_modules[\\/](@react-three[\\/]postprocessing|postprocessing|n8ao)([\\/]|$)/ },
+            { name: 'r3f-vendor', test: /node_modules[\\/]@react-three[\\/](fiber|drei)([\\/]|$)/ },
+            { name: 'react-vendor', test: /node_modules[\\/](react|react-dom|scheduler)/ },
+            { name: 'router-vendor', test: /node_modules[\\/]react-router/ },
+            { name: 'supabase-vendor', test: /node_modules[\\/]@supabase|node_modules[\\/](@supabase|isows)/ },
+            { name: 'phosphor-vendor', test: /node_modules[\\/]@phosphor-icons/ },
           ],
         },
       },

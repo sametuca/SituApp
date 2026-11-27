@@ -14,20 +14,16 @@ export class AuthError extends Error {}
 // ---------- doğrulama ----------
 // Supabase `profiles.username` kısıtıyla aynı olmalı
 export const USERNAME_RE = /^[A-Za-z0-9_çğıöşüÇĞİÖŞÜ-]+$/
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
-export function validate({ mode, username, email, password, confirm, consent }) {
+export function validate({ mode, username, email, password }) {
   const errors = {}
   if (mode === 'register') {
     const u = (username ?? '').trim()
     if (u.length < 3 || u.length > 16) errors.username = 'Kullanıcı adı 3-16 karakter olmalı.'
     else if (!USERNAME_RE.test(u)) errors.username = 'Sadece harf (a-z, Türkçe harfler), rakam, tire ve alt çizgi kullan.'
-  }
-  if (!EMAIL_RE.test((email ?? '').trim())) errors.email = 'Geçerli bir e-posta gir.'
-  if (mode === 'register') {
     if ((password ?? '').length < 8) errors.password = 'Şifre en az 8 karakter olmalı.'
-    if (confirm !== password) errors.confirm = 'Şifreler eşleşmiyor.'
-    for (const k of ['terms', 'kvkk', 'transfer']) if (!consent?.[k]) errors[k] = 'Devam etmek için bu onay gerekli.'
+  } else if (!(email ?? '').trim()) {
+    errors.email = 'Kullanıcı adını veya e-postanı gir.'
   } else if (!password) {
     errors.password = 'Şifreni gir.'
   }
@@ -50,10 +46,17 @@ async function sha256(text) {
 
 const publicUser = (u) => ({ id: u.id, email: u.email, username: u.username, consent: u.consent ?? null })
 
+async function syntheticEmail(username, domain = 'example.com') {
+  const normalized = username.trim().toLowerCase()
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(normalized))
+  const hash = Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, '0')).join('').slice(0, 24)
+  return `rastla-${hash}@${domain}`
+}
+
 const demo = {
   async signUp({ email, password, username, consentRecord }) {
     const users = readJSON(DEMO_USERS_KEY, [])
-    const mail = email.trim().toLowerCase()
+    const mail = username ? await syntheticEmail(username) : email?.trim().toLowerCase()
     if (users.some((u) => u.email === mail)) throw new AuthError('Bu e-posta ile zaten bir hesap var.')
     if (users.some((u) => u.username.toLowerCase() === username.trim().toLowerCase()))
       throw new AuthError('Bu kullanıcı adı alınmış.')
@@ -64,7 +67,11 @@ const demo = {
   },
   async signIn({ email, password }) {
     const users = readJSON(DEMO_USERS_KEY, [])
-    const user = users.find((u) => u.email === email.trim().toLowerCase())
+    const login = email?.trim()
+    const mail = login?.includes('@') ? login.toLowerCase() : login ? await syntheticEmail(login) : ''
+    const user = login?.includes('@')
+      ? users.find((u) => u.email === mail)
+      : users.find((u) => u.username.toLowerCase() === login?.toLowerCase()) ?? users.find((u) => u.email === mail)
     if (!user || user.hash !== (await sha256(password))) throw new AuthError('E-posta veya şifre hatalı.')
     localStorage.setItem(DEMO_SESSION_KEY, user.id)
     return { user: publicUser(user) }
@@ -111,7 +118,7 @@ const toAuthError = (e) => {
   const msg = String(e?.message ?? '')
   if (SUPABASE_ERRORS[msg]) return new AuthError(SUPABASE_ERRORS[msg])
   if (/password should be at least|weak/i.test(msg)) return new AuthError('Şifre en az 8 karakter olmalı.')
-  if (e?.code === 'email_address_invalid') return new AuthError('Bu e-posta adresi geçersiz görünüyor.')
+  if (e?.code === 'email_address_invalid') return new AuthError('Kayıt sağlayıcısı geçici hesap adresini reddetti. Kullanıcıdan e-posta istenmiyor; Supabase Auth ayarlarını kontrol edin.')
   if (e?.code === 'weak_password') return new AuthError('Şifre çok zayıf, daha uzun/karışık bir şifre dene.')
   if (e?.status === 429 || /rate limit/i.test(msg)) return new AuthError('Çok fazla deneme. Biraz bekle.')
   return new AuthError('Bir şeyler ters gitti, tekrar dene.')
@@ -120,30 +127,36 @@ const toAuthError = (e) => {
 const toUser = (u) => (u ? { id: u.id, email: u.email, username: u.user_metadata?.username ?? u.email.split('@')[0], consent: u.user_metadata?.consent ?? null } : null)
 
 const remote = {
-  async signUp({ email, password, username, consentRecord }) {
+  async signUp({ password, username }) {
     const name = username.trim()
-    // kullanıcı adı boş mu? (sunucu tarafı RPC; tetikleyici yine de benzersizliği garanti eder)
-    const { data: free, error: rpcErr } = await supabase.rpc('username_available', { p_name: name })
-    if (!rpcErr && free === false) throw new AuthError('Bu kullanıcı adı alınmış.')
     let avatar = 'zeynep'
     try {
       avatar = JSON.parse(localStorage.getItem('situapp_avatar'))?.slug ?? 'zeynep'
     } catch {
       /* seçim yok */
     }
-    const { data, error } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-      options: { data: { username: name, avatar, consent: consentRecord ?? null }, emailRedirectTo: window.location.origin },
+    const synthetic = await syntheticEmail(name)
+    const response = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: name, password, avatar }),
     })
-    if (error) throw toAuthError(error)
-    // e-posta zaten kayıtlıysa Supabase (kullanıcı sızdırmamak için) sahte bir kullanıcı döner: identities boş
-    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) throw new AuthError('Bu e-posta ile zaten bir hesap var.')
-    // e-posta doğrulaması açıksa oturum hemen oluşmaz
-    return { user: toUser(data.user), needsConfirmation: !data.session }
+    const result = await response.json().catch(() => null)
+    if (!response.ok) {
+      throw new AuthError(result?.error ?? 'Hesap oluşturulamadı. Biraz sonra tekrar dene.')
+    }
+    const { data, error } = await supabase.auth.signInWithPassword({ email: synthetic, password })
+    if (error) throw new AuthError('Hesabın oluşturuldu ancak oturum açılamadı. Aynı kullanıcı adı ve şifreyle giriş yap.')
+    return { user: toUser(data.user), needsConfirmation: false }
   },
   async signIn({ email, password }) {
-    const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
+    const login = email.trim()
+    const accountEmail = login.includes('@') ? login : await syntheticEmail(login)
+    let { data, error } = await supabase.auth.signInWithPassword({ email: accountEmail, password })
+    if (error?.message === 'Invalid login credentials' && !login.includes('@')) {
+      const legacyEmail = await syntheticEmail(login, 'local.rastla.app')
+      if (legacyEmail !== accountEmail) ({ data, error } = await supabase.auth.signInWithPassword({ email: legacyEmail, password }))
+    }
     if (error) throw toAuthError(error)
     return { user: toUser(data.user) }
   },

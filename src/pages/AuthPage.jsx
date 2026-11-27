@@ -3,18 +3,17 @@ import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { isDemoMode, validate, AuthError } from '../lib/auth'
 import { Field, PastelBackground, ToyButton } from '../components/ui'
-import { ConsentFields, LegalLinks } from '../components/Consent'
-import { emptyConsent } from '../legal/legalTexts'
+import { LegalLinks } from '../components/Consent'
 
 // three.js yalnızca giriş ekranı çizildikten sonra yüklensin
 const AvatarPreview = lazy(() => import('../components/3d/AvatarPreview'))
 
-const EMPTY = { username: '', email: '', password: '', confirm: '', consent: emptyConsent() }
-const QUICK_LOGIN = { email: 'test@situapp.dev', password: 'situapp-test-123' }
+const EMPTY = { username: '', email: '', password: '' }
+const QUICK_LOGIN = { email: 'tester', password: 'situapp-test-123' }
 const SHOW_QUICK_LOGIN = import.meta.env.DEV && isDemoMode // production build'de kod dışarıda kalır
 
 export default function AuthPage() {
-  const { user, loading, recovery, signIn, signUp, resetPassword, updatePassword, resendConfirmation } = useAuth()
+  const { user, loading, recovery, signIn, signUp, updatePassword } = useAuth()
   const location = useLocation()
   const [mode, setMode] = useState('login') // login | register
   // Çevrimiçi sayısı: her zaman 100-150 arasında, yavaşça oynayan bir değer gösterilir (gerçek sayıdan bağımsız).
@@ -30,7 +29,6 @@ export default function AuthPage() {
   const [busy, setBusy] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [shaking, setShaking] = useState(false)
-  const [verifyEmail, setVerifyEmail] = useState('') // e-posta doğrulaması bekleniyor
   const [newPw, setNewPw] = useState({ password: '', confirm: '' })
 
   if (loading) return <PastelBackground><div className="min-h-svh" /></PastelBackground>
@@ -68,12 +66,7 @@ export default function AuthPage() {
     setBusy(true)
     try {
       if (isRegister) {
-        const res = await signUp(form)
-        if (res.needsConfirmation) {
-          setVerifyEmail(form.email.trim())
-          setMode('login')
-          setForm({ ...EMPTY, email: form.email })
-        }
+        await signUp(form)
       } else {
         await signIn(form)
       }
@@ -93,24 +86,10 @@ export default function AuthPage() {
       try {
         await signIn(QUICK_LOGIN)
       } catch {
-        await signUp({ ...QUICK_LOGIN, username: 'tester', consent: { terms: true, kvkk: true, transfer: true } })
+        await signUp({ ...QUICK_LOGIN, username: 'tester' })
       }
     } catch (err) {
       fail({}, err instanceof AuthError ? err.message : 'Hızlı giriş başarısız.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const onResend = async () => {
-    const email = verifyEmail || form.email
-    if (!email.trim()) return fail({ email: 'Önce e-postanı yaz.' })
-    setBusy(true)
-    try {
-      setNotice(await resendConfirmation(email))
-      setFormError('')
-    } catch (err) {
-      fail({}, err.message)
     } finally {
       setBusy(false)
     }
@@ -132,30 +111,20 @@ export default function AuthPage() {
     }
   }
 
-  const onForgot = async () => {
-    if (!form.email.trim()) return fail({ email: 'Önce e-postanı yaz.' })
-    try {
-      setNotice(await resetPassword(form.email))
-      setFormError('')
-    } catch (err) {
-      fail({}, err.message)
-    }
-  }
-
   return (
     <PastelBackground>
       <main className="mx-auto flex min-h-svh w-full max-w-[390px] flex-col items-center justify-center px-4 py-3 sm:py-4">
         {/* marka */}
         <header className="animate-pop flex flex-col items-center text-center">
-          <h1 className="sr-only">SituApp</h1>
+          <h1 className="sr-only">Rastla</h1>
           <img
             src="/logo.png"
-            alt="SituApp"
+            alt="Rastla"
             draggable={false}
             className="mx-auto h-14 w-auto select-none drop-shadow-[0_6px_14px_rgba(74,59,92,0.18)] sm:h-16"
           />
           <p className="mt-1 text-xs font-bold tracking-wide text-ink-soft">
-            Avatarını seç. Mekânı bul. Bağlantını kur. 💫
+            Hayatının aşkına rastla. 💫
           </p>
           <div className="mt-1.5 flex items-center justify-center gap-2">
             <span className="inline-block rounded-full border-2 border-white bg-[#fff3c8] px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-[#8a5a00] shadow-soft">
@@ -197,22 +166,6 @@ export default function AuthPage() {
                 Şifremi Kaydet
               </ToyButton>
             </form>
-          ) : verifyEmail ? (
-            <div className="flex flex-col items-center gap-3 text-center" role="status">
-              <div className="text-5xl">💌</div>
-              <h2 className="text-lg font-black text-ink">E-postanı doğrula</h2>
-              <p className="text-xs font-semibold text-ink-soft">
-                <b className="text-ink">{verifyEmail}</b> adresine bir doğrulama bağlantısı gönderdik. Bağlantıya dokun, sonra buradan giriş yap. Gelmediyse gereksiz klasörüne de bak.
-              </p>
-              {notice && <p className="rounded-xl bg-candy-mint/50 px-3 py-2 text-xs font-bold text-ink">{notice}</p>}
-              {formError && <p role="alert" className="rounded-xl bg-candy-pink/30 px-3 py-2 text-xs font-bold text-candy-pink-dark">{formError}</p>}
-              <ToyButton type="button" loading={busy} onClick={onResend} className="!py-2.5 !text-base">
-                Yeniden gönder
-              </ToyButton>
-              <button type="button" onClick={() => { setVerifyEmail(''); setNotice(''); setFormError('') }} className="text-xs font-extrabold text-candy-pink-dark hover:underline">
-                Giriş ekranına dön
-              </button>
-            </div>
           ) : (
             <>
           {/* sekmeler */}
@@ -251,18 +204,19 @@ export default function AuthPage() {
                 error={errors.username}
               />
             )}
-            <Field
-              compact
-              id="email"
-              label="E-posta"
-              icon="✉️"
-              type="email"
-              autoComplete="email"
-              placeholder="sen@ornek.com"
-              value={form.email}
-              onChange={set('email')}
-              error={errors.email}
-            />
+            {!isRegister ? (
+              <Field
+                compact
+                id="email"
+                label="Kullanıcı adı veya e-posta"
+                icon="🧸"
+                autoComplete="username"
+                placeholder="kullanıcı adın"
+                value={form.email}
+                onChange={set('email')}
+                error={errors.email}
+              />
+            ) : null}
             <Field
               compact
               id="password"
@@ -285,30 +239,6 @@ export default function AuthPage() {
                 </button>
               }
             />
-            {isRegister && (
-              <>
-                <Field
-                  compact
-                  id="confirm"
-                  label="Şifre (tekrar)"
-                  icon="🔒"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  placeholder="şifreni tekrar yaz"
-                  value={form.confirm}
-                  onChange={set('confirm')}
-                  error={errors.confirm}
-                />
-                <ConsentFields value={form.consent} onChange={(consent) => setForm((f) => ({ ...f, consent }))} errors={errors} />
-              </>
-            )}
-
-            {!isRegister && (
-              <button type="button" onClick={onForgot} className="-mt-1 self-end text-[11px] font-bold text-candy-lilac-deep hover:underline">
-                Şifremi unuttum
-              </button>
-            )}
-
             {(formError || notice) && (
               <div aria-live="polite">
                 {formError && (
@@ -317,17 +247,17 @@ export default function AuthPage() {
                   </p>
                 )}
                 {notice && <p className="rounded-xl bg-candy-mint/50 px-3 py-1.5 text-xs font-bold text-ink">{notice}</p>}
-                {/doğrulaman/.test(formError) && (
-                  <button type="button" onClick={onResend} className="mt-1.5 text-xs font-extrabold text-candy-lilac-deep hover:underline">
-                    Doğrulama e-postasını yeniden gönder
-                  </button>
-                )}
               </div>
             )}
 
             <ToyButton type="submit" loading={busy} className="mt-0.5 !py-2.5 !text-base">
               {isRegister ? 'Hesap Oluştur' : 'Dünyaya Gir'}
             </ToyButton>
+            {isRegister && (
+              <p className="px-1 text-center text-[11px] font-semibold leading-4 text-ink-soft">
+                Bilgilerini kaybetmek istemiyorsan kullanıcı adını ve şifreni sakla.
+              </p>
+            )}
           </form>
 
           <p className="mt-3 text-center text-xs font-semibold text-ink-soft">
@@ -360,9 +290,6 @@ export default function AuthPage() {
             🧪 Demo modu: hesapların yalnızca bu tarayıcıda saklanır.
           </p>
         )}
-        <a href="/studio" className="mt-2 text-[11px] font-bold text-ink-soft/50 hover:text-ink-soft">
-          studio
-        </a>
       </main>
     </PastelBackground>
   )

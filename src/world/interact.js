@@ -49,7 +49,6 @@ export const GESTURES = [
 ]
 export const GESTURE_BY_KIND = Object.fromEntries(GESTURES.map((g) => [g.kind, g]))
 
-export const WHISPER_RANGE = 7 // m (sunucuyla aynı)
 export const GESTURE_RANGE = 8 // m
 
 /** Sohbet kutusundaki emoji seçici. */

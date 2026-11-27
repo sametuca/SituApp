@@ -17,10 +17,33 @@ async function writeManifest(list) {
   await writeFile(MANIFEST_FILE, JSON.stringify(list, null, 2))
 }
 
-async function download(url, dest) {
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`İndirme başarısız (${res.status}): ${url}`)
-  await writeFile(dest, Buffer.from(await res.arrayBuffer()))
+// SSRF koruması: yalnızca bilinen asset kaynaklarından ve yalnızca https indirilebilir.
+// Yönlendirmeler sonrası nihai adres de doğrulanır (açık yönlendirme ile iç ağa sızmaya karşı).
+const ALLOWED_HOSTS = [/(^|\.)meshy\.ai$/i, /(^|\.)meshyusercontent\.com$/i, /(^|\.)supabase\.co$/i, /(^|\.)supabase\.in$/i]
+const MAX_BYTES = 60 * 1024 * 1024
+
+function assertSafeUrl(raw, what = 'URL') {
+  let u
+  try {
+    u = new URL(String(raw))
+  } catch {
+    throw new Error(`${what} geçersiz: ${raw}`)
+  }
+  if (u.protocol !== 'https:') throw new Error(`${what} yalnızca https olabilir.`)
+  if (!ALLOWED_HOSTS.some((re) => re.test(u.hostname))) throw new Error(`${what} alan adına izin verilmiyor: ${u.hostname}`)
+  return u
+}
+
+async function download(rawUrl, dest) {
+  const u = assertSafeUrl(rawUrl, 'Dosya adresi')
+  const res = await fetch(u, { redirect: 'follow', signal: AbortSignal.timeout(120_000) })
+  if (!res.ok) throw new Error(`İndirme başarısız (${res.status}): ${u.hostname}`)
+  assertSafeUrl(res.url, 'Yönlendirilen adres')
+  const declared = Number(res.headers.get('content-length') ?? 0)
+  if (declared > MAX_BYTES) throw new Error('Dosya çok büyük (üst sınır 60 MB).')
+  const buf = Buffer.from(await res.arrayBuffer())
+  if (buf.length > MAX_BYTES) throw new Error('Dosya çok büyük (üst sınır 60 MB).')
+  await writeFile(dest, buf)
 }
 
 const safe = (s) => String(s).toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '')
