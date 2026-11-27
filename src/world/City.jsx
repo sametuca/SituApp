@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { screenK } from './screenK'
 import { useFrame, useLoader } from '@react-three/fiber'
-import { CanvasTexture, Color, DoubleSide, Object3D, ExtrudeGeometry, ShaderMaterial, Shape, RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
+import { AdditiveBlending, CanvasTexture, Color, DoubleSide, PlaneGeometry, Object3D, ExtrudeGeometry, ShaderMaterial, Shape, RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
 import { Html, RoundedBox } from '@react-three/drei'
 import { BEACH, BUILDINGS, GAP, GAZEBO, ISLAND, PIER, PLAY_BOUNDS, PLAZA_R, PROPS, RIM, RING, ROAD_END, ROAD_HALF, ROAD_START, SPEED_RING_POS, TOWELS } from './layout'
 import { CULL_R, playerPos, useCull } from './cull'
@@ -690,6 +690,67 @@ function Buoys() {
   )
 }
 
+// Güneş yolu: güneşin tam karşı yönünde, oyuncudan ufka uzanan, denizde titreşen altın parıltı şeridi (alçak güneşte güçlü, geceleyin ay yakamozuna devreder)
+const GLITTER_L = 420
+const glitterMat = () =>
+  new ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    blending: AdditiveBlending,
+    toneMapped: false,
+    uniforms: { uT: { value: 0 }, uK: { value: 0 }, uCol: { value: new Color('#ffd27a') } },
+    vertexShader: 'varying vec2 vUv; varying vec2 vW; void main(){ vUv = uv; vec4 w = modelMatrix * vec4(position,1.0); vW = w.xz; gl_Position = projectionMatrix * viewMatrix * w; }',
+    fragmentShader: `
+      varying vec2 vUv; varying vec2 vW; uniform float uT; uniform float uK; uniform vec3 uCol;
+      float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      void main(){
+        float d = vUv.y * ${GLITTER_L.toFixed(1)};
+        float hw = 9.0 + d * 0.22;
+        float u = (vUv.x - 0.5) * 240.0 / hw;
+        u += sin(vW.y * 0.17 + uT * 0.8) * 0.10 + sin(vW.x * 0.11 - uT * 0.6) * 0.06;
+        float band = exp(-u * u * 2.4);
+        float along = smoothstep(0.0, 0.07, vUv.y) * (1.0 - smoothstep(0.55, 1.0, vUv.y));
+        vec2 cell = floor(vW * 0.55);
+        float ph = h(cell) * 6.2831;
+        float tw = 0.5 + 0.5 * sin(uT * (1.6 + h(cell + 3.0) * 2.4) + ph);
+        float spark = smoothstep(0.62, 1.0, h(cell + 7.0)) * tw;
+        float a = (band * 0.16 + band * band * spark * 0.95) * along * uK;
+        gl_FragColor = vec4(uCol * a, a);
+      }`,
+  })
+
+function SunGlitter() {
+  const grp = useRef()
+  const mat = useMemo(glitterMat, [])
+  const geo = useMemo(() => {
+    const g = new PlaneGeometry(240, GLITTER_L)
+    g.translate(0, GLITTER_L / 2, 0)
+    return g
+  }, [])
+  useEffect(() => () => (mat.dispose(), geo.dispose()), [mat, geo])
+  useFrame(({ clock }) => {
+    const g = grp.current
+    if (!g) return
+    const dx = skyLive.dir.x
+    const dz = skyLive.dir.z
+    const night = Number.isFinite(worldClock.night) ? worldClock.night : 0
+    const sunset = Number.isFinite(worldClock.sunset) ? worldClock.sunset : 0
+    const low = 1 - Math.min(1, Math.max(0, (skyLive.dir.y - 0.25) / 0.7)) // güneş alçaldıkça güçlenir
+    const k = (1 - night) * (0.35 + 0.65 * Math.max(low, sunset)) * (1 - 0.7 * (skyLive.over ?? 0))
+    g.visible = k > 0.02 && Math.hypot(dx, dz) > 0.05
+    if (!g.visible) return
+    g.position.set(playerPos.x, -0.012, playerPos.z)
+    g.rotation.y = Math.atan2(-dx, -dz)
+    mat.uniforms.uT.value = clock.elapsedTime
+    mat.uniforms.uK.value = k
+  })
+  return (
+    <group ref={grp} visible={false}>
+      <mesh geometry={geo} material={mat} rotation={[-Math.PI / 2, 0, 0]} renderOrder={2} frustumCulled={false} />
+    </group>
+  )
+}
+
 function Sea() {
   const water = useLoader(TextureLoader, '/textures/water.webp')
   const foam = useLoader(TextureLoader, '/textures/foam.webp')
@@ -782,6 +843,7 @@ function Sea() {
         <planeGeometry args={[2200, 2200]} />
         <meshBasicMaterial ref={mat2} map={swell} transparent opacity={0.18} depthWrite={false} />
       </mesh>
+      <SunGlitter />
       {/* Yaz akşamı denizde ay ışığı yakamozu */}
       <mesh ref={moonPath} position={[14, -0.015, ISLAND.z1 + 58]} rotation={[-Math.PI / 2, 0, -0.22]} visible={false}>
         <planeGeometry args={[18, 95]} />
