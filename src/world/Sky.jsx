@@ -55,7 +55,7 @@ const KEYS = {
   night: { bg: C('#1f2659'), fog: C('#2c356e'), sun: C('#ffe6b8'), sunI: 0.68, amb: C('#9aaaf5'), ambI: 0.44, hs: C('#8ea3ff'), hg: C('#7a5d7e'), hI: 0.58, fn: 64, ff: 185 },
   dawn: { bg: C('#ffd9b0'), fog: C('#ffe6c8'), sun: C('#ffba85'), sunI: 1.08, amb: C('#ffeedb'), ambI: 0.38, hs: C('#ffe4c4'), hg: C('#f5d4b0'), hI: 0.68, fn: 72, ff: 195 },
   day: { bg: C('#a9dcff'), fog: C('#c2e7ff'), sun: C('#ffffff'), sunI: 1.65, amb: C('#ffffff'), ambI: 0.48, hs: C('#f2f9ff'), hg: C('#ffe9d6'), hI: 0.85, fn: 78, ff: 210 },
-  dusk: { bg: C('#ff9f78'), fog: C('#ffbca0'), sun: C('#ff945e'), sunI: 1.18, amb: C('#ffd0ba'), ambI: 0.42, hs: C('#ffc4a8'), hg: C('#cfa0e6'), hI: 0.66, fn: 70, ff: 190 },
+  dusk: { bg: C('#ffb08a'), fog: C('#ffcaa2'), sun: C('#ff945e'), sunI: 1.18, amb: C('#ffd0ba'), ambI: 0.42, hs: C('#ffc4a8'), hg: C('#cfa0e6'), hI: 0.66, fn: 70, ff: 190 },
   dusk2: { bg: C('#5f4396'), fog: C('#785aa8'), sun: C('#ffd4a3'), sunI: 0.84, amb: C('#bfa8f2'), ambI: 0.44, hs: C('#b096eb'), hg: C('#8a629c'), hI: 0.58, fn: 66, ff: 185 },
 }
 const FRAMES = [
@@ -675,8 +675,11 @@ const ZENITH_DAY = new Color('#3694f5')
 const MID_DAY = new Color('#86d2ff')
 const ZENITH_NIGHT = new Color('#161b4f')
 const MID_NIGHT = new Color('#2e3878')
-const ZENITH_DUSK = new Color('#7e57c2')
-const MID_DUSK = new Color('#ff9e7d')
+const ZENITH_DUSK = new Color('#78b0f2') // gündüzden kalan açık mavi
+const MID_DUSK = new Color('#ffb59a') // şeftali-pembe
+const LILAC_DAY = new Color('#5aa9f8')
+const LILAC_DUSK = new Color('#c4a8ec') // yumuşak leylak
+const LILAC_NIGHT = new Color('#232a6e')
 
 /** Atmosferik 3 katmanlı gökyüzü + güneş saçılımı + rüzgârda süzülen yumuşak pastel bulutlar (tek shader, 0 doku). */
 function SkyDome() {
@@ -690,6 +693,8 @@ function SkyDome() {
         uniforms: {
           uTop: { value: new Color('#3694f5') },
           uMid: { value: new Color('#86d2ff') },
+          uLilac: { value: new Color('#6fb4fb') },
+          uSunset: { value: 0 },
           uHorizon: { value: new Color('#dff2ff') },
           uSunDir: { value: new Vector3(0.5, 0.72, 0.35).normalize() },
           uSunCol: { value: new Color('#fff3cc') },
@@ -707,6 +712,8 @@ function SkyDome() {
         fragmentShader: `
           uniform vec3 uTop;
           uniform vec3 uMid;
+          uniform vec3 uLilac;
+          uniform float uSunset;
           uniform vec3 uHorizon;
           uniform vec3 uSunDir;
           uniform vec3 uSunCol;
@@ -747,8 +754,13 @@ function SkyDome() {
             float h = clamp(d.y, 0.0, 1.0);
 
             // 3 katmanlı atmosferik gradyan (ufuk → orta gök → derin tepe)
-            vec3 sky = mix(uHorizon, uMid, smoothstep(0.0, 0.32, h));
-            sky = mix(sky, uTop, smoothstep(0.22, 0.88, h));
+            // yaz akşamı: ufukta şeftali/altın → şeftali-pembe → leylak → gündüzden kalan açık mavi/camgöbeği
+            vec3 sky = mix(uHorizon, uMid, smoothstep(0.0, 0.2, h));
+            sky = mix(sky, uLilac, smoothstep(0.1, 0.46, h));
+            sky = mix(sky, uTop, smoothstep(0.34, 0.95, h));
+            // güneşe bakan ufukta altın parlama (turuncuya boğmadan, yalnızca dar bir bantta)
+            float sd0 = max(dot(normalize(vec3(d.x, 0.0, d.z) + vec3(1e-4)), normalize(vec3(uSunDir.x, 0.0, uSunDir.z) + vec3(1e-4))), 0.0);
+            sky = mix(sky, vec3(1.0, 0.82, 0.55), pow(1.0 - h, 7.0) * (0.25 + 0.55 * pow(sd0, 3.0)) * uSunset);
 
             // Ufukta sıcak güneşli pastel parlaklık
             float horizonBand = pow(1.0 - h, 5.5) * (1.0 - uNight * 0.8);
@@ -797,6 +809,8 @@ function SkyDome() {
     const sun = sunsetAt(skyLive.hour)
     tmpZ.copy(ZENITH_DAY).lerp(ZENITH_DUSK, sun).lerp(ZENITH_NIGHT, night)
     tmpM.copy(MID_DAY).lerp(MID_DUSK, sun).lerp(MID_NIGHT, night)
+    mat.uniforms.uLilac.value.copy(LILAC_DAY).lerp(LILAC_DUSK, sun).lerp(LILAC_NIGHT, night)
+    mat.uniforms.uSunset.value = sun * (1 - night)
     mat.uniforms.uTop.value.copy(tmpZ)
     mat.uniforms.uMid.value.copy(tmpM)
     mat.uniforms.uSunDir.value.copy(skyLive.dir)
