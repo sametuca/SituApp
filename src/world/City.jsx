@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { screenK } from './screenK'
 import { useFrame, useLoader } from '@react-three/fiber'
-import { CanvasTexture, Color, DataTexture, DoubleSide, MeshStandardMaterial, Object3D, ExtrudeGeometry, ShaderMaterial, Shape, LinearFilter, RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
+import { CanvasTexture, Color, DoubleSide, Object3D, ExtrudeGeometry, ShaderMaterial, Shape, RepeatWrapping, SRGBColorSpace, TextureLoader } from 'three'
 import { Html, RoundedBox } from '@react-three/drei'
-import { BEACH, BLANKETS, BUILDINGS, GAP, GAZEBO, ISLAND, PIER, PLAY_BOUNDS, PLAZA_R, PROPS, RIM, RING, ROAD_END, ROAD_HALF, ROAD_START, SPEED_RING_POS, TOWELS } from './layout'
+import { BEACH, BUILDINGS, GAP, GAZEBO, ISLAND, PIER, PLAY_BOUNDS, PLAZA_R, PROPS, RIM, RING, ROAD_END, ROAD_HALF, ROAD_START, SPEED_RING_POS, TOWELS } from './layout'
 import { CULL_R, playerPos, useCull } from './cull'
 import Facade from './Facade'
 import { facadeOf } from './facadeData'
@@ -16,7 +16,9 @@ import { RoadCurbs, RoadDetails, RoadMarkings } from './RoadInfrastructure'
 import { Em } from '../components/emoji'
 import { SKY_MATS, skyLive } from './Sky'
 import { worldClock } from './worldClock'
-import { getPuffyGrassPair, getPuffyPaverPair, getPuffySandPair, getPuffyShinglePair, getWallPair } from './pastelTex'
+import { Flat, Ring, TexRing } from './CityGround'
+import { q, sharedTexture, stdMat } from './CityGroundUtils'
+import { getPuffyShinglePair, getWallPair } from './pastelTex'
 
 const FACING = { s: 0, n: Math.PI, e: Math.PI / 2, w: -Math.PI / 2 }
 
@@ -24,226 +26,6 @@ const FACING = { s: 0, n: Math.PI, e: Math.PI / 2, w: -Math.PI / 2 }
 const Y = { floor: 0.02, sidewalk: 0.04, road: 0.06, plaza: 0.08, mark: 0.1 }
 
 // Doku önbelleği: aynı (doku, tekrar, kaydırma) için tek Texture nesnesi (her bina/parça için ayrı klon GPU'ya ayrı yüklenir; 70 bina × 4 yüz = yüzlerce yükleme).
-const texCache = new Map()
-function sharedTexture(base, key, setup) {
-  const k = `${base.uuid}|${key}`
-  let t = texCache.get(k)
-  if (!t) {
-    t = base.clone()
-    t.wrapS = t.wrapT = RepeatWrapping
-    t.colorSpace = SRGBColorSpace
-    t.anisotropy = 8
-    setup(t)
-    t.needsUpdate = true
-    texCache.set(k, t)
-  }
-  return t
-}
-const matCache = new Map()
-function stdMat(color, roughness = 0.6) {
-  const k = `${color}|${roughness}`
-  let m = matCache.get(k)
-  if (!m) {
-    m = new MeshStandardMaterial({ color, roughness })
-    matCache.set(k, m)
-  }
-  return m
-}
-const q = (v, s = 0.25) => Math.max(s, Math.round(v / s) * s) // tekrar sayısını yuvarla (önbellek isabeti)
-
-// Yer dokuları (Meshy ile üretilen üstten bakış desenler, scripts/make-tileable.py ile döşenebilir yapıldı): public/textures/<ad>.webp
-export const GROUND_TEX = { grass: 4.5, asphalt: 4.8, cobble: 3.2, sand: 4 } // doku adı → bir kiremitin kapladığı metre
-export const GROUND_URLS = Object.keys(GROUND_TEX).map((n) => `/textures/${n}.webp`)
-
-// Zenginleştirilmiş asfalt dokusu + kabartma haritası (düz leylak şerit yerine tanecikli, güneşle tepki veren pastel asfalt)
-let asphaltPair = null
-function getAsphaltPair() {
-  if (asphaltPair) return asphaltPair
-  const N = 512
-  const cv = document.createElement('canvas')
-  cv.width = cv.height = N
-  const g = cv.getContext('2d')
-  const bcv = document.createElement('canvas')
-  bcv.width = bcv.height = N
-  const bg = bcv.getContext('2d')
-
-  // temel ton: sıcak pastel arduvaz-leylak (binalar ve kaldırımlarla uyumlu, belirgin kontrast)
-  g.fillStyle = '#8b8399'
-  g.fillRect(0, 0, N, N)
-  bg.fillStyle = '#808080'
-  bg.fillRect(0, 0, N, N)
-
-  let seed = 4219
-  const rand = () => {
-    seed = (seed * 1664525 + 1013904223) >>> 0
-    return seed / 4294967296
-  }
-  const wrapDot = (ctx, x, y, r, fill) => {
-    ctx.fillStyle = fill
-    for (const ox of [-N, 0, N]) {
-      if (x + ox + r < 0 || x + ox - r > N) continue
-      for (const oy of [-N, 0, N]) {
-        if (y + oy + r < 0 || y + oy - r > N) continue
-        ctx.beginPath()
-        ctx.arc(x + ox, y + oy, r, 0, Math.PI * 2)
-        ctx.fill()
-      }
-    }
-  }
-
-  // yumuşak organik asfalt ton geçişleri
-  for (let i = 0; i < 42; i++) {
-    const x = rand() * N
-    const y = rand() * N
-    const r = 28 + rand() * 58
-    const dark = rand() > 0.45
-    wrapDot(g, x, y, r, dark ? 'rgba(92,84,110,0.12)' : 'rgba(182,175,198,0.10)')
-  }
-
-  // ince agrega / çakıl tanecikleri (hem renk hem kabartma haritası)
-  for (let i = 0; i < 4800; i++) {
-    const x = rand() * N
-    const y = rand() * N
-    const sz = 1 + rand() * 2.2
-    const v = rand()
-    if (v < 0.48) {
-      g.fillStyle = 'rgba(72,66,86,0.34)'
-      bg.fillStyle = 'rgba(60,60,60,0.45)'
-    } else if (v < 0.86) {
-      g.fillStyle = 'rgba(218,212,230,0.30)'
-      bg.fillStyle = 'rgba(205,205,205,0.42)'
-    } else {
-      g.fillStyle = 'rgba(246,238,228,0.38)'
-      bg.fillStyle = 'rgba(240,240,240,0.5)'
-    }
-    g.fillRect(x, y, sz, sz)
-    bg.fillRect(x, y, sz, sz)
-  }
-
-  // çok ince kılcal yüzey dokusu çizgileri
-  g.strokeStyle = 'rgba(72,66,88,0.14)'
-  g.lineWidth = 1.2
-  for (let i = 0; i < 6; i++) {
-    let x = rand() * N
-    let y = rand() * N
-    g.beginPath()
-    g.moveTo(x, y)
-    for (let s = 0; s < 5; s++) {
-      x += (rand() - 0.5) * 44
-      y += (rand() - 0.5) * 44
-      g.lineTo(x, y)
-    }
-    g.stroke()
-  }
-
-  const map = new CanvasTexture(cv)
-  map.wrapS = map.wrapT = RepeatWrapping
-  map.colorSpace = SRGBColorSpace
-  map.anisotropy = 4
-  const bump = new CanvasTexture(bcv)
-  bump.wrapS = bump.wrapT = RepeatWrapping
-  bump.anisotropy = 4
-  asphaltPair = { map, bump }
-  return asphaltPair
-}
-
-// Yumuşak kenar: alt zeminle karışsın diye alfa haritası (kenara `feather` m kala saydamlaşır). Keskin geçişler "2006 oyunu" gibi duruyordu.
-const featherCache = new Map()
-function featherTexture(w, d, f, round) {
-  const key = `${round ? `r${round}` : `${w}x${d}`}|${f}`
-  let t = featherCache.get(key)
-  if (t) return t
-  const N = 96
-  const data = new Uint8Array(N * N * 4)
-  for (let j = 0; j < N; j++) {
-    for (let i = 0; i < N; i++) {
-      const u = (i + 0.5) / N
-      const v = (j + 0.5) / N
-      let edge
-      if (round) edge = (1 - Math.hypot(u - 0.5, v - 0.5) * 2) * round // dairesel: merkezden uzaklık
-      else edge = Math.min(u * w, (1 - u) * w, v * d, (1 - v) * d)
-      const x = Math.max(0, Math.min(1, edge / f))
-      const a = Math.round(255 * x * x * (3 - 2 * x))
-      const k = (j * N + i) * 4
-      data[k] = data[k + 1] = data[k + 2] = a
-      data[k + 3] = 255
-    }
-  }
-  t = new DataTexture(data, N, N)
-  t.minFilter = t.magFilter = LinearFilter
-  t.needsUpdate = true
-  featherCache.set(key, t)
-  return t
-}
-
-/** tex: GROUND_TEX adı. Doku dünya ölçüsünde döşenir (kiremit boyu metre), renk tonu `color` ile çarpılır (pastel ton). feather: kenar yumuşatma (m). */
-function Flat({ x = 0, z = 0, w, d, y, color = '#ffffff', round, tex, feather = 0 }) {
-  const loaded = useLoader(TextureLoader, `/textures/${tex ?? 'grass'}.webp`)
-  const isAsphalt = tex === 'asphalt'
-  const isSand = tex === 'sand'
-  const isCobble = tex === 'cobble'
-  const isGrass = tex === 'grass'
-  const pair = isAsphalt ? getAsphaltPair() : isSand ? getPuffySandPair() : isCobble ? getPuffyPaverPair() : isGrass ? getPuffyGrassPair() : null
-  const base = pair ? pair.map : loaded
-  const { map, bumpMap } = useMemo(() => {
-    if (!tex) return { map: null, bumpMap: null }
-    const m = GROUND_TEX[tex]
-    const rx = Math.round(((round ? round * 2 : w) / m) * 20) / 20
-    const ry = Math.round(((round ? round * 2 : d) / m) * 20) / 20
-    const ox = Math.round((((x / m) % 1) + 1) * 20) / 20 % 1
-    const oy = Math.round((((-z / m) % 1) + 1) * 20) / 20 % 1
-    const key = `f${rx}|${ry}|${ox}|${oy}`
-    const setup = (t) => {
-      t.repeat.set(rx, ry)
-      t.offset.set(ox, oy) // komşu parçalarda desen aynı hizadan devam etsin
-    }
-    return {
-      map: sharedTexture(base, key, setup),
-      bumpMap: pair ? sharedTexture(pair.bump, `b${key}`, setup) : null,
-    }
-  }, [base, pair, tex, w, d, round, x, z])
-  const alpha = useMemo(() => (feather > 0 ? featherTexture(round ? round * 2 : w, round ? round * 2 : d, feather, round ? round * 2 : 0) : null), [feather, w, d, round])
-  return (
-    <mesh position={[x, y, z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow renderOrder={alpha ? 1 : 0}>
-      {round ? <circleGeometry args={[round, 64]} /> : <planeGeometry args={[w, d]} />}
-      <meshStandardMaterial color={color} map={map} bumpMap={bumpMap} bumpScale={isAsphalt ? 0.032 : isSand ? 0.028 : isGrass ? 0.026 : isCobble ? 0.024 : 0} alphaMap={alpha} transparent={Boolean(alpha)} depthWrite={!alpha} roughness={isAsphalt ? 0.82 : isSand ? 0.76 : isCobble ? 0.8 : 0.88} />
-    </mesh>
-  )
-}
-
-/** Dokulu halka (dönel kavşak asfaltı / kaldırımı): ringGeometry UV'si tüm halkaya tek kez sarılır → tekrar sayısı çapa göre. */
-function TexRing({ r0, r1, y, tex, color = '#ffffff' }) {
-  const loaded = useLoader(TextureLoader, `/textures/${tex}.webp`)
-  const isAsphalt = tex === 'asphalt'
-  const isCobble = tex === 'cobble'
-  const pair = isAsphalt ? getAsphaltPair() : isCobble ? getPuffyPaverPair() : null
-  const base = pair ? pair.map : loaded
-  const { map, bumpMap } = useMemo(() => {
-    const m = GROUND_TEX[tex]
-    const rep = Math.round(((r1 * 2) / m) * 10) / 10
-    const setup = (t) => t.repeat.set(rep, rep)
-    return {
-      map: sharedTexture(base, `ring${rep}`, setup),
-      bumpMap: pair ? sharedTexture(pair.bump, `bring${rep}`, setup) : null,
-    }
-  }, [base, pair, tex, r1])
-  return (
-    <mesh position={[0, y, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-      <ringGeometry args={[r0, r1, 96]} />
-      <meshStandardMaterial color={color} map={map} bumpMap={bumpMap} bumpScale={isAsphalt ? 0.032 : isCobble ? 0.02 : 0} roughness={isAsphalt ? 0.84 : isCobble ? 0.85 : 0.95} />
-    </mesh>
-  )
-}
-
-function Ring({ r0, r1, y, color }) {
-  return (
-    <mesh position={[0, y, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      <ringGeometry args={[r0, r1, 64]} />
-      <meshStandardMaterial color={color} roughness={0.9} />
-    </mesh>
-  )
-}
-
 const LABEL_RANGE = 34 // m: bundan uzaktaki bina pinleri gizlenir
 const LABEL_NAME_RANGE = 15 // m: bundan yakında pinin adı da açılır
 

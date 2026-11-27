@@ -290,9 +290,6 @@ export default function AuthPage() {
             🧪 Demo modu: hesapların yalnızca bu tarayıcıda saklanır.
           </p>
         )}
-        <a href="/studio" className="mt-2 text-[11px] font-bold text-ink-soft/50 hover:text-ink-soft">
-          studio
-        </a>
       </main>
     </PastelBackground>
   )

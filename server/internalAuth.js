@@ -8,6 +8,7 @@ import crypto from 'node:crypto'
 import dotenv from 'dotenv'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { ipOf } from './guard.js'
 
 // index.js'ten önce yüklenir (ESM); .env değerleri burada okunmalı. Var olan ortam değişkenlerini ezmez.
 dotenv.config({ path: path.join(path.dirname(fileURLToPath(import.meta.url)), '.env'), quiet: true })
@@ -26,7 +27,7 @@ export function requireInternal(req, res) {
     res.status(503).json({ error: 'Dahili araç uçları kapalı. server/.env içine STUDIO_KEY (veya ADMIN_KEY) ekleyin.' })
     return false
   }
-  const ip = String(req.socket.remoteAddress ?? '')
+  const ip = ipOf(req)
   const f = fails.get(ip) ?? { n: 0, t: 0 }
   if (f.n >= 8 && Date.now() - f.t < 600_000) {
     res.status(429).json({ error: 'Çok fazla hatalı deneme, biraz sonra tekrar deneyin.' })

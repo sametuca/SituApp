@@ -20,11 +20,38 @@ assertSealed() // hile koruması çalışmıyorsa sunucu hiç açılmaz
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 dotenv.config({ path: path.join(__dirname, '.env') })
-const DATA_DIR = path.join(__dirname, 'data')
+const DATA_DIR = process.env.SITUAPP_DATA_DIR || path.join(__dirname, 'data')
 const CHARACTERS_FILE = path.join(DATA_DIR, 'characters.json')
 
 const app = express()
-app.use(cors())
+const configuredOrigins = new Set(
+  (process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map((origin) => {
+      try {
+        return new URL(origin.trim()).origin
+      } catch {
+        return ''
+      }
+    })
+    .filter(Boolean),
+)
+app.use(cors((req, callback) => {
+  callback(null, {
+    origin(origin, done) {
+      if (!origin) return done(null, false)
+      let parsed
+      try {
+        parsed = new URL(origin)
+      } catch {
+        return done(null, false)
+      }
+      const requestHost = String(req.get('host') ?? '').toLowerCase()
+      const sameHost = requestHost && parsed.host.toLowerCase() === requestHost
+      done(null, Boolean(sameHost || configuredOrigins.has(parsed.origin)))
+    },
+  })
+}))
 app.use(compression({ level: 6, threshold: 1024 }))
 app.use(express.json({ limit: '32kb' }))
 

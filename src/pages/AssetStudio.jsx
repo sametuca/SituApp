@@ -10,7 +10,7 @@ const artStyles = [
   { id: 'sculpture', label: 'Heykelsi' },
 ]
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001'
+const API_BASE = import.meta.env.VITE_API_BASE || ''
 
 const WORLD_LOCATIONS = [
   { id: 'cafe', label: '☕ Kafe' },

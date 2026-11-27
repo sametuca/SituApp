@@ -54,7 +54,11 @@ export function AuthProvider({ children }) {
 
   const acceptConsent = useCallback(async (record) => {
     const u = await authService.acceptConsent(record)
-    recordConsent(record, u?.email ?? '')
+    try {
+      await recordConsent(record, await authService.getToken())
+    } catch (error) {
+      console.error('Onay kaydı gönderilemedi:', error)
+    }
     setUser(u)
   }, [])
 

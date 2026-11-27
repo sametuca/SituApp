@@ -77,6 +77,7 @@ cp server/.env.example server/.env  # server (optional)
 | `STUDIO_KEY` | Protects `/api/meshy/*`, `/api/characters`, `/api/assets/import` |
 | `ADMIN_KEY` | Enables the `/admin` moderation panel |
 | `TRUST_PROXY` | Set to `1` behind a reverse proxy (real client IPs) |
+| `CORS_ORIGINS` | Comma-separated exact origins when the frontend is hosted separately; same-origin requests work by default |
 
 > Without Supabase keys the app runs in **demo mode** — accounts live in `localStorage` and data in `server/data/`.
 > Both `.env` files are gitignored; only the `.example` files are committed.
