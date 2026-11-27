@@ -27,21 +27,31 @@ export default function WorldCanvas({ chatTargetRef, controlsRef, editing, feat,
   useEffect(() => {
     if (!sceneReady || (!graphics.ao && !graphics.bloom)) return undefined
     let active = true
-    let idleId
     let timerId
-    const enable = () => {
-      if (active) setEffectsReady(true)
+    let idleSince = 0
+    const checkIdle = () => {
+      if (!active) return
+      const idle = !introActive && focusRef.current.anim === 'idle' && document.visibilityState !== 'hidden'
+      if (!idle) {
+        idleSince = 0
+      } else {
+        const now = performance.now()
+        if (!idleSince) idleSince = now
+        if (now - idleSince >= 6000) {
+          setEffectsReady(true)
+          return
+        }
+      }
+      timerId = setTimeout(checkIdle, 750)
     }
 
-    if (typeof requestIdleCallback === 'function') idleId = requestIdleCallback(enable, { timeout: 2500 })
-    else timerId = setTimeout(enable, 1000)
+    timerId = setTimeout(checkIdle, 750)
 
     return () => {
       active = false
-      if (idleId != null && typeof cancelIdleCallback === 'function') cancelIdleCallback(idleId)
       if (timerId != null) clearTimeout(timerId)
     }
-  }, [graphics.ao, graphics.bloom, sceneReady])
+  }, [focusRef, graphics.ao, graphics.bloom, introActive, sceneReady])
 
   return (
     <WorldErrorBoundary>

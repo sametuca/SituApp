@@ -1,8 +1,9 @@
 // Şehir binaları: stil çeşitliliği (cephe dokusu, çatı, pencere), kentsel doku ve Building bileşeni.
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { CanvasTexture, Color, ExtrudeGeometry, Shape, SRGBColorSpace } from 'three'
 import { RoundedBox } from '@react-three/drei'
-import { CULL_R, useCull } from './cull'
+import { useFrame } from '@react-three/fiber'
+import { CULL_R, playerPos, useCull } from './cull'
 import Facade from './Facade'
 import { facadeOf } from './facadeData'
 import { SKY_MATS } from './Sky'
@@ -212,7 +213,59 @@ export function getKentselTex(idx) {
   return tex
 }
 
+const DETAIL_ENTER_R = 42
+const DETAIL_EXIT_R = 50
+const BUILDING_CULL_EXIT_R = CULL_R + 6
+
 export function Building({ b, i, focusRef }) {
+  const [lod, setLod] = useState({ visible: false, detailed: false })
+  const current = useRef(lod)
+  const timer = useRef((Math.abs(Math.trunc(b.x * 31 + b.z * 17)) % 180) / 1000)
+
+  useFrame((_, dt) => {
+    timer.current += dt
+    if (timer.current < 0.18) return
+    timer.current = 0
+
+    const dx = playerPos.x - b.x
+    const dz = playerPos.z - b.z
+    const d2 = dx * dx + dz * dz
+    const visible = current.current.visible ? d2 < BUILDING_CULL_EXIT_R ** 2 : d2 < CULL_R ** 2
+    const detailed = visible && (current.current.detailed ? d2 < DETAIL_EXIT_R ** 2 : d2 < DETAIL_ENTER_R ** 2)
+
+    if (visible !== current.current.visible || detailed !== current.current.detailed) {
+      current.current = { visible, detailed }
+      setLod(current.current)
+    }
+  })
+
+  if (!lod.visible) return null
+  return lod.detailed ? <DetailedBuilding b={b} i={i} focusRef={focusRef} /> : <DistantBuilding b={b} i={i} />
+}
+
+function DistantBuilding({ b, i }) {
+  const st = b.neon ? STYLES[3] : STYLES[(i * 5 + (i >> 2)) % STYLES.length]
+  const roofType = b.h > 8 || b.neon ? 'flat' : st.roofType
+  return (
+    <group position={[b.x, 0, b.z]} rotation={[0, FACING[b.facing], 0]}>
+      <RoundedBox args={[b.w, b.h, b.d]} radius={0.35} smoothness={1} position={[0, b.h / 2, 0]}>
+        <meshStandardMaterial color={lighten(b.color, 0.22)} roughness={0.82} />
+      </RoundedBox>
+      {roofType === 'flat' ? (
+        <RoundedBox args={[b.w + 0.7, 0.7, b.d + 0.7]} radius={0.3} smoothness={1} position={[0, b.h + 0.15, 0]}>
+          <meshStandardMaterial color={b.roof} roughness={0.78} />
+        </RoundedBox>
+      ) : (
+        <mesh position={[0, b.h + 0.65, 0]} rotation={[0, Math.PI / 4, 0]} scale={[(b.w + 0.9) / 1.414, 1, (b.d + 0.9) / 1.414]}>
+          <coneGeometry args={[1, 1.3, 4]} />
+          <meshStandardMaterial color={b.roof} roughness={0.78} />
+        </mesh>
+      )}
+    </group>
+  )
+}
+
+function DetailedBuilding({ b, i, focusRef }) {
   const { w, d, h, color, roof, facing, label, shop, neon } = b
   const grp = useRef()
   useCull(grp, b.x, b.z, CULL_R, 30)

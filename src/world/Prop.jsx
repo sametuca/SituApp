@@ -41,7 +41,7 @@ export default function Prop({ model, x, z, scale = 1, ry = 0 }) {
 /**
  * Aynı GLB modelini paylaşan çoklu süs nesnelerini (ağaçlar, lambalar, banklar, palmiyeler…) tek InstancedMesh çiftiyle çizer:
  * yakın (≤ 26 m) gölgeli, orta (26–72 m) gölgesiz; uzak (> 72 m) hiç gönderilmez.
- * Oyuncu 2 m'den fazla hareket ettiğinde (~4 Hz) güncellenir; yüzlerce çizim çağrısını tek çağrıya indirir.
+ * Oyuncu 4 m'den fazla hareket ettiğinde güncellenir; yüzlerce çizim çağrısını tek çağrıya indirir.
  */
 export function InstancedPropGroup({ model, items, cullR = PROP_CULL_R, shadowR = PROP_SHADOW_R }) {
   const { scene } = useGLTF(model)
@@ -118,7 +118,9 @@ export function InstancedPropGroup({ model, items, cullR = PROP_CULL_R, shadowR 
   }
 
   useEffect(() => {
-    last.current.x = 1e9
+    last.current.x = playerPos.x
+    last.current.z = playerPos.z
+    last.current.t = 0
     refresh()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baked])
@@ -129,7 +131,7 @@ export function InstancedPropGroup({ model, items, cullR = PROP_CULL_R, shadowR 
     last.current.t = 0
     const dx = playerPos.x - last.current.x
     const dz = playerPos.z - last.current.z
-    if (dx * dx + dz * dz < 4) return // 2 m hareket etmeden matris yeniden paketlenmez
+    if (dx * dx + dz * dz < 16) return // 4 m hareket etmeden matris yeniden paketlenmez
     last.current.x = playerPos.x
     last.current.z = playerPos.z
     refresh()
@@ -137,8 +139,8 @@ export function InstancedPropGroup({ model, items, cullR = PROP_CULL_R, shadowR 
 
   return parts.map((p, i) => (
     <group key={i}>
-      <instancedMesh ref={(r) => (nearRefs.current[i] = r)} args={[p.geo, p.mat, items.length]} castShadow receiveShadow frustumCulled={false} />
-      <instancedMesh ref={(r) => (farRefs.current[i] = r)} args={[p.geo, p.mat, items.length]} receiveShadow frustumCulled={false} />
+      <instancedMesh ref={(r) => (nearRefs.current[i] = r)} args={[p.geo, p.mat, items.length]} count={0} castShadow receiveShadow frustumCulled={false} />
+      <instancedMesh ref={(r) => (farRefs.current[i] = r)} args={[p.geo, p.mat, items.length]} count={0} receiveShadow frustumCulled={false} />
     </group>
   ))
 }

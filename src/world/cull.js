@@ -1,8 +1,9 @@
 // Uzaklık ayıklama: büyük dünyada uzaktaki bina/süs nesneleri çizilmez (gölge ve çizim maliyeti düşer). Oyuncu konumu LocalPlayer'dan gelir.
-import { useRef } from 'react'
+import { useLayoutEffect, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
+import { SPAWN } from './layout'
 
-export const playerPos = { x: 0, z: 0 }
+export const playerPos = { x: SPAWN.x, z: SPAWN.z }
 export const CULL_R = 76 // m: kamera yüksekliği ve sis (45→122 m) ötesindeki nesneler görünmez; sıkı yarıçap çizim çağrılarını ~%65 azaltır
 
 /**
@@ -10,9 +11,31 @@ export const CULL_R = 76 // m: kamera yüksekliği ve sis (45→122 m) ötesinde
  * Her ~0,25 sn'de bir değerlendirir.
  */
 export function useCull(ref, x, z, r = CULL_R, shadowR = 0) {
-  const timer = useRef(Math.random() * 0.25)
+  const timer = useRef((Math.abs(Math.trunc(x * 31 + z * 17)) % 250) / 1000)
   const casters = useRef(null)
   const shOn = useRef(true)
+
+  useLayoutEffect(() => {
+    const g = ref.current
+    if (!g) return
+    const dx = playerPos.x - x
+    const dz = playerPos.z - z
+    const d2 = dx * dx + dz * dz
+    const visible = d2 < r * r
+    g.visible = visible
+
+    if (shadowR > 0 && visible) {
+      const list = []
+      g.traverse((o) => {
+        if (o.isMesh && o.castShadow) list.push(o)
+      })
+      casters.current = list
+      shOn.current = d2 < shadowR * shadowR
+      if (!shOn.current) {
+        for (let i = 0; i < list.length; i++) list[i].castShadow = false
+      }
+    }
+  }, [ref, x, z, r, shadowR])
 
   useFrame((_, dt) => {
     timer.current += dt

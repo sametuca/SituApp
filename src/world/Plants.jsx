@@ -66,7 +66,9 @@ function InstancedPlant({ url, spots, size, cullR }) {
   }
 
   useEffect(() => {
-    last.current.x = 1e9
+    last.current.x = playerPos.x
+    last.current.z = playerPos.z
+    last.current.t = 0
     refresh()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baked])
@@ -77,14 +79,14 @@ function InstancedPlant({ url, spots, size, cullR }) {
     last.current.t = 0
     const dx = playerPos.x - last.current.x
     const dz = playerPos.z - last.current.z
-    if (dx * dx + dz * dz < 4) return
+    if (dx * dx + dz * dz < 16) return
     last.current.x = playerPos.x
     last.current.z = playerPos.z
     refresh()
   })
 
   return parts.map((p, i) => (
-    <instancedMesh key={i} ref={(r) => (refs.current[i] = r)} args={[p.geo, p.mat, spots.length]} receiveShadow frustumCulled={false} />
+    <instancedMesh key={i} ref={(r) => (refs.current[i] = r)} args={[p.geo, p.mat, spots.length]} count={0} receiveShadow frustumCulled={false} />
   ))
 }
 

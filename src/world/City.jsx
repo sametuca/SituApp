@@ -1,5 +1,7 @@
 // Şehir çizimi (birleştirici): zemin dokuları, yollar ve alt bileşenlerin (bina/deniz/süs) yerleşimi.
+import { useLayoutEffect } from 'react'
 import { BEACH, BUILDINGS, GAP, ISLAND, PLAZA_R, PROPS, RIM, RING, ROAD_END, ROAD_HALF, ROAD_START, TOWELS } from './layout'
+import { playerPos } from './cull'
 import Prop, { InstancedPropGroup } from './Prop'
 import Plants from './Plants'
 import TownDetails from './TownDetails'
@@ -33,6 +35,13 @@ const { INSTANCED_PROPS, SINGLE_PROPS } = (() => {
 })()
 
 export default function City({ focusRef }) {
+  useLayoutEffect(() => {
+    const f = focusRef.current
+    const destination = f.teleport
+    playerPos.x = destination ? destination[0] : f.x
+    playerPos.z = destination ? destination[1] : f.z
+  }, [focusRef])
+
   const road = ROAD_HALF * 2
   const W = ISLAND.x1 - ISLAND.x0
   const D = ISLAND.z1 - ISLAND.z0

@@ -118,8 +118,9 @@ function WorldScene({ avatar }) {
     preloadCritical(slug)
   }, [slug])
   useEffect(() => {
-    if (sceneReady) preloadLater()
-  }, [sceneReady])
+    if (!sceneReady) return undefined
+    return preloadLater(() => focusRef.current.anim !== 'idle' || document.visibilityState === 'hidden')
+  }, [focusRef, sceneReady])
   // ev düzeni: kendi evin sunucuda kalıcıdır, tarayıcıdaki kopya yalnızca önbellektir
   const homeOwner = user?.id ?? `guest-${name}`
   const [editing, setEditing] = useState(false)
