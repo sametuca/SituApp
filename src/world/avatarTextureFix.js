@@ -56,9 +56,10 @@ export function getCleanAvatarTexture(mesh, origTex) {
   const idx = mesh.geometry.index
   const triCount = idx ? idx.count / 3 : uv.count / 3
   const flipV = Boolean(origTex.flipY)
-  const uvX = (i) => (((uv.getX(i) % 1) + 1) % 1) * w
+  const wrapUv = (value) => (value === 1 ? 1 : ((value % 1) + 1) % 1)
+  const uvX = (i) => wrapUv(uv.getX(i)) * w
   const uvY = (i) => {
-    const v = ((uv.getY(i) % 1) + 1) % 1
+    const v = wrapUv(uv.getY(i))
     return (flipV ? 1 - v : v) * h
   }
   mctx.beginPath()

@@ -89,7 +89,6 @@ function frameAt(h) {
 }
 
 const GRAY = C('#b9c4d8')
-const FOG_WHITE = C('#ebe7f5')
 const tmp = new Color()
 const SUN_DIR = new Vector3()
 const MOON_DIR = new Vector3(0.45, 0.8, 0.4).normalize()
@@ -729,7 +728,7 @@ export default function Sky({ home: homeProp, interior = null, focusRef }) {
   const hemi = useRef()
   const warmFill = useRef()
   const coolRim = useRef()
-  const st = useRef({ dh: null, rain: 0, snow: 0, fog: 0, leaves: 0 })
+  const st = useRef({ dh: null, rain: 0, snow: 0, leaves: 0 })
 
   useFrame((_, dtRaw) => {
     const dt = Math.min(dtRaw, 0.1)
@@ -744,12 +743,12 @@ export default function Sky({ home: homeProp, interior = null, focusRef }) {
 
     // hava ağırlıkları yumuşakça hedefe
     const w = worldClock.weather
-    for (const k of ['rain', 'snow', 'fog', 'leaves']) {
+    for (const k of ['rain', 'snow', 'leaves']) {
       const goal = w === k ? 1 : 0
       const d = goal - s[k]
       s[k] += Math.sign(d) * Math.min(Math.abs(d), dt / EASE_WX)
     }
-    const over = Math.min(1, s.rain + s.snow * 0.5 + s.fog * 0.6 + s.leaves * 0.2)
+    const over = Math.min(1, s.rain + s.snow * 0.5 + s.leaves * 0.2)
     const night = nightAt(h)
     const sunset = sunsetAt(h)
     const k = frameAt(h)
@@ -761,12 +760,9 @@ export default function Sky({ home: homeProp, interior = null, focusRef }) {
     const grey = tmp.copy(GRAY).multiplyScalar(1 - 0.6 * night)
     k.bg.lerp(grey, over * 0.55)
     k.fog.lerp(grey, over * 0.5)
-    k.fog.lerp(tmp.copy(FOG_WHITE).multiplyScalar(1 - 0.65 * night), s.fog * 0.8)
     let fn = k.fn
     let ff = k.ff
     ff += (90 - ff) * s.rain * 0.5
-    fn += (4 - fn) * s.fog * 0.9
-    ff += (48 - ff) * s.fog * 0.85
     const sunI = k.sunI * (1 - 0.5 * over)
 
     skyLive.night = night

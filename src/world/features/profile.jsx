@@ -300,8 +300,8 @@ export function useProfile({ net, say, panel, setPanel, home }) {
         reqAt.current = {}
         setCache({})
       }),
-      net.on('icebreaker', (m) => setIncoming((l) => [...l.filter((x) => x.id !== m.id), m].slice(-3))),
-      net.on('icebreaker_answer', (m) => {
+      net.on('profile_icebreaker', (m) => setIncoming((l) => [...l.filter((x) => x.id !== m.id), m].slice(-3))),
+      net.on('profile_icebreaker_answer', (m) => {
         const k = Date.now() + Math.random()
         setAnswers((l) => [...l, { ...m, k }].slice(-3))
         setTimeout(() => setAnswers((l) => l.filter((x) => x.k !== k)), 12000)
@@ -321,7 +321,7 @@ export function useProfile({ net, say, panel, setPanel, home }) {
   )
 
   const peerHeader = (peer) => (
-    <ProfileCard peer={peer} profile={cache[peer.id]} mine={mine} catalog={catalog} request={request} onIce={() => net.send({ t: 'icebreaker', to: peer.id })} />
+    <ProfileCard peer={peer} profile={cache[peer.id]} mine={mine} catalog={catalog} request={request} onIce={() => net.send({ t: 'profile_icebreaker', to: peer.id })} />
   )
 
   const settingsSections = [
@@ -375,7 +375,7 @@ export function useProfile({ net, say, panel, setPanel, home }) {
         </div></Dock>
       )}
       {first && (
-        <TopDock><div className={`relative flex w-[min(92vw,22rem)] animate-pop flex-col gap-2 rounded-3xl p-4 ${glass}`} role="dialog" aria-label="Buz kırıcı">
+        <TopDock><div className={`pointer-events-auto relative flex w-[min(92vw,22rem)] animate-pop flex-col gap-2 rounded-3xl p-4 ${glass}`} role="dialog" aria-label="Buz kırıcı">
           <p className="text-xs font-extrabold text-[#5fb0d8]">🧊 {first.name} sana bir soru gönderdi</p>
           <p className="text-base font-black text-[#4a3b5c]">{first.q}</p>
           <div className="grid grid-cols-2 gap-2">
@@ -383,7 +383,7 @@ export function useProfile({ net, say, panel, setPanel, home }) {
               <button
                 key={pick}
                 onClick={() => {
-                  net.send({ t: 'icebreaker_answer', to: first.id, qid: first.qid, pick })
+                  net.send({ t: 'profile_icebreaker_answer', to: first.id, qid: first.qid, pick })
                   setIncoming((l) => l.slice(1))
                 }}
                 className="rounded-2xl border-b-4 border-[#5fb0d8] bg-[#9bdcf7] px-2 py-3 text-sm font-extrabold text-[#1f5d7a] active:translate-y-[2px] active:border-b-2"

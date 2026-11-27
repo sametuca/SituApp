@@ -686,7 +686,6 @@ const MODAL_THEMES = {
   bag: 'border-[#f0e5d5] bg-[#fffdf9]/95 text-[#4a3b5c]',
   dating: 'border-[#ffd6e7] bg-gradient-to-b from-[#fff6fa]/96 to-white/95 text-[#4a3b5c]',
   gym: 'border-[#ff9f8e]/70 bg-gradient-to-b from-[#271f3d]/96 to-[#1d1630]/96 text-white',
-  pvp: 'border-[#d6c7ff] bg-gradient-to-b from-[#f5f0ff]/96 to-white/95 text-[#4a3b5c]',
 }
 
 export function Modal({ children, onClose, label, wide = false, theme = 'default', dockBottom = false }) {
@@ -879,7 +878,7 @@ export function HelpModal({ onClose, inCity = false, onOpenWardrobe, onGoHome, o
                   <h3 className="text-xs font-extrabold uppercase tracking-wide text-[#e8952c]">Sohbet & Komutlar</h3>
                   <ul className="mt-2 flex flex-col gap-2">
                     <Row k="Enter">yazmaya başla / gönder · Esc: vazgeç</Row>
-                    <Row k="/f isim …">yakındaki birine fısılda (en fazla 7 m; çevre görmez)</Row>
+                    <Row k="/f isim …">aynı odadaki birine fısılda; çevre yalnızca fısıldadığını görür</Row>
                     <Row k="/yakındakiler">yakınındaki oyuncuları listele</Row>
                     <Row k="/ışınlan kafe">lobi, kafe, kulüp, park veya plaja ışınlan</Row>
                     <Row k="/intro">giriş sahnesini tekrar izle</Row>
@@ -888,7 +887,7 @@ export function HelpModal({ onClose, inCity = false, onOpenWardrobe, onGoHome, o
                 <div>
                   <h3 className="text-xs font-extrabold uppercase tracking-wide text-[#e8952c]">Etkileşim & Eşleşme</h3>
                   <ul className="mt-2 flex flex-col gap-2">
-                    <Row k="Karaktere tıkla">profilini gör, jest gönder, dansa veya düelloya davet et</Row>
+                    <Row k="Karaktere tıkla">profilini gör, jest gönder veya dansa davet et</Row>
                     <Row k="Eşleşme">ikiniz de birbirine kalp gönderirseniz karşılıklı eşleşirsiniz</Row>
                   </ul>
                 </div>

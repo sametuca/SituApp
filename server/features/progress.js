@@ -247,7 +247,7 @@ export default function progress(ctx) {
     } else if (type === 'gesture' || type === 'photo' || type === 'match') {
       ctx.bumpStat?.(me, 'cha', 0.35)
       if (peer) ctx.addBond?.(me, peer, type === 'match' ? 30 : 8, type === 'match')
-    } else if (type === 'game_played' || type === 'pvp_win') ctx.bumpStat?.(me, 'ski', 0.5)
+    } else if (type === 'game_played') ctx.bumpStat?.(me, 'ski', 0.5)
 
     save()
     if (changed) pushState(me.key)

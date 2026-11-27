@@ -29,7 +29,7 @@ import WhisperInbox from '../world/WhisperInbox'
 import { useMultiplayer } from '../world/net'
 import { ChatPanel, HelpModal, Minimap, StartGuide, TopBar } from '../world/Hud'
 import { ChatFab, ChatSheet, DoorPrompt, GestureChip, IncomingChip, InteractSheet, InviteChip, Joystick, LookJoystick, MatchOverlay, NearbyCard, SkillBar } from '../world/Social'
-import { GESTURE_BY_KIND, REACTIONS, SKILL_COOLDOWN_MS, WHISPER_RANGE, loadSlots, saveSlots, skillFor } from '../world/interact'
+import { GESTURE_BY_KIND, GESTURE_RANGE, REACTIONS, SKILL_COOLDOWN_MS, loadSlots, saveSlots, skillFor } from '../world/interact'
 import SkillEditor from '../components/SkillEditor'
 import { useIsTouch } from '../world/useIsTouch'
 import { HOME_TIERS, applyHomeTier } from '../world/homeTiers'
@@ -875,8 +875,7 @@ function WorldScene({ avatar }) {
       const msg = rest.join(' ').trim()
       if (!who || !msg) return say('Örnek: /f Elif Bugün çok güzelsin 🤫')
       const peer = net.roster.find((p) => normalize(p.name) === normalize(who)) ?? net.roster.find((p) => normalize(p.name).startsWith(normalize(who)))
-      if (!peer) return say(`“${who}” burada yok. Fısıldamak için aynı yerde ve yakın olmalısınız.`)
-      if (distTo(peer.id) > WHISPER_RANGE) return say(`🤫 ${peer.name} çok uzakta. Fısıldamak için biraz yaklaş.`)
+      if (!peer) return say(`“${who}” burada yok. Fısıldamak için aynı yerde olmalısınız.`)
       if (!net.sendWhisper(msg, peer.id)) say('Şu an çevrimdışısın.')
       return
     }
@@ -1215,7 +1214,7 @@ function WorldScene({ avatar }) {
       {interactPeer && !chatTarget && (
         <InteractSheet
           peer={interactPeer}
-          near={distTo(interactPeer.id) <= WHISPER_RANGE - 0.2}
+          near={distTo(interactPeer.id) <= GESTURE_RANGE - 0.2}
           canInvite={!home}
           touch={touch}
           extras={feat.peerActions(interactPeer)}

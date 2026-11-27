@@ -12,7 +12,7 @@
 //     { t: 'exterior_set', ext }                    evin dış görünümü (features/neighborhood.js); sunucu → { t:'plot', p } (welcome: plots, myExt)
 //     { t: 'invite', to? | name? }                bir oyuncuyu evine davet et (id ya da ad)
 //     { t: 'react', e }                            kafanın üstünde emoji tepkisi (odadaki herkes görür)
-//     { t: 'whisper', to, text }                   fısıltı: yalnızca yakındaki (≤ 7 m) hedefe gider, çevre "fısıldıyor" görür
+//     { t: 'whisper', to, text }                   fısıltı: aynı odadaki hedefe gider; yakındaki çevre "fısıldıyor" görür
 //     { t: 'gesture', to, kind }                   birine jest: heart | flower | wink | wave | kiss | dance (≤ 8 m)
 //     { t: 'typing', to }                          özel sohbette "yazıyor…" göstergesi
 //     { t: 'block', id } / { t: 'unblock', key }   engelle / engeli kaldır
@@ -49,8 +49,8 @@
 //     { t: 'decor', owner, decor }  { t: 'gifts', list }  { t: 'gift_offer', offer, from, fromName, kind }
 //     profil (features/profile.js): { t:'profile_save', profile:{bio,age,city,tags} } → { t:'profile_saved', profile } ;
 //       { t:'profile', id } → { t:'profile', id, profile|null } ; welcome'a profile + profileTags (katalog) eklenir
-//     buz kırıcı: { t:'icebreaker', to } → alıcıya { t:'icebreaker', id, name, qid, q, a, b } ;
-//       { t:'icebreaker_answer', to, qid, pick:'a'|'b' } → gönderene { t:'icebreaker_answer', id, name, a, b, choice }
+//     profil buz kırıcı: { t:'profile_icebreaker', to } → alıcıya { t:'profile_icebreaker', id, name, qid, q, a, b } ;
+//       { t:'profile_icebreaker_answer', to, qid, pick:'a'|'b' } → gönderene { t:'profile_icebreaker_answer', id, name, a, b, choice }
 //     { t: 'info', text } / { t: 'denied', reason }    kullanıcıya gösterilecek kısa mesaj
 //     { t: 'join', p } / { t: 'leave', id }
 //     { t: 'state', p: [[id, x, z, ry, animIdx], ...] }   ~10 Hz, yalnızca değişenler
@@ -87,6 +87,8 @@ const TICK_MS = 100
 const MAX_SPEED = 13 // m/sn (bisiklet 8,4; ağ gecikmesi payı dahil)
 const AOI_R = 55 // m: konum yayını ilgi alanı (500+ oyuncu için)
 const NEAR_R = 24 // m: bu mesafedekiler her tick güncellenir
+const MAX_STATE_PER_PEER = 120
+const MAX_STATE_BUFFERED = 512 * 1024
 const CHAT_RANGE = 70 // m: şehirde herkese açık sohbet/emoji yalnızca bu mesafedekilere gider
 const MAX_PAYLOAD = 144 * 1024 // yalnızca sesli mesaj (≤ 96 KB ses → ~128 KB base64) için; diğer mesajlar aşağıda 8 KB ile sınırlı
 const MAX_TEXT_PAYLOAD = 8192 // ev kaydı (40 eşya) 2 KB'ı aşabilir
@@ -97,7 +99,6 @@ const CHAT_MAX = 140
 // ---- etkileşim ----
 const REACTIONS = new Set(['❤️', '😘', '😍', '🥰', '😂', '😳', '🔥', '👋', '😉', '🥺', '💃', '🎉'])
 const GESTURES = { heart: '💗', flower: '🌸', wink: '😉', wave: '👋', kiss: '😘', dance: '💃' }
-const WHISPER_RANGE = 7 // m: fısıldamak için bu kadar yakın olmalısın
 const WITNESS_RANGE = 12 // m: bu mesafedekiler "fısıldıyor 🤫" görür (metni görmez)
 const GESTURE_RANGE = 8
 const MATCH_WINDOW_MS = 10 * 60 * 1000 // karşılıklı kalp için süre
@@ -148,6 +149,14 @@ export function attachGameServer(httpServer) {
       if (from && mod.blockedPair(from, p)) continue
       p.ws.send(data)
     }
+  }
+  let onlineTimer = null
+  const broadcastOnline = () => {
+    if (onlineTimer) return
+    onlineTimer = setTimeout(() => {
+      onlineTimer = null
+      broadcast({ t: 'online', n: players.size })
+    }, 250)
   }
   const dist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z)
   const inRoom = (room, exceptId) => [...players.values()].filter((p) => p.room === room && p.id !== exceptId)
@@ -310,6 +319,8 @@ export function attachGameServer(httpServer) {
       ry: Math.PI,
       anim: 'idle',
       dirty: false,
+      stateCursor: 0,
+      needsSync: false,
       lastChat: 0,
       room: 'city',
       uid: ident?.uid ?? null,
@@ -351,7 +362,7 @@ export function attachGameServer(httpServer) {
       online: players.size,
     })
     broadcast({ t: 'join', p: publicInfo(me) }, me.id, 'city')
-    broadcast({ t: 'online', n: players.size })
+    broadcastOnline()
     return me
   }
 
@@ -550,7 +561,6 @@ export function attachGameServer(httpServer) {
         if (!text || now - (me.lastWhisper ?? 0) < CHAT_COOLDOWN_MS) return
         const target = typeof msg.to === 'string' ? players.get(msg.to) : null
         if (!target || target.id === me.id || target.room !== me.room) return send(ws, { t: 'info', text: 'Bu kişi artık burada değil.' })
-        if (dist(me, target) > WHISPER_RANGE) return send(ws, { t: 'info', text: `🤫 ${target.name} çok uzakta. Fısıldamak için biraz yaklaş.` })
         if (refuse(me, target, 'whisper')) return
         if (ctx.canWhisper && !ctx.canWhisper(me, target)) return send(ws, { t: 'info', text: `🛡️ ${target.name} yalnızca arkadaşlar ve eşleşmelerden fısıltı kabul ediyor.` })
         me.lastWhisper = now
@@ -626,7 +636,7 @@ export function attachGameServer(httpServer) {
       for (const o of players.values()) o.hearts?.delete(me.id)
       broadcast({ t: 'leave', id: me.id }, undefined, me.room)
       if (leftVid) broadcastVenueChannels(leftVid)
-      broadcast({ t: 'online', n: players.size })
+      broadcastOnline()
     })
     ws.on('error', () => ws.terminate())
   })
@@ -653,7 +663,7 @@ export function attachGameServer(httpServer) {
       let c = r.cells.get(key)
       if (!c) r.cells.set(key, (c = []))
       c.push(p)
-      if (p.moved) r.any = true
+      if (p.moved || p.needsSync) r.any = true
     }
     for (const r of byRoom.values()) {
       if (!r.any && !full) continue
@@ -665,22 +675,34 @@ export function attachGameServer(httpServer) {
           if (c) around.push(...c)
         }
         for (const p of list) {
+          if (p.ws.readyState !== 1) continue
+          if (p.ws.bufferedAmount > MAX_STATE_BUFFERED) {
+            p.needsSync = true
+            continue
+          }
+          const forceSync = full || p.needsSync
           const out = []
-          for (const q of around) {
-            if (q === p || (!q.moved && !full)) continue
+          let cursor = around.length ? (p.stateCursor ?? 0) % around.length : 0
+          let scanned = 0
+          while (scanned < around.length && out.length < MAX_STATE_PER_PEER) {
+            const q = around[cursor]
+            cursor = (cursor + 1) % around.length
+            scanned++
+            if (q === p || (!q.moved && !forceSync)) continue
             const dx = q.x - p.x
             const dz = q.z - p.z
             const d2 = dx * dx + dz * dz
-            if (d2 > AOI_R * AOI_R || (d2 > NEAR_R * NEAR_R && !far && !full)) continue
+            if (d2 > AOI_R * AOI_R || (d2 > NEAR_R * NEAR_R && !far && !forceSync)) continue
             if (q.entryTick !== tickNo) {
               // her oyuncunun satırı tick başına bir kez metne çevrilir, alıcılar arasında paylaşılır
               q.entryTick = tickNo
               q.entry = `["${q.id}",${Math.round(q.x * 100) / 100},${Math.round(q.z * 100) / 100},${Math.round(q.ry * 100) / 100},${ANIMS.indexOf(q.anim)}]`
             }
             out.push(q.entry)
-            if (out.length >= 120) break
           }
-          if (out.length && p.ws.readyState === 1) p.ws.send(`{"t":"state","p":[${out.join(',')}]}`)
+          p.stateCursor = cursor
+          if (p.needsSync && scanned >= around.length) p.needsSync = false
+          if (out.length) p.ws.send(`{"t":"state","p":[${out.join(',')}]}`)
         }
       }
     }

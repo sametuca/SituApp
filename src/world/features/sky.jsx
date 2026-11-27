@@ -1,25 +1,26 @@
 // Gün-gece döngüsü + hava durumu (istemci). Sunucu: server/features/weather.js (hava). Görsel: world/Sky.jsx, world/WeatherFx.jsx.
 //
-// Dünya saati: varsayılan gerçek yerel saat (Europe/Istanbul). Ayarlar → "🌗 Zaman": Gerçek saat / Hep gündüz / Hep gün batımı / Hep gece (localStorage).
+// Dünya saati: varsayılan 3 kat uzun gece (Europe/Istanbul). Ayarlar → "🌗 Zaman" ile değiştirilebilir.
 // Test/geliştirme URL parametreleri: ?hour=21 (saati sabitler), ?daylen=3 (bir günü 3 dk'da döndürür; ?hour başlangıç saati),
 // ?weather=rain (sunucu havasını yok sayar).
 // Her saniye worldClock'a yayımlanır (publishWorld): hour, phase, night, sunset, weather.
 import { useEffect, useMemo, useState } from 'react'
 import WeatherFx from '../WeatherFx'
-import { currentHour, nightAt, phaseOf, publishWorld, realHour, setHourSource, sunsetAt } from '../worldClock'
+import { currentHour, longNightHour, nightAt, phaseOf, publishWorld, realHour, setHourSource, sunsetAt } from '../worldClock'
 
 const MODE_KEY = 'situapp_time_mode'
 const FX_KEY = 'situapp_weather_fx'
 const EVENT_FX_KEY = 'situapp_fx' // progress.jsx: etkinlik efektleri açık mı
 
 const MODES = [
+  { id: 'longnight', emoji: '🌙', label: 'Uzun gece (3×)', hour: null },
   { id: 'real', emoji: '🕒', label: 'Gerçek saat', hour: null },
   { id: 'day', emoji: '☀️', label: 'Hep gündüz', hour: 12.5 },
   { id: 'dusk', emoji: '🌇', label: 'Hep gün batımı', hour: 19.2 },
   { id: 'night', emoji: '🌙', label: 'Hep gece', hour: 23 },
 ]
-const WEATHER_EMOJI = { clear: '', snow: '❄️', leaves: '🍂', petals: '🌸', fog: '🌫️' }
-const WEATHER_NAME = { clear: 'Açık', snow: 'Karlı', leaves: 'Yaprak savruluyor', petals: 'Çiçek yaprakları', fog: 'Sisli' }
+const WEATHER_EMOJI = { clear: '', snow: '❄️', leaves: '🍂', petals: '🌸' }
+const WEATHER_NAME = { clear: 'Açık', snow: 'Karlı', leaves: 'Yaprak savruluyor', petals: 'Çiçek yaprakları' }
 const WEATHERS = Object.keys(WEATHER_NAME)
 
 const read = (key, fallback) => {
@@ -57,7 +58,7 @@ export function useSky({ net, touch, home, venue, focusRef }) {
   const dayLen = Number(q.get('daylen')) > 0 ? Number(q.get('daylen')) : null // dakika
   const urlWeather = WEATHERS.includes(q.get('weather')) ? q.get('weather') : null
 
-  const [mode, setMode] = useState(() => (MODES.some((m) => m.id === read(MODE_KEY, 'real')) ? read(MODE_KEY, 'real') : 'real'))
+  const [mode, setMode] = useState(() => (MODES.some((m) => m.id === read(MODE_KEY, 'longnight')) ? read(MODE_KEY, 'longnight') : 'longnight'))
   const [fxOn, setFxOn] = useState(() => read(FX_KEY, '1') !== '0')
   const [srvWeather, setSrvWeather] = useState('clear')
   const [eventOn, setEventOn] = useState(false)
@@ -76,7 +77,7 @@ export function useSky({ net, touch, home, venue, focusRef }) {
     return () => offs.forEach((off) => off())
   }, [on])
 
-  // saat kaynağı: ?daylen ile hızlandırılmış gün
+  // Saat kaynağı: ?daylen ile hızlandırılmış test günü.
   useEffect(() => {
     if (!dayLen) return undefined
     const t0 = performance.now()
@@ -89,7 +90,17 @@ export function useSky({ net, touch, home, venue, focusRef }) {
   useEffect(() => {
     const tick = () => {
       const m = MODES.find((x) => x.id === mode)
-      const hour = urlHour != null && !dayLen ? urlHour : DAY_ONLY ? 12.5 : m?.hour != null ? m.hour : currentHour()
+      const current = currentHour()
+      const hour =
+        urlHour != null && !dayLen
+          ? urlHour
+          : DAY_ONLY
+            ? 12.5
+            : m?.id === 'longnight' && !dayLen
+              ? longNightHour(current)
+              : m?.hour != null
+                ? m.hour
+                : current
       const phase = phaseOf(hour)
       publishWorld({ hour, phase, night: nightAt(hour), sunset: sunsetAt(hour), weather })
     }
@@ -113,9 +124,9 @@ export function useSky({ net, touch, home, venue, focusRef }) {
     <section key="time" className="flex flex-col gap-2">
       <div>
         <p className="text-sm font-black text-[#4a3b5c]">🌗 Gün / Gece Döngüsü</p>
-        <p className="text-xs font-semibold text-[#8a7a9c]">Gerçek saate göre güneşli gündüz ve gece ya da sabit bir zaman seç.</p>
+        <p className="text-xs font-semibold text-[#8a7a9c]">Varsayılan döngüde gündüz 6, gece 18 saat sürer. Gerçek saate veya sabit bir zamana geçebilirsin.</p>
       </div>
-      <div className="grid grid-cols-2 gap-1.5">
+      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
         {MODES.map((m) => (
           <button
             key={m.id}

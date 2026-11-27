@@ -6,7 +6,7 @@ import { Dock } from '../components/Dock'
 import { Ico } from '../components/Icon'
 import { ToyButton } from '../components/ui'
 import { MicButton, StickerBubble, StickerPanel, VoiceBubble } from './features/media'
-import { CHAT_EMOJIS, GESTURES, GESTURE_BY_KIND, QUICK_REPLIES, REACTIONS, SKILL_COOLDOWN_MS, SKILLS, WHISPER_RANGE } from './interact'
+import { CHAT_EMOJIS, GESTURES, GESTURE_BY_KIND, QUICK_REPLIES, REACTIONS, SKILL_COOLDOWN_MS, SKILLS } from './interact'
 import { levelOf } from './collectibles'
 import Portrait from './Portrait'
 
@@ -511,7 +511,7 @@ export function InteractSheet({ peer, near, canInvite, touch, extras = [], heade
       {whisper && (
         <form onSubmit={sendWhisper} className="flex flex-col gap-1.5">
           <p className="text-xs font-bold text-[#6b4fc0]">
-            {near ? `Yalnızca ${peer.name} duyar. Etraftakiler “fısıldıyor 🤫” görür, ne dediğini görmez.` : `${peer.name} fısıldamak için çok uzakta (en fazla ${WHISPER_RANGE} m).`}
+            Yalnızca {peer.name} duyar. Etraftakiler “fısıldıyor 🤫” görür, ne dediğini görmez.
           </p>
           <div className="flex gap-2">
             <input
@@ -525,7 +525,7 @@ export function InteractSheet({ peer, near, canInvite, touch, extras = [], heade
               placeholder="Kulağına bir şey söyle…"
               className="min-w-0 flex-1 rounded-2xl border-2 border-[#d6c7ff] bg-[#faf6ff] px-4 py-2.5 text-base font-semibold italic text-[#4a3b5c] outline-none placeholder:text-[#8a7a9c]/60 focus:ring-4 focus:ring-[#d6c7ff]/60"
             />
-            <button type="submit" disabled={!near} aria-label="Fısılda" className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border-b-4 border-[#8a6bd1] bg-[#a88bff] text-lg text-white active:translate-y-0.5 active:border-b-2 disabled:opacity-50">
+            <button type="submit" aria-label="Fısılda" className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border-b-4 border-[#8a6bd1] bg-[#a88bff] text-lg text-white active:translate-y-0.5 active:border-b-2">
               🤫
             </button>
           </div>
@@ -543,7 +543,7 @@ export function GestureChip({ from, onBack, onChat, onClose }) {
     return () => clearTimeout(t)
   }, [from, onClose])
   return (
-    <TopDock><div className={`relative w-[min(92vw,22rem)] animate-pop rounded-3xl p-2.5 pl-4 ${glass}`} role="status">
+    <TopDock><div className={`pointer-events-auto relative w-[min(92vw,22rem)] animate-pop rounded-3xl p-2.5 pl-4 ${glass}`} role="status">
       <div className="flex items-center gap-3">
         <span className="text-3xl" aria-hidden>
           {from.emoji}
@@ -623,7 +623,7 @@ export function InviteChip({ from, onGo, onClose }) {
     return () => clearTimeout(t)
   }, [from, onClose])
   return (
-    <TopDock><div className={`relative flex w-[min(92vw,22rem)] animate-pop items-center gap-3 rounded-3xl p-2.5 pl-4 ${glass}`} role="status">
+    <TopDock><div className={`pointer-events-auto relative flex w-[min(92vw,22rem)] animate-pop items-center gap-3 rounded-3xl p-2.5 pl-4 ${glass}`} role="status">
       <span className="text-2xl" aria-hidden>
         🏠
       </span>
@@ -651,7 +651,7 @@ export function IncomingChip({ from, onOpen, onClose }) {
   return (
     <TopDock><button
       onClick={onOpen}
-      className={`relative w-[min(92vw,20rem)] animate-pop rounded-3xl px-4 py-2.5 text-left ${glass}`}
+      className={`pointer-events-auto relative w-[min(92vw,20rem)] animate-pop rounded-3xl px-4 py-2.5 text-left ${glass}`}
     >
       <p className="text-xs font-extrabold text-[#fdb252]">{from.whisper ? `🤫 ${from.name} sana fısıldadı` : `💌 ${from.name} sana yazdı`}</p>
       <p className="truncate text-sm font-semibold text-[#4a3b5c]">{from.text}</p>

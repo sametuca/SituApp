@@ -8,7 +8,6 @@ const ICONS = {
   friends: '💗',
   quests: '⭐',
   trophy: '🏆',
-  pvp: '⚔️',
   soundOn: '🔊',
   soundOff: '🔇',
   collection: '🧺',

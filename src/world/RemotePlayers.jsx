@@ -152,10 +152,8 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
     const r = remotes.current.get(id)
     const g = group.current
     if (!r || !g) return
-    // hedef konuma doğru yumuşak ilerle (ağ güncellemeleri ~10 Hz)
+    // Konumlar ortak RemotePlayers döngüsünde yumuşatılır; burada yalnızca çizilen avatarı güncelle.
     const k = 1 - Math.exp(-dt * 12)
-    r.x = MathUtils.lerp(r.x, r.tx, k)
-    r.z = MathUtils.lerp(r.z, r.tz, k)
     g.position.set(r.x, groundY(r.x, r.z), r.z)
 
     const budget = budgetRef?.current
@@ -249,9 +247,19 @@ const RemoteAvatar = memo(function RemoteAvatar({ id, name, avatar, remotes, bub
 export default function RemotePlayers({ roster, remotes, bubbles, reactions, whispering, onPick, touch = false }) {
   const budgetRef = useRef({ draw: new Set(), shadow: new Set(), tag: new Set(), halfRate: new Set(), bubble: new Set(), ready: false, count: -1 })
   const timerRef = useRef(0)
+  const drawIdsRef = useRef([])
+  const [drawIds, setDrawIds] = useState([])
+  const rosterById = useMemo(() => new Map(roster.map((p) => [p.id, p])), [roster])
 
-  // Saniyede 4 kez mesafeye göre çizim/gölge/etiket/balon/30Hz bütçesi hesaplanır (50+ kişilik mekânlarda sabit FPS)
+  // Konumları tek döngüde yumuşat; yalnızca çizim bütçesindeki oyuncular için ayrı R3F bileşeni tut.
   useFrame((_, dt) => {
+    const k = 1 - Math.exp(-dt * 12)
+    for (const r of remotes.current.values()) {
+      r.x = MathUtils.lerp(r.x, r.tx, k)
+      r.z = MathUtils.lerp(r.z, r.tz, k)
+    }
+
+    // Saniyede 4 kez mesafeye göre çizim/gölge/etiket/balon/30Hz bütçesi hesaplanır.
     timerRef.current += dt
     const size = remotes.current.size
     if (budgetRef.current.ready && timerRef.current < 0.25 && size === budgetRef.current.count) return
@@ -278,11 +286,20 @@ export default function RemotePlayers({ roster, remotes, bubbles, reactions, whi
       if (d2 <= BUBBLE_RANGE_SQ) bubble.add(pid)
     }
     budgetRef.current = { draw, shadow, tag, halfRate, bubble, ready: true, count: size }
+    const ids = list.slice(0, maxDraw).map(([id]) => id).sort()
+    const prev = drawIdsRef.current
+    if (ids.length !== prev.length || ids.some((id, i) => id !== prev[i])) {
+      drawIdsRef.current = ids
+      setDrawIds(ids)
+    }
   })
 
-  return roster.map(({ key: _playerKey, ...p }) => (
-    <RemoteAvatar key={p.id} {...p} remotes={remotes} bubbles={bubbles} reactions={reactions} whispering={whispering} budgetRef={budgetRef} onPick={onPick} />
-  ))
+  return drawIds.map((id) => {
+    const p = rosterById.get(id)
+    if (!p) return null
+    const { key: _playerKey, ...peer } = p
+    return <RemoteAvatar key={id} {...peer} remotes={remotes} bubbles={bubbles} reactions={reactions} whispering={whispering} budgetRef={budgetRef} onPick={onPick} />
+  })
 }
 
 /** Yerel oyuncunun isim etiketi ve kendi konuşma balonu (LocalPlayer'ın çocuğu olarak çizilir). */

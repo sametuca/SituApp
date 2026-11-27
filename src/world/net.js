@@ -77,8 +77,20 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
     let stopped = false
     let retry = 0
     let timer = null
+    let rosterTimer = null
 
-    const syncRoster = () => setRoster([...remotes.current.values()].map((p) => ({ id: p.id, key: p.key, name: p.name, avatar: p.avatar, dnd: Boolean(p.dnd) })))
+    const syncRoster = (immediate = false) => {
+      if (immediate) {
+        clearTimeout(rosterTimer)
+        rosterTimer = null
+        setRoster([...remotes.current.values()].map((p) => ({ id: p.id, key: p.key, name: p.name, avatar: p.avatar, dnd: Boolean(p.dnd) })))
+      } else if (!rosterTimer) {
+        rosterTimer = setTimeout(() => {
+          rosterTimer = null
+          setRoster([...remotes.current.values()].map((p) => ({ id: p.id, key: p.key, name: p.name, avatar: p.avatar, dnd: Boolean(p.dnd) })))
+        }, 100)
+      }
+    }
     const addRemote = (p) => {
       if (blockedKeys.current.has(p.key)) return // engellediklerim görünmez
       remotes.current.set(p.id, { ...p, anim: ANIMS[p.anim] ?? 'idle', tx: p.x, tz: p.z, tr: p.ry })
@@ -169,7 +181,7 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
             setStatus('online')
             roomRef.current = 'city'
             setRoom('city')
-            syncRoster()
+            syncRoster(true)
             // bağlantı koptuysa ve bir evdeysek sunucuya aynı odaya dönmeyi söyle
             if (wantRoom.current && wantRoom.current !== 'city') ws.send(JSON.stringify({ t: 'room', ...wantRoom.current }))
             break
@@ -186,7 +198,7 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
             whispering.current.clear()
             typing.current.clear()
             m.players.forEach(addRemote)
-            syncRoster()
+            syncRoster(true)
             onRoomRef.current?.(m)
             break
           case 'venue_channels':
@@ -207,7 +219,7 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
             blockedKeys.current = new Set(m.list.map((b) => b.key))
             setBlocked(m.list)
             for (const [id, r] of remotes.current) if (blockedKeys.current.has(r.key)) remotes.current.delete(id)
-            syncRoster()
+            syncRoster(true)
             break
           case 'dnd': {
             if (m.id === selfId.current) setDndState(m.on)
@@ -288,12 +300,13 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
         if (wsRef.current !== ws) return
         wsRef.current = null
         remotes.current.clear()
-        syncRoster()
+        syncRoster(true)
         if (stopped) return // (kicked/auth: durum zaten ayarlandı)
         setStatus('offline')
         setOnline(1)
         retry += 1
-        timer = setTimeout(connect, Math.min(1000 * 2 ** (retry - 1), 10000))
+        const delay = Math.min(1000 * 2 ** (retry - 1), 10000)
+        timer = setTimeout(connect, Math.round(delay * (0.75 + Math.random() * 0.5)))
       }
       ws.onerror = () => ws.close()
     }
@@ -302,6 +315,7 @@ export function useMultiplayer({ name, avatar, onChat, onDenied, onInfo, onInvit
     return () => {
       stopped = true
       clearTimeout(timer)
+      clearTimeout(rosterTimer)
       wsRef.current?.close()
     }
   }, [name, avatar])

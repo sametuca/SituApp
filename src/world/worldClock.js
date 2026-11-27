@@ -4,7 +4,7 @@
 //   phase     'dawn' | 'day' | 'dusk' | 'night'
 //   night     0..1 gece yoğunluğu (0 gündüz, 1 tam gece)
 //   sunset    0..1 gün batımı yoğunluğu
-//   weather   'clear' | 'rain' | 'snow' | 'leaves' | 'petals' | 'fog'
+//   weather   'clear' | 'rain' | 'snow' | 'leaves' | 'petals'
 export const worldClock = { hour: 12, phase: 'day', night: 0, sunset: 0, weather: 'clear' }
 
 const subs = new Set()
@@ -31,6 +31,13 @@ export const phaseOf = (h) => {
   if (nightAt(h) >= 0.6) return 'night'
   if (h < 12) return h < 8 ? 'dawn' : 'day'
   return h >= 17.3 ? 'dusk' : 'day'
+}
+
+/** 10:00-16:00 local time maps to a 12-hour world day; the remaining 18 hours map to world night. */
+export function longNightHour(h) {
+  const elapsed = ((h - 10) % 24 + 24) % 24
+  if (elapsed < 6) return 7 + elapsed * 2
+  return (19 + (elapsed - 6) * (2 / 3)) % 24
 }
 
 const TR = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Istanbul', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' })

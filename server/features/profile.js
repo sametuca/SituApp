@@ -1,6 +1,6 @@
 // Profil, ilgi etiketleri ve buz kırıcı kartlar.
-// Mesajlar: profile_save {profile} · profile {id} → profile {id, profile} · icebreaker {to} → icebreaker {id,name,qid,q,a,b}
-//           icebreaker_answer {to, qid, pick:'a'|'b'} → gönderene icebreaker_answer {id,name,a,b,choice}
+// Mesajlar: profile_save {profile} · profile {id} → profile {id, profile} · profile_icebreaker {to} → profile_icebreaker {id,name,qid,q,a,b}
+//           profile_icebreaker_answer {to, qid, pick:'a'|'b'} → gönderene profile_icebreaker_answer {id,name,a,b,choice}
 // Profil fotoğrafı (yalnızca Supabase modu, hesaplı oyuncu): istemci Storage'a `<uid>/<ad>.jpg` yükler, sonra
 //   profile_photo {path|null} (dakikada 3) → profile_photo {ok, url|null} ; photo_privacy {who:'all'|'friends'} → photo_privacy {who}
 //   Sunucu her izleyici için ayrı url hesaplar ve { t:'photo', key, url|null } yollar (welcome.photos: toplu). photo_hidden (moderasyon) → hiçbir yerde gösterilmez.
@@ -268,7 +268,7 @@ export default function profile(ctx) {
         send(me.ws, { t: 'profile', id, profile: pub(stored(target.key), me.key, target.key) ?? EMPTY, photo: photoUrlFor(me.key, target.key) })
       },
 
-      icebreaker(me, msg) {
+      profile_icebreaker(me, msg) {
         const now = Date.now()
         if (now - (me.lastIce ?? 0) < ICE_COOLDOWN_MS) return info(me, '🧊 Biraz bekle, yeni bir buz kırıcı için birkaç saniye gerek.')
         const target = typeof msg.to === 'string' ? players.get(msg.to) : null
@@ -279,11 +279,11 @@ export default function profile(ctx) {
         const qid = Math.floor(Math.random() * QUESTIONS.length)
         const [a, b] = QUESTIONS[qid]
         pending.set(pkey(me.id, target.id), { qid, ts: now })
-        send(target.ws, { t: 'icebreaker', id: me.id, name: me.name, qid, q: 'Hangisi?', a, b })
+        send(target.ws, { t: 'profile_icebreaker', id: me.id, name: me.name, qid, q: 'Hangisi?', a, b })
         info(me, `🧊 ${target.name} kişisine buz kırıcı gönderildi.`)
       },
 
-      icebreaker_answer(me, msg) {
+      profile_icebreaker_answer(me, msg) {
         const sender = typeof msg.to === 'string' ? players.get(msg.to) : null
         const k = sender ? pkey(sender.id, me.id) : ''
         const pend = pending.get(k)
@@ -291,7 +291,7 @@ export default function profile(ctx) {
         pending.delete(k)
         if (sender.room !== me.room || mod().reach(me, sender, 'icebreaker')) return
         const [a, b] = QUESTIONS[pend.qid]
-        send(sender.ws, { t: 'icebreaker_answer', id: me.id, name: me.name, a, b, choice: msg.pick === 'a' ? a : b })
+        send(sender.ws, { t: 'profile_icebreaker_answer', id: me.id, name: me.name, a, b, choice: msg.pick === 'a' ? a : b })
       },
     },
   }

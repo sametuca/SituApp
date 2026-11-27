@@ -646,7 +646,7 @@ function GiftPicker({ peer, onPick, onClose }) {
 function OfferCard({ offer, onAccept, onDecline }) {
   const g = GIFT_BY_ID[offer.kind]
   return (
-    <TopDock><div className={`relative w-[min(92vw,22rem)] animate-pop rounded-3xl bg-white/80 p-3 backdrop-blur-md ${chip}`} role="alert">
+    <TopDock><div className={`pointer-events-auto relative w-[min(92vw,22rem)] animate-pop rounded-3xl bg-white/80 p-3 backdrop-blur-md ${chip}`} role="alert">
       <div className="flex items-center gap-3">
         <span className="text-3xl" aria-hidden>
           {g?.emoji ?? '🎁'}
