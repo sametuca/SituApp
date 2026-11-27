@@ -22,7 +22,8 @@ import Sky from '../world/Sky'
 import { AirportTutorialHud, AirportTutorialScene } from '../world/AirportTutorial'
 import { IntroCutsceneCamera, IntroCutsceneOverlay } from '../world/IntroCutscene'
 import { GIFT_BY_ID } from '../world/cosmeticsData'
-import { findFreeSpot, furnitureColliders, isValid, loadHome, newUid, saveHome } from '../world/homeLayout'
+import { furnitureColliders } from '../world/homeLayout'
+import { useHomeFurniture } from './useHomeFurniture'
 import LocalPlayer, { ClickToMoveGround } from '../world/LocalPlayer'
 import RemotePlayers, { GuideNpc, SelfTag } from '../world/RemotePlayers'
 import { NearbyPicker, VenueChannelPill } from '../world/CrowdHud'
@@ -140,7 +141,6 @@ function WorldScene({ avatar }) {
   }, [sceneReady])
   // ev düzeni: kendi evin sunucuda kalıcıdır, tarayıcıdaki kopya yalnızca önbellektir
   const homeOwner = user?.id ?? `guest-${name}`
-  const [furn, setFurn] = useState(() => loadHome(homeOwner))
   const [editing, setEditing] = useState(false)
   const [selected, setSelected] = useState(null)
   const [invite, setInvite] = useState(null) // { owner, ownerName }: biri seni evine çağırdı
@@ -149,7 +149,6 @@ function WorldScene({ avatar }) {
   const [interactId, setInteractId] = useState(null) // etkileşim menüsü açık olan oyuncu
   const [, setTick] = useState(0)
   const [panel, setPanel] = useState(null) // açık panel: 'settings' | özellik panelleri
-  const synced = useRef(null) // sunucuyla en son eşleşen düzen (JSON); değişmediyse tekrar yollama
   const [help, setHelp] = useState(false)
   const [nearGuide, setNearGuide] = useState(false)
   const nearGuideRef = useRef(false)
@@ -371,59 +370,9 @@ function WorldScene({ avatar }) {
     if (net.homeTier !== cachedTier) focusRef.current.teleport = [HOME_ROOM.spawn[0], HOME_ROOM.spawn[1], Math.PI] // önbellek yanlıştıysa doğru kapı önüne
   }, [net.homeTier, tierKey, cachedTier])
   const maxItems = HOME_TIERS[Math.max(0, Math.min(HOME_TIERS.length - 1, net.homeTier ?? cachedTier))].max
+  const { furn, setFurn, addFurn, rotateFurn, removeFurn, stopEditing } = useHomeFurniture({ homeOwner, net, say, maxItems, editing, selected, setEditing, setSelected })
   const shownItems = !home ? NO_ITEMS : isOwnHome ? furn : (net.visit?.items ?? NO_ITEMS)
   const furnColliders = useMemo(() => furnitureColliders(shownItems), [shownItems])
-
-  // sunucudaki evim: bağlanınca (ve yeniden bağlanınca) onu al; sunucuda yoksa buradakini yükle
-  const editingRef = useRef(false)
-  useEffect(() => {
-    editingRef.current = editing
-  }, [editing])
-  const sync = net.homeSync
-  useEffect(() => {
-    if (!sync || editingRef.current) return
-    if (sync.items) {
-      synced.current = JSON.stringify(sync.items)
-      setFurn(sync.items)
-    } else if (furn.length && net.saveHome(furn)) synced.current = JSON.stringify(furn)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sync?.n])
-  // düzen değişince: önbelleğe yaz, kısa beklemeyle sunucuya yolla (sunucudakiyle aynıysa yollama)
-  useEffect(() => {
-    saveHome(homeOwner, furn)
-    const json = JSON.stringify(furn)
-    if (synced.current === null) synced.current = json // ilk açılış: henüz sunucuyla eşleşmedik, yollama
-    if (json === synced.current) return
-    const t = setTimeout(() => {
-      if (net.saveHome(furn)) synced.current = json
-    }, 400)
-    return () => clearTimeout(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [homeOwner, furn])
-
-  // extra: hediye yerleştirirken { uid, from } (hediyeler envanterden gelir, features/cosmetics)
-  const addFurn = (id, extra) => {
-    if (furn.length >= maxItems) return say(`Bu evde en fazla ${maxItems} eşya olur. Evini büyütürsen daha fazla koyabilirsin 🏡`)
-    if (extra?.uid && furn.some((i) => i.uid === extra.uid)) return say('Bu hediye zaten odada.')
-    const spot = findFreeSpot(furn, id)
-    if (!spot) return say('Odada boş yer kalmadı 🛋️')
-    const uid = extra?.uid ?? newUid()
-    setFurn((l) => [...l, { uid, id, x: spot.x, z: spot.z, ry: 0, ...(extra?.from ? { from: extra.from } : {}) }])
-    setSelected(uid)
-  }
-  const rotateFurn = () => {
-    const next = furn.map((i) => (i.uid === selected ? { ...i, ry: (i.ry + Math.PI / 2) % (Math.PI * 2) } : i))
-    if (!isValid(next, selected)) return say('Burada dönmeye yer yok.')
-    setFurn(next)
-  }
-  const removeFurn = () => {
-    setFurn((l) => l.filter((i) => i.uid !== selected))
-    setSelected(null)
-  }
-  const stopEditing = () => {
-    setEditing(false)
-    setSelected(null)
-  }
 
   const openChat = useCallback((target) => {
     chatTargetRef.current = target
