@@ -205,46 +205,6 @@ export function AirportTutorialHud({ step, near, touch, celebrate, onCollect, on
 
   return (
     <>
-      <TopDock><div className="relative pointer-events-auto w-[min(92vw,24rem)] animate-pop rounded-3xl border-2 border-white bg-white/94 px-4 py-3 shadow-toy backdrop-blur-md">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="rounded-full bg-[#fff3c8] px-2.5 py-0.5 text-[11px] font-black text-[#8a5a00]">
-              {idx + 1}/{STEPS.length}
-            </span>
-            <div className="flex items-center gap-1" aria-hidden>
-              {STEPS.map((s, i) => (
-                <span
-                  key={s.id}
-                  className={`h-1.5 rounded-full transition-all ${
-                    i < idx ? 'w-1.5 bg-[#7fd8a8]' : i === idx ? 'w-4 bg-[#fdb252]' : 'w-1.5 bg-[#e8dff8]'
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-          <button onClick={onSkip} className="rounded-full px-2 py-0.5 text-[11px] font-extrabold text-[#8a7a9c] transition hover:bg-[#f6f0ff]">
-            Atla 👉
-          </button>
-        </div>
-
-        <div className="mt-2 flex items-center gap-3">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#fff7eb] text-xl">{cur.emoji}</span>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-black leading-snug text-[#4a3b5c] sm:text-base">{cur.title}</p>
-            <p className="mt-0.5 text-[11px] font-semibold leading-snug text-[#8a7a9c] sm:text-xs">{cur.hint}</p>
-          </div>
-          {step === 'inventory' ? (
-            <button onClick={onOpenInventory} className="shrink-0 rounded-2xl border-b-4 border-[#d98a1c] bg-[#fdb252] px-3.5 py-1.5 text-xs font-black text-white shadow-soft active:translate-y-[2px] active:border-b-2">
-              🎒 Aç
-            </button>
-          ) : step === 'wardrobe' ? (
-            <button onClick={onOpenWardrobe} className="shrink-0 rounded-2xl border-b-4 border-[#7a5fd0] bg-[#a88bff] px-3.5 py-1.5 text-xs font-black text-white shadow-soft active:translate-y-[2px] active:border-b-2">
-              👗 Aç
-            </button>
-          ) : null}
-        </div>
-      </div></TopDock>
-
       {/* adım tamamlanınca mini konfeti kutlaması */}
       {celebrate && (
         <div className="pointer-events-none absolute inset-x-0 top-[13.5rem] z-20 grid place-items-center" role="status">

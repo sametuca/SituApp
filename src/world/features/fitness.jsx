@@ -96,8 +96,25 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
         setQueued(false)
         setResult(null)
         setLiveState(null)
-        setMatch({ mid: m.mid, seed: m.seed, startAt: m.startAt, you: m.you, opp: m.opp, solo: false })
+        setMatch({
+          mid: m.mid,
+          seed: m.seed,
+          waitingReady: Boolean(m.waitingReady),
+          youReady: false,
+          oppReady: false,
+          startAt: m.startAt || 0,
+          you: m.you,
+          opp: m.opp,
+          solo: false,
+        })
         setPanel('boxing')
+      }),
+      on('box_ready_state', (m) => {
+        setMatch((prev) => (prev && prev.mid === m.mid ? { ...prev, youReady: Boolean(m.youReady), oppReady: Boolean(m.oppReady) } : prev))
+      }),
+      on('box_go', (m) => {
+        setMatch((prev) => (prev && prev.mid === m.mid ? { ...prev, waitingReady: false, youReady: true, oppReady: true, startAt: m.startAt } : prev))
+        window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'match' }))
       }),
       on('box_state', (m) => setLiveState(m)),
       on('box_end', (m) => {
@@ -221,12 +238,28 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
     setMatch({
       mid: `solo_${Date.now()}`,
       seed: Math.floor(Math.random() * 1_000_000),
-      startAt: Date.now() + 800,
+      waitingReady: true,
+      youReady: false,
+      oppReady: true,
+      startAt: 0,
       you: { str: Math.floor(attr.str), sta: Math.floor(attr.sta), ski: Math.floor(attr.ski) },
       opp: { id: 'coach', name: 'Koç Kaan', str: 14, sta: 14, ski: 14 },
       solo: true,
     })
   }
+
+  const onReadyBox = useCallback(() => {
+    setMatch((prev) => {
+      if (!prev || prev.youReady) return prev
+      if (prev.solo) {
+        window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'match' }))
+        return { ...prev, youReady: true, oppReady: true, waitingReady: false, startAt: Date.now() + 900 }
+      }
+      send({ t: 'box_ready' })
+      window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: 'pop' }))
+      return { ...prev, youReady: true }
+    })
+  }, [send])
 
   const onSoloEnd = useCallback(
     (res, reason, score) => {
@@ -320,7 +353,9 @@ export function useFitness({ net, say, name, venue, focusRef, panel, setPanel, t
           <BoxingArena
             match={match}
             selfName={name || 'Sen'}
+            touch={touch}
             liveState={liveState}
+            onReady={onReadyBox}
             onSendHit={(i, type) => send({ t: 'box_hit', i, type })}
             onSoloEnd={onSoloEnd}
             onExit={closeBoxing}

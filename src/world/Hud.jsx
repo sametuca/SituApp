@@ -492,7 +492,7 @@ export function StartGuide({ touch, ready = true, inCity, inAirport = false, foc
   return (
     <div
       className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex justify-center px-3"
-      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 5.5rem)' }}
+      style={{ paddingBottom: touch ? 'calc(env(safe-area-inset-bottom) + 7.25rem)' : 'calc(env(safe-area-inset-bottom) + 9.5rem)' }}
     >
       <div className={`pointer-events-auto relative flex w-[min(25rem,calc(100vw-1.5rem))] animate-pop items-center gap-3 rounded-3xl px-4 py-3.5 pr-11 ${glass}`} role="status" key={stage}>
         <span className="shrink-0 text-3xl" aria-hidden>{stage === 'welcome' ? '🌴' : stage === 'move' ? '🕹️' : '👋'}</span>

@@ -85,6 +85,21 @@ export async function createConfirmedAuthUser({ email, password, metadata }) {
   return data
 }
 
+/** Admin API ile kullanıcının şifresini günceller. */
+export async function setUserPassword(uid, password) {
+  if (!enabled) throw new Error('Supabase modu aktif değil.')
+  if (!UUID_RE.test(String(uid ?? ''))) throw new Error('Geçersiz kullanıcı UID.')
+  if (typeof password !== 'string' || password.length < 6) throw new Error('Şifre en az 6 karakter olmalı.')
+  const res = await fetch(`${URL_BASE}/auth/v1/admin/users/${uid}`, {
+    method: 'PUT',
+    headers: { ...svcHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
+    signal: AbortSignal.timeout(10000),
+  })
+  if (!res.ok) throw new Error('Şifre güncellenemedi.')
+  return true
+}
+
 // ---- Auth: token doğrulama (kısa süreli önbellek) ----
 const tokenCache = new Map() // token → { user, exp }
 const TOKEN_TTL_MS = 60_000

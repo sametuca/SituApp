@@ -1,9 +1,16 @@
-// Boks arenası 3B: boksörler, vuruş kıvılcımları.
+// Boks arenası 3B: boksörler, yumruk & slash izleri, vuruş kıvılcımları ve şok halkası.
 import { Suspense, useMemo, useRef } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { RoundedBox, useGLTF } from '@react-three/drei'
-import { Box3, Vector3 } from 'three'
+import { Box3, DoubleSide, Vector3 } from 'three'
 import { fixPropMaterialSeams } from '../avatarTextureFix'
+
+const SLASH_COLORS = {
+  jab: '#7fcdf3',
+  hook: '#ffd35e',
+  upper: '#ff8a7a',
+  block: '#b79cff',
+}
 
 function BoxerModel({ model, height = 1.65 }) {
   const { scene } = useGLTF(model)
@@ -53,6 +60,10 @@ function Boxer3D({ x, facing, model, bodyCol, gloveCol, stateRef, isSelf }) {
   const root = useRef()
   const body = useRef()
   const shield = useRef()
+  const slashRef = useRef()
+  const slashMatRef = useRef()
+  const fistRef = useRef()
+  const fistMatRef = useRef()
 
   useFrame(({ clock }) => {
     const s = stateRef.current
@@ -60,25 +71,83 @@ function Boxer3D({ x, facing, model, bodyCol, gloveCol, stateRef, isSelf }) {
     const punch = isSelf ? s.youPunch : s.oppPunch
     const pType = isSelf ? s.youType : s.oppType
     const hit = isSelf ? s.oppPunch : s.youPunch
+    const hitLanded = isSelf ? s.oppHit : s.youHit
     const shielded = isSelf ? s.shieldUntil > now : s.oppShieldUntil > now
     const t = clock.elapsedTime + (isSelf ? 0 : 1.7)
-    const bob = Math.sin(t * 4.5) * 0.05
+    const bob = Math.sin(t * 5.2) * 0.055
+
+    // Keskin yaylanma: hızlı ileri atılış + akıcı geri çekilme
+    const snap = punch > 0 ? Math.pow(Math.sin(punch * Math.PI), 0.65) : 0
+    const gotHit = hit > 0.22 && hitLanded ? Math.sin(((hit - 0.22) / 0.78) * Math.PI) : 0
 
     if (root.current) {
-      const lunge = punch > 0 ? Math.sin(punch * Math.PI) * 0.56 * facing : 0
-      const recoil = hit > 0.25 ? -Math.sin(((hit - 0.25) / 0.75) * Math.PI) * 0.3 * facing : 0
-      root.current.position.set(x + lunge + recoil, 0.22 + Math.abs(bob) * 0.45, 0)
+      const lunge = pType === 'block' ? -snap * 0.14 * facing : snap * 0.78 * facing
+      const recoil = -gotHit * 0.38 * facing
+      const hopY = pType === 'upper' && punch > 0 ? snap * 0.28 : Math.abs(bob) * 0.55
+      root.current.position.set(x + lunge + recoil, 0.22 + hopY, 0)
       root.current.rotation.y = facing > 0 ? Math.PI / 2 : -Math.PI / 2
     }
+
     if (body.current) {
-      const punchLean = pType === 'upper' ? -punch * 0.18 : punch * 0.28
-      body.current.rotation.x = punchLean - (hit > 0.25 ? 0.24 : 0)
-      body.current.rotation.y = pType === 'hook' ? punch * 0.45 : pType === 'jab' ? -punch * 0.2 : Math.sin(t * 2.2) * 0.05
-      body.current.position.y = pType === 'upper' ? Math.sin(punch * Math.PI) * 0.16 : 0
+      const punchLean =
+        pType === 'upper'
+          ? -snap * 0.32
+          : pType === 'block'
+            ? -snap * 0.12
+            : snap * 0.42
+      body.current.rotation.x = punchLean - gotHit * 0.34
+      body.current.rotation.y =
+        pType === 'hook'
+          ? Math.sin(punch * Math.PI * 1.15) * 0.78
+          : pType === 'jab'
+            ? -snap * 0.34
+            : Math.sin(t * 2.5) * 0.07
+      body.current.rotation.z = gotHit * 0.18
+      body.current.scale.set(1 + snap * 0.08, 1 - snap * 0.05 + (pType === 'upper' ? snap * 0.12 : 0), 1 + snap * 0.1)
     }
+
+    // Savurma (Slash) kavisi ve parlak yumruk izi
+    const showSlash = punch > 0.08 && pType !== 'block'
+    if (slashRef.current) {
+      slashRef.current.visible = showSlash
+      if (showSlash) {
+        const col = SLASH_COLORS[pType] || '#ffd35e'
+        if (slashMatRef.current) {
+          slashMatRef.current.color.set(col)
+          slashMatRef.current.opacity = Math.min(0.92, punch * 1.15)
+        }
+        const sweep = (1 - punch) * 2.4 - 0.9
+        if (pType === 'upper') {
+          slashRef.current.position.set(0, 1.05 + snap * 0.45, 0.62 + snap * 0.35)
+          slashRef.current.rotation.set(sweep, Math.PI / 2, 0)
+        } else if (pType === 'hook') {
+          slashRef.current.position.set(0, 1.12, 0.58 + snap * 0.32)
+          slashRef.current.rotation.set(Math.PI / 2, 0, sweep)
+        } else {
+          slashRef.current.position.set(0, 1.14, 0.65 + snap * 0.5)
+          slashRef.current.rotation.set(Math.PI / 2 + 0.35, 0.25, sweep * 0.8)
+        }
+        slashRef.current.scale.setScalar(0.85 + snap * 0.48)
+      }
+    }
+
+    if (fistRef.current) {
+      fistRef.current.visible = showSlash
+      if (showSlash) {
+        if (fistMatRef.current) {
+          fistMatRef.current.color.set(gloveCol)
+          fistMatRef.current.emissive.set(SLASH_COLORS[pType] || '#ffd35e')
+        }
+        const sideX = pType === 'hook' ? Math.cos((1 - punch) * Math.PI) * 0.45 : pType === 'jab' ? -0.15 : 0.12
+        const upY = pType === 'upper' ? 0.85 + snap * 0.72 : 1.12
+        fistRef.current.position.set(sideX, upY, 0.52 + snap * 0.78)
+        fistRef.current.scale.setScalar(0.85 + snap * 0.55)
+      }
+    }
+
     if (shield.current) {
       shield.current.visible = shielded
-      if (shielded) shield.current.rotation.y = t * 1.4
+      if (shielded) shield.current.rotation.y = t * 1.8
     }
   })
 
@@ -89,6 +158,16 @@ function Boxer3D({ x, facing, model, bodyCol, gloveCol, stateRef, isSelf }) {
           <BoxerModel model={model} />
         </Suspense>
       </group>
+      {/* 3B Slash Kavis İzi */}
+      <mesh ref={slashRef} visible={false}>
+        <torusGeometry args={[0.68, 0.065, 8, 22, Math.PI * 0.88]} />
+        <meshBasicMaterial ref={slashMatRef} color="#ffd35e" transparent opacity={0.85} side={DoubleSide} />
+      </mesh>
+      {/* Atılan Yumruk Eldiven Parlaması */}
+      <mesh ref={fistRef} visible={false}>
+        <sphereGeometry args={[0.2, 12, 10]} />
+        <meshStandardMaterial ref={fistMatRef} color={gloveCol} emissive="#ffd35e" emissiveIntensity={0.65} roughness={0.25} />
+      </mesh>
       {/* Blok kalkanı */}
       <mesh ref={shield} position={[0, 1.0, 0.25]} visible={false}>
         <sphereGeometry args={[0.92, 18, 14]} />
@@ -100,30 +179,46 @@ function Boxer3D({ x, facing, model, bodyCol, gloveCol, stateRef, isSelf }) {
 
 function HitSparks({ stateRef }) {
   const group = useRef()
-  const seeds = useMemo(() => Array.from({ length: 10 }, (_, i) => ({ a: (i / 10) * Math.PI * 2, y: (i % 3 - 1) * 0.25 })), [])
+  const ringRef = useRef()
+  const ringMatRef = useRef()
+  const seeds = useMemo(() => Array.from({ length: 12 }, (_, i) => ({ a: (i / 12) * Math.PI * 2, y: ((i % 3) - 1) * 0.26 })), [])
   useFrame(() => {
     const g = group.current
     if (!g) return
     const s = stateRef.current
-    const power = Math.max(s.youPunch, s.oppPunch)
-    const active = power > 0.35
+    const youHitPow = s.youHit ? s.youPunch : 0
+    const oppHitPow = s.oppHit ? s.oppPunch : 0
+    const power = Math.max(youHitPow, oppHitPow)
+    const active = power > 0.22
     g.visible = active
     if (!active) return
-    const k = (1 - power) * 1.4
+    const targetX = youHitPow >= oppHitPow ? 0.55 : -0.55
+    g.position.set(targetX, 1.22, 0)
+    const k = (1 - power) * 1.55
     g.children.forEach((m, i) => {
+      if (m === ringRef.current) return
       const sd = seeds[i]
-      m.position.set(Math.cos(sd.a) * k * 0.4, 1.25 + sd.y + Math.sin(sd.a) * k * 0.35, Math.sin(sd.a) * k * 0.4)
-      m.scale.setScalar(Math.max(0.1, power * 0.9))
+      if (!sd) return
+      m.position.set(Math.cos(sd.a) * k * 0.48, sd.y + Math.sin(sd.a) * k * 0.42, Math.sin(sd.a) * k * 0.48)
+      m.scale.setScalar(Math.max(0.12, power * 1.05))
     })
+    if (ringRef.current && ringMatRef.current) {
+      ringRef.current.scale.setScalar(0.35 + k * 0.95)
+      ringMatRef.current.opacity = Math.max(0, power * 0.85)
+    }
   })
   return (
     <group ref={group} visible={false}>
       {seeds.map((_, i) => (
         <mesh key={i}>
-          <octahedronGeometry args={[0.09, 0]} />
-          <meshBasicMaterial color={i % 2 ? '#ffd35e' : '#ffffff'} />
+          <octahedronGeometry args={[0.095, 0]} />
+          <meshBasicMaterial color={i % 3 === 0 ? '#ff8a7a' : i % 2 ? '#ffd35e' : '#ffffff'} />
         </mesh>
       ))}
+      <mesh ref={ringRef} rotation={[0, Math.PI / 4, 0]}>
+        <ringGeometry args={[0.42, 0.56, 24]} />
+        <meshBasicMaterial ref={ringMatRef} color="#ffd35e" transparent opacity={0.8} side={DoubleSide} />
+      </mesh>
     </group>
   )
 }

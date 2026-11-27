@@ -25,6 +25,25 @@ export const CUE_META = {
 }
 export const CUE_TYPES = Object.keys(CUE_META)
 
+export const BOX_KEYS = [
+  { code: 'KeyA', label: 'A' },
+  { code: 'KeyS', label: 'S' },
+  { code: 'KeyD', label: 'D' },
+  { code: 'KeyW', label: 'W' },
+  { code: 'KeyF', label: 'F' },
+  { code: 'KeyJ', label: 'J' },
+  { code: 'KeyK', label: 'K' },
+  { code: 'KeyL', label: 'L' },
+]
+
+export const BOX_DIRS = {
+  left: { arrow: '←', label: 'Sol' },
+  right: { arrow: '→', label: 'Sağ' },
+  up: { arrow: '↑', label: 'Yukarı' },
+  down: { arrow: '↓', label: 'Aşağı' },
+}
+const DIR_LIST = ['left', 'right', 'up', 'down']
+
 export function makeRng(seed) {
   let s = seed >>> 0 || 1
   return () => {
@@ -36,7 +55,7 @@ export function makeRng(seed) {
 export const roundStart = (r) => BOX.leadMs + r * (BOX.roundMs + BOX.breakMs)
 export const matchDuration = () => roundStart(BOX.rounds) - BOX.breakMs
 
-/** Tohumdan vuruş dizisi: [{ i, t (maç başından ms), type, round }]. Sonraki raunt biraz daha hızlı. */
+/** Tohumdan vuruş dizisi: [{ i, t (maç başından ms), type, round, keyCode, keyLabel, dir, arrow }]. Sonraki raunt biraz daha hızlı. */
 export function boxCues(seed) {
   const rng = makeRng(seed)
   const cues = []
@@ -47,8 +66,19 @@ export function boxCues(seed) {
     while (t < start + BOX.roundMs - 450) {
       const x = rng()
       const type = x < 0.34 ? 'jab' : x < 0.6 ? 'hook' : x < 0.8 ? 'upper' : 'block'
-      cues.push({ i: cues.length, t: Math.round(t), type, round: r })
-      t += (680 + rng() * 440) * pace
+      const kp = BOX_KEYS[Math.floor(rng() * BOX_KEYS.length)]
+      const dir = DIR_LIST[Math.floor(rng() * DIR_LIST.length)]
+      cues.push({
+        i: cues.length,
+        t: Math.round(t),
+        type,
+        round: r,
+        keyCode: kp.code,
+        keyLabel: kp.label,
+        dir,
+        arrow: BOX_DIRS[dir].arrow,
+      })
+      t += (740 + rng() * 440) * pace
     }
   }
   return cues

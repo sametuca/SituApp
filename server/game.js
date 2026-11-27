@@ -78,6 +78,7 @@ import { FEATURE_FACTORIES } from './features/index.js'
 import * as supa from './supa.js'
 import { user as storeUser, save as saveStore } from './store.js'
 import { sanitizeLook } from '../src/world/lookData.js'
+import { levelOf } from '../src/world/collectibles.js'
 import { loadProfile, saveAvatar, setName, uidByName } from './auth.js'
 import { VENUE_BY_ID, VENUE_HARD_CAP, VENUE_ROOM, VENUE_SOFT_CAP, isVenueRoom, venueChannelOf, venueIdOf, venueRoom } from '../src/world/venues.js'
 
@@ -774,5 +775,60 @@ export function attachGameServer(httpServer) {
     clearInterval(heartbeat)
   })
 
-  return { online: () => players.size }
+  return {
+    online: () => players.size,
+    listPlayers: () =>
+      [...players.values()].map((p) => {
+        const u = storeUser(p.key)
+        const stars = u.stats?.stars ?? 0
+        return {
+          id: p.id,
+          key: p.key,
+          uid: p.uid ?? null,
+          name: p.name,
+          avatar: p.avatar,
+          room: p.room,
+          x: Math.round(p.x * 10) / 10,
+          z: Math.round(p.z * 10) / 10,
+          coins: u.coins ?? 0,
+          stars,
+          level: levelOf(stars).level,
+          ip: p.ip ?? null,
+        }
+      }),
+    kick(idOrKey, reason = 'Yönetici tarafından çıkarıldın.') {
+      let n = 0
+      for (const p of players.values()) {
+        if (p.id === idOrKey || p.key === idOrKey) {
+          send(p.ws, { t: 'info', text: `⛔ ${reason}` })
+          setTimeout(() => p.ws.close(4403, 'kicked'), 80)
+          n++
+        }
+      }
+      return n
+    },
+    announce(text) {
+      const msg = String(text ?? '').trim().slice(0, 240)
+      if (!msg) return 0
+      for (const p of players.values()) send(p.ws, { t: 'info', text: `📢 ${msg}` })
+      return players.size
+    },
+    reward(key, { coins = 0, stars = 0 } = {}) {
+      const u = storeUser(key)
+      const cDelta = Math.trunc(Number(coins) || 0)
+      const sDelta = Math.trunc(Number(stars) || 0)
+      if (cDelta) u.coins = Math.max(0, (u.coins ?? 0) + cDelta)
+      if (sDelta) {
+        u.stats ??= {}
+        u.stats.stars = Math.max(0, (u.stats.stars ?? 0) + sDelta)
+      }
+      saveStore()
+      for (const p of players.values()) {
+        if (p.key !== key) continue
+        if (cDelta) send(p.ws, { t: 'coins', n: u.coins, d: cDelta, why: 'Yönetici ödülü' })
+        if (sDelta) send(p.ws, { t: 'collect_xp', xp: u.stats.stars, bonus: sDelta, kind: 'star', hidden: false })
+      }
+      return { coins: u.coins ?? 0, stars: u.stats?.stars ?? 0 }
+    },
+  }
 }

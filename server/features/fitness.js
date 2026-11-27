@@ -121,6 +121,7 @@ export default function fitness(ctx) {
   const endMatch = (m, winnerId, reason) => {
     if (!matches.delete(m.id)) return
     clearTimeout(m.timer)
+    clearTimeout(m.readyTimer)
     for (const f of m.fighters) inMatch.delete(f.id)
     const [A, B] = m.fighters
     const pa = players.get(A.id)
@@ -145,10 +146,26 @@ export default function fitness(ctx) {
     }
   }
 
+  const launchMatchClock = (m) => {
+    if (m.started) return
+    clearTimeout(m.readyTimer)
+    m.started = true
+    m.startAt = Date.now() + 1200
+    for (const f of m.fighters) {
+      const p = players.get(f.id)
+      if (p && p.ws.readyState === 1) send(p.ws, { t: 'box_go', mid: m.id, startAt: m.startAt })
+    }
+    m.timer = setTimeout(() => {
+      const [A, B] = m.fighters
+      const win = A.hp === B.hp ? (A.score === B.score ? null : A.score > B.score ? A.id : B.id) : A.hp > B.hp ? A.id : B.id
+      endMatch(m, win, 'time')
+    }, matchDuration() + 2600)
+    m.timer.unref?.()
+  }
+
   const startMatch = (a, b) => {
     const mid = `box_${seq++}`
     const seed = Math.floor(Math.random() * 1_000_000_000)
-    const startAt = Date.now() + 1200
     const cues = boxCues(seed)
     const mk = (p) => {
       const at = attrOf(p.key)
@@ -167,7 +184,7 @@ export default function fitness(ctx) {
         ski: Math.floor(at.ski),
       }
     }
-    const m = { id: mid, seed, startAt, cues, fighters: [mk(a), mk(b)], timer: null }
+    const m = { id: mid, seed, started: false, startAt: 0, ready: new Set(), cues, fighters: [mk(a), mk(b)], timer: null, readyTimer: null }
     matches.set(mid, m)
     inMatch.set(a.id, mid)
     inMatch.set(b.id, mid)
@@ -179,18 +196,23 @@ export default function fitness(ctx) {
           t: 'box_start',
           mid,
           seed,
-          startAt,
+          waitingReady: true,
+          startAt: 0,
           you: { str: f.str, sta: f.sta, ski: f.ski },
           opp: { id: opp.id, name: opp.name, avatar: opp.avatar, str: opp.str, sta: opp.sta, ski: opp.ski },
         })
       }
     }
-    m.timer = setTimeout(() => {
+    m.readyTimer = setTimeout(() => {
+      if (m.started) return
       const [A, B] = m.fighters
-      const win = A.hp === B.hp ? (A.score === B.score ? null : A.score > B.score ? A.id : B.id) : A.hp > B.hp ? A.id : B.id
-      endMatch(m, win, 'time')
-    }, matchDuration() + 2600)
-    m.timer.unref?.()
+      const aReady = m.ready.has(A.id)
+      const bReady = m.ready.has(B.id)
+      if (aReady && !bReady) endMatch(m, A.id, 'forfeit')
+      else if (bReady && !aReady) endMatch(m, B.id, 'forfeit')
+      else launchMatchClock(m)
+    }, 30_000)
+    m.readyTimer.unref?.()
   }
 
   const removeQueue = (p) => {
@@ -278,11 +300,31 @@ export default function fitness(ctx) {
         }
         send(me.ws, { t: 'box_left' })
       },
+      box_ready(me) {
+        const mid = inMatch.get(me.id)
+        if (!mid) return
+        const m = matches.get(mid)
+        if (!m || m.started) return
+        m.ready.add(me.id)
+        for (const f of m.fighters) {
+          const opp = m.fighters.find((x) => x.id !== f.id)
+          const p = players.get(f.id)
+          if (p && p.ws.readyState === 1) {
+            send(p.ws, {
+              t: 'box_ready_state',
+              mid: m.id,
+              youReady: m.ready.has(f.id),
+              oppReady: Boolean(opp && m.ready.has(opp.id)),
+            })
+          }
+        }
+        if (m.ready.size >= m.fighters.length) launchMatchClock(m)
+      },
       box_hit(me, msg) {
         const mid = inMatch.get(me.id)
         if (!mid) return
         const m = matches.get(mid)
-        if (!m) return
+        if (!m || !m.started) return
         const f = m.fighters.find((x) => x.id === me.id)
         const opp = m.fighters.find((x) => x.id !== me.id)
         if (!f || !opp) return

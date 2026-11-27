@@ -195,11 +195,29 @@ app.post('/api/auth/register', registerHandler)
 app.post('/api/feedback', feedbackHandler)
 import { consentHandler } from './consent.js'
 app.post('/api/consent', consentHandler)
-import { adminBan, adminHidePhoto, adminOverview, adminResolve } from './admin.js'
+import {
+  adminAnnounce,
+  adminBan,
+  adminChangePassword,
+  adminHidePhoto,
+  adminKick,
+  adminLogin,
+  adminOverview,
+  adminResolve,
+  adminReward,
+  adminSetUserPassword,
+  setGameBridge,
+} from './admin.js'
+app.post('/api/admin/login', adminLogin)
 app.get('/api/admin/overview', adminOverview)
 app.post('/api/admin/resolve', adminResolve)
 app.post('/api/admin/hide-photo', adminHidePhoto)
 app.post('/api/admin/ban', adminBan)
+app.post('/api/admin/kick', adminKick)
+app.post('/api/admin/announce', adminAnnounce)
+app.post('/api/admin/reward', adminReward)
+app.post('/api/admin/set-password', adminSetUserPassword)
+app.post('/api/admin/admin-password', adminChangePassword)
 
 let game = null
 app.get('/api/health', (_req, res) => {
@@ -236,3 +254,4 @@ await Promise.all([initStore(), initHomes(), initNames()])
 supa.hookShutdown()
 const server = app.listen(PORT, () => console.log(`Rastla sunucusu: http://localhost:${PORT} (WebSocket: /ws) — ${supa.enabled ? 'Supabase modu' + (supa.allowGuest ? ' (misafirlere açık)' : '') : 'demo/dosya modu'}`))
 game = attachGameServer(server)
+setGameBridge(game)

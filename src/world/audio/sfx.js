@@ -148,6 +148,27 @@ export const SFX = {
     tone(ac, o, t, { f: 300, f2: 230, type: 'triangle', a: 0.005, d: 0.15, g: 0.16 })
     return 0.2
   },
+  // boks: savurma (slash/whoosh), isabetli yumruk (punch) ve blok kalkanı (block)
+  slash(ac, o, t) {
+    const v = rnd(0.92, 1.1)
+    noise(ac, o, t, { type: 'bandpass', f: 2400 * v, f2: 680 * v, q: 1.4, a: 0.003, d: 0.13, g: 0.26 })
+    tone(ac, o, t, { f: 880 * v, f2: 240 * v, type: 'sine', a: 0.002, d: 0.11, g: 0.12 })
+    return 0.18
+  },
+  punch(ac, o, t, opt) {
+    const heavy = opt?.heavy ? 1.22 : 1
+    const v = rnd(0.94, 1.08)
+    noise(ac, o, t, { type: 'bandpass', f: 2600 * v, f2: 750, q: 1.3, a: 0.002, d: 0.09, g: 0.22 * heavy })
+    tone(ac, o, t + 0.015, { f: 175 * v, f2: 46, type: 'triangle', a: 0.002, d: 0.16, g: 0.34 * heavy })
+    noise(ac, o, t + 0.015, { type: 'lowpass', f: 950, f2: 260, a: 0.002, d: 0.11, g: 0.28 * heavy })
+    if (opt?.heavy) bell(ac, o, t + 0.03, N(84), 0.08, 0.45)
+    return 0.26
+  },
+  block(ac, o, t) {
+    tone(ac, o, t, { f: 320, f2: 190, type: 'triangle', a: 0.002, d: 0.11, g: 0.22 })
+    bell(ac, o, t + 0.01, N(79), 0.09, 0.38)
+    return 0.24
+  },
   // adım: yumuşak gürültü + alçak tok ses; zemine göre tını. Hafif perde/ses rastgeleliği.
   step(ac, o, t, opt) {
     const s = opt?.surface ?? 'city'
