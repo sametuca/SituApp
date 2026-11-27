@@ -25,6 +25,7 @@ import { GIFT_BY_ID } from '../world/cosmeticsData'
 import { furnitureColliders } from '../world/homeLayout'
 import { useHomeFurniture } from './useHomeFurniture'
 import { useAirportTutorial } from './useAirportTutorial'
+import { useSkills } from './useSkills'
 import LocalPlayer, { ClickToMoveGround } from '../world/LocalPlayer'
 import RemotePlayers, { GuideNpc, SelfTag } from '../world/RemotePlayers'
 import { NearbyPicker, VenueChannelPill } from '../world/CrowdHud'
@@ -34,11 +35,10 @@ import { HelpModal, StartGuide, TopBar } from '../world/Hud'
 import { ChatPanel } from '../world/HudChat'
 import { Minimap } from '../world/HudMap'
 import { ChatFab, ChatSheet, DoorPrompt, GestureChip, IncomingChip, InteractSheet, InviteChip, Joystick, LookJoystick, MatchOverlay, SkillBar } from '../world/Social'
-import { GESTURE_BY_KIND, GESTURE_RANGE, REACTIONS, SKILL_COOLDOWN_MS, loadSlots, saveSlots, skillFor } from '../world/interact'
+import { GESTURE_BY_KIND, GESTURE_RANGE, REACTIONS } from '../world/interact'
 import SkillEditor from '../components/SkillEditor'
 import { useIsTouch } from '../world/useIsTouch'
 import { HOME_TIERS, applyHomeTier } from '../world/homeTiers'
-import { bike } from '../world/bikeStore'
 import { BEACH_START, HOME_DOOR, HOME_ROOM, HOME_ZONE, SPAWN, resolveCollisions, resolveRoom, zoneAt } from '../world/layout'
 import { getGraphicsProfile } from '../world/performanceProfile'
 import GraphicsEffects from '../world/GraphicsEffects'
@@ -429,45 +429,7 @@ function WorldScene({ avatar }) {
     if (!interactPeer) return
     if (!net.sendWhisper(text, interactPeer.id)) say('Şu an çevrimdışısın.')
   }
-  const react = useCallback((e) => net.sendReact(e), [net])
-  const reactRef = useRef(react)
-  const [slots, setSlots] = useState(loadSlots) // beceri çubuğu 4 yuvası (ifadeler; sürükle-bırakla değişir)
-  const [skillEdit, setSkillEdit] = useState(false)
-  const skillList = useMemo(() => slots.map((e, i) => skillFor(e, i)), [slots])
-  const skillListRef = useRef(skillList)
-  skillListRef.current = skillList
-  const changeSlots = useCallback((next) => {
-    setSlots(next)
-    saveSlots(next)
-  }, [])
-  const [skillCd, setSkillCd] = useState({})
-  const skillCdRef = useRef({})
-  const soloDanceTimer = useRef(null)
-  useEffect(() => () => clearTimeout(soloDanceTimer.current), [])
-  const triggerSkill = useCallback(
-    (sk) => {
-      const now = Date.now()
-      if ((skillCdRef.current[sk.id] ?? 0) > now) return
-      const next = { ...skillCdRef.current, [sk.id]: now + SKILL_COOLDOWN_MS }
-      skillCdRef.current = next
-      setSkillCd(next)
-      react(sk.emoji)
-      window.dispatchEvent(new CustomEvent('situapp:sfx', { detail: sk.sfx }))
-      if (sk.pose && !bike.on && (!together.self.current || together.self.current.solo)) {
-        together.self.current = { kind: sk.pose, lead: true, ry: focusRef.current.ry, t0: performance.now() / 1000, solo: true }
-        clearTimeout(soloDanceTimer.current)
-        soloDanceTimer.current = setTimeout(() => {
-          if (together.self.current?.solo) together.self.current = null
-        }, sk.dur ?? 2400)
-      }
-    },
-    [react],
-  )
-  const skillRef = useRef(triggerSkill)
-  useEffect(() => {
-    reactRef.current = react
-    skillRef.current = triggerSkill
-  }, [react, triggerSkill])
+  const { reactRef, slots, skillEdit, setSkillEdit, skillList, skillListRef, changeSlots, skillCd, triggerSkill, skillRef } = useSkills({ net, focusRef })
 
   // sohbet ettiğin oyuncu ayrılırsa çekmeceyi kapat
   useEffect(() => {
