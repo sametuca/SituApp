@@ -6,6 +6,7 @@
 import { save, user } from '../store.js'
 import * as supa from '../supa.js'
 import { savePhotoPath } from '../auth.js'
+import { MUSIC_IDS, MOOD_IDS, MOOD_TTL } from '../../src/world/vibeData.js'
 
 export const TAGS = [
   ['kahve', '☕', 'Kahve'],
@@ -35,7 +36,7 @@ export const TAGS = [
 ].map(([id, emoji, label]) => ({ id, emoji, label }))
 const TAG_IDS = new Set(TAGS.map((t) => t.id))
 
-const EMPTY = { bio: '', age: null, birthDate: '', city: '', instagram: '', x: '', socialPrivacy: 'all', instagramLocked: false, xLocked: false, tags: [] }
+const EMPTY = { bio: '', age: null, birthDate: '', city: '', instagram: '', x: '', socialPrivacy: 'all', instagramLocked: false, xLocked: false, tags: [], music: '', mood: null }
 const HANDLE_RE = /^[a-zA-Z0-9._]{1,30}$/
 const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/
 
@@ -62,6 +63,10 @@ export default function profile(ctx) {
   const mod = () => ctx.features[0].api
   const info = (me, text) => send(me.ws, { t: 'info', text })
   const stored = (k) => user(k).profile ?? null
+  const moodOf = (k) => {
+    const m = user(k).mood
+    return m && MOOD_IDS.has(m.id) && Date.now() - m.at < MOOD_TTL ? m.id : null
+  }
 
   /** Herkese açık profil (yalnızca bilinen alanlar; arkadaşlara özel sosyal hesaplar gizlenir). */
   const pub = (p, viewerKey = null, ownerKey = null) => {
@@ -81,6 +86,8 @@ export default function profile(ctx) {
       instagramLocked: !canSeeSocials && Boolean(instagram),
       xLocked: !canSeeSocials && Boolean(x),
       tags: (p.tags ?? []).filter((t) => TAG_IDS.has(t)),
+      music: MUSIC_IDS.has(p.music) ? p.music : '',
+      mood: ownerKey ? moodOf(ownerKey) : null,
     }
   }
 
@@ -141,7 +148,7 @@ export default function profile(ctx) {
         const url = photoUrlFor(me.key, p.key)
         if (url) photos[p.key] = url
       }
-      return { profile: pub(stored(me.key), me.key, me.key), profileTags: TAGS, photos, photoPrivacy: user(me.key).photoPrivacy ?? 'all', photoEnabled: Boolean(me.uid) }
+      return { profile: pub(stored(me.key), me.key, me.key), profileTags: TAGS, vibe: { mood: moodOf(me.key) }, photos, photoPrivacy: user(me.key).photoPrivacy ?? 'all', photoEnabled: Boolean(me.uid) }
     },
     handlers: {
       profile_photo(me, msg) {
@@ -175,6 +182,18 @@ export default function profile(ctx) {
         pushPhoto(me.key)
       },
 
+      mood_set(me, msg) {
+        const now = Date.now()
+        if (now - (me.lastMood ?? 0) < 1500) return
+        me.lastMood = now
+        const id = msg?.id === null ? null : typeof msg?.id === 'string' && MOOD_IDS.has(msg.id) ? msg.id : undefined
+        if (id === undefined) return
+        user(me.key).mood = id ? { id, at: now } : null
+        save()
+        send(me.ws, { t: 'mood', key: me.key, mood: id, mine: true })
+        ctx.broadcast({ t: 'mood', key: me.key, mood: id }, me.id, me.room, me)
+      },
+
       profile_save(me, msg) {
         const now = Date.now()
         if (now - (me.lastProfileSave ?? 0) < 1000) return info(me, 'Biraz yavaş, profilini az önce kaydettin.')
@@ -203,7 +222,7 @@ export default function profile(ctx) {
         const instagram = cleanHandle(mod().censor(raw.instagram ?? ''))
         const x = cleanHandle(mod().censor(raw.x ?? ''))
         const socialPrivacy = raw.socialPrivacy === 'friends' ? 'friends' : 'all'
-        const p = { bio: bio.slice(0, 120), age, birthDate, city: city.slice(0, 20), instagram, x, socialPrivacy, tags }
+        const p = { bio: bio.slice(0, 120), age, birthDate, city: city.slice(0, 20), instagram, x, socialPrivacy, tags, music: MUSIC_IDS.has(raw.music) ? raw.music : '' }
         user(me.key).profile = p
         save()
         send(me.ws, { t: 'profile_saved', profile: pub(p, me.key, me.key) })

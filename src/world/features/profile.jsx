@@ -3,11 +3,12 @@ import { Dock } from '../../components/Dock'
 import { Modal } from '../Hud'
 import { PhotoSection } from './photoUpload'
 import { Ico, TagIcon } from '../../components/Icon'
+import { MUSIC, MOODS, zodiacOf, zodiacMatch } from '../vibeData'
 
 const NUDGE_KEY = 'situapp_profile_nudge'
 const MAX_TAGS = 6
 
-const isEmpty = (p) => !p || (!p.bio && !p.age && !p.birthDate && !p.city && !p.instagram && !p.x && !p.instagramLocked && !p.xLocked && !(p.tags?.length > 0))
+const isEmpty = (p) => !p || (!p.bio && !p.age && !p.birthDate && !p.city && !p.instagram && !p.x && !p.music && !p.instagramLocked && !p.xLocked && !(p.tags?.length > 0))
 
 function SocialValue({ label, value, locked }) {
   return (
@@ -79,8 +80,39 @@ function Chip({ tag, on, common, onClick, small, showIcon = true }) {
   )
 }
 
+/** Göze batmayan ortak etiketler: burç, müzik zevki, ruh hali + sohbet açıcı öneri. */
+function Vibes({ profile, mine, mood, myMood }) {
+  const zo = zodiacOf(profile?.birthDate)
+  const myZo = zodiacOf(mine?.birthDate)
+  const music = MUSIC.find((m) => m.id === profile?.music)
+  const myMusic = mine?.music
+  const md = MOODS.find((m) => m.id === mood)
+  const zMatch = zodiacMatch(zo, myZo)
+  const sameMusic = music && music.id === myMusic
+  const sameMood = md && md.id === myMood
+  const items = [
+    zo && { k: 'z', text: `${zo.emoji} ${zo.label}`, common: Boolean(zMatch), title: zMatch ?? 'Burç' },
+    music && { k: 'm', text: `${music.emoji} ${music.label}`, common: sameMusic, title: 'Müzik zevki' },
+    md && { k: 'd', text: `${md.emoji} ${md.label}`, common: sameMood, title: 'Şu anki ruh hali' },
+  ].filter(Boolean)
+  if (!items.length) return null
+  const hint = sameMusic ? `🎵 İkiniz de ${music.label} dinliyorsunuz. Ona en sevdiği şarkıyı sor!` : sameMood ? `${md.emoji} İkiniz de aynı havadasınız, sohbet başlatmak için güzel bir an.` : zMatch ? `${zo.emoji} ${zMatch}. Burç muhabbetiyle başlayabilirsin.` : md?.id === 'sohbet' ? '💬 Sohbete açık görünüyor, bir merhaba yeter.' : null
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex flex-wrap gap-1">
+        {items.map((i) => (
+          <span key={i.k} title={i.title} className={`rounded-full border-2 px-2 py-0.5 text-[11px] font-extrabold ${i.common ? 'border-[#ffb703] bg-[#fff3c4] text-[#8a5a00]' : 'border-white bg-[#f6f0ff] text-[#5b4a70]'}`}>
+            {i.text}
+          </span>
+        ))}
+      </div>
+      {hint && <p className="text-[11px] font-bold text-[#8a5a00]">{hint}</p>}
+    </div>
+  )
+}
+
 /** Etkileşim menüsünde kişinin mini profili. */
-function ProfileCard({ peer, profile, mine, catalog, request }) {
+function ProfileCard({ peer, profile, mine, catalog, request, myMood }) {
   useEffect(() => {
     request(peer.id)
   }, [peer.id, request])
@@ -121,6 +153,7 @@ function ProfileCard({ peer, profile, mine, catalog, request }) {
             <SocialValue label="Instagram" value={profile.instagram} locked={profile.instagramLocked} />
             <SocialValue label="X" value={profile.x} locked={profile.xLocked} />
           </div>
+          <Vibes profile={profile} mine={mine} mood={profile.mood} myMood={myMood} />
           {profile.bio && <p className="text-sm font-semibold italic text-[#4a3b5c]">“{profile.bio}”</p>}
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
@@ -148,6 +181,7 @@ function ProfileEditor({ initial, catalog, onSave, onClose, net, photoEnabled, p
   const [xHandle, setXHandle] = useState(initial?.x ?? '')
   const [socialPrivacy, setSocialPrivacy] = useState(initial?.socialPrivacy === 'friends' ? 'friends' : 'all')
   const [tags, setTags] = useState(initial?.tags ?? [])
+  const [music, setMusic] = useState(initial?.music ?? '')
   const ageNum = birthDate ? calcAge(birthDate) : (initial?.age ?? null)
   const ageBad = Boolean(birthDate) && (ageNum === null || ageNum < 18 || ageNum > 99)
   const toggle = (id) => setTags((t) => (t.includes(id) ? t.filter((x) => x !== id) : t.length >= MAX_TAGS ? t : [...t, id]))
@@ -173,6 +207,7 @@ function ProfileEditor({ initial, catalog, onSave, onClose, net, photoEnabled, p
               x: xHandle.trim().replace(/^@+/, ''),
               socialPrivacy,
               tags,
+              music,
             })
           }
         }}
@@ -228,6 +263,16 @@ function ProfileEditor({ initial, catalog, onSave, onClose, net, photoEnabled, p
         </div>
         <div>
           <p className="text-sm font-black text-[#4a3b5c]">
+            Müzik zevkin
+          </p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {MUSIC.map((m) => (
+              <button key={m.id} type="button" aria-pressed={music === m.id} onClick={() => setMusic(music === m.id ? '' : m.id)} className={`rounded-full border-2 px-3 py-1.5 text-sm font-extrabold active:scale-95 ${music === m.id ? 'border-[#fdb252] bg-[#ffead0] text-[#926021]' : 'border-white bg-[#f6f0ff] text-[#5b4a70]'}`}>
+                {m.emoji} {m.label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-3 text-sm font-black text-[#4a3b5c]">
             İlgi alanların <span className="text-xs font-bold text-[#8a7a9c]">({tags.length}/{MAX_TAGS})</span>
           </p>
           <div className="mt-2 flex flex-wrap gap-1.5">
@@ -259,12 +304,14 @@ export function useProfile({ net, say, panel, setPanel, home }) {
   const [nudge, setNudge] = useState(false)
   const [photoEnabled, setPhotoEnabled] = useState(false)
   const [privacy, setPrivacy] = useState('all')
+  const [myMood, setMyMood] = useState(null)
   const reqAt = useRef({})
 
   useEffect(() => {
     const offs = [
       net.on('welcome', (m) => {
         setMine(m.profile ?? null)
+        setMyMood(m.vibe?.mood ?? null)
         setPhotoEnabled(Boolean(m.photoEnabled))
         setPrivacy(m.photoPrivacy ?? 'all')
         setCatalog(m.profileTags ?? [])
@@ -273,6 +320,13 @@ export function useProfile({ net, say, panel, setPanel, home }) {
           safeStore.set()
           // girişte ekran zaten kalabalık (öneri, rozet, ipuçları): hatırlatmayı biraz sonra göster
           setTimeout(() => setNudge(true), 30000)
+        }
+      }),
+      net.on('mood', (m) => {
+        if (m.mine) setMyMood(m.mood)
+        else {
+          reqAt.current = {}
+          setCache({})
         }
       }),
       net.on('photo_privacy', (m) => setPrivacy(m.who)),
@@ -304,7 +358,7 @@ export function useProfile({ net, say, panel, setPanel, home }) {
   )
 
   const peerHeader = (peer) => (
-    <ProfileCard peer={peer} profile={cache[peer.id]} mine={mine} catalog={catalog} request={request} />
+    <ProfileCard peer={peer} profile={cache[peer.id]} mine={mine} catalog={catalog} request={request} myMood={myMood} />
   )
 
   const settingsSections = [
@@ -316,6 +370,15 @@ export function useProfile({ net, say, panel, setPanel, home }) {
       <button onClick={() => setPanel('profile')} className="mt-2 rounded-2xl bg-[#fff2e3] px-4 py-2 text-sm font-extrabold text-[#926021] active:scale-95">
         Profilimi düzenle
       </button>
+      <p className="mt-3 text-sm font-black text-[#4a3b5c]">Şu anki ruh halim</p>
+      <p className="mt-0.5 text-xs font-semibold text-[#8a7a9c]">Diğerleri profil kartında görür, 6 saat sonra kendiliğinden silinir.</p>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {MOODS.map((m) => (
+          <button key={m.id} type="button" aria-pressed={myMood === m.id} onClick={() => net.send({ t: 'mood_set', id: myMood === m.id ? null : m.id })} className={`rounded-full border-2 px-3 py-1.5 text-xs font-extrabold active:scale-95 ${myMood === m.id ? 'border-[#fdb252] bg-[#ffead0] text-[#926021]' : 'border-white bg-[#f6f0ff] text-[#5b4a70]'}`}>
+            {m.emoji} {m.label}
+          </button>
+        ))}
+      </div>
     </section>,
   ]
 
