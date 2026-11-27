@@ -7,45 +7,39 @@ const MOBILE_STEPS = [
   {
     id: 'drag',
     selector: null,
-    emoji: '👆',
-    title: 'Ekranı Kaydır & Etrafa Bak',
+    title: 'Ekranı Kaydır ve Etrafa Bak',
     desc: 'Parmağını ekranda sağa-sola sürükleyerek kamerayı çevirebilir, iki parmakla yakınlaştırabilir ve kumsaldaki oyunculara dokunarak tanışabilirsin.',
   },
   {
     id: 'move-joy',
     selector: '[data-tour="move-joy"]',
-    emoji: '🕹️',
-    title: 'Hareket Joystick’i',
-    desc: 'Sol joystick ile sahilde ve şehirde yürürsün. Topuzu en kenara itersen karakterin koşmaya başlar!',
+    title: 'Hareket Kontrolü',
+    desc: 'Sol joystick ile sahilde ve şehirde yürürsün. Topuzu en kenara itersen karakterin koşmaya başlar.',
   },
   {
     id: 'look-joy',
     selector: '[data-tour="look-joy"]',
-    emoji: '🔄',
-    title: 'Kamera Joystick’i',
-    desc: 'Sağdaki kamera joystick’i ile yürürken bile bakış açını kolayca sağa-sola ve yukarı-aşağı çevirebilirsin.',
+    title: 'Kamera Kontrolü',
+    desc: 'Sağdaki joystick ile yürürken bile bakış açını kolayca sağa-sola ve yukarı-aşağı çevirebilirsin.',
   },
   {
     id: 'left-menu',
     selector: '[data-tour="left-menu-panel"]',
     fallbackSelector: '[data-tour="left-menu-btn"]',
-    emoji: '☰',
     title: 'Sol Hızlı Menü',
-    desc: 'Harita & Işınlanma, Gardırop, Bisiklet, Çanta, Sosyal & Buluşma, Ortak Görevler, Paketler ve Fısıltı kutusuna buradan ulaşırsın.',
+    desc: 'Harita ve Işınlanma, Gardırop, Bisiklet, Çanta, Sosyal ve Buluşma, Ortak Görevler, Paketler ve Fısıltı kutusuna buradan ulaşırsın.',
   },
   {
     id: 'right-menu',
     selector: '[data-tour="right-menu-panel"]',
-    emoji: '⚙️',
-    title: 'Ayarlar & Durum Menüsü',
-    desc: 'TL bakiyeni, Ses aç/kapat ayarını, Arkadaş listeni, Günlük Görevlerini, Statlarını ve Tam Ekran modunu buradan yönetirsin.',
+    title: 'Ayarlar ve Durum Menüsü',
+    desc: 'TL bakiyeni, Ses ayarını, Arkadaş listeni, Günlük Görevlerini, Statlarını ve Tam Ekran modunu buradan yönetirsin.',
   },
   {
     id: 'skill-bar',
     selector: '[data-tour="skill-bar"]',
-    emoji: '✨',
-    title: 'Tepki & Dans Çubuğu',
-    desc: 'Tek dokunuşla selam ver, dans et veya kalp gönder! Artık hazırsın — önce sahilde kaynaş, sonra birlikte şehre ak!',
+    title: 'Tepki ve Dans Çubuğu',
+    desc: 'Tek dokunuşla selam ver, dans et veya tepki gönder. Artık hazırsın; önce sahilde kaynaş, sonra birlikte şehre geç.',
   },
 ]
 
@@ -53,30 +47,26 @@ const DESKTOP_STEPS = [
   {
     id: 'drag',
     selector: null,
-    emoji: '🖱️',
-    title: 'Kamerayı Kaydır & Yürü',
-    desc: 'Farenin sol tuşunu basılı tutup sağa-sola sürükleyerek etrafına bak, tekerlekle yakınlaştır ve WASD / Ok tuşlarıyla sahilde dolaş.',
+    title: 'Kamerayı Kaydır ve Yürü',
+    desc: 'Farenin sol tuşunu basılı tutup sağa-sola sürükleyerek etrafına bak, tekerlekle yakınlaştır ve WASD veya Ok tuşlarıyla sahilde dolaş.',
   },
   {
     id: 'left-rail',
     selector: '[data-tour="desktop-left-bar"]',
-    emoji: '🎒',
     title: 'Sol Araç Çubuğu',
-    desc: 'Gardırop, Bisiklet, Çanta, Sosyal & Buluşma, Ortak Görevler, Paketler ve Fısıltı sohbetlerin sol menüde elinin altında.',
+    desc: 'Gardırop, Bisiklet, Çanta, Sosyal ve Buluşma, Ortak Görevler, Paketler ve Fısıltı sohbetlerin sol menüde yer alır.',
   },
   {
     id: 'right-menu',
     selector: '[data-tour="right-menu-panel"]',
-    emoji: '⚙️',
-    title: 'Sağ Üst Menü & Ayarlar',
+    title: 'Sağ Üst Menü ve Ayarlar',
     desc: 'Arkadaş listene, Günlük Görevlere, Karakter Statlarına, Tam Ekran moduna ve Ses/Grafik ayarlarına buradan ulaşırsın.',
   },
   {
     id: 'skill-bar',
     selector: '[data-tour="skill-bar"]',
-    emoji: '💃',
-    title: 'Beceri & İfade Çubuğu',
-    desc: '1–4 tuşlarıyla veya tıklayarak el salla, dans et, kalp gönder! Artık serbestsin — önce sahilde kaynaş, sonra şehre ak!',
+    title: 'Beceri ve İfade Çubuğu',
+    desc: '1–4 tuşlarıyla veya tıklayarak el salla, dans et ve tepki gönder. Artık serbestsin; önce sahilde kaynaş, sonra şehre geç.',
   },
 ]
 
@@ -213,9 +203,9 @@ export function OnboardingTour({ active, touch, stepIndex, onStepChange, onDone 
           className="pointer-events-auto flex w-[min(90vw,22.5rem)] animate-pop flex-col gap-2.5 rounded-3xl border-2 border-white bg-white/96 p-4 text-[#4a3b5c] shadow-toy backdrop-blur-md"
         >
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5">
-              <span className="rounded-full bg-[#fff3c8] px-2.5 py-0.5 text-[11px] font-black text-[#8a5a00]">
-                {stepIndex + 1}/{steps.length}
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-extrabold tracking-wide text-[#8c7ca1]">
+                Adım {stepIndex + 1} / {steps.length}
               </span>
               <div className="flex gap-1">
                 {steps.map((s, i) => (
@@ -231,28 +221,23 @@ export function OnboardingTour({ active, touch, stepIndex, onStepChange, onDone 
             <button
               type="button"
               onClick={onDone}
-              className="rounded-full bg-[#f6f0ff] px-2.5 py-1 text-[11px] font-black text-[#7c6d91] transition hover:bg-[#eadcff] active:scale-95"
+              className="rounded-lg px-2 py-0.5 text-[11px] font-bold text-[#8c7ca1] transition hover:bg-[#f6f0ff] hover:text-[#4a3b5c] active:scale-95"
             >
-              Atla ✕
+              Atla
             </button>
           </div>
 
-          <div className="flex items-start gap-3">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#fff4e0] text-xl shadow-sm">
-              {cur.emoji}
-            </span>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-sm font-black text-[#4a3b5c] sm:text-base">{cur.title}</h3>
-              <p className="mt-0.5 text-xs font-bold leading-relaxed text-[#7b6b90]">{cur.desc}</p>
-            </div>
+          <div className="min-w-0">
+            <h3 className="text-sm font-black text-[#4a3b5c] sm:text-base">{cur.title}</h3>
+            <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6f6085]">{cur.desc}</p>
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-0.5">
+          <div className="flex items-center justify-end gap-2 pt-1">
             {stepIndex > 0 && (
               <button
                 type="button"
                 onClick={() => onStepChange(stepIndex - 1)}
-                className="rounded-xl bg-[#f6f0ff] px-3 py-2 text-xs font-black text-[#6b4fc0] active:scale-95"
+                className="rounded-xl bg-[#f6f0ff] px-3.5 py-2 text-xs font-bold text-[#6b4fc0] active:scale-95"
               >
                 Geri
               </button>
@@ -262,7 +247,7 @@ export function OnboardingTour({ active, touch, stepIndex, onStepChange, onDone 
               onClick={next}
               className="flex-1 rounded-xl border-b-[3px] border-[#d98a1c] bg-[#fdb252] px-4 py-2 text-xs font-black text-white shadow-sm active:translate-y-[1px]"
             >
-              {isLast ? '🌴 Başla! Serbestsin' : 'Devam Et →'}
+              {isLast ? 'Başla' : 'Devam Et'}
             </button>
           </div>
         </div>
