@@ -28,5 +28,6 @@ import fitness from './fitness.js'
 import inventory from './inventory.js'
 import dating from './dating.js'
 import duo from './duo.js'
+import away from './away.js'
 
-export const FEATURE_FACTORIES = [moderation, games, friends, profile, progress, media, together, cosmetics, npcs, venues, collect, economy, dj, housing, rental, pets, beach, jobs, surf, minigames, fitness, inventory, dating, duo]
+export const FEATURE_FACTORIES = [moderation, games, friends, profile, progress, media, together, cosmetics, npcs, venues, collect, economy, dj, housing, rental, pets, beach, jobs, surf, minigames, fitness, inventory, dating, duo, away]
