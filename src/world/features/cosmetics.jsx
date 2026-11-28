@@ -10,7 +10,7 @@ import { DEFAULT_DECOR } from '../cosmeticsData'
 import { OFFER_TTL_MS, SEEN_KEY, petOfferDone, petOfferMark, readSavedLook, writeSavedLook } from './cosmeticsShared'
 import { PetAdopt, Wardrobe } from './Wardrobe'
 import { DecorTab, GiftPicker, GiftsTab, OfferCard } from './GiftsUi'
-export function useCosmetics({ net, say, touch, home, homeItems, venue, focusRef, panel, setPanel, closeInteract, slug }) {
+export function useCosmetics({ net, say, touch, home, homeItems, venue, focusRef, panel, setPanel, closeInteract, slug, deferAutomaticPrompts }) {
   const [self, setSelf] = useState(null) // { acc, acc2, pet, look }
   const [petUntil, setPetUntil] = useState(0)
   const [petOffer, setPetOffer] = useState(false) // ilk girişte 1 haftalık ücretsiz evcil hayvan seçimi
@@ -42,10 +42,10 @@ export function useCosmetics({ net, say, touch, home, homeItems, venue, focusRef
   }, [panel, wardrobeSeen])
 
   useEffect(() => {
-    if (!petOffer || venue || home) return undefined
+    if (!petOffer || deferAutomaticPrompts || venue || home) return undefined
     const t = setTimeout(() => setPetOfferReady(true), 1800) // şehre çıkınca kısa bir beklemeyle
     return () => clearTimeout(t)
-  }, [petOffer, venue, home])
+  }, [petOffer, deferAutomaticPrompts, venue, home])
   const on = net.on
   const send = net.send
   const homeKey = net.homeKey
@@ -238,7 +238,6 @@ export function useCosmetics({ net, say, touch, home, homeItems, venue, focusRef
           }}
         />
       )}
-      {petOffer && petOfferReady && !venue && !home && <PetAdopt onPick={(pet) => (petOfferMark(homeKey), send({ t: 'pet_adopt', pet }))} onLater={() => (petOfferMark(homeKey, true), setPetOffer(false))} />}
       {giftTo && (
         <GiftPicker
           peer={giftTo}
@@ -263,5 +262,8 @@ export function useCosmetics({ net, say, touch, home, homeItems, venue, focusRef
 
   const sceneNodes = <PetLayer focusRef={focusRef} remotes={net.remotes} />
 
-  return { peerActions, extraButtons, settingsSections, overlays, homeDecor: decor, editorTabs, sceneNodes }
+  const automaticPrompt = petOffer && petOfferReady && !venue && !home
+    ? <PetAdopt onPick={(pet) => (petOfferMark(homeKey), send({ t: 'pet_adopt', pet }))} onLater={() => (petOfferMark(homeKey, true), setPetOffer(false))} />
+    : null
+  return { peerActions, extraButtons, settingsSections, overlays, automaticPrompt, homeDecor: decor, editorTabs, sceneNodes }
 }

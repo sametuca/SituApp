@@ -1,5 +1,5 @@
 // Akşam ışıkları ve canlı efektler: sokak lambaları (sırayla yanar), kapı ışıkları, polen, feston ışık zincirleri, ateşböcekleri, ıslak zemin.
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { AdditiveBlending, BufferGeometry, Float32BufferAttribute, LatheGeometry, Object3D, Vector2, Vector3 } from 'three'
 import { BEACH, GAP, PIER, PROPS, ROAD_HALF } from './layout'
@@ -23,8 +23,6 @@ export function Lamps({ focusRef }) {
   const pool = useRef()
   const lights = useRef([])
   const t = useRef(0)
-  const [lampLights, setLampLights] = useState(false)
-  const lampLightsRef = useRef(false)
   const tex = useMemo(() => glowTexture(SOFT), [])
   useEffect(() => () => tex.dispose(), [tex])
   const dummy = useMemo(() => new Object3D(), [])
@@ -34,11 +32,6 @@ export function Lamps({ focusRef }) {
   useFrame((_, dt) => {
     const lit = skyLive.lit
     const on = lit > 0.02
-    // gündüz hiç ışık yok: gerçek nokta ışıkları sahnede bulunduğu sürece HER malzemenin gölgelendiricisine eklenir (boşuna maliyet)
-    if (on !== lampLightsRef.current) {
-      lampLightsRef.current = on
-      setLampLights(on)
-    }
     if (glow.current) glow.current.visible = on
     if (pool.current) pool.current.visible = on
     if (on && glow.current) {
@@ -79,7 +72,7 @@ export function Lamps({ focusRef }) {
         .slice(0, REAL_LIGHTS)
       near.forEach((n, i) => lights.current[i]?.position.set(n.l.x, LAMP_TOP - 0.15, n.l.z))
     }
-    lights.current.forEach((l) => l && (l.intensity = lit * 9.5))
+    lights.current.forEach((l) => l && (l.intensity = on ? lit * 9.5 : 0))
   })
 
   return (
@@ -92,7 +85,7 @@ export function Lamps({ focusRef }) {
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial map={tex} color="#ffc978" transparent depthWrite={false} blending={AdditiveBlending} fog={false} toneMapped={false} />
       </instancedMesh>
-      {lampLights && Array.from({ length: REAL_LIGHTS }, (_, i) => (
+      {Array.from({ length: REAL_LIGHTS }, (_, i) => (
         <pointLight key={i} ref={(l) => (lights.current[i] = l)} color="#ffca7a" intensity={0} distance={15} decay={2} position={[0, LAMP_TOP, 0]} />
       ))}
     </>

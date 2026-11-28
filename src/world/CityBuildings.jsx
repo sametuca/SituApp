@@ -239,8 +239,16 @@ export function Building({ b, i, focusRef }) {
     }
   })
 
-  if (!lod.visible) return null
-  return lod.detailed ? <DetailedBuilding b={b} i={i} focusRef={focusRef} /> : <DistantBuilding b={b} i={i} />
+  return (
+    <>
+      {b.homeDoor && (
+        <group position={[b.x, 0, b.z]} rotation={[0, FACING[b.facing], 0]}>
+          <pointLight position={[0, 3.1, b.d / 2 + 1.5]} color="#ffe9ad" intensity={lod.detailed ? 3.8 : 0} distance={10} decay={2} />
+        </group>
+      )}
+      {lod.visible && (lod.detailed ? <DetailedBuilding b={b} i={i} focusRef={focusRef} /> : <DistantBuilding b={b} i={i} />)}
+    </>
+  )
 }
 
 function DistantBuilding({ b, i }) {
@@ -288,7 +296,6 @@ function DetailedBuilding({ b, i, focusRef }) {
             <ringGeometry args={[0.72, 1.05, 36]} />
             <meshStandardMaterial color="#ffd35e" emissive="#ffd35e" emissiveIntensity={0.85} transparent opacity={0.88} />
           </mesh>
-          <pointLight position={[0, 3.1, d / 2 + 1.5]} color="#ffe9ad" intensity={3.8} distance={10} decay={2} />
         </>
       )}
       <RoundedBox args={[w, h, d]} radius={0.35} smoothness={2} position={[0, h / 2, 0]} castShadow receiveShadow>

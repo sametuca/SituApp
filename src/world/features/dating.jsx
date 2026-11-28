@@ -134,7 +134,7 @@ function SpeedDateModal({ session, msgs, onVote, onChat, onDecide, onClose }) {
   )
 }
 
-export function useDating({ net, say, panel, setPanel, focusRef, home, venue, closeInteract }) {
+export function useDating({ net, say, panel, setPanel, focusRef, home, venue, closeInteract, deferAutomaticPrompts }) {
   const { on, send } = net
   const [vibe, setVibe] = useState(() => {
     try {
@@ -161,12 +161,12 @@ export function useDating({ net, say, panel, setPanel, focusRef, home, venue, cl
 
   // Şehirde ilk kez mod seçilmemişse nazik 10 saniyelik mod seçici göster
   useEffect(() => {
-    if (!home && !venue && !vibe) {
+    if (!deferAutomaticPrompts && !home && !venue && !vibe) {
       const t = setTimeout(() => setShowVibeIntro(true), 2200)
       return () => clearTimeout(t)
     }
     return undefined
-  }, [home, venue, vibe])
+  }, [home, venue, vibe, deferAutomaticPrompts])
 
   // Etkinlik sayacını güncelle
   useEffect(() => {
@@ -420,27 +420,8 @@ export function useDating({ net, say, panel, setPanel, focusRef, home, venue, cl
     </div>,
   ]
 
-  const overlays = (
-    <>
-      {/* Gelen Buz Kırıcı bildirimi */}
-      {ibBanner && (
-        <div className="pointer-events-auto fixed left-1/2 top-20 z-40 w-[min(92vw,24rem)] -translate-x-1/2 animate-pop rounded-3xl border-2 border-white bg-white/95 px-4 py-3 shadow-toy">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-xs font-black text-[#c93b78]">
-              {ibBanner.emoji} {ibBanner.fromName}: “{ibBanner.text}”
-            </p>
-            <button type="button" onClick={() => setIbBanner(null)} className="text-xs font-black text-[#8a7a9c]">
-              ✖️
-            </button>
-          </div>
-        </div>
-      )}
-
-      {meetupTarget && <MeetupPicker peer={meetupTarget} onPick={pickMeetup} onClose={() => setMeetupTarget(null)} />}
-      {meetupInvite && <MeetupInviteModal invite={meetupInvite} onReply={answerMeetup} />}
-
-      {/* İlk giriş Mod (Vibe) seçici */}
-      {showVibeIntro && !open && !sdSession && (
+  const automaticPrompt = showVibeIntro && !vibe && !open && !sdSession
+    ? (
         <Modal onClose={() => setShowVibeIntro(false)} label="Bugün Modun Ne?" hideClose>
           <div className="flex items-start justify-between gap-2">
             <div>
@@ -475,7 +456,26 @@ export function useDating({ net, say, panel, setPanel, focusRef, home, venue, cl
             ))}
           </div>
         </Modal>
+      ) : null
+
+  const overlays = (
+    <>
+      {/* Gelen Buz Kırıcı bildirimi */}
+      {ibBanner && (
+        <div className="pointer-events-auto fixed left-1/2 top-20 z-40 w-[min(92vw,24rem)] -translate-x-1/2 animate-pop rounded-3xl border-2 border-white bg-white/95 px-4 py-3 shadow-toy">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-black text-[#c93b78]">
+              {ibBanner.emoji} {ibBanner.fromName}: “{ibBanner.text}”
+            </p>
+            <button type="button" onClick={() => setIbBanner(null)} className="text-xs font-black text-[#8a7a9c]">
+              ✖️
+            </button>
+          </div>
+        </div>
       )}
+
+      {meetupTarget && <MeetupPicker peer={meetupTarget} onPick={pickMeetup} onClose={() => setMeetupTarget(null)} />}
+      {meetupInvite && <MeetupInviteModal invite={meetupInvite} onReply={answerMeetup} />}
 
       {/* Aktif 3 Dakikalık Hızlı Randevu ekranı */}
       {sdSession && (
@@ -711,5 +711,5 @@ export function useDating({ net, say, panel, setPanel, focusRef, home, venue, cl
     </>
   )
 
-  return { extraButtons, peerHeader, peerActions, settingsSections, overlays }
+  return { extraButtons, peerHeader, peerActions, settingsSections, overlays, automaticPrompt }
 }

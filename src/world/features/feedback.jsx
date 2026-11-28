@@ -141,9 +141,8 @@ export function useFeedback({ panel, setPanel, venue, home, name: who }) {
     </button>
   )
 
-  const overlays = (
-    <>
-      {ask && !panel && !venue && !home && (
+  const automaticPrompt = ask && !panel && !venue && !home
+    ? (
         <div
           className="pointer-events-auto fixed inset-0 z-40 grid place-items-center bg-[#4a3b5c]/30 p-4 backdrop-blur-[2px]"
           onClick={dismiss}
@@ -188,7 +187,10 @@ export function useFeedback({ panel, setPanel, venue, home, name: who }) {
             </div>
           </div>
         </div>
-      )}
+      ) : null
+
+  const overlays = (
+    <>
       {panel === 'feedback' && (
         <FeedbackModal
           who={who}
@@ -199,5 +201,5 @@ export function useFeedback({ panel, setPanel, venue, home, name: who }) {
     </>
   )
 
-  return { menuNodes, overlays }
+  return { menuNodes, overlays, automaticPrompt }
 }

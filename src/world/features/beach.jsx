@@ -11,6 +11,27 @@ const mmss = (ms) => {
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
 }
 
+function MeetupBanner({ meetup, focusRef, touch }) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 400)
+    return () => clearInterval(id)
+  }, [])
+  const dist = Math.round(Math.hypot(focusRef.current.x - BEACH.x, focusRef.current.z - BEACH.z))
+  return (
+    <TopDock><div className={`relative pointer-events-none rounded-2xl px-3 py-1 text-center sm:px-4 sm:py-1.5 ${glass}`}>
+      <p className="text-[11px] font-black text-[#c9731a] sm:text-xs">
+        🌅 Gün batımı buluşması · {meetup.phase === 'soon' ? `${mmss(meetup.start - now)} sonra` : `${mmss(meetup.end - now)} kaldı`}
+      </p>
+      {!touch && (
+        <p className="text-[0.6875rem] font-bold text-[#8a7a9c]">
+          {meetup.phase === 'soon' ? 'Plajın ortasına gel, TL kazan!' : dist <= BEACH.r + 4 ? `Plajdasın · ${meetup.n} kişi burada` : `Plaja gel (${dist} m) · ${meetup.n} kişi bekliyor`}
+        </p>
+      )}
+    </div></TopDock>
+  )
+}
+
 function Volley({ vb, me, touch, onHit, onLeave }) {
   const [, tick] = useState(0)
   const arrive = useRef(0)
@@ -73,7 +94,6 @@ function Volley({ vb, me, touch, onHit, onLeave }) {
 export function useBeach({ net, focusRef, home, venue, touch }) {
   const { on, send } = net
   const [meetup, setMeetup] = useState({ phase: 'idle', start: 0, end: 0, n: 0 })
-  const [now, setNow] = useState(Date.now())
   const [vb, setVb] = useState(null)
   const [waiting, setWaiting] = useState(false)
   const [near, setNear] = useState(null) // 'net' | null
@@ -103,10 +123,11 @@ export function useBeach({ net, focusRef, home, venue, touch }) {
     return () => offs.forEach((off) => off())
   }, [on])
 
-  // saniye saati + yakınlık denetimi
+  const showMeetup = !home && !venue && meetup.phase !== 'idle'
+
+  // Yakınlık denetimi
   useEffect(() => {
     const id = setInterval(() => {
-      setNow(Date.now())
       const f = focusRef.current
       if (home || venue) return setNear(null)
       if (Math.hypot(f.x - NET.x, f.z - NET.z) <= NET.r - 0.5) setNear('net')
@@ -201,22 +222,9 @@ export function useBeach({ net, focusRef, home, venue, touch }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  const dist = Math.round(Math.hypot(focusRef.current.x - BEACH.x, focusRef.current.z - BEACH.z))
-  const showMeetup = !home && !venue && meetup.phase !== 'idle'
   const overlays = (
     <>
-      {showMeetup && (
-        <TopDock><div className={`relative pointer-events-none rounded-2xl px-3 py-1 text-center sm:px-4 sm:py-1.5 ${glass}`}>
-          <p className="text-[11px] font-black text-[#c9731a] sm:text-xs">
-            🌅 Gün batımı buluşması · {meetup.phase === 'soon' ? `${mmss(meetup.start - now)} sonra` : `${mmss(meetup.end - now)} kaldı`}
-          </p>
-          {!touch && (
-            <p className="text-[0.6875rem] font-bold text-[#8a7a9c]">
-              {meetup.phase === 'soon' ? 'Plajın ortasına gel, TL kazan!' : dist <= BEACH.r + 4 ? `Plajdasın · ${meetup.n} kişi burada` : `Plaja gel (${dist} m) · ${meetup.n} kişi bekliyor`}
-            </p>
-          )}
-        </div></TopDock>
-      )}
+      {showMeetup && <MeetupBanner meetup={meetup} focusRef={focusRef} touch={touch} />}
       {res && (
         <TopDock><div className={`relative pointer-events-none animate-pop rounded-2xl px-5 py-2 text-center ${glass}`}>
           <p className="text-sm font-black text-[#c9731a]">🌅 Buluşma bitti!</p>

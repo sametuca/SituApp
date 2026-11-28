@@ -1,6 +1,6 @@
 // Kasaba detayları: çeşitli meyve/kiraz/çam ağaçları, pastel çalılıklar, çöp kutuları,
 // plaj çeşitliliği, yemlenen martı/kuşlar ve fiziksel kocaman plaj topu.
-import { Suspense, useMemo, useRef, useState } from 'react'
+import { Suspense, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { RoundedBox } from '@react-three/drei'
 import { BEACH, G } from './layout'
@@ -261,8 +261,6 @@ function BeachEveningDecor() {
   const embersRef = useRef([])
   const innerRef = useRef()
   const torchFlames = useRef([])
-  const [lightOn, setLightOn] = useState(false)
-  const lightOnRef = useRef(false)
   const embers = useMemo(
     () => Array.from({ length: 8 }, (_, i) => ({ phase: i / 8, rad: 0.14 + (i % 3) * 0.08, spd: 0.48 + (i % 4) * 0.09 })),
     [],
@@ -272,11 +270,6 @@ function BeachEveningDecor() {
     const t = clock.elapsedTime
     const lit = skyLive.lit
     const near = Math.hypot(playerPos.x - BONFIRE_POS[0], playerPos.z - BONFIRE_POS[1]) < 24
-    const wantLight = lit > 0.05 && near
-    if (wantLight !== lightOnRef.current) {
-      lightOnRef.current = wantLight
-      setLightOn(wantLight)
-    }
     if (innerRef.current) {
       const p = 0.92 + Math.sin(t * 10) * 0.08 + Math.cos(t * 17) * 0.04
       innerRef.current.scale.set(p, 0.95 + Math.sin(t * 13) * 0.14, p)
@@ -296,7 +289,7 @@ function BeachEveningDecor() {
       m.scale.setScalar(Math.max(0.01, s))
     })
     if (fireLight.current) {
-      fireLight.current.intensity = lit * (6.2 + Math.sin(t * 11) * 0.85 + Math.cos(t * 17) * 0.5)
+      fireLight.current.intensity = lit > 0.05 && near ? lit * (6.2 + Math.sin(t * 11) * 0.85 + Math.cos(t * 17) * 0.5) : 0
       fireLight.current.position.set(
         BONFIRE_POS[0] + Math.sin(t * 13) * 0.05,
         0.95 + Math.cos(t * 9) * 0.04,
@@ -329,7 +322,7 @@ function BeachEveningDecor() {
           <meshBasicMaterial color={i % 2 === 0 ? '#ffd35e' : '#ff8c42'} />
         </mesh>
       ))}
-      {lightOn && <pointLight ref={fireLight} position={[BONFIRE_POS[0], 0.95, BONFIRE_POS[1]]} color="#ff9f45" intensity={0} distance={14} decay={2} />}
+      <pointLight ref={fireLight} position={[BONFIRE_POS[0], 0.95, BONFIRE_POS[1]]} color="#ff9f45" intensity={0} distance={14} decay={2} />
 
       {/* Bambu sahil fenerleri */}
       {TIKI_SPOTS.map(([tx, tz], i) => (

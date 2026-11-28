@@ -3,6 +3,7 @@
 //   peerHeader(peer):  etkileşim menüsünde kişinin altına çizilecek JSX (mini profil vb.)
 //   settingsSections:  Ayarlar paneline eklenecek JSX parçaları
 //   overlays:          ekranın üstüne çizilecek JSX (diyaloglar, bildirimler…)
+//   automaticPrompt:   uygun zamanda diğer otomatik sorularla sırayla gösterilecek JSX
 //   extraButtons:      üst çubuğa düğmeler [{ key, emoji, label, onClick, badge? }] (sol sütun)
 //   extraNodes:        üst çubuğun sağ grubuna hazır JSX düğmeler
 //   readAt:            { oyuncuId: ts } DM okundu bilgisi
@@ -10,7 +11,7 @@
 // ctx: { net, say, touch, openChat, closeInteract, roster, focusRef, home, venue (mekân kimliği | null), panel, setPanel, chatTarget, pushFeed, slug }
 // Ek dönüş alanları: homeDecor (HomeRoom'a), editorTabs (Döşe çekmecesine sekme), sceneNodes (Canvas içine R3F düğümleri: evcil hayvan).
 // Yeni özellik: src/world/features/<ad>.jsx yaz, aşağıya bir satır ekle (kuralı bozma: hook sırası sabit olmalı).
-import { Suspense } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { Modal } from '../Hud'
 import { useModeration } from './moderation'
 import { useGames } from './games'
@@ -56,6 +57,15 @@ function SettingsPanel({ sections, onClose }) {
   )
 }
 
+function AutomaticPrompts({ parts, enabled }) {
+  const [current, setCurrent] = useState(-1)
+  useEffect(() => {
+    if (!enabled || parts[current]?.automaticPrompt) return
+    setCurrent(parts.findIndex((p) => p.automaticPrompt))
+  }, [enabled, parts, current])
+  return enabled ? parts[current]?.automaticPrompt ?? null : null
+}
+
 export function useFeatures(ctx) {
   const parts = [useModeration(ctx), useGames(ctx), useFriends(ctx), useProfile(ctx), useProgress(ctx), useMedia(ctx), useTogether(ctx), useCosmetics(ctx), useNpcs(ctx), useAudio(ctx), useSky(ctx), useVenues(ctx), useCollect(ctx), useEconomy(ctx), useDj(ctx), useHousing(ctx), useBike(ctx), useFeedback(ctx), useBeach(ctx), useEdge(ctx), useHomeCare(ctx), useCityLife(ctx), useJobs(ctx), useSurf(ctx), useMinigames(ctx), useArcade(ctx), useFitness(ctx), useInventory(ctx), useDating(ctx), useDuo(ctx), useAway(ctx)]
 
@@ -68,6 +78,7 @@ export function useFeatures(ctx) {
     <>
       {ctx.panel === 'settings' && <SettingsPanel sections={settingsSections} onClose={() => ctx.setPanel(null)} />}
       {parts.map((p, i) => (p.overlays ? <div key={i}>{p.overlays}</div> : null))}
+      <AutomaticPrompts parts={parts} enabled={ctx.canShowAutomaticPrompt} />
     </>
   )
   // hazır JSX üst çubuk düğmeleri ve DM'de karşı tarafın okuma zamanları (id → ts)

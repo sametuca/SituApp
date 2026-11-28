@@ -119,7 +119,6 @@ export function useCityLife({ focusRef, home, venue, touch, say, panel }) {
       )}
       {inCity && visited.length > 0 && visited.length < TOUR_ZONES.length && (
         <div className="pointer-events-none absolute left-[4.5rem] top-3 z-10 hidden sm:flex items-center gap-1.5 rounded-full border-2 border-white bg-white/90 px-3.5 py-1.5 text-xs font-extrabold text-[#4a3b5c] shadow-soft">
-          <span>🧭</span>
           <span>Şehir Turu {visited.length}/{TOUR_ZONES.length}</span>
         </div>
       )}

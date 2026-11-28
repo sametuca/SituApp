@@ -254,6 +254,8 @@ function WorldScene({ avatar }) {
   useEffect(() => {
     if (interactId && !net.roster.some((p) => p.id === interactId)) setInteractId(null) // karşı taraf ayrıldı/oda değişti
   }, [interactId, net.roster])
+  const { tutStep, setTutStep, tutNear, setTutNear, tutCelebrate, inTutorial, onTutCollect, onTutDoor } = useAirportTutorial({ venue, panel, fade, setFade, beginTransition })
+  const tourActive = Boolean(showTips && sceneReady && !inTutorial && !help && !introActive && !home && !venue && !panel && !chatTarget && !interactPeer)
   const feat = useFeatures({
     net,
     name,
@@ -273,6 +275,8 @@ function WorldScene({ avatar }) {
     slug,
     pushFeed: addFeed,
     enterHome: (owner) => (owner === net.homeKey ? goTo(ownHome()) : visit(owner)), // Konut Mahallesi kapıları
+    deferAutomaticPrompts: Boolean(showTips || !sceneReady || inTutorial || introActive),
+    canShowAutomaticPrompt: Boolean(!showTips && sceneReady && !inTutorial && !introActive && !home && !venue && !panel && !help && !chatTarget && !interactPeer && !editing),
   })
   useEffect(() => {
     const onVisit = (e) => { if (e.detail) visit(e.detail) }
@@ -312,8 +316,6 @@ function WorldScene({ avatar }) {
     }
   }, [])
 
-  const { tutStep, setTutStep, tutNear, setTutNear, tutCelebrate, inTutorial, onTutCollect, onTutDoor } = useAirportTutorial({ venue, panel, fade, setFade, beginTransition })
-
   useWorldKeys({ doorGo, editing, enterVenue, fade, home, inTutorial, nearDoor, nearGuide, nearGuideRef, nearVenue, onTutCollect, onTutDoor, reactRef, removeFurn, rotateFurn, selected, setHelp, setInteractId, setPanel, skillListRef, skillRef, tutNear, tutStep, venue })
 
   const closeTips = useCallback(() => {
@@ -321,7 +323,6 @@ function WorldScene({ avatar }) {
     setShowTips(false)
   }, [tipsKey])
 
-  const tourActive = Boolean(showTips && sceneReady && !inTutorial && !help && !introActive && !home && !venue && !panel && !chatTarget && !interactPeer)
   const isMobileTour = Boolean(touch || (typeof window !== 'undefined' && window.innerWidth < 768))
   const activeTourStepId = tourActive ? (isMobileTour ? ONBOARD_STEPS.mobile : ONBOARD_STEPS.desktop)[tourIdx]?.id ?? null : null
 
@@ -494,7 +495,7 @@ function WorldScene({ avatar }) {
           onInvite={() => net.invite({ to: interactPeer.id })}
         />
       )}
-      {gestureIn && !match && !chatTarget && !interactPeer && peerOf(gestureIn.id) && (
+      {!tourActive && gestureIn && !match && !chatTarget && !interactPeer && peerOf(gestureIn.id) && (
         <GestureChip
           from={gestureIn}
           onBack={() => {
@@ -524,17 +525,17 @@ function WorldScene({ avatar }) {
           onClose={stopEditing}
         />
       )}
-      {nearDoor && !(inTutorial && tutStep !== 'exit') && !chatTarget && !fade && (
+      {!tourActive && nearDoor && !(inTutorial && tutStep !== 'exit') && !chatTarget && !fade && (
         <DoorPrompt emoji={home || venue ? '🚪' : '🏠'} label={home || venue ? 'Dışarı çık' : 'Evine gir'} action={home || venue ? 'Çık' : 'Gir'} touch={touch} raised={Boolean(editing)} onGo={doorGo} />
       )}
-      {!home && !venue && !nearDoor && nearVenue && !chatTarget && !fade && !editing && (
+      {!tourActive && !home && !venue && !nearDoor && nearVenue && !chatTarget && !fade && !editing && (
         <DoorPrompt label={VENUE_BY_ID[nearVenue].name} action="Gir" touch={touch} onGo={() => enterVenue(nearVenue)} />
       )}
-      {!home && !venue && !nearDoor && !nearVenue && nearGuide && !help && !chatTarget && !fade && !editing && (
+      {!tourActive && !home && !venue && !nearDoor && !nearVenue && nearGuide && !help && !chatTarget && !fade && !editing && (
         <DoorPrompt label="Rehber · Nasıl Oynanır" action="Aç" touch={touch} onGo={() => setHelp(true)} />
       )}
-      {invite && !chatTarget && !editing && <InviteChip from={invite} onGo={() => visit(invite.owner)} onClose={() => setInvite(null)} />}
-      {incoming && !chatTarget && !interactPeer && !gestureIn && peerOf(incoming.id) && (
+      {!tourActive && invite && !chatTarget && !editing && <InviteChip from={invite} onGo={() => visit(invite.owner)} onClose={() => setInvite(null)} />}
+      {!tourActive && incoming && !chatTarget && !interactPeer && !gestureIn && peerOf(incoming.id) && (
         <IncomingChip from={incoming} onOpen={() => openChat(incoming.id)} onClose={() => setIncoming(null)} />
       )}
       {chatTarget && (chatTarget === 'public' || sheetPeer) && (
@@ -551,7 +552,7 @@ function WorldScene({ avatar }) {
           onVoice={sheetPeer ? (v) => net.send({ t: 'voice', to: sheetPeer.id, ...v }) : undefined}
         />
       )}
-      {match && (
+      {!tourActive && match && (
         <MatchOverlay
           peer={match}
           onClose={() => setMatch(null)}
@@ -562,7 +563,7 @@ function WorldScene({ avatar }) {
           }}
         />
       )}
-      {feat.overlays}
+      {!tourActive && feat.overlays}
       {inTutorial && !panel && !help && (
         <AirportTutorialHud
           step={tutStep}

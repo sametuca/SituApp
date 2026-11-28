@@ -61,9 +61,11 @@ export function useHomeCare({ net, home, focusRef, touch, say, panel }) {
   }, [home, ownerKey, send])
 
   useEffect(() => {
+    if (!home) return undefined
+    setNow(Date.now())
     const id = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(id)
-  }, [])
+  }, [home])
 
   useEffect(() => {
     const offs = [

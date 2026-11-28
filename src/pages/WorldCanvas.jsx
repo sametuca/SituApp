@@ -1,7 +1,7 @@
 // Dünya 3B sahnesi (R3F Canvas): ışık/ortam, şehir/ev/mekân, oyuncular, NPC'ler, özellik katmanları, kamera ve izleyiciler.
 // World.jsx'ten ayrıldı; tüm durum World.jsx'te kalır, buraya yalnızca prop olarak gelir.
 import { lazy, Suspense, useEffect, useState } from 'react'
-import { Canvas } from '@react-three/fiber'
+import { Canvas, useFrame } from '@react-three/fiber'
 import { Environment, Lightformer, OrbitControls } from '@react-three/drei'
 import { NeutralToneMapping, PCFSoftShadowMap } from 'three'
 import City from '../world/City'
@@ -18,11 +18,30 @@ import RemotePlayers, { GuideNpc, SelfTag } from '../world/RemotePlayers'
 import { HOME_DOOR, HOME_ROOM, HOME_ZONE, resolveCollisions, resolveRoom } from '../world/layout'
 import { DoorWatcher, SceneReady, VenueDoorWatcher, WorldErrorBoundary, ZoneWatcher } from './WorldLoading'
 import { GUIDE_TIPS } from './worldConfig'
+import { createAdaptiveDpr } from '../world/performanceProfile'
 
 const GraphicsEffects = lazy(() => import('../world/GraphicsEffects'))
 
+function MobileResolution({ graphics, active, onChange }) {
+  const [sample] = useState(() => {
+    const nativeDpr = window.devicePixelRatio ?? 2
+    const [min, max] = graphics.lowPower ? graphics.dpr : [1, 1.25]
+    return createAdaptiveDpr(Math.min(Math.max(min, nativeDpr), max), Math.min(nativeDpr, graphics.lowPower ? 1.25 : 1.5))
+  })
+  useFrame((_, delta) => {
+    const next = sample(delta, active && document.visibilityState === 'visible')
+    if (next != null) onChange(next)
+  })
+  return null
+}
+
 export default function WorldCanvas({ chatTargetRef, controlsRef, editing, feat, finishIntro, focusRef, furnColliders, graphics, home, inTutorial, introActive, isOwnHome, joystickRef, lookJoystickRef, moveTargetRef, name, net, onSceneReady, roomTier, say, sceneBase, sceneReady, selected, setChatTarget, setFurn, setHelp, setInteractId, setNearDoor, setNearGuide, setNearVenue, setPanel, setSelected, setTutNear, setZone, shownItems, slug, start, touch, tutStep, venue, venueCollide, venueDim, venueTh, venueZone }) {
   const [effectsReady, setEffectsReady] = useState(false)
+  const [mobileDpr, setMobileDpr] = useState(null)
+
+  useEffect(() => {
+    if (!touch) setMobileDpr(null)
+  }, [touch])
 
   useEffect(() => {
     if (!sceneReady || (!graphics.ao && !graphics.bloom)) return undefined
@@ -57,7 +76,7 @@ export default function WorldCanvas({ chatTargetRef, controlsRef, editing, feat,
     <WorldErrorBoundary>
     <Canvas
       shadows={graphics.shadows ? PCFSoftShadowMap : false}
-      dpr={graphics.lowPower ? graphics.dpr : (touch ? [1, 1.25] : graphics.dpr)}
+      dpr={touch && mobileDpr != null ? mobileDpr : graphics.lowPower ? graphics.dpr : (touch ? [1, 1.25] : graphics.dpr)}
       gl={{ powerPreference: graphics.lowPower ? 'default' : 'high-performance', antialias: graphics.antialias, toneMapping: NeutralToneMapping, toneMappingExposure: 1.02 }}
       camera={{ fov: 55, near: 0.3, far: 300, position: [start.x, 6.4, start.z + 9.4] }}
       onCreated={({ gl }) => {
@@ -68,6 +87,7 @@ export default function WorldCanvas({ chatTargetRef, controlsRef, editing, feat,
       }}
     >
       <color attach="background" args={[sceneBase.bg]} />
+      {touch && sceneReady && <MobileResolution graphics={graphics} active={!introActive} onChange={setMobileDpr} />}
       <fog attach="fog" args={sceneBase.fog} />
       {/* Tek karede üretilen hafif PBR ışık haritası (IBL): tüm kil/plastik/cam/su yüzeylerine modern yansıma ve derinlik katar */}
       {!graphics.lowPower && (
