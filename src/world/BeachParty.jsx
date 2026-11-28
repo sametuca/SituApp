@@ -1,11 +1,14 @@
 // Sahil Partisi (Beach Party): plajda doğan oyuncuları ilk anda karşılayan müzikli, ışıklı, danslı sahil sahnesi.
 // Öne çıkan 3D objeler mevcut Meshy GLB modelleridir (dj-stand, club-speaker, club-ball, surfboard-a/b).
-import { Suspense, useMemo, useRef } from 'react'
+import { Suspense, useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Html, RoundedBox, useGLTF } from '@react-three/drei'
 import { Box3, Color, Vector3 } from 'three'
 import { BEACH_PARTY, BEACH_PARTY_TABLES } from './layout'
 import { screenK } from './screenK'
+import { getBeachPartyBeat, suspendBeachPartySpatial, updateBeachPartySpatial } from './audio/beachPartyDj'
+
+const _camDir = new Vector3()
 
 const TILE_COLORS = ['#fdb252', '#ff8fb8', '#7fcdf3', '#8fdcb4', '#b79cff', '#ffd35e']
 const BULB_COLORS = ['#ffd35e', '#ff8fb8', '#7fcdf3', '#8fdcb4', '#fdb252', '#b79cff']
@@ -35,7 +38,9 @@ function GlbProp({ url, position = [0, 0, 0], rotation = [0, 0, 0], scale = 1, s
     const t = clock.elapsedTime
     if (spin) g.rotation.y = rotation[1] + t * spin
     if (pulse) {
-      const beat = 1 + Math.pow(Math.max(0, Math.sin(t * 6.4)), 4) * 0.06
+      const liveBeat = getBeachPartyBeat()
+      const kick = liveBeat > 0.02 ? liveBeat * 0.11 : Math.pow(Math.max(0, Math.sin(t * 6.4)), 4) * 0.06
+      const beat = 1 + kick
       g.scale.set(baseScale * beat, baseScale * beat, baseScale * beat)
     }
   })
@@ -66,11 +71,12 @@ function DanceFloor() {
 
   useFrame(({ clock }) => {
     const t = clock.elapsedTime * 2.8
+    const beatBoost = getBeachPartyBeat() * 0.45
     for (let i = 0; i < tiles.length; i++) {
       const m = mats.current[i]
       if (!m) continue
       const wave = 0.5 + 0.5 * Math.sin(t + i * 0.75)
-      m.emissiveIntensity = 0.25 + wave * 0.55
+      m.emissiveIntensity = 0.25 + wave * 0.52 + beatBoost
     }
   })
 
@@ -161,12 +167,19 @@ function StringLights() {
   )
 }
 
-export default function BeachParty() {
+export default function BeachParty({ focusRef }) {
   const spotRef = useRef()
-  useFrame(({ clock }) => {
+
+  useEffect(() => () => suspendBeachPartySpatial(), [])
+
+  useFrame(({ clock, camera }) => {
+    camera.getWorldDirection(_camDir)
+    updateBeachPartySpatial(focusRef?.current, _camDir.x, _camDir.z)
+
     if (!spotRef.current) return
     const h = (clock.elapsedTime * 0.08) % 1
     spotRef.current.color.setHSL(h, 0.75, 0.72)
+    spotRef.current.intensity = 4.2 + getBeachPartyBeat() * 2.6
   })
 
   return (

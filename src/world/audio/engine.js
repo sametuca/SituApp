@@ -107,14 +107,15 @@ export function ensureStarted() {
 export function installUnlock() {
   if (unlockInstalled || typeof window === 'undefined') return
   unlockInstalled = true
+  const events = ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']
   const go = () => {
     ensureStarted()
     if (ac && ac.state === 'running') {
-      ;['pointerdown', 'keydown', 'touchend'].forEach((e) => window.removeEventListener(e, go, true))
+      events.forEach((e) => window.removeEventListener(e, go, true))
       unlockInstalled = false
     }
   }
-  ;['pointerdown', 'keydown', 'touchend'].forEach((e) => window.addEventListener(e, go, true))
+  events.forEach((e) => window.addEventListener(e, go, true))
 }
 
 /** Bağlam hazır olunca (ya da zaten hazırsa hemen) çağrılır. Döndürdüğü işlev aboneliği kaldırır. */

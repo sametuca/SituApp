@@ -169,7 +169,7 @@ export function useAudio({ net, focusRef, home, panel, touch }) {
       <div className="flex items-center gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-sm font-black text-[#4a3b5c]">Ses</p>
-          <p className="text-xs font-semibold text-[#8a7a9c]">Ses efektleri cihazında üretilir.</p>
+          <p className="text-xs font-semibold text-[#8a7a9c]">Sahil partisi 3B ortam müziği ve ses efektleri.</p>
         </div>
         <button
           role="switch"
@@ -185,6 +185,7 @@ export function useAudio({ net, focusRef, home, panel, touch }) {
         </button>
       </div>
       <div className={`mt-3 flex flex-col gap-2 transition-opacity ${st.muted ? 'opacity-50' : ''}`}>
+        <Slider label="Müzik" value={st.music} onChange={(v) => setSettings({ music: v })} />
         <Slider label="Efekt" value={st.sfx} onChange={(v) => setSettings({ sfx: v })} onRelease={() => play('pop')} />
         <button onClick={test} className="mt-1 w-fit rounded-2xl bg-[#a88bff] px-4 py-2 text-sm font-extrabold text-white shadow-soft active:scale-95">
           Sesi test et

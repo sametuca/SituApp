@@ -60,7 +60,7 @@ export default function City({ focusRef }) {
       <SkyBalloon />
       <SpeedRings />
       <BeachPier />
-      <BeachParty />
+      <BeachParty focusRef={focusRef} />
       <TurkishFlags />
       <TownDetails focusRef={focusRef} />
 
