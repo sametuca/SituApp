@@ -10,6 +10,7 @@
 - **Gökyüzü**: `DAY_ONLY` kaldırıldı. Varsayılan mod "Gün batımı" (oturumda 17:36→19:12 yavaş ilerler, lambalar sırayla yanar); "Hep gece" seçilebilir. Görsel: `Sky.jsx` (katmanlı gökyüzü, güneş yolu `City.jsx SunGlitter`, lamba/kapı ışıkları, polen, rüzgâr salınımı `windSway.js`).
 - **PvP kaldırıldı** (`server/features/pvp.js` yok; aşağıdaki PvP notu tarihsel). Eklenenler: `fitness.js`, `inventory.js`, `dating.js`, `duo.js`, `away.js`, boks/sörf/mini oyunlar.
 - **Mekân ışıkları**: rollere ayrıldı (bkz. en alttaki "Mekân ışık rolleri").
+- **Mobil HUD**: tepki düğmeleri ekranda kalır; koleksiyon/seviye ve ifade düzenleme sol hızlı menüdedir. Sohbet açıkken joystick ve üst HUD gizlenir; sohbet ve fısıltı çekmeceleri klavye karşısında görsel viewport'a göre yerleşir.
 
 ## Akış ve mimari
 

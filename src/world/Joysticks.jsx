@@ -32,6 +32,11 @@ export function Joystick({ inputRef }) {
   const [running, setRunning] = useState(false)
   const [dragging, setDragging] = useState(false)
 
+  useEffect(() => () => {
+    inputRef.current.x = 0
+    inputRef.current.y = 0
+  }, [inputRef])
+
   const apply = (e) => {
     const r = base.current.getBoundingClientRect()
     let dx = e.clientX - (r.left + r.width / 2)
@@ -114,6 +119,11 @@ export function LookJoystick({ inputRef }) {
   const [knob, setKnob] = useState({ x: 0, y: 0 })
   const [dragging, setDragging] = useState(false)
   const narrow = useNarrowViewport()
+
+  useEffect(() => () => {
+    inputRef.current.x = 0
+    inputRef.current.y = 0
+  }, [inputRef])
 
   const apply = (e) => {
     const r = base.current.getBoundingClientRect()

@@ -5,11 +5,14 @@ import { MicButton, StickerBubble, StickerPanel, VoiceBubble } from './features/
 import { CHAT_EMOJIS, QUICK_REPLIES } from './interact'
 import Portrait from './Portrait'
 import { glass } from './socialShared'
+import { useVisualViewport } from './useIsTouch'
 // ---------- sohbet çekmecesi (özel veya herkese açık) ----------
 export function ChatSheet({ peer, feed, onSend, onClose, touch, typing, onTyping, readUpTo = 0, onSticker, onVoice }) {
   const [text, setText] = useState('')
   const [emojis, setEmojis] = useState(false)
   const [pickTab, setPickTab] = useState('emoji') // emoji | sticker
+  const [focused, setFocused] = useState(false)
+  const viewport = useVisualViewport(touch)
   const list = useRef(null)
   const input = useRef(null)
 
@@ -38,13 +41,18 @@ export function ChatSheet({ peer, feed, onSend, onClose, touch, typing, onTyping
 
   return (
     <div
-      className={`absolute z-20 flex flex-col gap-3 bg-white/92 p-4 shadow-toy backdrop-blur-md animate-pop ${
-        touch ? 'inset-x-0 bottom-0 max-h-[72svh] rounded-t-[2rem] border-t-2 border-white pb-[max(1rem,env(safe-area-inset-bottom))]' : 'bottom-3 left-3 w-[22rem] rounded-[2rem] border-2 border-white'
+      className={`absolute z-20 flex flex-col bg-white/92 shadow-toy backdrop-blur-md animate-pop ${
+        touch ? 'inset-x-0 bottom-0 max-h-[72svh] gap-2 overflow-y-auto overscroll-contain rounded-t-[2rem] border-t-2 border-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]' : 'bottom-3 left-3 w-[22rem] gap-3 rounded-[2rem] border-2 border-white p-4'
       }`}
+      style={touch ? {
+        paddingLeft: 'max(1rem, env(safe-area-inset-left))',
+        paddingRight: 'max(1rem, env(safe-area-inset-right))',
+        ...(viewport ? { bottom: viewport.bottom, maxHeight: `min(72svh, max(0px, ${viewport.height}px - max(0.5rem, env(safe-area-inset-top))))` } : {}),
+      } : undefined}
       role="dialog"
       aria-label={peer ? `${peer.name} ile sohbet` : 'Sohbet'}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-3">
         {peer ? (
           <Portrait peer={peer} size={40} className="h-10 w-10" />
         ) : (
@@ -59,101 +67,105 @@ export function ChatSheet({ peer, feed, onSend, onClose, touch, typing, onTyping
         </button>
       </div>
 
-      <div ref={list} className="flex min-h-24 flex-1 flex-col gap-1.5 overflow-y-auto" role="log" aria-live="polite" style={{ maxHeight: touch ? '32svh' : '14rem' }}>
-        {messages.length === 0 && <p className="m-auto text-center text-sm font-semibold text-[#8a7a9c]">{peer ? `${peer.name} ile ilk mesajı sen at 👋` : 'Henüz mesaj yok.'}</p>}
-        {peer && typing && (
-          <p className="flex w-fit items-center gap-1 self-start rounded-2xl bg-[#f1e6ff] px-3 py-1.5 text-sm font-bold text-[#8a7a9c]" aria-live="polite">
-            {peer.name} yazıyor
-            <span className="inline-flex gap-0.5" aria-hidden>
-              {[0, 1, 2].map((i) => (
-                <span key={i} className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#a88bff]" style={{ animationDelay: `${i * 0.15}s` }} />
-              ))}
-            </span>
-          </p>
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain touch-pan-y">
+        <div ref={list} className={`flex flex-1 touch-pan-y flex-col gap-1.5 overflow-y-auto ${touch ? 'min-h-16' : 'min-h-24'}`} role="log" aria-live="polite" style={{ maxHeight: touch ? '32svh' : '14rem' }}>
+          {messages.length === 0 && <p className="m-auto text-center text-sm font-semibold text-[#8a7a9c]">{peer ? `${peer.name} ile ilk mesajı sen at 👋` : 'Henüz mesaj yok.'}</p>}
+          {peer && typing && (
+            <p className="flex w-fit items-center gap-1 self-start rounded-2xl bg-[#f1e6ff] px-3 py-1.5 text-sm font-bold text-[#8a7a9c]" aria-live="polite">
+              {peer.name} yazıyor
+              <span className="inline-flex gap-0.5" aria-hidden>
+                {[0, 1, 2].map((i) => (
+                  <span key={i} className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#a88bff]" style={{ animationDelay: `${i * 0.15}s` }} />
+                ))}
+              </span>
+            </p>
+          )}
+          {messages.map((m, i) =>
+            m.sticker ? (
+              <StickerBubble key={`${m.ts}-${i}`} id={m.sticker} self={m.self} />
+            ) : m.voice ? (
+              <VoiceBubble key={`${m.ts}-${i}`} voice={m.voice} self={m.self} />
+            ) : (
+            <p
+              key={`${m.ts}-${i}`}
+              className={`max-w-[85%] break-words rounded-2xl px-3 py-1.5 text-sm font-semibold ${
+                m.kind === 'system'
+                  ? 'w-fit bg-[#fdb252]/90 text-white'
+                  : m.whisper
+                    ? `italic border-2 border-dashed border-[#c9b6f5] bg-[#f4edff] text-[#5b3fa8] ${m.self ? 'self-end' : 'self-start'}`
+                    : m.self
+                      ? 'self-end bg-[#a9ddf5] text-[#2f4a5c]'
+                      : 'self-start bg-[#f1e6ff] text-[#4a3b5c]'
+              }`}
+            >
+              {m.kind === 'system' ? m.text : m.whisper ? m.text : !peer && !m.self ? <><b>{m.name}: </b>{m.text}</> : peer && m.self && m.dm ? <>{m.text}<span className={`ml-1.5 text-[11px] font-black ${m.ts <= readUpTo ? 'text-[#3b8fd6]' : 'text-[#2f4a5c]/50'}`} title={m.ts <= readUpTo ? 'Okundu' : 'Gönderildi'}>{m.ts <= readUpTo ? '✓✓' : '✓'}</span></> : m.text}
+            </p>
+            ),
+          )}
+        </div>
+
+        {peer && !(touch && focused) && (
+          <div className="-mx-1 flex touch-pan-x gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none]">
+            {QUICK_REPLIES.map((q) => (
+              <button
+                key={q}
+                onClick={() => onSend(q)}
+                className="shrink-0 rounded-full border-2 border-white bg-[#ffedd6]/70 px-3 py-1.5 text-xs font-extrabold text-[#4a3b5c] active:scale-95"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
         )}
-        {messages.map((m, i) =>
-          m.sticker ? (
-            <StickerBubble key={`${m.ts}-${i}`} id={m.sticker} self={m.self} />
-          ) : m.voice ? (
-            <VoiceBubble key={`${m.ts}-${i}`} voice={m.voice} self={m.self} />
-          ) : (
-          <p
-            key={`${m.ts}-${i}`}
-            className={`max-w-[85%] break-words rounded-2xl px-3 py-1.5 text-sm font-semibold ${
-              m.kind === 'system'
-                ? 'w-fit bg-[#fdb252]/90 text-white'
-                : m.whisper
-                  ? `italic border-2 border-dashed border-[#c9b6f5] bg-[#f4edff] text-[#5b3fa8] ${m.self ? 'self-end' : 'self-start'}`
-                  : m.self
-                    ? 'self-end bg-[#a9ddf5] text-[#2f4a5c]'
-                    : 'self-start bg-[#f1e6ff] text-[#4a3b5c]'
-            }`}
-          >
-            {m.kind === 'system' ? m.text : m.whisper ? m.text : !peer && !m.self ? <><b>{m.name}: </b>{m.text}</> : peer && m.self && m.dm ? <>{m.text}<span className={`ml-1.5 text-[11px] font-black ${m.ts <= readUpTo ? 'text-[#3b8fd6]' : 'text-[#2f4a5c]/50'}`} title={m.ts <= readUpTo ? 'Okundu' : 'Gönderildi'}>{m.ts <= readUpTo ? '✓✓' : '✓'}</span></> : m.text}
-          </p>
-          ),
+
+        {emojis && onSticker && (
+          <div className="flex gap-1.5" role="tablist" aria-label="Emoji ve çıkartma">
+            {[
+              ['emoji', '😊 Emoji'],
+              ['sticker', '🧸 Çıkartma'],
+            ].map(([id, label]) => (
+              <button key={id} type="button" role="tab" aria-selected={pickTab === id} onClick={() => setPickTab(id)} className={`flex-1 rounded-xl py-1.5 text-xs font-extrabold active:scale-95 ${pickTab === id ? 'bg-[#a88bff] text-white' : 'bg-[#f1e6ff] text-[#4a3b5c]'}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+        {emojis && onSticker && pickTab === 'sticker' && (
+          <StickerPanel
+            onPick={(id) => {
+              onSticker(id)
+              setEmojis(false)
+            }}
+          />
+        )}
+        {emojis && (pickTab === 'emoji' || !onSticker) && (
+          <div className="grid grid-cols-8 gap-1 rounded-2xl bg-[#faf6ff] p-1.5">
+            {CHAT_EMOJIS.map((e) => (
+              <button
+                key={e}
+                type="button"
+                onClick={() => {
+                  setText((t) => (t + e).slice(0, 140))
+                  input.current?.focus()
+                }}
+                className="grid h-9 place-items-center rounded-xl text-xl active:scale-90 hover:bg-[#ffedd6]/60"
+              >
+                {e}
+              </button>
+            ))}
+          </div>
         )}
       </div>
 
-      {peer && (
-        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none]">
-          {QUICK_REPLIES.map((q) => (
-            <button
-              key={q}
-              onClick={() => onSend(q)}
-              className="shrink-0 rounded-full border-2 border-white bg-[#ffedd6]/70 px-3 py-1.5 text-xs font-extrabold text-[#4a3b5c] active:scale-95"
-            >
-              {q}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {emojis && onSticker && (
-        <div className="flex gap-1.5" role="tablist" aria-label="Emoji ve çıkartma">
-          {[
-            ['emoji', '😊 Emoji'],
-            ['sticker', '🧸 Çıkartma'],
-          ].map(([id, label]) => (
-            <button key={id} type="button" role="tab" aria-selected={pickTab === id} onClick={() => setPickTab(id)} className={`flex-1 rounded-xl py-1.5 text-xs font-extrabold active:scale-95 ${pickTab === id ? 'bg-[#a88bff] text-white' : 'bg-[#f1e6ff] text-[#4a3b5c]'}`}>
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
-      {emojis && onSticker && pickTab === 'sticker' && (
-        <StickerPanel
-          onPick={(id) => {
-            onSticker(id)
-            setEmojis(false)
-          }}
-        />
-      )}
-      {emojis && (pickTab === 'emoji' || !onSticker) && (
-        <div className="grid grid-cols-8 gap-1 rounded-2xl bg-[#faf6ff] p-1.5">
-          {CHAT_EMOJIS.map((e) => (
-            <button
-              key={e}
-              type="button"
-              onClick={() => {
-                setText((t) => (t + e).slice(0, 140))
-                input.current?.focus()
-              }}
-              className="grid h-9 place-items-center rounded-xl text-xl active:scale-90 hover:bg-[#ffedd6]/60"
-            >
-              {e}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <form onSubmit={submit} className="flex gap-2">
+      <form onSubmit={submit} className="flex shrink-0 gap-2">
         <button type="button" onClick={() => setEmojis((o) => !o)} aria-label="Emoji seç" aria-expanded={emojis} className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border-2 border-[#d6c7ff]/70 bg-white text-xl active:scale-95">
           😊
         </button>
         <input
           ref={input}
           value={text}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
           onChange={(e) => {
             setText(e.target.value)
             if (peer && e.target.value) onTyping?.(peer.id)
@@ -180,8 +192,8 @@ export function ChatFab({ onClick }) {
     <button
       onClick={onClick}
       aria-label="Sohbeti aç"
-      className={`absolute z-10 grid h-14 w-14 place-items-center rounded-full text-2xl transition active:scale-95 ${glass}`}
-      style={{ right: 'max(0.85rem, env(safe-area-inset-right))', bottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+      className={`absolute bottom-[calc(max(0.8rem,env(safe-area-inset-bottom))+5rem)] z-10 grid h-12 w-12 place-items-center rounded-full text-2xl transition active:scale-95 max-[560px]:bottom-[calc(max(0.8rem,env(safe-area-inset-bottom))+11.75rem)] ${glass}`}
+      style={{ right: 'max(0.85rem, env(safe-area-inset-right))' }}
     >
       <Ico name="chat" size={28} />
     </button>

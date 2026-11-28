@@ -87,7 +87,7 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch, slots =
         data-tour="skill-bar"
         className="pointer-events-auto absolute z-10 flex flex-col gap-1 rounded-2xl border border-white/60 bg-white/68 p-1.5 shadow-sm backdrop-blur-sm"
         style={{ right: 'max(0.75rem, env(safe-area-inset-right))', bottom: 'max(0.8rem, env(safe-area-inset-bottom))' }}
-        aria-label="Beceri ve deneyim çubuğu"
+        aria-label="Beceri çubuğu"
       >
         <div className="grid grid-cols-4 gap-1">
           {slots.map((sk) => {
@@ -102,7 +102,7 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch, slots =
                 disabled={onCd}
                 onClick={() => onSkill(sk)}
                 aria-label={`${sk.label}${onCd ? ` (${secs} saniye bekle)` : ''}`}
-                className={`relative flex h-9 w-9 flex-col items-center justify-center overflow-hidden rounded-xl border transition ${
+                className={`relative flex h-11 w-11 flex-col items-center justify-center overflow-hidden rounded-xl border transition ${
                   onCd ? 'cursor-not-allowed border-white/60 bg-[#ede6fa]/75' : 'border-white/80 bg-[#faf6ff]/85 shadow-sm active:scale-95'
                 }`}
               >
@@ -118,33 +118,6 @@ export function SkillBar({ xp = 0, cooldowns, onSkill, onOpenExp, touch, slots =
               </button>
             )
           })}
-        </div>
-        <div className="flex items-center gap-1.5">
-        <button
-          type="button"
-          onClick={onOpenExp}
-          title="Koleksiyon ve seviye ilerlemesini aç"
-          className="flex min-w-0 flex-1 items-center gap-1.5 rounded-2xl bg-[#faf6ff]/90 px-2 py-1 text-left active:scale-[0.99]"
-        >
-          <span className="shrink-0 rounded-full bg-[#ffe48f] px-2 py-0.5 text-[10px] font-black text-[#7a5b00]">
-            Sv.{lv.level}
-          </span>
-          <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#eadfff]">
-            <div className="h-full rounded-full bg-gradient-to-r from-[#ffe48f] via-[#fdb252] to-[#ff9248] transition-[width] duration-500" style={{ width: `${pct}%` }} />
-          </div>
-          <span className="shrink-0 text-[10px] font-black tabular-nums text-[#6b4fc0]">
-            {lv.into}/{lv.span}
-          </span>
-        </button>
-        {onEdit && <button
-            type="button"
-            onClick={onEdit}
-            aria-label="İfadeleri düzenle"
-            title="İfadeleri düzenle"
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[#efe7ff] text-[#6b4fc0] transition hover:bg-[#e3d6ff] active:scale-90"
-          >
-            <Em e="✏️" size={16} />
-          </button>}
         </div>
       </div>
     )

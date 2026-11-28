@@ -50,6 +50,7 @@ export function TopBar({ online, status, dnd, touch = false, inCity = false, tou
   const hasSpotlight = extraButtons.some((b) => b.hint)
   const leftTotalBadge = extraButtons.reduce((sum, b) => sum + (Number(b.badge) || 0), 0)
   const leftAnyHighlight = extraButtons.some((b) => b.highlight)
+  const mobileMenuHeight = 'min(72svh, max(0px, calc(100svh - max(0.5rem, env(safe-area-inset-top)) - 3.5rem - max(0.5rem, env(safe-area-inset-bottom)))))'
   return (
     <>
       {/* "Buraya tıkla" rehber odağı: ekranı karartıp hedef düğmeyi öne çıkarır */}
@@ -61,7 +62,13 @@ export function TopBar({ online, status, dnd, touch = false, inCity = false, tou
       )}
       <div
         className={`pointer-events-none absolute left-0 right-0 top-0 flex items-start justify-between gap-2 px-2.5 pb-2 sm:px-3 sm:py-3 ${hasSpotlight ? 'z-30' : 'z-20'}`}
-        style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}
+        style={{
+          paddingTop: 'max(0.5rem, env(safe-area-inset-top))',
+          ...(mobileBar ? {
+            paddingLeft: 'max(0.625rem, env(safe-area-inset-left))',
+            paddingRight: 'max(0.625rem, env(safe-area-inset-right))',
+          } : {}),
+        }}
       >
         {mobileBar && !hasSpotlight ? (
           <div className="pointer-events-auto relative" ref={leftRef} data-tour="left-menu-wrap">
@@ -87,7 +94,8 @@ export function TopBar({ online, status, dnd, touch = false, inCity = false, tou
             {leftOpen && (
               <div
                 data-tour="left-menu-panel"
-                className="absolute left-0 top-12 z-30 flex max-h-[72svh] w-56 flex-col gap-0.5 overflow-y-auto rounded-3xl border-2 border-white bg-white/95 p-2 shadow-toy backdrop-blur-md"
+                className="absolute left-0 top-12 z-30 flex max-h-[72svh] w-56 touch-pan-y flex-col gap-0.5 overflow-y-auto rounded-3xl border-2 border-white bg-white/95 p-2 shadow-toy backdrop-blur-md"
+                style={{ maxHeight: mobileMenuHeight }}
                 onClick={() => setLeftOpen(false)}
               >
                 {inCity && (
@@ -203,7 +211,7 @@ export function TopBar({ online, status, dnd, touch = false, inCity = false, tou
           {menuBadge > 0 && <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full border border-white bg-[#fdb252] px-1 text-[10px] font-black text-white sm:h-5 sm:min-w-5">{menuBadge}</span>}
         </button>
         {menu && (
-          <div data-tour="right-menu-panel" className="absolute right-0 top-12 z-30 flex max-h-[75svh] w-64 flex-col gap-1 overflow-y-auto rounded-3xl border-2 border-white bg-white/95 p-2 shadow-soft backdrop-blur-md sm:top-14 sm:w-72" onClick={() => setMenu(false)}>
+          <div data-tour="right-menu-panel" className="absolute right-0 top-12 z-30 flex max-h-[75svh] w-64 touch-pan-y flex-col gap-1 overflow-y-auto rounded-3xl border-2 border-white bg-white/95 p-2 shadow-soft backdrop-blur-md sm:top-14 sm:w-72" style={mobileBar ? { maxHeight: mobileMenuHeight } : undefined} onClick={() => setMenu(false)}>
             {menuNodes}
             <button onClick={toggleFullscreen} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-xs font-extrabold text-[#4a3b5c] transition hover:bg-[#fff8f0] sm:py-2.5 sm:text-sm">
               <span className="grid h-6 w-6 place-items-center text-[#6b4fc0]"><FullscreenIcon active={isFullscreen} size={19} /></span>

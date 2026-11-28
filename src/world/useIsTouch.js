@@ -44,3 +44,22 @@ export function useIsTouch() {
   }, [])
   return touch
 }
+
+export function useVisualViewport(enabled) {
+  const [viewport, setViewport] = useState(null)
+  useEffect(() => {
+    const visual = window.visualViewport
+    if (!enabled || !visual) return undefined
+    const update = () => setViewport({ height: visual.height, bottom: Math.max(0, window.innerHeight - visual.height - visual.offsetTop) })
+    update()
+    visual.addEventListener('resize', update)
+    visual.addEventListener('scroll', update)
+    window.addEventListener('resize', update)
+    return () => {
+      visual.removeEventListener('resize', update)
+      visual.removeEventListener('scroll', update)
+      window.removeEventListener('resize', update)
+    }
+  }, [enabled])
+  return enabled ? viewport : null
+}

@@ -325,6 +325,7 @@ function WorldScene({ avatar }) {
 
   const isMobileTour = Boolean(touch || (typeof window !== 'undefined' && window.innerWidth < 768))
   const activeTourStepId = tourActive ? (isMobileTour ? ONBOARD_STEPS.mobile : ONBOARD_STEPS.desktop)[tourIdx]?.id ?? null : null
+  const mobileChatOpen = Boolean(touch && chatTarget)
 
   const runCommand = (text) =>
     runWorldCommand(text, { say, net, focusRef, home, venue, goTo, ownHome, leaveVenue, visit, setHelp, setPanel, setIntroActive })
@@ -344,7 +345,7 @@ function WorldScene({ avatar }) {
       <WorldCanvas chatTargetRef={chatTargetRef} controlsRef={controlsRef} editing={editing} feat={feat} finishIntro={finishIntro} focusRef={focusRef} furnColliders={furnColliders} graphics={graphics} home={home} inTutorial={inTutorial} introActive={introActive} isOwnHome={isOwnHome} joystickRef={joystickRef} lookJoystickRef={lookJoystickRef} moveTargetRef={moveTargetRef} name={name} net={net} onSceneReady={onSceneReady} roomTier={roomTier} say={say} sceneBase={sceneBase} sceneReady={sceneReady} selected={selected} setChatTarget={setChatTarget} setFurn={setFurn} setHelp={setHelp} setInteractId={setInteractId} setNearDoor={setNearDoor} setNearGuide={setNearGuide} setNearVenue={setNearVenue} setPanel={setPanel} setSelected={setSelected} setTutNear={setTutNear} setZone={setZone} shownItems={shownItems} slug={slug} start={start} touch={touch} tutStep={tutStep} venue={venue} venueCollide={venueCollide} venueDim={venueDim} venueTh={venueTh} venueZone={venueZone} />
 
       <ConnectionOverlays status={net.status} signOut={signOut} />
-      {!introActive && (
+      {!introActive && !mobileChatOpen && (
         <TopBar
           zone={zone}
           online={net.online}
@@ -363,6 +364,10 @@ function WorldScene({ avatar }) {
                   : []
               : [
                   ...feat.extraButtons,
+                  ...(touch ? [
+                    { key: 'collection', icon: 'collection', label: 'Karakter ve Koleksiyon', onClick: () => setPanel('collection') },
+                    { key: 'skill-editor', icon: 'smile', label: 'İfadeleri düzenle', onClick: () => setSkillEdit(true) },
+                  ] : []),
                   {
                     key: 'inbox',
                     icon: 'feedback',
@@ -383,7 +388,7 @@ function WorldScene({ avatar }) {
           onHelp={() => setHelp(true)}
         />
       )}
-      {!introActive && !inTutorial && venue && net.status === 'online' && (
+      {!introActive && !inTutorial && !mobileChatOpen && venue && net.status === 'online' && (
         <VenueChannelPill
           venueName={VENUE_BY_ID[venue]?.name ?? 'Mekân'}
           channel={net.venueChannel}
@@ -438,11 +443,11 @@ function WorldScene({ avatar }) {
         />
       )}
       {!introActive && !home && !venue && <Minimap focusRef={focusRef} remotes={net.remotes} compact={touch} />}
-      {!introActive && (touch ? (
+      {!introActive && (touch ? !mobileChatOpen && (
         <>
           <Joystick inputRef={joystickRef} />
           <LookJoystick inputRef={lookJoystickRef} />
-          {!inTutorial && !chatTarget && !editing && <ChatFab onClick={() => openChat('public')} />}
+          {!inTutorial && !chatTarget && !editing && !interactPeer && <ChatFab onClick={() => openChat('public')} />}
         </>
       ) : (
         <>
@@ -469,9 +474,9 @@ function WorldScene({ avatar }) {
           )}
         </>
       ))}
-      <DockSlot />
+      <DockSlot hidden={mobileChatOpen} />
       {skillEdit && <SkillEditor slots={slots} onChange={changeSlots} onClose={() => setSkillEdit(false)} />}
-      <TopDockSlot />
+      <TopDockSlot touch={touch} hidden={mobileChatOpen} />
       {!introActive && !inTutorial && !editing && !chatTarget && !interactPeer && (
         <>
           <SkillBar xp={feat.xp} cooldowns={skillCd} slots={skillList} onEdit={() => setSkillEdit(true)} onSkill={triggerSkill} onOpenExp={() => setPanel('collection')} touch={touch} />
